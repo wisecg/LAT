@@ -1,0 +1,8 @@
+*.pyc
+*.root
+*.o
+wave-skim
+skim_mjd_data
+ds_livetime
+logs/*
+plots/*
