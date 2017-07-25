@@ -40,7 +40,7 @@ int main(int argc, char** argv)
          << "       [-c : use calibration TCut]\n";
     return 1;
   }
-  string inPath="", outPath="";
+  string inPath=".", outPath=".";
   int dsNum=-1, subNum=0, run=0;
   bool sw=0, tcs=0, fil=0, cal=0;
   vector<string> opt(argv, argv+argc);
@@ -52,16 +52,14 @@ int main(int argc, char** argv)
     if (opt[i] == "-c") { cal=1; }
   }
 
-  // Set cut
-  string theCut = "trapENFCal>0.8 && gain==0 && mH==1 && isGood && !muVeto && !isLNFill1 && !isLNFill2 && P!=0 && D!=0 && trapETailMin<0.5"; // DS0-5 standard cut
+  // DS0-5 standard cut
+  string theCut = "trapENFCal > 0.7 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
-  // test cut
-  // theCut = "trapENFCal>20 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
-  theCut = "trapENFCal > 20 && trapENFCal < 100 && mH==1";
+  // test/debug cut
+  theCut = "trapENFCal > 2 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
-  if (cal) theCut = "trapENFCal>0.5 && trapENFCal<250 && gain==0 && isGood && !muVeto && !isLNFill1 && !isLNFill2 && P!=0 && D!=0 && trapETailMin<0.5"; // calibration file cut
-
-  if (dsNum == 5) theCut += " && channel!=692 && channel!=1232";
+  // calibration file cut
+  if (cal) theCut = "trapENFCal>0.7 && trapENFCal<250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
   // Set file I/O
   string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);

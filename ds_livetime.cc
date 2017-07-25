@@ -699,7 +699,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       double ltAvg = getVectorAverage(livetimeMapBest[chan]);
       double ltUnc = getVectorUncertainty(livetimeMapBest[chan]);
 
-      cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-11.4f  %-13.4f  %-9.5f  %.5f  %d\n", chan,detID,activeMass,channelRuntime[chan],chLive,bestExposure[detID],ltAvg,ltUnc,livetimeMapBest[chan].size());
+      cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-11.4f  %-13.4f  %-9.5f  %.5f  %zu\n", chan,detID,activeMass,channelRuntime[chan],chLive,bestExposure[detID],ltAvg,ltUnc,livetimeMapBest[chan].size());
     }
 
     // Now report some average values for "all", "best", HG, and LG channel sets
