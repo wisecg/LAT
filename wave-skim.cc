@@ -56,7 +56,7 @@ int main(int argc, char** argv)
   string theCut = "trapENFCal > 0.7 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
   // test/debug cut
-  // theCut = "trapENFCal > 20 && trapENFCal < 100 && mH==1";
+  theCut = "trapENFCal > 2 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
   // calibration file cut
   if (cal) theCut = "trapENFCal>0.7 && trapENFCal<250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
