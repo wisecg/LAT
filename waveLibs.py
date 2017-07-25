@@ -259,9 +259,11 @@ def generateSimBaseline():
 
     # This WF is actually 2030 samples because the force trigger WF is longer
     tempWF = np.fft.irfft(tempFT)
-    # Seems to be off by around pi
-    tempWF = tempWF*3.14
-    # Cut off first 6 and last 6 samples, early and later samples still look a bit wacky
+    # Cut off first 50 and last 50 samples, symmetrically pad
+    tempWF = np.pad(tempWF[50:-50], 50, mode='symmetric')
+    # Seems to be off by a scale of around pi
+    tempWF = tempWF*np.pi
+    # Cut off first 6 and last 6 samples to make the length 2018
     return tempWF[6:-6]
 
 """
