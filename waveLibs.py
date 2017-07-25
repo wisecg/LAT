@@ -245,6 +245,25 @@ def MGTWFFromNpArray(npArr):
     mgtwf.SetData(vec)
     return mgtwf
 
+def generateSimBaseline():
+    """ Generates a fake baseline from a force triggered power spectrum, based off of WC's thesis """
+    from ROOT import TFile,MGTWaveformFT
+
+    fNoiseFile = TFile("./data/noise_spectra_DS0.root")
+    noiseFT = fNoiseFile.Get("noiseWF_ch624_P42574A");
+    tempFT = np.zeros(noiseFT.GetDataLength(), dtype=complex)
+    # Skip 0th component (DC component)
+    for i in range(1, noiseFT.GetDataLength()):
+        sigma = np.sqrt(noiseFT.At(i).real()*noiseFT.At(i).real()+noiseFT.At(i).imag()*noiseFT.At(i).imag())/np.sqrt(2.)
+        tempFT[i] = np.complex(sigma*np.random.random_sample(), sigma*np.random.random_sample())
+
+    # This WF is actually 2030 samples because the force trigger WF is longer
+    tempWF = np.fft.irfft(tempFT)
+    # Seems to be off by around pi
+    tempWF = tempWF*3.14
+    # Cut off first 6 and last 6 samples, early and later samples still look a bit wacky
+    return tempWF[6:-6]
+
 """
 # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
