@@ -40,15 +40,15 @@ import waveLibs as wl
 import waveModel as wm
 
 def main(argv):
-
     print "======================================="
     print "LAT started:",time.strftime('%X %x %Z')
     startT = time.clock()
+    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     # let's get some (m)args
     intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode = False, False, False, False, False, False, False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
-    pathToInput, pathToOutput, manualInput, manualOutput = "", "", "", ""
+    pathToInput, pathToOutput, manualInput, manualOutput = ".", ".", "", ""
 
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -82,8 +82,6 @@ def main(argv):
             print "Batch mode selected.  A new file will be created."
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
-    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
-
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
@@ -126,7 +124,7 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    theCut = "trapENFCal < 2"
+    theCut = "trapENFCal > 2 && trapENFCal < 10"
     print "WARNING: Custom cut in use!"
     # ============================================================
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -312,12 +310,16 @@ def main(argv):
 
 
             # Let's start the show
-            signal = wl.processWaveform(wf)
+            removeNBeg, removeNEnd = 0, 2
+            if dsNum==2: removeNBeg = 3
+            signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
             data = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
             tOffset[iH] = signal.GetOffset()
             _,dataNoise = signal.GetBaseNoise()
 
+
+            print len(data),len(dataTS)
 
             # wavelet packet transform
             wp = pywt.WaveletPacket(data, 'db2', 'symmetric', maxlevel=4)
@@ -329,7 +331,10 @@ def main(argv):
             new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
             new_wp['aaa'] = wp['aaa'].data
             data_wlDenoised = new_wp.reconstruct(update=False)
-            data_wlDenoised = data_wlDenoised[1:-1] # make it equal to 2016
+
+            # resize in a smart way
+            diff = len(data_wlDenoised) - len(data)
+            if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
 
             # wavelet parameters
 
@@ -448,44 +453,23 @@ def main(argv):
 
 
             # run waveform fitter
-
+            # nelder-mead (~0.5 sec).
             MakeTracesGlobal()
-
-            # 0. brute - trying to make a quick initial guess for the slowness parameter.  probably misguided
-            # FIXME: this keeps returning the lowest allowed value for slowness.
-            # bruteArgs = [en, datas]
-            # ranges = (slice(dataMax-500,dataMax+300,100), slice(1,100,10))
-            # resbrute = op.brute(bruteLnLike, ranges, args=(bruteArgs,), full_output=False, finish=None, disp=False)
-            # mt, slo = resbrute[0], resbrute[1]
-            # print "brute results:  mt %.0f  en %.3f  slo %.2f" % (mt, en, slo)
-            # floats = [mt, en, slo]
-
-            # 1. nelder-mead (~0.5 sec).  nobody does it better.  works almost like magic.
             result = op.minimize(findLnLike, floats, args=datas, method="Nelder-Mead")#,options={"maxiter":10})
             if not result["success"]:
-                # print "fit 'fail': ", result["message"]
+                print "fit 'fail': ", result["message"]
                 errorCode[0] = 1
             mt, en, slo = result["x"]
             nelder, nelderTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-            # nelderStop = time.clock()
 
-            # 2. powell "polish step" (~0.1 sec).  Sometimes screws up Nelder's good results!
-            # floats = [mt,en,slo]
-            # powell = op.minimize(findLnLike, floats, args=datas, method="Powell")
-            # if not powell["success"]:
-            #     fitFail= True
-            #     print powell["message"]
-            # mt, en, slo = powell["x"]
-            # # print "powell results: mt %.0f  en %.3f  slo %.2f" % (mt, en, slo)
-            # model, modelTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-            #
-            # powellStop = time.clock()
-            # print "Time: nelder %.3f  powell %.3f  total %.3f" % (nelderStop-start, powellStop-nelderStop, powellStop-start)
+            print "fail %i  match %.2f  fitE %.2f  slo %.2f" % (errorCode[0], mt, en, slo)
+            print nelder
 
             # take absolute values for parameters
             mt, en, slo = abs(mt), abs(en), abs(slo)
             model, modelTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
             fitMatch[iH], fitE[iH], fitSlo[iH] = mt, en, slo
+
 
             # TODO: compute a trap energy off the model? (need pinghan's calibration constants)
             trap = np.zeros(1000)
@@ -496,7 +480,6 @@ def main(argv):
             # time domain match filter
 
             match, matchTS = wm.MakeModel(dataList, tempList, [mt,en,slo], opt="nowindow")
-            # match = np.flip(match,0)
             match = match[::-1]
 
             # line up the max of the match with the max of the best-fit signal
@@ -557,7 +540,7 @@ def main(argv):
                 if j==1: fails[iH] += int(j)<<i
             # print "fails:",fails[iH]
 
-            # Make diagnostic plots
+            # Make plots!
             if batMode: continue
             if plotNum==0: # raw data
                 p[0].cla()
@@ -728,13 +711,6 @@ def main(argv):
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
     print float(nList)/((stopT-startT)/60.),"entries per minute."
 
-
-def bruteLnLike(x0, *bruteArgs):
-    mt, slo = x0
-    en, datas = bruteArgs[0]
-    floats = [mt, en, slo]
-    # print mt, en, slo
-    findLnLike(floats, datas)
 
 def findLnLike(floats, datas):
     # SciPy Minimizer.

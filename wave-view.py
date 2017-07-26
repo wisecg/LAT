@@ -121,7 +121,7 @@ def main(argv):
 
             # resize in a smart way
             diff = len(data_wlDenoised) - len(waveBLSub)
-            if diff > 0: data_wlDenoised = data_wlDenoised[:-1*diff]
+            if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
 
             # fill the figure
             p1.set_ydata(waveBLSub)
