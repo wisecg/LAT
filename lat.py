@@ -237,6 +237,7 @@ def main(argv):
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
     # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo) # Damn you to hell, PDSF
     templateFile = np.load("./data/lat_template.npz")
+    if dsNum==2: templateFile = np.load("./data/lat_ds2template.npz")
     tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
 
 
@@ -317,9 +318,6 @@ def main(argv):
             dataTS = signal.GetTS()
             tOffset[iH] = signal.GetOffset()
             _,dataNoise = signal.GetBaseNoise()
-
-
-            print len(data),len(dataTS)
 
             # wavelet packet transform
             wp = pywt.WaveletPacket(data, 'db2', 'symmetric', maxlevel=4)
@@ -426,7 +424,6 @@ def main(argv):
 
 
             # optimal matched filter (freq. domain)
-
             guess, guessTS = wm.MakeModel(dataList, tempList, floats, fn=InterpFn)
 
             # idx = np.where((tempTS > dataTS[0]-5) & (tempTS < dataTS[-1]+5))
@@ -462,8 +459,6 @@ def main(argv):
             mt, en, slo = result["x"]
             nelder, nelderTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
 
-            print "fail %i  match %.2f  fitE %.2f  slo %.2f" % (errorCode[0], mt, en, slo)
-            print nelder
 
             # take absolute values for parameters
             mt, en, slo = abs(mt), abs(en), abs(slo)
@@ -656,11 +651,11 @@ def main(argv):
 
             if plotNum==6: # waveform fit plot
                 p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.7)
+                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.8)
                 idx = np.where((tempTS >= dataTS[0]-5) & (tempTS <= dataTS[-1]+5))
                 p[0].plot(tempTS[idx],temp[idx],color='orange',label='template')
                 p[0].plot(nelderTS,nelder,color='red',label='bestfit',linewidth=3)
-                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch',linewidth=4)
+                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch',linewidth=4,alpha=0.5)
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  fitMatch %.1f  fitE %.2f  fitSlo %.1f" % (run,iEvent,chan,dataENF,mt,en,slo))
                 p[0].legend(loc=4)
                 p[1].cla()

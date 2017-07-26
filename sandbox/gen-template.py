@@ -6,32 +6,40 @@ import matplotlib.pyplot as plt
 def main():
 
     # Generate a siggen WF
-    samp, r, z, ene, t0 = 2016, 0, 15, 3938, 1000
-    wave, waveTS = MakeSiggenWaveform(samp,r,z,ene,t0)
+    # samp, r, z, ene, t0 = 2016, 0, 15, 3938, 1000
+    # wave, waveTS = MakeSiggenWaveform(samp,r,z,ene,t0)
+
+    tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 50, 10
+    tOrig, tOrigTS = MakeSiggenWaveform(tSamp, tR, tZ, tAmp, tST, tSlo)
+
+    result, resultTS = np.zeros(10000), np.zeros(10000)
+
+    result[5000:] = tOrig
+    resultTS = np.arange(0, 10000) * 10 # ts in ns
+
+    np.savez("./data/lat_ds2template.npz",result,resultTS)
 
     # plots
-    # fig = plt.figure(figsize=(8,5), facecolor='w')
-    # a1 = plt.subplot(111)
-    # a1.set_ylabel("ADC",y=0.95, ha='right')
-    # a1.set_xlabel("Time (ns)",x=0.95, ha='right')
-    # a1.set_title("Samples %d  r %.1f  z %.1f  ADC %d  startTime %.0f" % (samp,r,z,ene,t0*10))
-    # a1.plot(waveTS,wave,color='green',label='Generated WF')
-    # a1.axvline(x=t0*10,color='red',label='StartTime')
-    # a1.legend(loc=4)
-    # plt.show()
+    fig = plt.figure(figsize=(8,5), facecolor='w')
+    a1 = plt.subplot(111)
+    a1.set_ylabel("ADC",y=0.95, ha='right')
+    a1.set_xlabel("Time (ns)",x=0.95, ha='right')
+    a1.set_title("Samples %d  r %.1f  z %.1f  ADC %d  startTime %.0f" % (tSamp,tR,tZ,tAmp,tST*10))
+
+    a1.plot(resultTS,result,color='red',label='Superlong WF')
+    a1.plot(tOrigTS,tOrig,color='green',label='Generated WF')
+
+    a1.axvline(x=tST*10,color='red',label='StartTime')
+    a1.legend(loc=4)
+    plt.show()
     # plt.savefig("./plots/gen-template.pdf")
 
     # save the template
     # np.savez("./data/genTemplateWF.npz",wave,waveTS,1592.0,t0)
 
-    # LAT Template:
+    # example - load the LAT template:
     # templateFile = np.load("./data/lat_template.npz")
     # tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
-
-    tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
-    tOrig, tOrigTS = MakeSiggenWaveform(tSamp, tR, tZ, tAmp, tST, tSlo)
-    np.savez("./data/lat_template.npz",tOrig,tOrigTS)
-
 
     # TestScaling()
     # FitTemplateEnergy()
@@ -75,9 +83,9 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     fitSamples = 1000 # ask me if you think you need to change this (you almost definitely don't)
     timeStepSize = 1 # don't change this, you'll break everything
     # Create a detector model (don't change any of this)
-    detName = "./data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05,2.5, 1.65)
+    detName = "../data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05,2.5, 1.65)
     detector =  Detector(detName, timeStep=timeStepSize, numSteps=fitSamples*10./timeStepSize, maxWfOutputLength=5000)
-    detector.LoadFieldsGrad("./data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
+    detector.LoadFieldsGrad("../data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
     # Sets the impurity gradient.  Don't bother changing this
     detector.SetFieldsGradIdx(0)
 
