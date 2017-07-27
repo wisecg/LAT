@@ -59,7 +59,10 @@ int main(int argc, char** argv)
   theCut = "trapENFCal > 2 && gain==0 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
   // calibration file cut
-  if (cal) theCut = "trapENFCal>0.7 && trapENFCal<250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+  // if (cal) theCut = "trapENFCal>0.7 && trapENFCal<250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+
+  // Special E=0 cut
+  if (cal) theCut = "trapENFCal<250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
   // Set file I/O
   string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
