@@ -245,6 +245,27 @@ def MGTWFFromNpArray(npArr):
     mgtwf.SetData(vec)
     return mgtwf
 
+def generateSimBaseline():
+    """ Generates a fake baseline from a force triggered power spectrum, based off of WC's thesis """
+    from ROOT import TFile,MGTWaveformFT
+
+    fNoiseFile = TFile("./data/noise_spectra_DS0.root")
+    noiseFT = fNoiseFile.Get("noiseWF_ch624_P42574A");
+    tempFT = np.zeros(noiseFT.GetDataLength(), dtype=complex)
+    # Skip 0th component (DC component)
+    for i in range(1, noiseFT.GetDataLength()):
+        sigma = np.sqrt(noiseFT.At(i).real()*noiseFT.At(i).real()+noiseFT.At(i).imag()*noiseFT.At(i).imag())/np.sqrt(2.)
+        tempFT[i] = np.complex(sigma*np.random.random_sample(), sigma*np.random.random_sample())
+
+    # This WF is actually 2030 samples because the force trigger WF is longer
+    tempWF = np.fft.irfft(tempFT)
+    # Cut off first 50 and last 50 samples, symmetrically pad
+    tempWF = np.pad(tempWF[50:-50], 50, mode='symmetric')
+    # Seems to be off by a scale of around pi
+    tempWF = tempWF*np.pi
+    # Cut off first 6 and last 6 samples to make the length 2018
+    return tempWF[6:-6]
+
 """
 # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
@@ -294,7 +315,7 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
 
 class processWaveform:
     """ Handy class for auto-processing waveforms into various numpy arrays. """
-    def __init__(self, wave, removeNSamples=2, N=1, Wn=0.08, lo=50, hi=400, opt=''):
+    def __init__(self, wave, remLo=0, remHi=2):
 
         self.waveMGT = wave                            # input an MGTWaveform object
         self.offset = self.waveMGT.GetTOffset()        # time offset [ns]
@@ -306,41 +327,18 @@ class processWaveform:
         self.stop = hist.GetXaxis().GetXmax() + 5.
         self.binsPerNS = (self.stop - self.start) / hist.GetNbinsX()
         ts = np.arange(self.start,self.stop,self.binsPerNS)
-        removeSamples = [npArr.size - i for i in xrange(1,removeNSamples+1)]
+
+        removeSamples = [] # resize the waveform
+        if remLo > 0: removeSamples += [i for i in range(0,remLo+1)]
+        if remHi > 0: removeSamples += [npArr.size - i for i in range(1,remHi+1)]
+        # print "removing:",removeSamples
+
         self.ts = np.delete(ts,removeSamples)
         self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
 
-        # self.baseAvg, self.noiseAvg = findBaseline(self.waveRaw) # get baseline and baseline RMS
         self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
-
         self.waveBLSub = self.waveRaw
         self.waveBLSub[:] = [x - self.baseAvg for x in self.waveRaw] # subtract the baseline value
-
-        # self.lastZero, self.lastZeroTime, self.loWin, self.hiWin = 0,0,0,0
-        # self.waveEdge, self.tsEdge = np.empty([1]), np.empty([1])
-        self.waveletYOrig, self.waveletYTrans = np.empty([1]), np.empty([1])
-
-        if (opt == 'full'):
-
-            self.waveletYOrig, self.waveletYTrans = waveletTransform(self.waveBLSub) # wavelet transform
-
-            self.b, self.a = sg.butter(N, Wn)
-            self.waveFilt = sg.filtfilt(self.b, self.a, self.waveBLSub)  # do a smoothing
-
-            # self.zeros = np.asarray(np.where(self.waveBLSub < 0.1))
-            # zeros = np.asarray(np.where(self.waveFilt < 0.01))   # make a list of negative points ("zeros")
-            # if (zeros.size > 0): self.lastZero = zeros[0,-1]     # find the last zero crossing
-            # self.lastZeroTime = ts[self.lastZero]
-            # self.loWin, self.hiWin = self.lastZero-lo, self.lastZero+hi  # indexes, not times
-            # waveEnds = np.concatenate((np.arange(0, self.loWin), np.arange(self.hiWin, self.waveRaw.size)), axis=0)
-            # self.waveEdge = np.delete(self.waveBLSub, waveEnds) # rising edge of the waveform
-            # self.tsEdge = np.delete(self.ts, waveEnds)          # rising edge timestamps
-
-            # self.waveFTX, self.waveFTY, self.waveFTPow = fourierTransform(self.waveBLSub) # fourier transform
-
-            # self.waveTrap = trapezoidalFilter(self.waveBLSub) # trapezoidal filter
-            # self.waveFiltTrap = trapezoidalFilter(self.waveFilt) # trapezoidal filter on the smoothed waveform
-
 
     # constants
     def GetOffset(self): return self.offset
@@ -349,22 +347,11 @@ class processWaveform:
     def GetBins(self): return self.binsPerNS
     def GetBaseNoise(self): return self.baseAvg, self.noiseAvg
     def GetWindowIndex(self): return self.loWin, self.hiWin
-    # def GetBaselineRMS(self): return self.baselineRMS
-    # def GetBaselineSlope(self): return self.baselineSlope
 
     # arrays
-    def GetWaveEdge(self): return self.waveEdge
-    def GetTSEdge(self): return self.tsEdge
     def GetTS(self): return self.ts
     def GetWaveRaw(self): return self.waveRaw
     def GetWaveBLSub(self): return self.waveBLSub
-    def GetWaveFilt(self): return self.waveFilt
-    def GetLastZeroIndex(self): return self.lastZero
-    def GetLastZeroTime(self): return self.lastZeroTime
-    # def GetFourier(self): return self.waveFTX, self.waveFTY, self.waveFTPow
-    def GetWavelet(self): return self.waveletYOrig, self.waveletYTrans
-    def GetTrapezoid(self): return self.waveTrap
-    # def GetFiltTrapezoid(self): return self.waveFiltTrap
 
 
 class latBranch:

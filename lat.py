@@ -40,15 +40,15 @@ import waveLibs as wl
 import waveModel as wm
 
 def main(argv):
-
     print "======================================="
     print "LAT started:",time.strftime('%X %x %Z')
     startT = time.clock()
+    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     # let's get some (m)args
     intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode = False, False, False, False, False, False, False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
-    pathToInput, pathToOutput, manualInput, manualOutput = "", "", "", ""
+    pathToInput, pathToOutput, manualInput, manualOutput = ".", ".", "", ""
 
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -82,8 +82,6 @@ def main(argv):
             print "Batch mode selected.  A new file will be created."
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
-    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
-
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
@@ -126,7 +124,7 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    theCut = "trapENFCal < 2"
+    theCut = "trapENFCal > 2 && trapENFCal < 10"
     print "WARNING: Custom cut in use!"
     # ============================================================
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -239,6 +237,7 @@ def main(argv):
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
     # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo) # Damn you to hell, PDSF
     templateFile = np.load("./data/lat_template.npz")
+    if dsNum==2 or dsNum==6: templateFile = np.load("./data/lat_ds2template.npz")
     tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
 
 
@@ -312,24 +311,19 @@ def main(argv):
 
 
             # Let's start the show
-            signal = wl.processWaveform(wf)
+            removeNBeg, removeNEnd = 0, 2
+            if dsNum==2 or dsNum==6: removeNBeg = 3
+            signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
             data = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
             tOffset[iH] = signal.GetOffset()
             _,dataNoise = signal.GetBaseNoise()
-
 
             # wavelet packet transform
             wp = pywt.WaveletPacket(data, 'db2', 'symmetric', maxlevel=4)
             nodes = wp.get_level(4, order='freq')
             waveletYTrans = np.array([n.data for n in nodes],'d')
             waveletYTrans = abs(waveletYTrans)
-
-            # reconstruct waveform w/ only lowest frequency.
-            new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
-            new_wp['aaa'] = wp['aaa'].data
-            data_wlDenoised = new_wp.reconstruct(update=False)
-            data_wlDenoised = data_wlDenoised[1:-1] # make it equal to 2016
 
             # wavelet parameters
 
@@ -353,6 +347,15 @@ def main(argv):
             bcMax[iH] = np.max(sumList)
             bcMin[iH] = np.min(sumList)
 
+            # reconstruct waveform w/ only lowest frequency.
+            new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
+            new_wp['aaa'] = wp['aaa'].data
+            data_wlDenoised = new_wp.reconstruct(update=False)
+            # resize in a smart way
+            diff = len(data_wlDenoised) - len(data)
+            if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
+
+            # calculate wf entropy
             d1 = 2. * np.multiply(waveletYTrans[0:1,1:65], np.log(waveletYTrans[0:1,1:65]/waveS0[iH]/2.0))
             d2 = np.multiply(waveletYTrans[0:1,65:-1], np.log(waveletYTrans[0:1,65:-1]/waveS0[iH]))
             waveEnt[iH] = np.abs(np.sum(d1)) + np.abs(np.sum(d2))
@@ -419,16 +422,27 @@ def main(argv):
             datas = [dataList, tempList, InterpFn]
             floats = [mt,en,slo]
 
+            # save the initial guess
+            guess, guessTS = wm.MakeModel(dataList, tempList, floats, fn=InterpFn)
+
+            # run waveform fitter
+            # nelder-mead (~0.5 sec).
+            MakeTracesGlobal()
+            result = op.minimize(findLnLike, floats, args=datas, method="Nelder-Mead")#,options={"maxiter":10})
+            if not result["success"]:
+                print "fit 'fail': ", result["message"]
+                errorCode[0] = 1
+            mt, en, slo = result["x"]
+            nelder, nelderTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
+
+            # save parameters.  take absval for slowness only.
+            slo = abs(slo)
+            fitMatch[iH], fitE[iH], fitSlo[iH] = mt, en, slo
+
 
             # optimal matched filter (freq. domain)
 
-            guess, guessTS = wm.MakeModel(dataList, tempList, floats, fn=InterpFn)
-
-            # idx = np.where((tempTS > dataTS[0]-5) & (tempTS < dataTS[-1]+5))
-            # guess, guessTS = temp[idx], tempTS[idx]
-            # if len(guess)!=len(data): # aborted padding trick
-                # c = np.lib.pad(a,(5,0),'constant',constant_values=0)
-
+            # we use the guess (not the fit result) to keep this independent of the wf fitter.
             data_fft = np.fft.fft(data) # can also try taking fft of the low-pass data
             temp_fft = np.fft.fft(guess)
 
@@ -447,60 +461,13 @@ def main(argv):
             oppie[iH] = np.amax(SNR)
 
 
-            # run waveform fitter
-
-            MakeTracesGlobal()
-
-            # 0. brute - trying to make a quick initial guess for the slowness parameter.  probably misguided
-            # FIXME: this keeps returning the lowest allowed value for slowness.
-            # bruteArgs = [en, datas]
-            # ranges = (slice(dataMax-500,dataMax+300,100), slice(1,100,10))
-            # resbrute = op.brute(bruteLnLike, ranges, args=(bruteArgs,), full_output=False, finish=None, disp=False)
-            # mt, slo = resbrute[0], resbrute[1]
-            # print "brute results:  mt %.0f  en %.3f  slo %.2f" % (mt, en, slo)
-            # floats = [mt, en, slo]
-
-            # 1. nelder-mead (~0.5 sec).  nobody does it better.  works almost like magic.
-            result = op.minimize(findLnLike, floats, args=datas, method="Nelder-Mead")#,options={"maxiter":10})
-            if not result["success"]:
-                # print "fit 'fail': ", result["message"]
-                errorCode[0] = 1
-            mt, en, slo = result["x"]
-            nelder, nelderTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-            # nelderStop = time.clock()
-
-            # 2. powell "polish step" (~0.1 sec).  Sometimes screws up Nelder's good results!
-            # floats = [mt,en,slo]
-            # powell = op.minimize(findLnLike, floats, args=datas, method="Powell")
-            # if not powell["success"]:
-            #     fitFail= True
-            #     print powell["message"]
-            # mt, en, slo = powell["x"]
-            # # print "powell results: mt %.0f  en %.3f  slo %.2f" % (mt, en, slo)
-            # model, modelTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-            #
-            # powellStop = time.clock()
-            # print "Time: nelder %.3f  powell %.3f  total %.3f" % (nelderStop-start, powellStop-nelderStop, powellStop-start)
-
-            # take absolute values for parameters
-            mt, en, slo = abs(mt), abs(en), abs(slo)
-            model, modelTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-            fitMatch[iH], fitE[iH], fitSlo[iH] = mt, en, slo
-
-            # TODO: compute a trap energy off the model? (need pinghan's calibration constants)
-            trap = np.zeros(1000)
-            trap = np.append(trap,wl.trapezoidalFilter(model))
-            trapMax = np.amax(trap)
-
-
             # time domain match filter
 
             match, matchTS = wm.MakeModel(dataList, tempList, [mt,en,slo], opt="nowindow")
-            # match = np.flip(match,0)
             match = match[::-1]
 
             # line up the max of the match with the max of the best-fit signal
-            modelMaxTime = modelTS[np.argmax(model)]
+            modelMaxTime = nelderTS[np.argmax(nelder)]
             matchMaxTime = matchTS[np.argmax(match)]
             matchTS = matchTS + (modelMaxTime - matchMaxTime)
             fitMax[iH] = modelMaxTime
@@ -557,7 +524,7 @@ def main(argv):
                 if j==1: fails[iH] += int(j)<<i
             # print "fails:",fails[iH]
 
-            # Make diagnostic plots
+            # Make plots!
             if batMode: continue
             if plotNum==0: # raw data
                 p[0].cla()
@@ -627,7 +594,7 @@ def main(argv):
                 p[0].plot(dataTS,data,'b',label='data')
                 idx = np.where((tempTS >= dataTS[0]-5) & (tempTS <= dataTS[-1]+5))
                 p[0].plot(tempTS[idx],temp[idx],'r',label='template')
-                p[0].plot(modelTS,trap,color='k',label='bestfit-trap')
+                p[0].plot(nelderTS,trap,color='k',label='bestfit-trap')
                 p[0].plot(nelderTS,nelder,color='cyan',label='bestfit')
                 p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch')
                 p[0].axvline(fitMax[iH],color='orange',label='fitMax')
@@ -639,7 +606,7 @@ def main(argv):
                 p[1].cla()
                 p[1].plot(dataTS,data,'b',alpha=0.8,label='data')
                 p[1].plot(matchTS,match,'k',label='match')
-                p[1].plot(modelTS,model,color='orange',label='model')
+                p[1].plot(nelderTS,nelder,color='orange',label='bestFit')
                 p[1].plot(dataTS,data_lPass,'r',label='lowpass')
                 if len(match)==len(data):
                     p[1].plot(matchTS,smoothMF,'g',label='smoothMF')
@@ -673,11 +640,11 @@ def main(argv):
 
             if plotNum==6: # waveform fit plot
                 p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.7)
+                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.8)
                 idx = np.where((tempTS >= dataTS[0]-5) & (tempTS <= dataTS[-1]+5))
                 p[0].plot(tempTS[idx],temp[idx],color='orange',label='template')
                 p[0].plot(nelderTS,nelder,color='red',label='bestfit',linewidth=3)
-                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch',linewidth=4)
+                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch',linewidth=4,alpha=0.5)
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  fitMatch %.1f  fitE %.2f  fitSlo %.1f" % (run,iEvent,chan,dataENF,mt,en,slo))
                 p[0].legend(loc=4)
                 p[1].cla()
@@ -703,9 +670,6 @@ def main(argv):
                 p[0].legend(loc=4)
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENF,matchMax[iH],matchTime[iH],matchWidth[iH]))
 
-
-
-
             plt.tight_layout()
             plt.pause(0.000001)
             # ------------------------------------------------------------------------
@@ -729,20 +693,11 @@ def main(argv):
     print float(nList)/((stopT-startT)/60.),"entries per minute."
 
 
-def bruteLnLike(x0, *bruteArgs):
-    mt, slo = x0
-    en, datas = bruteArgs[0]
-    floats = [mt, en, slo]
-    # print mt, en, slo
-    findLnLike(floats, datas)
-
 def findLnLike(floats, datas):
     # SciPy Minimizer.
     #     This could be moved to waveModel.py IF you decide you
     #     don't need to look at the trace arrays anymore.
-    #
-    #     Also, the version in this file (match-minimizer.py)
-    #     is different because it tries to align the MAX time
+    #     Also, this version tries to align the MAX time
     #     (not the start time) of the waveforms.
     global mtTrace, enTrace, sloTrace
 

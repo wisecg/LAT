@@ -51,6 +51,7 @@ def MakeModel(dataList, tempList, params, fn=0, opt=""):
         They don't necessarily refer to the start time or max time of a pulse,
         unless that is specified in a function calling this one.
     """
+    # print "entering MakeModel ..."
 
     # Unpack inputs
     data, dataTS, dataE, dataSync = dataList[0], dataList[1], dataList[2], dataList[3]
@@ -99,7 +100,7 @@ def MakeModel(dataList, tempList, params, fn=0, opt=""):
 
     # Window the model
     if dataTS[0] < modelTS[0] or dataTS[-1] > modelTS[-1]:
-        # print "Model floated out the window.  st %d  tempSync %d  dST %d  loData %d  loModel %d  hiData %d  hiModel %d" % (st,tempSync,deltaSync,dataTS[0],modelTS[0],dataTS[-1],modelTS[-1]) # commented this warning out for LAT
+        print "Model floated out the window.  st %d  tempSync %d  dST %d  loData %d  loModel %d  hiData %d  hiModel %d" % (st,tempSync,deltaSync,dataTS[0],modelTS[0],dataTS[-1],modelTS[-1]) # commented this warning out for LAT
         return np.ones(len(data)),dataTS
     idxFirst = (np.abs(modelTS - dataTS[0])).argmin()
     idxLast = idxFirst + len(dataTS)
@@ -117,7 +118,7 @@ def MakeModel(dataList, tempList, params, fn=0, opt=""):
     # Float the smoothing
     model = gaussian_filter(model,sigma=float( slo ))
 
-    # MCMC requires modelTS and dataTS need to have same number of entries ALWAYS.
+    # Let's make sure modelTS and dataTS have same number of entries ALWAYS.
     if len(modelTS)!=len(dataTS):
         print "array TS mismatch: model %d  data %d  m0 %.0f  m-1 %.0f  d0 %.0f  d-1 %.0f  dST %.0f  tST %.0f  st %.0f" % (len(modelTS),len(dataTS),modelTS[0],modelTS[-1],dataTS[0],dataTS[-1],deltaST,tempST,st)
         return np.ones(len(dataTS)),dataTS
