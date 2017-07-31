@@ -36,13 +36,13 @@ def main(argv):
     # waveTree.Add("~/project/lat/latSkimDS1*")
     # inputFile = TFile("~/project/latskim/ds1NoisyRuns.root")
     # inputFile = TFile("~/project/latskim/latSkimDS5_ch626.root")
-    inputFile = TFile("waveSkimDS2_1.root")
+    inputFile = TFile("waveSkimDS5_run21975.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
     theCut = inputFile.Get("theCut").GetTitle()
     # theCut += " && trapENFCal  1.1"
-    # theCut = " trapENFCal > 2 && trapENFCal < 10"
+    # theCut = " trapENFCal > 0.5 && trapENFCal < 10"
 
     # Print cut and events passing cut
     print "Using cut:\n",theCut,"\n"
