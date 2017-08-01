@@ -854,7 +854,6 @@ int main(int argc, const char** argv)
         threshSigma.push_back((*threshSigmaIn)[i]);
         dtPulserGlobal = (double)globalTime - dummydTGlobal;
 		dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
-      	cout << "card: " << pulserCardMap[hitCh] <<  "dT : " << dummydTCard[pulserCardMap[hitCh]] << endl;
       }
 
       double dtmu = 0; // same calculation as above, only for each hit
