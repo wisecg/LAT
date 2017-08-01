@@ -36,16 +36,17 @@ def checkTemplates():
     data238ENM, data238Max = file238['arr_3'], file238['arr_4']
     data238Noise, data238DenoisedNoise = file238['arr_5'], file238['arr_6']
 
+
     # pick the data waveform to use
     # pysiggen
-    data, dataTS, dataENM, dataNoise = pyData, pyDataTS, pyAmp, 1.
-    dataTSMax = np.argmax(data) * 10
+    # data, dataTS, dataENM, dataNoise = pyData, pyDataTS, pyAmp, 1.
+    # dataTSMax = np.argmax(data) * 10
 
     # 5 kev
     # data, dataTS, dataENM, dataTSMax, dataNoise = data5, data5TS, data5ENM, data5Max, data5Noise
 
     # 5 keV denoised
-    # data, dataTS, dataENM, dataTSMax, dataNoise = data5_denoised, data5TS, data5ENM, data5Max, data5DenoisedNoise
+    data, dataTS, dataENM, dataTSMax, dataNoise = data5_denoised, data5TS, data5ENM, data5Max, data5DenoisedNoise
 
     # 238 kev
     # data, dataTS, dataENM, dataTSMax, dataNoise = data238, data238TS, data238ENM, data238Max, data238Noise
@@ -55,7 +56,7 @@ def checkTemplates():
 
 
     # generate an xGauss "guess" waveform
-    xAmp, xMu, xSig, xTau = dataENM, 10000., 200., 72000. # guesses
+    xAmp, xMu, xSig, xTau = dataENM, 10000., 600., 72000. # guesses
     consts = [dataTS]
     floats = [xAmp, xMu, xSig, xTau]
     guess = MakeXGModel(consts, floats)
@@ -64,25 +65,32 @@ def checkTemplates():
     # run waveform fitter
     start = time.clock()
     MakeXGTracesGlobal()
+
+    # 1. Powell / Nelder-Mead
     datas = [dataTS, dataENM, 10000., 200., 72000., data, dataNoise]
-    result = op.minimize(findLnLikeXG, floats, args=datas, method="Nelder-Mead")
-    if not result["success"]:
-        print "fit fail, message:",result["message"]
-    xAmp, xMu, xSig, xTau = result["x"]
-    floats = [xAmp, xMu, xSig, xTau]
+    # result = op.minimize(findLnLikeXG, floats, args=datas, method="Powell") #method="Nelder-Mead"
+
+    # 2. conjugate gradient
+    result = op.fmin_cg(findLnLikeXG, floats, fprime=gradLNLike, args=tuple(datas))
+    xAmp, xMu, xSig, xTau = result
+    print result
+
+    # if not result["success"]:
+        # print "fit fail, message:",result["message"]
+    # xAmp, xMu, xSig, xTau = result["x"]
+    # floats = [xAmp, xMu, xSig, xTau]
     fit = MakeXGModel(consts, floats)
     stop = time.clock()
     print "Time:",stop-start,"seconds."
 
-
     # get residual
     resid = data - fit
 
-    # calculate fitChi2:  (observed - expected)^2 / expected
-    # fitChi2 = np.sum ( np.square(data-fit) / fit )
-    # print "fitChi2:",fitChi2
-
-
+    # calculate fitChi2.  Textbook is (observed - expected)^2 / expected,
+    # but we'll follow MGWFCalculateChiSquare.cc and do (observed - expected)^2 / NDF.
+    # TODO: check this.
+    fitChi2 = np.sum(np.square(data - fit)) / len(data)
+    print "fitChi2:",fitChi2
 
 
     # do plotting stuff
@@ -98,8 +106,10 @@ def checkTemplates():
     p0.plot(dataTS,data,color='blue',label='pysig data')
     p0.plot(dataTS,guess,color='orange',label='xgauss model')
     p0.plot(dataTS,fit,color='red',label='xgauss fit')
+
     p0.set_title("xAmp %.2f  xMu %.2f  xSig %.2f  xTau %.2f" %(xAmp,xMu,xSig,xTau))
     p0.legend(loc=4)
+
     p1.plot(xAmpTrace[1:],label='xAmp',color='red')
     p1.legend(loc=4)
     p1.set_xlabel('Fit Steps')
@@ -134,6 +144,8 @@ def xGaussFn(mode,x,h,mu,sig,tau):
     else:
         print "unknown mode!"
         return -1
+
+
 
 
 def fitData(argv):
@@ -337,13 +349,13 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     return wf_notrap, timesteps
 
 
-def findLnLikeXG(floats, datas):
+def findLnLikeXG(floats, *datas):
     """ Calculate Log-likelihood of an xGauss function for use w/ scipy minimizers. """
     global xAmpTrace, xMuTrace, xSigTrace, xTauTrace
 
     # Can fix parameters here by setting them back to their original guess values
     xAmp, xMu, xSig, xTau = floats
-    if True: xTau = datas[4]
+    # if True: xTau = datas[4]
     floats = [xAmp, xMu, xSig, xTau]
 
     # print xAmp, xMu, xSig, xTau
@@ -424,8 +436,8 @@ def MakeXGModel(consts, floats):
     xAmp, xMu, xSig, xTau = floats
     model = np.zeros(len(modelTS))
     for i in range(len(modelTS)):
-        mode, z = xGaussTest(modelTS[i],xMu,xSig,xTau)
-        model[i] = xGaussFn(mode,modelTS[i],1.,xMu,xSig,xTau)
+        mode,_ = xGaussTest(modelTS[i],xMu,xSig,xTau)
+        model[i] = xGaussFn(mode,modelTS[i],1.,xMu,xSig,xTau) # set h==1, not needed
     model = model * 1./np.sum(model)
 
     # scale the model by setting its max ADC amplitude to "xAmp" - xGauss Energy (uncalibrated)
@@ -434,6 +446,161 @@ def MakeXGModel(consts, floats):
 
     return model
 
+
+def gradLNLike(floats, *datas):
+
+    xAmp, xMu, xSig, xTau = floats
+    # if True: xTau = datas[4]
+    floats = [xAmp, xMu, xSig, xTau]
+    data, dataNoise = datas[5], datas[6]
+
+    consts = [datas[0]]
+    model = MakeXGModel(consts, floats)
+
+    ga = (1./dataNoise) * np.sum( np.multiply(partialXGArr("A",consts,floats),(model - data) ))
+    gmu = (1./dataNoise) * np.sum( np.multiply(partialXGArr("mu",consts,floats),(model - data) ))
+    gsig = (1./dataNoise) * np.sum( np.multiply(partialXGArr("sig",consts,floats),(model - data) ))
+    gtau = (1./dataNoise) * np.sum( np.multiply(partialXGArr("tau",consts,floats),(model - data) ))
+
+    return np.asarray((ga, gmu, gsig, gtau))
+
+
+def partialXGArr(opt,consts,floats):
+    # get a numpy array of the requested partial of xGauss.
+
+    modelTS = consts[0]
+    xAmp, xMu, xSig, xTau = floats
+    partial = np.zeros(len(modelTS))
+
+    if opt != "A":
+        for i in range(len(modelTS)):
+            mode,_ = xGaussTest(modelTS[i],xMu,xSig,xTau)
+            partial[i] = xGaussGrad(mode,opt,modelTS[i],xMu,xSig,xTau)
+
+    elif opt=="A":
+        floats = [1.,xMu,xSig,xTau] # since xAmp is just a multiplier, the partial is just the model with xAmp==1.
+        partial = MakeXGModel(consts,floats)
+
+    return partial
+
+def xGaussGradV1(mode,opt,x,mu,sig,tau):
+    """ Computed w/ Mathematica. GEEEZ. """
+
+    gx,gmu,gsig,gtau = 0.,0.,0.,0.
+    C = (1/np.sqrt(2.))*(sig/tau - (x-mu)/sig)
+    D = np.sqrt(np.pi/2.)
+
+    if mode==1:
+        A = (-1./2.)(sig/tau - (x-mu)/sig)**2. + sig**2./(2*tau**2.) - (x-mu)/tau
+        B = sig**2./(2*tau**2.) - (x-mu)/tau
+
+        gx = (1./tau) * np.exp(A)
+        gx += (-1./tau**2.) * (np.exp(B) * D * sig * sp.erfc(C) )
+
+        gmu = (-1./tau) * np.exp(A)
+        gmu += (1./tau**2.) * (np.exp(B) * D * sig * sp.erfc(C) )
+
+        gsig = (-1./tau) * (np.exp(A) * sig * ((x-mu)/sig**2. + 1./tau))
+        gsig += (1./tau**3.) * (np.exp(B) * D * sig**2. * sp.erfc(C) )
+        gsig += (1./tau) * (np.exp(B) * D * sp.erfc(C) )
+
+        gtau = (1./tau**3.) * (np.exp(A) * sig**2.)
+        gtau += (-1./tau**2.) * (np.exp(B) * D * sig * sp.erfc(C) )
+        gtau += (1./tau) * (np.exp(B) * D * sig * (-1.*sig**2./tau**3. + (x-mu)/tau**2.) * sp.erfc(C) )
+
+    elif mode==2:
+        E = (-1.*(x-mu)**2./(2*sig**2.))
+        F = E + (1./2.) * (-1.*(x-mu)/sig + sig/tau)**2.
+
+        gx = (1./tau) * (np.exp(E))
+        gx += (1./tau) * (np.exp(F) * D * sig * (-1.*(x-mu)/sig**2.) - (1./sig)*(sig/tau - (x-mu)/sig) * sp.erfc(C) )
+
+        gmu = (-1./tau) * (np.exp(E))
+        gmu += (1./tau) * (np.exp(F) * D * sig * ((x-mu)/sig**2. + (1/sig)*(sig/tau - (x-mu)/sig)) * sp.erfc(C) )
+
+        gsig = (-1./tau) * (np.exp(E) * sig * ((x-mu)/sig**2. + 1./tau) )
+        gsig += (1./tau) * ( np.exp(F) * D * sp.erfc(C) )
+        gsig += (1./tau) * ( np.exp(F) * D * sig * ((x-mu)**2./sig**3. + ((x-mu)/sig**2. + 1./tau) * (sig/tau - (x-mu)/sig)) * sp.erfc(C) )
+
+        gtau = (1./tau**3.) * ( np.exp(E) * sig**2. )
+        gtau += (-1./tau**3.) * ( np.exp(E) * D * sig**2. * (sig/tau - (x-mu)/sig) * sp.erfc(C) )
+        gtau += (-1./tau**2.) * ( np.exp(F) * D * sp.erfc(C) )
+
+    elif mode==3:
+        G = (1 - (x-mu)*tau/sig**2.)
+
+        gx = np.exp(E) * tau / sig**2. * G**2.
+        gx -= np.exp(E) * (x-mu) / sig**2. * G
+
+        gmu = -1.* np.exp(E) * tau / sig**2. * G**2.
+        gmu += np.exp(E) * (x-mu) / sig**2. * G
+
+        gsig = -2. * np.exp(E) * (x-mu) * tau / sig**3. * G**2.
+        gsig += np.exp(E) * (x-mu)**2. / sig**3. * G
+
+        gtau = np.exp(E) * (x-mu) / sig**2. * G**2.
+
+    if opt=="mu":  return gmu
+    if opt=="sig": return gsig
+    if opt=="tau": return gtau
+
+def xGaussGrad(mode,opt,x,mu,sig,tau):
+    # A little bit faster version of the original.
+
+    gmu, gsig, gtau = 0.,0.,0.
+
+    # pre-compute some stuff
+    A, B, C, D, E, F, G = 0.,0.,0.,0.,0.,0.,0.
+    C = (1/np.sqrt(2.))*(sig/tau - (x-mu)/sig)
+    D = np.sqrt(np.pi/2.)
+    if mode==1:
+        A = (-1./2.) * (sig/tau - (x-mu)/sig)**2. + sig**2./(2*tau**2.) - (x-mu)/tau
+        B = sig**2./(2*tau**2.) - (x-mu)/tau
+    elif mode==2:
+        E = (-1.*(x-mu)**2./(2*sig**2.))
+        F = E + (1./2.) * (-1.*(x-mu)/sig + sig/tau)**2.
+    elif mode==3:
+        G = (1 - (x-mu)*tau/sig**2.)
+
+    # return the numeric value of the partial derivative at the given point
+    if opt=="mu":
+        if mode==1:
+            gmu = (-1./tau) * np.exp(A)
+            gmu += (1./tau**2.) * (np.exp(B) * D * sig * sp.erfc(C) )
+        elif mode==2:
+            gmu = (-1./tau) * (np.exp(E))
+            gmu += (1./tau) * (np.exp(F) * D * sig * ((x-mu)/sig**2. + (1/sig)*(sig/tau - (x-mu)/sig)) * sp.erfc(C) )
+        elif mode==3:
+            gmu = -1.* np.exp(E) * tau / sig**2. * G**2.
+            gmu += np.exp(E) * (x-mu) / sig**2. * G
+        return gmu
+
+    elif opt=="sig":
+        if mode==1:
+            gsig = (-1./tau) * (np.exp(A) * sig * ((x-mu)/sig**2. + 1./tau))
+            gsig += (1./tau**3.) * (np.exp(B) * D * sig**2. * sp.erfc(C) )
+            gsig += (1./tau) * (np.exp(B) * D * sp.erfc(C) )
+        elif mode==2:
+            gsig = (-1./tau) * (np.exp(E) * sig * ((x-mu)/sig**2. + 1./tau) )
+            gsig += (1./tau) * ( np.exp(F) * D * sp.erfc(C) )
+            gsig += (1./tau) * ( np.exp(F) * D * sig * ((x-mu)**2./sig**3. + ((x-mu)/sig**2. + 1./tau) * (sig/tau - (x-mu)/sig)) * sp.erfc(C) )
+        elif mode==3:
+            gsig = -2. * np.exp(E) * (x-mu) * tau / sig**3. * G**2.
+            gsig += np.exp(E) * (x-mu)**2. / sig**3. * G
+        return gsig
+
+    elif opt=="tau":
+        if mode==1:
+            gtau = (1./tau**3.) * (np.exp(A) * sig**2.)
+            gtau += (-1./tau**2.) * (np.exp(B) * D * sig * sp.erfc(C) )
+            gtau += (1./tau) * (np.exp(B) * D * sig * (-1.*sig**2./tau**3. + (x-mu)/tau**2.) * sp.erfc(C) )
+        elif mode==2:
+            gtau = (1./tau**3.) * ( np.exp(E) * sig**2. )
+            gtau += (-1./tau**3.) * ( np.exp(E) * D * sig**2. * (sig/tau - (x-mu)/sig) * sp.erfc(C) )
+            gtau += (-1./tau**2.) * ( np.exp(F) * D * sp.erfc(C) )
+        elif mode==3:
+            gtau = np.exp(E) * (x-mu) / sig**2. * G**2.
+        return gtau
 
 
 def MakeModel(dataList, tempList, params, fn=0, opt=""):
