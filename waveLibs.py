@@ -325,6 +325,54 @@ def peakdet(v, delta, x = None):
                 lookformax = True
     return np.array(maxtab), np.array(mintab)
 
+
+def walkBackt0(trap,thresh=2.):
+    """ Leading Edge start time -- walk back from max to threshold """
+    trapMax = np.argmax(trap)
+    foundFirst, triggerTS = False, 0
+    for i in range(trapMax,0,-1):
+        if trap[i] <= thresh:
+            foundFirst = True
+            triggerTS = (i+1)
+            break
+    return triggerTS, foundFirst
+
+
+def constFractiont0(trap, frac=0.05, delay=100, thresh=0.):
+    """ 
+        Constant Fraction start time 
+        1) Invert the signal
+        2) Delay and sum the original + inverted
+        3) Walk back from maximum to a threshold (usually zero crossing)
+    """
+    invertTrap = np.multiply(trap, -1.*frac)
+    summedTrap = np.add(invertTrap[delay:], trap[:-delay])
+    trapMax = np.argmax(summedTrap)
+    foundFirst, triggerTS = False, 0
+    for i in range(trapMax,0,-1):
+        if summedTrap[i] <= thresh:
+            foundFirst = True
+            triggerTS = (i+1)
+            break
+    return triggerTS, foundFirst
+
+
+def asymTrapFilt(data,ramp=200,flat=100,fall=40,padAfter=False):
+    """ Computes an asymmetric trapezoidal filter """
+    trap = np.zeros(len(data))
+    for i in range(len(data)-1000):
+        w1 = ramp
+        w2 = ramp+flat
+        w3 = ramp+flat+fall
+        r1 = np.sum(data[i:w1+i])/(ramp)
+        r2 = np.sum(data[w2+i:w3+i])/(fall)
+        if not padAfter:
+            trap[i+1000] = r2 - r1
+        else:
+            trap[i] = r2 - r1
+    return trap
+
+
 """
 # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
