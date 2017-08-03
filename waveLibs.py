@@ -327,32 +327,36 @@ def peakdet(v, delta, x = None):
 
 
 def walkBackt0(trap,thresh=2.):
-    """ Leading Edge start time -- walk back from max to threshold """
-    trapMax = np.argmax(trap)
+    """ 
+        Leading Edge start time -- walk back from max to threshold 
+        Times are returned in ns
+    """
+    trapMax = np.argmax(trap[0:1000])
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if trap[i] <= thresh:
             foundFirst = True
-            triggerTS = (i+1)
+            triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
             break
     return triggerTS, foundFirst
 
 
-def constFractiont0(trap, frac=0.05, delay=100, thresh=0.):
+def constFractiont0(trap, frac=0.1, delay=200, thresh=0.):
     """ 
         Constant Fraction start time 
         1) Invert the signal
         2) Delay and sum the original + inverted
         3) Walk back from maximum to a threshold (usually zero crossing)
+        Times are returned in ns
     """
     invertTrap = np.multiply(trap, -1.*frac)
     summedTrap = np.add(invertTrap[delay:], trap[:-delay])
-    trapMax = np.argmax(summedTrap)
+    trapMax = np.argmax(summedTrap[0:1000-delay])
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if summedTrap[i] <= thresh:
             foundFirst = True
-            triggerTS = (i+1)
+            triggerTS = ((thresh-summedTrap[i])*((i+1)-i)/(summedTrap[i+1]-summedTrap[i]) + i)*10
             break
     return triggerTS, foundFirst
 
