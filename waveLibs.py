@@ -331,7 +331,7 @@ def walkBackt0(trap,thresh=2.):
         Leading Edge start time -- walk back from max to threshold 
         Times are returned in ns
     """
-    trapMax = np.argmax(trap[0:1000])
+    trapMax = np.argmax(trap)
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if trap[i] <= thresh:
@@ -351,7 +351,7 @@ def constFractiont0(trap, frac=0.1, delay=200, thresh=0.):
     """
     invertTrap = np.multiply(trap, -1.*frac)
     summedTrap = np.add(invertTrap[delay:], trap[:-delay])
-    trapMax = np.argmax(summedTrap[0:1000-delay])
+    trapMax = np.argmax(summedTrap)
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if summedTrap[i] <= thresh:
