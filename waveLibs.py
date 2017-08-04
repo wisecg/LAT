@@ -326,22 +326,26 @@ def peakdet(v, delta, x = None):
     return np.array(maxtab), np.array(mintab)
 
 
-def walkBackt0(trap,thresh=2.):
+def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
     """ 
         Leading Edge start time -- walk back from max to threshold 
         Times are returned in ns
     """
-    trapMax = np.argmax(trap)
+    minsample = np.amax([0,rmin])
+    maxsample = np.amin([len(trap),rmax])
+    trapMax = np.argmax(trap[minsample:maxsample])
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if trap[i] <= thresh:
             foundFirst = True
-            triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
+            if (trap[i+1]-trap[i]) != 0: 
+                triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
+            else: triggerTS = (i+1)*10
             break
     return triggerTS, foundFirst
 
 
-def constFractiont0(trap, frac=0.1, delay=200, thresh=0.):
+def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):
     """ 
         Constant Fraction start time 
         1) Invert the signal
@@ -349,14 +353,18 @@ def constFractiont0(trap, frac=0.1, delay=200, thresh=0.):
         3) Walk back from maximum to a threshold (usually zero crossing)
         Times are returned in ns
     """
+    minsample = np.amax([0,rmin])
+    maxsample = np.amin([len(trap)-delay,rmax])
     invertTrap = np.multiply(trap, -1.*frac)
     summedTrap = np.add(invertTrap[delay:], trap[:-delay])
-    trapMax = np.argmax(summedTrap)
+    trapMax = np.argmax(summedTrap[0:1000])
     foundFirst, triggerTS = False, 0
     for i in range(trapMax,0,-1):
         if summedTrap[i] <= thresh:
             foundFirst = True
-            triggerTS = ((thresh-summedTrap[i])*((i+1)-i)/(summedTrap[i+1]-summedTrap[i]) + i)*10
+            if (summedTrap[i+1]-summedTrap[i]) != 0:
+                triggerTS = ((thresh-summedTrap[i])*((i+1)-i)/(summedTrap[i+1]-summedTrap[i]) + i)*10
+            else: triggerTS = (i+1)*10
             break
     return triggerTS, foundFirst
 
