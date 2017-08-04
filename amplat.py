@@ -252,10 +252,10 @@ def main(argv):
 
             # Amplitude Evaluation -- Functional correction for t0 triggerWalk and then use padTrap
             # Function is still in development...
-            # Function is exp(p0 + p1*E) where p0 ~ 8.5 and p1 ~ -0.1
+            # Function is exp(p0 + p1*E) where p0 ~ 7.8 and p1 ~ -0.45
             # Functional walk back distance is the minimum of the function value or ~5800 (standard value)
-            ENFC[iH] = padTrapInterp( np.amax([LEt0-7000+8000+2000-np.amin([np.exp(8.5 - 0.1*Max[iH]),5500.]), 0.]) )
-            ENAFC[iH] = padTrapInterp( np.amax([Asymt0-7000+8000+2000-np.amin([np.exp(8.5 - 0.1*Max[iH]),5500.]), 0.]) )
+            ENFC[iH] = padTrapInterp( np.amax([LEt0-7000+8000+2000-np.amin([np.exp(7.8 - 0.45*Max[iH]),1000.]), 0.]) )
+            ENAFC[iH] = padTrapInterp( np.amax([Asymt0-7000+8000+2000-np.amin([np.exp(7.8 - 0.66*Max[iH]),1000.]), 0.]) )
 
             # WF fitting amplitude
 
