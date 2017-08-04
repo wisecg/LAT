@@ -13,7 +13,7 @@ def plotPartials():
 
     file5 = np.load("./data/ds5exampleWaveform5.npz")
     dataTS, data, data5_denoised, dataENM, dataNoise = file5['arr_0'], file5['arr_1'], file5['arr_2'], file5['arr_3'], file5['arr_5']
-    xAmp, xMu, xSig, xTau = dataENM, 10000., 600., 72000.  # xMu should be from GAT data
+    xAmp, xMu, xSig, xTau = dataENM, 10000., 600., -72000.  # xMu should be from GAT data
 
     consts = [dataTS]
     floats = [xAmp, xMu, xSig, xTau]
