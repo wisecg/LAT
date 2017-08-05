@@ -25,6 +25,7 @@ Usage:
          [-b batch mode -- creates new file]
 
 v1: 27 May 2017
+v2: 04 Aug 2017 - improvements to wf fitting, handle multisampling, etc.
 
 ================ C. Wiseman (USC), B. Zhu (LANL) ================
 """
@@ -36,8 +37,10 @@ from scipy.signal import butter, lfilter, filtfilt
 import scipy.optimize as op
 from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
+import scipy.special as sp
 import waveLibs as wl
 import waveModel as wm
+limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
     print "======================================="
@@ -82,6 +85,7 @@ def main(argv):
             print "Batch mode selected.  A new file will be created."
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
+    import matplotlib.ticker as mtick
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
@@ -93,7 +97,7 @@ def main(argv):
         inPath = "%s/waveSkimDS%d_%d.root" % (pathToInput, dsNum, subNum)
         outPath = "%s/latSkimDS%d_%d.root" % (pathToOutput, dsNum, subNum)
     if fileMode:
-        inFull = "%s/waveSkimDS%d_run%d.root" % (pathToInput, dsNum, runNum)
+        inPath = "%s/waveSkimDS%d_run%d.root" % (pathToInput, dsNum, runNum)
         outPath = "%s/latSkimDS%d_run%d.root" % (pathToOutput, dsNum, runNum)
     if pathMode:
         inPath, outPath = manualInput, manualOutput
@@ -124,7 +128,7 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    theCut = "trapENFCal > 2 && trapENFCal < 10"
+    theCut += " && trapENFCal < 6 && trapENFCal > 2"
     print "WARNING: Custom cut in use!"
     # ============================================================
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -136,7 +140,7 @@ def main(argv):
     print "Found",nList,"entries passing cuts."
 
     # Output: In batch mode (-b) only, create an output file+tree & append new branches.
-    if batMode:
+    if batMode and not intMode:
         outFile = TFile(outPath, "RECREATE")
         print "Attempting tree copy to",outPath
         oTree = gatTree.CopyTree("")
@@ -145,95 +149,81 @@ def main(argv):
         cutUsed = TNamed("theCut",theCut)
         cutUsed.Write()
 
-    waveS0, waveS1, waveS2 = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    waveS1, waveS2 = std.vector("double")(), std.vector("double")()
     waveS3, waveS4, waveS5 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-    wpar4, waveEnt, tOffset = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    tOffset = std.vector("double")()
     bcMax, bcMin = std.vector("double")(), std.vector("double")()
-    derivMax, derivTime = std.vector("double")(), std.vector("double")()
     bandMax, bandTime = std.vector("double")(), std.vector("double")()
-    raw10, raw50, raw90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
     den10, den50, den90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
     oppie = std.vector("double")()
-    fitMatch, fitE, fitSlo = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    fitMu, fitAmp, fitSlo = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    fitTau, fitBL = std.vector("double")(), std.vector("double")()
     matchMax, matchWidth, matchTime = std.vector("double")(), std.vector("double")(), std.vector("double")()
     pol0, pol1, pol2, pol3 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
-    exp0, exp1 = std.vector("double")(), std.vector("double")()
-    fitMax = std.vector("double")()
     fails = std.vector("int")()
+    fitChi2, fitLL = std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "oTree.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
-    b1, b2, b3 = oTree.Branch("waveS0",waveS0), oTree.Branch("waveS1",waveS1), oTree.Branch("waveS2",waveS2)
-    b4, b5, b6 = oTree.Branch("waveS3",waveS3), oTree.Branch("waveS4",waveS4), oTree.Branch("waveS5",waveS5)
-    b7, b8, b9 = oTree.Branch("wpar4",wpar4), oTree.Branch("waveEnt",waveEnt), oTree.Branch("tOffset",tOffset)
-    b10, b11 = oTree.Branch("bcMax",bcMax), oTree.Branch("bcMin",bcMin)
-    b12, b13 = oTree.Branch("derivMax",derivMax), oTree.Branch("derivTime",derivTime)
-    b14, b15 = oTree.Branch("bandMax",bandMax), oTree.Branch("bandTime",bandTime)
-    b16, b17, b18 = oTree.Branch("raw10",raw10), oTree.Branch("raw50",raw50), oTree.Branch("raw90",raw90)
-    b19, b20, b21 = oTree.Branch("den10",den10), oTree.Branch("den50",den50), oTree.Branch("den90",den90)
-    b22 = oTree.Branch("oppie",oppie)
-    b23, b24, b25 = oTree.Branch("fitMatch", fitMatch), oTree.Branch("fitE", fitE), oTree.Branch("fitSlo", fitSlo)
-    b26, b27, b28 = oTree.Branch("matchMax", matchMax), oTree.Branch("matchWidth", matchWidth), oTree.Branch("matchTime", matchTime)
-    b29, b30, b31, b32 = oTree.Branch("pol0", pol0), oTree.Branch("pol1", pol1), oTree.Branch("pol2", pol2), oTree.Branch("pol3", pol3)
-    b33, b34 = oTree.Branch("exp0", exp0), oTree.Branch("exp1", exp1)
-    b35 = oTree.Branch("fitMax",fitMax)
-    b36 = oTree.Branch("fails",fails)
+    b1, b2 = oTree.Branch("waveS1",waveS1), oTree.Branch("waveS2",waveS2)
+    b3, b4, b5 = oTree.Branch("waveS3",waveS3), oTree.Branch("waveS4",waveS4), oTree.Branch("waveS5",waveS5)
+    b6 = oTree.Branch("tOffset",tOffset)
+    b7, b8 = oTree.Branch("bcMax",bcMax), oTree.Branch("bcMin",bcMin)
+    b9, b10 = oTree.Branch("bandMax",bandMax), oTree.Branch("bandTime",bandTime)
+    b11, b12, b13 = oTree.Branch("den10",den10), oTree.Branch("den50",den50), oTree.Branch("den90",den90)
+    b14 = oTree.Branch("oppie",oppie)
+    b15, b16, b17 = oTree.Branch("fitMu", fitMu), oTree.Branch("fitAmp", fitAmp), oTree.Branch("fitSlo", fitSlo)
+    b18, b19 = oTree.Branch("fitTau",fitTau), oTree.Branch("fitBL",fitBL)
+    b20, b21, b22 = oTree.Branch("matchMax", matchMax), oTree.Branch("matchWidth", matchWidth), oTree.Branch("matchTime", matchTime)
+    b23, b24, b25, b26 = oTree.Branch("pol0", pol0), oTree.Branch("pol1", pol1), oTree.Branch("pol2", pol2), oTree.Branch("pol3", pol3)
+    b27, b28, b29 = oTree.Branch("fails",fails), oTree.Branch("fitChi2",fitChi2), oTree.Branch("fitLL",fitLL)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
-    "waveS0":[waveS0, b1], "waveS1":[waveS1, b2], "waveS2":[waveS2, b3],
-    "waveS3":[waveS3, b4], "waveS4":[waveS4, b5], "waveS5":[waveS5, b6],
-    "wpar4":[wpar4, b7], "waveEnt":[waveEnt, b8], "tOffset":[tOffset, b9],
-    "bcMax":[bcMax, b10], "bcMin":[bcMin, b11],
-    "derivMax":[derivMax, b12], "derivTime":[derivTime, b13],
-    "bandMax":[bandMax, b14], "bandTime":[bandTime, b15],
-    "raw10":[raw10, b16], "raw50":[raw50, b17], "raw90":[raw90, b18],
-    "den10":[den10, b19], "den50":[den50, b20], "den90":[den90, b21],
-    "oppie":[oppie, b22],
-    "fitMatch":[fitMatch, b23], "fitE":[fitE, b24], "fitSlo":[fitSlo, b25],
-    "matchMax":[matchMax, b26], "matchWidth":[matchWidth, b27], "matchTime":[matchTime, b28],
-    "pol0":[pol0, b29], "pol1":[pol1, b30], "pol2":[pol2, b31], "pol3":[pol3, b32],
-    "exp0":[exp0, b33], "exp1":[exp1, b34],
-    "fitMax":[fitMax,b35],
-    "fails":[fails,b36]
+        "waveS1":[waveS1, b1], "waveS2":[waveS2, b2],
+        "waveS3":[waveS3, b3], "waveS4":[waveS4, b4], "waveS5":[waveS5, b5],
+        "tOffset":[tOffset, b6],
+        "bcMax":[bcMax, b7], "bcMin":[bcMin, b8],
+        "bandMax":[bandMax, b9], "bandTime":[bandTime, b10],
+        "den10":[den10, b11], "den50":[den50, b12], "den90":[den90, b13],
+        "oppie":[oppie, b14],
+        "fitMu":[fitMu, b15], "fitAmp":[fitAmp, b16], "fitSlo":[fitSlo, b17],
+        "fitTau":[fitTau, b18], "fitBL":[fitBL,b19],
+        "matchMax":[matchMax, b20], "matchWidth":[matchWidth, b21], "matchTime":[matchTime, b22],
+        "pol0":[pol0, b23], "pol1":[pol1, b24], "pol2":[pol2, b25], "pol3":[pol3, b26],
+        "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29]
     }
 
 
-    # Make a figure (-i option: select different diagnostic plots)
-    # NOTE: If you want to add a custom or one-off figure, PLEASE don't change plotNum 0-4.
-    fig = plt.figure(figsize=(10,7), facecolor='w')
+    # Make a figure (-i option: select different plots)
+    fig = plt.figure(figsize=(12,7), facecolor='w')
     p = []
     for i in range(1,8): p.append(plt.subplot())
     if plotNum==0:
-        p[0] = plt.subplot(111)
+        p[0] = plt.subplot(111)  # raw waveform
     elif plotNum==1 or plotNum==2:
-        p[0] = plt.subplot(211)
+        p[0] = plt.subplot(211)  # 1-wavelet, 2-time points, bandpass filters, tail slope
         p[1] = plt.subplot(212)
     elif plotNum==3:
-        p[0] = plt.subplot2grid((2,5), (0,0), colspan=3)
+        p[0] = plt.subplot2grid((2,5), (0,0), colspan=3)  # oppie / freq-domain matched filter
         p[1] = plt.subplot2grid((2,5), (0,3), colspan=2)
         p[2] = plt.subplot2grid((2,5), (1,0), colspan=3)
     elif plotNum==4:
-        p[0] = plt.subplot2grid((6,7), (0,0), colspan=4, rowspan=3) # data & fit
-        p[1] = plt.subplot2grid((6,7), (3,0), colspan=4, rowspan=3) # matched filter
-        p[2] = plt.subplot2grid((6,7), (0,4), colspan=3, rowspan=2) # trace 1
-        p[3] = plt.subplot2grid((6,7), (2,4), colspan=3, rowspan=2) # trace 2
-        p[4] = plt.subplot2grid((6,7), (4,4), colspan=3, rowspan=2) # trace 3
+        p[0] = plt.subplot(111)  # time-domain matched filter
     elif plotNum==5:
-        p[0] = plt.subplot(111) # bandTime plot
+        p[0] = plt.subplot(111)  # bandpass / bandTime
     elif plotNum==6:
-        # waveform fit
-        p[0] = plt.subplot2grid((6,6), (0,0), colspan=6, rowspan=4) # data & fit
-        p[1] = plt.subplot2grid((6,6), (4,0), colspan=2, rowspan=2) # trace 1
-        p[2] = plt.subplot2grid((6,6), (4,2), colspan=2, rowspan=2) # trace 2
-        p[3] = plt.subplot2grid((6,6), (4,4), colspan=2, rowspan=2) # trace 3
-    elif plotNum==7:
-        p[0] = plt.subplot(111) # matched filter plot
-
+        p[0] = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
+        p[1] = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
+        p[2] = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
+        p[3] = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
+        p[4] = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
+        p[5] = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
+        p[6] = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
     if not batMode: plt.show(block=False)
 
 
-    # Make a signal template
-    print "Generating signal template ..."
+    # Load a fast signal template - used w/ the freq-domain matched filter
+    # print "Generating signal template ..."
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
     # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo) # Damn you to hell, PDSF
     templateFile = np.load("./data/lat_template.npz")
@@ -290,9 +280,9 @@ def main(argv):
             # load data
             run = gatTree.run
             chan = gatTree.channel.at(iH)
-            dataENF = gatTree.trapENFCal.at(iH)
+            dataENFCal = gatTree.trapENFCal.at(iH)
             dataENM = gatTree.trapENM.at(iH)
-            dataMax = gatTree.trapENMSample.at(iH)*10. - 4000
+            dataTSMax = gatTree.trapENMSample.at(iH)*10. - 4000
             wf = MGTWaveform()
             iEvent = 0
             if gatMode:
@@ -302,47 +292,45 @@ def main(argv):
                 wf = gatTree.MGTWaveforms.at(iH)
                 iEvent = gatTree.iEvent
 
-            # print "%d:  run %d  chan %d  trapENFCal %.2f" % (iList, run, chan, dataENF)
+            # print "%d:  run %d  chan %d  trapENFCal %.2f" % (iList, run, chan, dataENFCal)
 
             # be absolutely sure you're matching the right waveform to this hit
             if wf.GetID() != chan:
                 print "ERROR -- Vector matching failed.  iList %d  run %d  iEvent %d" % (iList,run,iEvent)
                 return
 
-
             # Let's start the show
             removeNBeg, removeNEnd = 0, 2
             if dsNum==2 or dsNum==6: removeNBeg = 3
             signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-            data = signal.GetWaveBLSub()
+            data = signal.GetWaveRaw()
+            data_blSub = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
             tOffset[iH] = signal.GetOffset()
-            _,dataNoise = signal.GetBaseNoise()
+            dataBL,dataNoise = signal.GetBaseNoise()
 
             # wavelet packet transform
-            wp = pywt.WaveletPacket(data, 'db2', 'symmetric', maxlevel=4)
+            wp = pywt.WaveletPacket(data_blSub, 'db2', 'symmetric', maxlevel=4)
             nodes = wp.get_level(4, order='freq')
-            waveletYTrans = np.array([n.data for n in nodes],'d')
-            waveletYTrans = abs(waveletYTrans)
+            wpCoeff = np.array([n.data for n in nodes],'d')
+            wpCoeff = abs(wpCoeff)
 
             # wavelet parameters
 
-            waveS0[iH] = np.sum(waveletYTrans[0:1,1:-1])
-            waveS1[iH] = np.sum(waveletYTrans[0:1,1:33])
-            waveS2[iH] = np.sum(waveletYTrans[0:1,33:65])
-            waveS3[iH] = np.sum(waveletYTrans[0:1,65:97])
-            waveS4[iH] = np.sum(waveletYTrans[0:1,97:-1])
-            waveS5[iH] = np.sum(waveletYTrans[2:-1,1:-1])
-            wpar4[iH] = np.amax(waveletYTrans[0:1,1:-1])
+            waveS1[iH] = np.sum(wpCoeff[0:1,1:33])
+            waveS2[iH] = np.sum(wpCoeff[0:1,33:65])
+            waveS3[iH] = np.sum(wpCoeff[0:1,65:97])
+            waveS4[iH] = np.sum(wpCoeff[0:1,97:-1])
+            waveS5[iH] = np.sum(wpCoeff[2:-1,1:-1])
 
-            S6 = np.sum(waveletYTrans[2:9,1:33])
-            S7 = np.sum(waveletYTrans[2:9,33:65])
-            S8 = np.sum(waveletYTrans[2:9,65:97])
-            S9 = np.sum(waveletYTrans[2:9,97:-1])
-            S10 = np.sum(waveletYTrans[9:,1:33])
-            S11 = np.sum(waveletYTrans[9:,33:65])
-            S12 = np.sum(waveletYTrans[9:,65:97])
-            S13 = np.sum(waveletYTrans[9:,97:-1])
+            S6 = np.sum(wpCoeff[2:9,1:33])
+            S7 = np.sum(wpCoeff[2:9,33:65])
+            S8 = np.sum(wpCoeff[2:9,65:97])
+            S9 = np.sum(wpCoeff[2:9,97:-1])
+            S10 = np.sum(wpCoeff[9:,1:33])
+            S11 = np.sum(wpCoeff[9:,33:65])
+            S12 = np.sum(wpCoeff[9:,65:97])
+            S13 = np.sum(wpCoeff[9:,97:-1])
             sumList = [S6, S7, S8, S9, S10, S11, S12, S13]
             bcMax[iH] = np.max(sumList)
             bcMin[iH] = np.min(sumList)
@@ -352,51 +340,35 @@ def main(argv):
             new_wp['aaa'] = wp['aaa'].data
             data_wlDenoised = new_wp.reconstruct(update=False)
             # resize in a smart way
-            diff = len(data_wlDenoised) - len(data)
+            diff = len(data_wlDenoised) - len(data_blSub)
             if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
-
-            # calculate wf entropy
-            d1 = 2. * np.multiply(waveletYTrans[0:1,1:65], np.log(waveletYTrans[0:1,1:65]/waveS0[iH]/2.0))
-            d2 = np.multiply(waveletYTrans[0:1,65:-1], np.log(waveletYTrans[0:1,65:-1]/waveS0[iH]))
-            waveEnt[iH] = np.abs(np.sum(d1)) + np.abs(np.sum(d2))
-
 
             # waveform high/lowpass filters - parameters are a little arbitrary
 
             B1,A1 = butter(2, [1e5/(1e8/2),1e6/(1e8/2)], btype='bandpass')
-            data_bPass = lfilter(B1, A1, data)
+            data_bPass = lfilter(B1, A1, data_blSub)
 
             B2, A2 = butter(1, 0.08)
-            data_filt = filtfilt(B2, A2, data)
+            data_filt = filtfilt(B2, A2, data_blSub)
             data_filtDeriv = wl.wfDerivative(data_filt)
             filtAmp = np.amax(data_filtDeriv) # scale the max to match the amplitude
             data_filtDeriv = data_filtDeriv * (dataENM / filtAmp)
 
             B3, A3 = butter(2,1e6/(1e8/2), btype='lowpass')
-            data_lPass = lfilter(B3, A3, data)
+            data_lPass = lfilter(B3, A3, data_blSub)
 
             idx = np.where((dataTS > dataTS[0]+100) & (dataTS < dataTS[-1]-100))
             windowingOffset = dataTS[idx][0] - dataTS[0]
 
             bandMax[iH] = np.amax(data_bPass[idx])
-            bandTime[iH] = dataTS[ np.argmax(data_bPass[idx])] + windowingOffset
-
-            derivMax[iH] = np.amax(data_filtDeriv[idx])
-            derivTime[iH] = dataTS[ np.argmax(data_filtDeriv[idx])] + windowingOffset
+            bandTime[iH] = dataTS[ np.argmax(data_bPass[idx])] - windowingOffset
 
 
-            # timepoints of raw and low-pass waveforms
-            unnecessaryWF = wl.MGTWFFromNpArray(data)
+            # timepoints of low-pass waveforms
             tpc = MGWFTimePointCalculator();
             tpc.AddPoint(.2)
             tpc.AddPoint(.5)
             tpc.AddPoint(.9)
-            # tpc.FindTimePoints(wf) # FIXME: this should work but timepoints are drawed weirdedly
-            tpc.FindTimePoints(unnecessaryWF)
-            raw10[iH] = tpc.GetFromStartRiseTime(0)*10
-            raw50[iH] = tpc.GetFromStartRiseTime(1)*10
-            raw90[iH] = tpc.GetFromStartRiseTime(2)*10
-
             mgtLowPass = wl.MGTWFFromNpArray(data_lPass)
             tpc.FindTimePoints(mgtLowPass)
             den10[iH] = tpc.GetFromStartRiseTime(0)*10
@@ -404,46 +376,87 @@ def main(argv):
             den90[iH] = tpc.GetFromStartRiseTime(2)*10
 
 
-            # load and scale template waveform
+            # ================ xgauss waveform fitting ================
 
-            temp, tempTS = tOrig, tOrigTS
-            temp = temp * (dataENM / tAmp)         # scale by amplitudes (not energies)
-            tempMax = np.argmax(temp) * 10         # convert to ns
-            tempTS = tempTS - (tempMax - dataMax)  # align @ max of rising edge
-            tempMax = tempTS[np.argmax(temp)]      # get the new max TS after the shifting
-            tempE = dataENF # set 'calibrated' energy of template equal to data's trapENFCal.
-
-            # set window, guess parameters, pack into lists
-            loWin, hiWin = dataTS[0], dataTS[-1]
-            mt, en, slo = dataMax, dataENF, 20.  # guesses
-            InterpFn = interpolate.interp1d(tempTS, temp, kind="linear", copy="False", assume_sorted="True")
-            dataList = [data, dataTS, dataENF, dataMax, loWin, hiWin, dataNoise]
-            tempList = [temp, tempTS, tempE, tempMax]
-            datas = [dataList, tempList, InterpFn]
-            floats = [mt,en,slo]
-
-            # save the initial guess
-            guess, guessTS = wm.MakeModel(dataList, tempList, floats, fn=InterpFn)
-
-            # run waveform fitter
-            # nelder-mead (~0.5 sec).
+            amp, mu, sig, tau, bl = dataENM, dataTSMax, 600., -72000., dataBL
+            floats = np.asarray([amp, mu, sig, tau, bl])
+            temp = xgModelWF(dataTS, floats)
             MakeTracesGlobal()
-            result = op.minimize(findLnLike, floats, args=datas, method="Nelder-Mead")#,options={"maxiter":10})
+
+            datas = [dataTS, data, dataNoise] # fit data
+            # datas = [dataTS, data_wlDenoised, denoisedNoise] # fit wavelet-denoised data
+
+            # L-BGFS-B
+            bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau.  Unbounded rn.
+            opts = {'disp': None,   # None, True to print convergence messages
+                    'maxls': 100,   # 20, max line search steps
+                    'iprint': -1,   # -1
+                    'gtol': 1e-08,  # 1e-05
+                    'eps': 1e-08,   # 1e-08
+                    'maxiter': 15000,   # 15000
+                    'ftol': 2.220446049250313e-09,
+                    'maxcor': 10,   # 10
+                    'maxfun': 15000}    # 15000
+
+            # numerical gradient - seems trustworthy
+            start = time.clock()
+            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None)
+            fitSpeed = time.clock() - start
+
             if not result["success"]:
-                print "fit 'fail': ", result["message"]
+                # print "fit 'fail': ", result["message"]
                 errorCode[0] = 1
-            mt, en, slo = result["x"]
-            nelder, nelderTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
 
-            # save parameters.  take absval for slowness only.
-            slo = abs(slo)
-            fitMatch[iH], fitE[iH], fitSlo[iH] = mt, en, slo
+            # save parameters
+            amp, mu, sig, tau, bl = result["x"]
+            fitMu[iH], fitAmp[iH], fitSlo[iH], fitTau[iH], fitBL[iH] = mu, amp, sig, tau, bl
+            floats = [amp, mu, sig, tau, bl]
+            fit = xgModelWF(dataTS, floats)
 
+            # log-likelihood of this fit
+            fitLL[iH] = result["fun"]
+
+            # chi-square of this fit
+            # Textbook is (observed - expected)^2 / expected,
+            # but we'll follow MGWFCalculateChiSquare.cc and do (observed - expected)^2 / NDF.
+            # NOTE: we're doing the chi2 against the DATA, though the FIT is to the DENOISED DATA.
+            fitChi2[iH] = np.sum(np.square(data-fit)) / len(data)
+
+
+            # get wavelet coeff's for rising edge only.  normalize to bcMin
+            # view this w/ plot 1
+
+            # find the window of rising edge
+            fit_blSub = fit - bl
+            fitMaxTime = dataTS[np.argmax(fit_blSub)]
+            fitStartTime = dataTS[0]
+            idx = np.where(fit_blSub < 0.1)
+            if len(dataTS[idx] > 0): fitStartTime = dataTS[idx][-1]
+
+            # sum all HF wavelet components for this edge
+            numXRows = wpCoeff.shape[1]
+            wpLoRise = int(fitStartTime/dataTS[-1] * numXRows)
+            wpHiRise = int(fitMaxTime/dataTS[-1] * numXRows)
+            wpRiseNoise = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / bcMin[iH]
+
+
+            # =========================================================
 
             # optimal matched filter (freq. domain)
+            # we use the pysiggen fast template (not the fit result) to keep this independent of the wf fitter.
 
-            # we use the guess (not the fit result) to keep this independent of the wf fitter.
-            data_fft = np.fft.fft(data) # can also try taking fft of the low-pass data
+            # pull in the template, shift it, and make sure it's the same length as the data
+            guessTS = tOrigTS - 15000.
+            idx = np.where((guessTS > -5) & (guessTS < dataTS[-1]))
+            guessTS, guess = guessTS[idx], tOrig[idx]
+            if len(guess)!=len(data):
+                if len(guess)>len(data):
+                    guess, guessTS = guess[0:len(data)], guessTS[0:len(data)]
+                else:
+                    guess = np.pad(guess, (0,len(data)-len(guess)), 'edge')
+                    guessTS = np.pad(guessTS, (0,len(data)-len(guessTS)), 'edge')
+
+            data_fft = np.fft.fft(data_blSub) # can also try taking fft of the low-pass data
             temp_fft = np.fft.fft(guess)
 
             datafreq = np.fft.fftfreq(data.size) * 1e8
@@ -461,41 +474,52 @@ def main(argv):
             oppie[iH] = np.amax(SNR)
 
 
-            # time domain match filter
+            # time-domain matched filter.  use the baseline-subtracted wf as data, and fit_blSub too.
 
-            match, matchTS = wm.MakeModel(dataList, tempList, [mt,en,slo], opt="nowindow")
-            match = match[::-1]
+            # make a longer best-fit waveform s/t it can be shifted L/R.
+            matchTS = np.append(dataTS, np.arange(dataTS[-1], dataTS[-1] + 20000, 10)) # add 2000 samples
+            match = xgModelWF(matchTS, [amp, mu+10000., sig, tau, bl]) # shift mu accordingly
+            match = match[::-1] - bl # time flip and subtract off bl
 
-            # line up the max of the match with the max of the best-fit signal
-            modelMaxTime = nelderTS[np.argmax(nelder)]
+            # line up the max of the 'match' (flipped wf) with the max of the best-fit wf
             matchMaxTime = matchTS[np.argmax(match)]
-            matchTS = matchTS + (modelMaxTime - matchMaxTime)
-            fitMax[iH] = modelMaxTime
+            matchTS = matchTS + (fitMaxTime - matchMaxTime)
 
-            idx = np.where((matchTS >= dataTS[0]-5) & (matchTS <= dataTS[-1]+5))
-            match, matchTS = match[idx], matchTS[idx]
+            # resize match wf and the window function to have same # samples as dataTS.
+            if matchTS[0] <= dataTS[0] and matchTS[-1] >= dataTS[-1]:
+                idx = np.where((matchTS >= dataTS[0]) & (matchTS <= dataTS[-1]-5))
+                match, matchTS = match[idx], matchTS[idx]
+
+            elif matchTS[-1] < dataTS[-1]: # too early
+                idx = np.where(matchTS >= dataTS[0])
+                tmpData = match[idx]
+                match = np.pad(tmpData, (0,len(data)-len(tmpData)), 'edge')
+                matchTS, windowTS = dataTS, dataTS
+
+            elif matchTS[0] > dataTS[0]: # too late
+                idx = np.where(matchTS <= dataTS[-1])
+                tmpData = match[idx]
+                match = np.pad(tmpData, (len(data)-len(tmpData),0), 'edge')
+                matchTS, windowTS = dataTS, dataTS
 
             # make sure match is same length as data, then compute convolution and parameters
             matchMax[iH], matchWidth[iH], matchTime[iH] = -888, -888, -888
-            smoothMF = np.zeros(len(dataTS))
+            smoothMF, windMF = np.zeros(len(dataTS)), np.zeros(len(dataTS))
             if len(match)!=len(data):
-                # print "array mismatch: len match %i  len data %i " % (len(match),len(data))
-                errorCode[1] = 1
+                print "array mismatch: len match %i  len data %i " % (len(match),len(data))
+                # errorCode[1] = 1
             else:
-                # I can't decide which of these is better.
-                # smoothMF = gaussian_filter(match * data, sigma=float(5))
-                smoothMF = gaussian_filter(match * data_lPass,sigma=float(5))
-
                 # compute match filter parameters
+                smoothMF = gaussian_filter(match * data_blSub, sigma=5.)
                 matchMax[iH] = np.amax(smoothMF)
                 matchTime[iH] = matchTS[ np.argmax(smoothMF) ]
                 idx = np.where(smoothMF > matchMax[iH]/2.)
                 if len(matchTS[idx]>1): matchWidth[iH] = matchTS[idx][-1] - matchTS[idx][0]
 
 
-            # Fit tail slope (2 methods).  Guard against fit fails
+            # Fit tail slope to polynomial.  Guard against fit fails
 
-            idx = np.where(dataTS >= modelMaxTime)
+            idx = np.where(dataTS >= fitMaxTime)
             tail, tailTS = data[idx], dataTS[idx]
             popt1,popt2 = 0,0
             try:
@@ -505,15 +529,6 @@ def main(argv):
                 # print "curve_fit tailModelPol failed, run %i  event %i  channel %i" % (run, iList, chan)
                 errorCode[2] = 1
                 pass
-            try:
-                popt2,_ = op.curve_fit(wl.tailModelExp, tailTS, tail, p0=[dataENM,72000])
-                exp0[iH], exp1[iH] = popt2[0], popt2[1]
-            except:
-                # print "curve_fit tailModelExp failed, run %i  event %i  channel %i" % (run, iList, chan)
-                errorCode[3] = 1
-                pass
-
-
 
             # ------------------------------------------------------------------------
             # End waveform processing.
@@ -529,32 +544,36 @@ def main(argv):
             if plotNum==0: # raw data
                 p[0].cla()
                 p[0].plot(dataTS,data,'b')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
 
             elif plotNum==1: # wavelet plot
+
                 p[0].cla()
-                p[0].plot(dataTS,data,'b')
-                p[0].plot(dataTS,data_wlDenoised,'r')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
+                p[0].plot(dataTS,data_blSub,color='blue',label='data')
+                p[0].plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
+                p[0].axvline(fitStartTime,color='orange',label='risingEdge',linewidth=2)
+                p[0].axvline(fitMaxTime,color='orange',linewidth=2)
+                p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
+                p[0].legend(loc=4)
 
                 p[1].cla()
-                p[1].imshow(waveletYTrans, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(waveletYTrans)],cmap='jet')
-                p[1].set_title("S5/E %.2f  (S3-S1)/E %.2f  bcMax/bcMin %.2f" % (waveS5[iH]/dataENF, (waveS3[iH]-waveS1[iH])/dataENF, bcMax[iH]/bcMin[iH]))
+                p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='jet')
+                p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
+                p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
+                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise))
+
 
             elif plotNum==2: # time points, bandpass filters, tail slope
                 p[0].cla()
                 p[0].plot(dataTS,data,color='blue',label='data')
-                p[0].axvline(raw10[iH],color='red',label='rawTP')
-                p[0].axvline(raw50[iH],color='red')
-                p[0].axvline(raw90[iH],color='red')
                 p[0].axvline(den10[iH],color='black',label='lpTP')
                 p[0].axvline(den50[iH],color='black')
                 p[0].axvline(den90[iH],color='black')
-                p[0].plot(nelderTS,nelder,color='magenta',label='bestfit')
+                p[0].plot(dataTS,fit,color='magenta',label='bestfit')
                 if errorCode[2]!=1: p[0].plot(tailTS, wl.tailModelPol(tailTS, *popt1), color='orange',linewidth=2, label='tailPol')
-                if errorCode[3]!=1: p[0].plot(tailTS, wl.tailModelExp(tailTS, *popt2), color='magenta',linewidth=2, label='tailExp')
                 p[0].legend(loc=4)
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
                 p[1].cla()
                 p[1].plot(dataTS,data_lPass,color='blue',label='lowpass')
@@ -562,15 +581,14 @@ def main(argv):
                 p[1].plot(dataTS,data_filt,color='black',label='filtfilt')
                 p[1].plot(dataTS,data_bPass,color='red',label='bpass')
                 p[1].axvline(bandTime[iH],color='orange',label='bandTime')
-                p[1].axvline(derivTime[iH],color='magenta',label='derivTime')
                 p[1].legend(loc=4)
 
-            elif plotNum==3: # matched filter - freq
+            elif plotNum==3: # freq-domain matched filter
                 p[0].cla()
                 p[0].plot(dataTS,data,'b')
-                p[0].plot(guessTS,guess,'r')
-                p[0].plot(nelderTS,nelder,color='cyan')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
+                p[0].plot(dataTS,temp,'r')
+                p[0].plot(dataTS,fit,color='cyan')
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
                 data_asd, data_xFreq = plt.psd(data, Fs=1e8, NFFT=2048, pad_to=2048, visible=False)
                 temp_asd, temp_xFreq = plt.psd(temp, Fs=1e8, NFFT=2048, pad_to=2048, visible=False)
@@ -589,86 +607,56 @@ def main(argv):
                 p[2].set_xlabel('Offset time (s)')
                 p[2].set_ylabel('SNR')
 
-            elif plotNum==4: # matched filter - time + fitter
+            if plotNum==4: # time domain match filter plot
                 p[0].cla()
-                p[0].plot(dataTS,data,'b',label='data')
-                idx = np.where((tempTS >= dataTS[0]-5) & (tempTS <= dataTS[-1]+5))
-                p[0].plot(tempTS[idx],temp[idx],'r',label='template')
-                p[0].plot(nelderTS,trap,color='k',label='bestfit-trap')
-                p[0].plot(nelderTS,nelder,color='cyan',label='bestfit')
-                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch')
-                p[0].axvline(fitMax[iH],color='orange',label='fitMax')
+                p[0].plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
+                p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=3)
+                p[0].axvline(matchTime[iH],color='orange',label='matchTime',linewidth=2)
+                p[0].plot(matchTS,smoothMF,color='magenta',label='smoothMF',linewidth=3)
+                p[0].plot(matchTS,match,color='cyan',label='match',linewidth=3)
                 p[0].set_xlabel('Time (s)')
                 p[0].set_ylabel('Voltage (arb)')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
                 p[0].legend(loc=4)
-
-                p[1].cla()
-                p[1].plot(dataTS,data,'b',alpha=0.8,label='data')
-                p[1].plot(matchTS,match,'k',label='match')
-                p[1].plot(nelderTS,nelder,color='orange',label='bestFit')
-                p[1].plot(dataTS,data_lPass,'r',label='lowpass')
-                if len(match)==len(data):
-                    p[1].plot(matchTS,smoothMF,'g',label='smoothMF')
-                idx = np.where(smoothMF > matchMax[iH]/2.)
-                p[1].axvline(matchTS[idx][-1],color='green',alpha=0.7)
-                p[1].axvline(matchTS[idx][0],color='green',alpha=0.7)
-                p[1].set_title("mMax %.2f  mWidth %.2f  mMax/E %.2f" % (matchMax[iH],matchWidth[iH],matchMax[iH]/dataENF))
-                p[1].legend(loc=4)
-
-                p[2].cla()
-                p[2].set_title("maxTime %.1f  Energy %.2f  Slow %.1f" % (mt,en,slo))
-                p[2].plot(mtTrace[1:])
-                p[2].set_ylabel('maxTime')
-                p[3].cla()
-                p[3].plot(enTrace[1:])
-                p[3].set_ylabel('energy')
-                p[4].cla()
-                p[4].plot(sloTrace[1:])
-                p[4].set_ylabel('slowness')
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENFCal,matchMax[iH],matchTime[iH],matchWidth[iH]))
 
             if plotNum==5: # bandTime plot
                 p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.7)
+                p[0].plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
                 p[0].plot(dataTS,data_lPass,color='magenta',label='lowpass',linewidth=4)
                 p[0].plot(dataTS,data_bPass,color='red',label='bpass',linewidth=4)
                 p[0].axvline(bandTime[iH],color='orange',label='bandTime',linewidth=4)
                 p[0].legend(loc=4)
                 p[0].set_xlabel('Time (ns)')
                 p[0].set_ylabel('ADC (arb)')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENF))
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
             if plotNum==6: # waveform fit plot
                 p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.8)
-                idx = np.where((tempTS >= dataTS[0]-5) & (tempTS <= dataTS[-1]+5))
-                p[0].plot(tempTS[idx],temp[idx],color='orange',label='template')
-                p[0].plot(nelderTS,nelder,color='red',label='bestfit',linewidth=3)
-                p[0].axvline(fitMatch[iH],color='magenta',label='fitMatch',linewidth=4,alpha=0.5)
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  fitMatch %.1f  fitE %.2f  fitSlo %.1f" % (run,iEvent,chan,dataENF,mt,en,slo))
+                p[0].plot(dataTS,data,color='blue',label='data')
+                # p[0].plot(dataTS,data_wlDenoised,color='cyan',label='wlDenoised',alpha=0.5)
+                p[0].plot(dataTS,temp,color='orange',label='xgauss guess')
+                p[0].plot(dataTS,fit,color='red',label='xgauss fit')
+                p[0].set_title("Run %d  evt %d  chan %d  trapENFCal %.1f  trapENM %.1f  deltaBL %.1f\n  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,chan,dataENFCal,dataENM,dataBL-bl,amp,mu,sig,tau,fitChi2[iH],fitSpeed))
                 p[0].legend(loc=4)
                 p[1].cla()
-                p[1].plot(mtTrace[1:],label='fitMatch',color='red')
-                p[1].legend(loc=4)
-                p[1].set_xlabel('Fit Steps')
+                p[1].plot(dataTS,data-fit,color='blue',label='residual')
+                p[1].legend(loc=1)
                 p[2].cla()
-                p[2].plot(enTrace[1:],label='fitE',color='green')
-                p[2].legend(loc=4)
+                p[2].plot(ampTr[1:],label='amp',color='red')
+                p[2].legend(loc=1)
                 p[3].cla()
-                p[3].plot(sloTrace[1:],label='fitSlo',color='blue')
-                p[3].legend(loc=4)
-
-            if plotNum==7: # match filter plot
-                p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data',alpha=0.7)
-                p[0].plot(nelderTS,nelder,color='red',label='bestfit',linewidth=3)
-                p[0].axvline(matchTime[iH],color='orange',label='matchTime',linewidth=2)
-                p[0].plot(matchTS,smoothMF,color='magenta',label='smoothMF',linewidth=4)
-                p[0].plot(matchTS,match,color='cyan',label='match',linewidth=3)
-                p[0].set_xlabel('Time (s)')
-                p[0].set_ylabel('Voltage (arb)')
-                p[0].legend(loc=4)
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENF,matchMax[iH],matchTime[iH],matchWidth[iH]))
+                p[3].plot(muTr[1:],label='mu',color='green')
+                p[3].legend(loc=1)
+                p[4].cla()
+                p[4].plot(sigTr[1:],label='sig',color='blue')
+                p[4].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+                p[4].legend(loc=1)
+                p[5].cla()
+                p[5].plot(tauTr[1:],label='tau',color='black')
+                p[5].legend(loc=1)
+                p[6].cla()
+                p[6].plot(blTr[1:],label='bl',color='magenta')
+                p[6].legend(loc=1)
 
             plt.tight_layout()
             plt.pause(0.000001)
@@ -683,7 +671,7 @@ def main(argv):
                 print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
 
     # End loop over events
-    if batMode:
+    if batMode and not intMode:
         oTree.Write("",TObject.kOverwrite)
         print "Wrote",oTree.GetBranch("channel").GetEntries(),"entries in the copied tree,"
         print "and wrote",b1.GetEntries(),"entries in the new branches."
@@ -693,46 +681,62 @@ def main(argv):
     print float(nList)/((stopT-startT)/60.),"entries per minute."
 
 
-def findLnLike(floats, datas):
-    # SciPy Minimizer.
-    #     This could be moved to waveModel.py IF you decide you
-    #     don't need to look at the trace arrays anymore.
-    #     Also, this version tries to align the MAX time
-    #     (not the start time) of the waveforms.
-    global mtTrace, enTrace, sloTrace
+def evalXGaus(x,mu,sig,tau):
+    """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
+        Negative tau: Regular WF, high tail
+        Positive tau: Backwards WF, low tail
+    """
+    tmp = (x-mu + sig**2./2./tau)/tau
+    if all(tmp < limit):
+        return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
+    else:
+        print "Exceeded limit ..."
+        # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
+        den = 1./(sig + tau*(x-mu)/sig)
+        return sig * gaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 
-    # Unpack parameters.
-    dataList, tempList, InterpFn = datas
-    data, dataTS, dataE, dataMax, loWin, hiWin, dataNoise = dataList
-    temp, tempTS, tempE, tempMax = tempList
+def xgModelWF(dataTS, floats):
+    """ Make a model waveform: Take a timestamp vector, generate an
+        xGauss model, normalize to 1, then scale its max value to amp.
+    """
+    amp, mu, sig, tau, bl = floats
+    model = evalXGaus(dataTS,mu,sig,tau)
 
-    # Can fix parameters here by setting them back to their input guess values
-    mt, en, slo = 0, 0, 0
-    if len(floats)==1: # basinhopping case
-        slo, mt, en = floats[0], dataMax, dataE
-    if len(floats)==3: # minimize case (no fixing)
-        mt, en, slo = floats
+    # pin max value of function to amp
+    model = model * 1./np.sum(model)
+    xMax = np.argmax(model)
+    model = model * (amp / model[xMax])
 
-    # Make a trace
-    mtTrace = np.append(mtTrace,mt)
-    enTrace = np.append(enTrace,en)
-    sloTrace = np.append(sloTrace,slo)
-    # print mt, en, slo
+    # float the baseline
+    model = model + bl
 
-    # Build the model to compare with data
-    model, modelTS = wm.MakeModel(dataList, tempList, [mt,en,slo], fn=InterpFn)
-
-    # Find LL of data vs. model
-    lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
-    return lnLike
-
+    return model
 
 def MakeTracesGlobal():
-    # This is so 'findLnLike' can write to the trace arrays.
-    # It has to remain in this file to work.
-    tmp1 = tmp2 = tmp3 = np.empty([1,])
-    global mtTrace, enTrace, sloTrace
-    mtTrace, enTrace, sloTrace = tmp1, tmp2, tmp3
+    """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
+    tmp1 = tmp2 = tmp3 = tmp4 = tmp5 = np.empty([1,])
+    global ampTr, muTr, sigTr, tauTr, blTr
+    ampTr, muTr, sigTr, tauTr, blTr = tmp1, tmp2, tmp3, tmp4, tmp5
+
+def lnLike(floats, *datas):
+    """ log-likelihood function: L(A,mu,sig,tau)
+    To make this work with op.minimize, 'datas' is passed in as a tuple (the asterisk),
+    where the original list is the 1st element.
+    """
+    # Add to traces.
+    global ampTr, muTr, sigTr, tauTr, blTr
+    amp, mu, sig, tau, bl = floats
+    ampTr = np.append(ampTr, amp)
+    muTr = np.append(muTr, mu)
+    sigTr = np.append(sigTr, sig)
+    tauTr = np.append(tauTr, tau)
+    blTr = np.append(blTr, bl)
+
+    dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
+
+    model = xgModelWF(dataTS, floats)
+    lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
+    return lnLike
 
 
 if __name__ == "__main__":

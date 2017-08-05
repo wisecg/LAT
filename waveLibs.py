@@ -277,7 +277,7 @@ def peakdet(v, delta, x = None):
     %        maxima and minima ("peaks") in the vector V.
     %        MAXTAB and MINTAB consists of two columns. Column 1
     %        contains indices in V, and column 2 the found values.
-    %      
+    %
     %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
     %        in MAXTAB and MINTAB are replaced with the corresponding
     %        X-values.
@@ -289,7 +289,7 @@ def peakdet(v, delta, x = None):
     % This function is released to the public domain; Any use is allowed.
     """
     maxtab, mintab = [], []
-       
+
     if x is None:
         x = np.arange(len(v))
     v = np.asarray(v)
@@ -302,7 +302,7 @@ def peakdet(v, delta, x = None):
 
     mn, mx, mnpos, mxpos = np.Inf, -np.Inf, np.NaN, np.NaN
     lookformax = True
-    
+
     for i in np.arange(len(v)):
         this = v[i]
         if this > mx:
@@ -327,8 +327,8 @@ def peakdet(v, delta, x = None):
 
 
 def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
-    """ 
-        Leading Edge start time -- walk back from max to threshold 
+    """
+        Leading Edge start time -- walk back from max to threshold
         Times are returned in ns
     """
     minsample = np.amax([0,rmin])
@@ -338,7 +338,7 @@ def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
     for i in range(trapMax,0,-1):
         if trap[i] <= thresh:
             foundFirst = True
-            if (trap[i+1]-trap[i]) != 0: 
+            if (trap[i+1]-trap[i]) != 0:
                 triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
             else: triggerTS = (i+1)*10
             break
@@ -346,8 +346,8 @@ def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
 
 
 def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):
-    """ 
-        Constant Fraction start time 
+    """
+        Constant Fraction start time
         1) Invert the signal
         2) Delay and sum the original + inverted
         3) Walk back from maximum to a threshold (usually zero crossing)
@@ -456,7 +456,7 @@ class processWaveform:
         self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
 
         self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
-        self.waveBLSub = self.waveRaw
+        self.waveBLSub = np.copy(self.waveRaw)
         self.waveBLSub[:] = [x - self.baseAvg for x in self.waveRaw] # subtract the baseline value
 
     # constants

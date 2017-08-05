@@ -9,6 +9,7 @@ wl = imp.load_source('waveLibs', '../waveLibs.py')
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
+    """ Investigate fitting out the baseline instead of subtracting it. """
 
     scanSpeed = 0.2
     opt1, opt2 = "", ""
@@ -37,27 +38,14 @@ def main(argv):
 
     print "Using cut:\n",theCut,"\nFound",nList,"entries passing cuts."
 
-    # fit with one xgauss
-    fig = plt.figure(figsize=(13,7), facecolor='w')
-    p0 = plt.subplot2grid((6,8), (0,0), colspan=8, rowspan=3) # wf plot
-    p1 = plt.subplot2grid((6,8), (3,0), colspan=8, rowspan=1) # residual
-    p2 = plt.subplot2grid((6,8), (4,0), colspan=2, rowspan=2) # traces
-    p3 = plt.subplot2grid((6,8), (4,2), colspan=2, rowspan=2)
-    p4 = plt.subplot2grid((6,8), (4,4), colspan=2, rowspan=2)
-    p5 = plt.subplot2grid((6,8), (4,6), colspan=2, rowspan=2)
-
-    # fit with two xgauss's
-    # fig = plt.figure(figsize=(11,7), facecolor='w')
-    # p0 = plt.subplot2grid((8,8), (0,0), colspan=8, rowspan=3) # wf plot
-    # p1 = plt.subplot2grid((8,8), (3,0), colspan=8, rowspan=1) # residual
-    # p2 = plt.subplot2grid((8,8), (4,0), colspan=2, rowspan=2) # traces
-    # p3 = plt.subplot2grid((8,8), (4,2), colspan=2, rowspan=2)
-    # p4 = plt.subplot2grid((8,8), (4,4), colspan=2, rowspan=2)
-    # p5 = plt.subplot2grid((8,8), (4,6), colspan=2, rowspan=2)
-    # p6 = plt.subplot2grid((8,8), (6,0), colspan=2, rowspan=2)
-    # p7 = plt.subplot2grid((8,8), (6,2), colspan=2, rowspan=2)
-    # p8 = plt.subplot2grid((8,8), (6,4), colspan=2, rowspan=2)
-
+    fig = plt.figure(figsize=(12,7), facecolor='w')
+    p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # wf plot
+    p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
+    p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
+    p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
+    p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
+    p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
+    p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
     if not batMode: plt.show(block=False)
 
     # Loop over events
@@ -91,14 +79,16 @@ def main(argv):
             trapENFCal = waveTree.trapENFCal.at(iH)
             wf = waveTree.MGTWaveforms.at(iH)
             signal = wl.processWaveform(wf)
-            data = signal.GetWaveBLSub()
+            data = signal.GetWaveRaw()
+            dataBLSub = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
-            _,dataNoise = signal.GetBaseNoise()
+            dataBL,dataNoise = signal.GetBaseNoise()
+            print "dataBL:",dataBL
             dataTSMax = waveTree.trapENMSample.at(iH)*10. - 4000
             dataENM = waveTree.trapENM.at(iH)
 
             # wavelet packet denoised waveform
-            wp = pywt.WaveletPacket(data, 'db2', 'symmetric', maxlevel=4)
+            wp = pywt.WaveletPacket(dataBLSub, 'db2', 'symmetric', maxlevel=4)
             nodes = wp.get_level(4, order='freq')
             waveletYTrans = np.array([n.data for n in nodes],'d')
             waveletYTrans = abs(waveletYTrans)
@@ -108,7 +98,7 @@ def main(argv):
             new_wp['aaa'] = wp['aaa'].data
             data_wlDenoised = new_wp.reconstruct(update=False)
             # resize in a smart way
-            diff = len(data_wlDenoised) - len(data)
+            diff = len(data_wlDenoised) - len(dataBLSub)
             if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
 
             # get the noise of the denoised wf
@@ -117,17 +107,10 @@ def main(argv):
 
             # ================= run waveform fitter =================
 
-            # fit with one xgauss
-            amp, mu, sig, tau = dataENM, dataTSMax, 600., -72000.
-            floats = np.asarray([amp, mu, sig, tau])
-            guess = xgModelWF(dataTS,floats)
+            amp, mu, sig, tau, bl = dataENM, dataTSMax, 600., -72000., dataBL
+            floats = np.asarray([amp, mu, sig, tau, bl])
+            guess = xgModelWF(dataTS, floats)
             MakeTracesGlobal()
-
-            # fit with two xgauss's
-            # amp, mu, sig, tau, amp2, mu2, sig2 = dataENM, 10000., 600., -72000., 1., 10000., 10.
-            # floats = np.asarray([amp,mu,sig,tau,amp2,mu2,sig2])
-            # guess = xg2ModelWF(dataTS, floats)
-            # MakeTracesGlobal2()
 
             datas = [dataTS, data, dataNoise] # fit data
             # datas = [dataTS, data_wlDenoised, denoisedNoise] # fit wavelet denoised
@@ -138,7 +121,7 @@ def main(argv):
             # result = op.minimize(lnLike, floats, args=datas, method="Powell")
 
             # L-BGFS-B
-            bnd = ((None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau
+            bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau,bl
             opts = {'disp': None,   # None, True to print convergence messages
                     'maxls': 100,   # 20, max line search steps
                     'iprint': -1,   # -1
@@ -150,8 +133,7 @@ def main(argv):
                     'maxfun': 15000}    # 15000
 
             # numerical gradient - seems trustworthy
-            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=bnd)#, jac=lnLikeGrad)
-            # result = op.minimize(lnLike2, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None)#, jac=lnLikeGrad)
+            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None)#, jac=lnLikeGrad)
 
             # analytical gradient - BETA, Don't Use!
             # result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None, jac=lnLikeGrad)
@@ -162,18 +144,11 @@ def main(argv):
                 print "fit 'fail': ", result["message"]
                 # errorCode[0] = 1
 
-            # fit with one xg
-            amp, mu, sig, tau = result["x"]
-            floats = [amp, mu, sig, tau]
+            amp, mu, sig, tau, bl = result["x"]
+            floats = [amp, mu, sig, tau, bl]
             fit = xgModelWF(dataTS, floats)
 
-            # fit with two xg's
-            # amp, mu, sig, tau, amp2, mu2, sig2 = result["x"]
-            # floats = [amp, mu, sig, tau, amp2, mu2, sig2]
-            # fit = xg2ModelWF(dataTS, floats)
-
             # fitchi2 and finalL
-
             # calculate fitChi2.  Textbook is (observed - expected)^2 / expected,
             # but we'll follow MGWFCalculateChiSquare.cc and do (observed - expected)^2 / NDF.
             # NOTE: we're doing the chi2 against the DATA, though the FIT is to the DENOISED DATA.
@@ -182,9 +157,7 @@ def main(argv):
 
             finalLL = result["fun"]
 
-            title = "Run %d  evt %d  trapENFCal %.1f  trapENM %.1f  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,trapENFCal,dataENM,amp,mu,sig,tau,fitChi2,stop-start)
-
-            # title = "%d cal %.1f  enm %.1f  amp %.2f  mu %.2f  sig %.2f  tau %.2f\namp2 %.2f  mu2 %.2f  sig2 %.2f  chi2 %.2f  spd %.3f" % (iList,trapENFCal,dataENM,amp,mu,sig,tau,amp2,mu2,sig2,fitChi2,stop-start)
+            title = "Run %d  evt %d  chan %d  trapENFCal %.1f  trapENM %.1f  deltaBL %.2f\n  amp %.2f  mu %.2f  sig %.2f  tau %.2f  bl %.2f  chi2 %.2f  spd %.3f" % (run,iList,chan,trapENFCal,dataENM,bl-dataBL,amp,mu,sig,tau,bl,fitChi2,stop-start)
 
             print title
 
@@ -216,22 +189,12 @@ def main(argv):
             p5.cla()
             p5.plot(tauTr[1:],label='tau',color='black')
             p5.legend(loc=1)
-            # p6.cla()
-            # p6.plot(amp2Tr[1:],label='amp2',color='magenta')
-            # p6.legend(loc=1)
-            # p7.cla()
-            # p7.plot(mu2Tr[1:],label='mu2',color='cyan')
-            # p7.legend(loc=1)
-            # p8.cla()
-            # p8.plot(sig2Tr[1:],label='sig2',color='orange')
-            # p8.legend(loc=1)
+            p6.cla()
+            p6.plot(blTr[1:],label='bl',color='magenta')
+            p6.legend(loc=1)
 
             plt.tight_layout()
             plt.pause(scanSpeed)
-
-
-def evalGaus(x,mu,sig):
-    return np.exp(-((x-mu)**2./2./sig**2.))
 
 def evalXGaus(x,mu,sig,tau):
     """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
@@ -247,43 +210,28 @@ def evalXGaus(x,mu,sig,tau):
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * gaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 
-def evalXgGrad(x,amp,mu,sig,tau):
-    """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc """
-
-    gaus = evalGaus(x,mu,sig)
-    tailH = evalXGaus(x,mu,sig,tau)
-    y = (x-mu)/sig
-    sigtau = -sig/tau
-
-    gamp = tailH
-    gmu = amp/tau * (-tailH + gaus)
-    gsig = amp/tau * (sigtau * tailH - (sigtau - y) * gaus)
-    gtau = amp/tau * (-(1. + sigtau * y + sigtau**2.) + tailH + sigtau**2.*gaus) * amp
-
-    return np.asarray((gamp,gmu,gsig,gtau))
-
 def xgModelWF(dataTS, floats):
     """ Make a model waveform: Take a timestamp vector, generate an
         xGauss model, normalize to 1, then scale its max value to amp.
     """
-    amp, mu, sig, tau = floats
+    amp, mu, sig, tau, bl = floats
     model = evalXGaus(dataTS,mu,sig,tau)
-
-    # simple scaling by amp
-    # model = model * amp
 
     # pin max value of function to amp
     model = model * 1./np.sum(model)
     xMax = np.argmax(model)
     model = model * (amp / model[xMax])
 
+    # float the baseline
+    model = model + bl
+
     return model
 
 def MakeTracesGlobal():
     """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
-    tmp1 = tmp2 = tmp3 = tmp4 = np.empty([1,])
-    global ampTr, muTr, sigTr, tauTr
-    ampTr, muTr, sigTr, tauTr = tmp1, tmp2, tmp3, tmp4
+    tmp1 = tmp2 = tmp3 = tmp4 = tmp5 = np.empty([1,])
+    global ampTr, muTr, sigTr, tauTr, blTr
+    ampTr, muTr, sigTr, tauTr, blTr = tmp1, tmp2, tmp3, tmp4, tmp5
 
 def lnLike(floats, *datas):
     """ log-likelihood function: L(A,mu,sig,tau)
@@ -291,97 +239,19 @@ def lnLike(floats, *datas):
     where the original list is the 1st element.
     """
     # Add to traces.
-    global ampTr, muTr, sigTr, tauTr
-    amp, mu, sig, tau = floats
+    global ampTr, muTr, sigTr, tauTr, blTr
+    amp, mu, sig, tau, bl = floats
     ampTr = np.append(ampTr, amp)
     muTr = np.append(muTr, mu)
     sigTr = np.append(sigTr, sig)
     tauTr = np.append(tauTr, tau)
+    blTr = np.append(blTr, bl)
 
     dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
 
     model = xgModelWF(dataTS, floats)
     lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
     return lnLike
-
-def lnLikeGrad(floats, *datas):
-    """ grad of log-likelihood function: grad(L(A,mu,sig,tau)) """
-
-    amp, mu, sig, tau = floats
-    dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
-
-    model = xgModelWF(dataTS, floats)
-
-    # FIXME: do you need to add the original amplitude parameter "h" back in, instead of treating amp == h ?
-    grads = evalXgGrad(dataTS,amp,mu,sig,tau) # [4,2016]
-
-    g_amp = 1./dataNoise * np.sum( np.multiply(grads[0],(model - data)) )
-    g_mu =  1./dataNoise * np.sum( np.multiply(grads[1],(model - data)) )
-    g_sig = 1./dataNoise * np.sum( np.multiply(grads[2],(model - data)) )
-    g_tau = 1./dataNoise * np.sum( np.multiply(grads[3],(model - data)) )
-
-    return np.asarray((g_amp, g_mu, g_sig, g_tau))
-
-def numGradient(floats, f, datas, epsilon=1e-8):
-    """ Adapted from 'approx_fprime' in scipy's optimize.py, starting at line 649: https://github.com/scipy/scipy/blob/5530bf1d76918c2c49994b431e076723bcf2943b/scipy/optimize/optimize.py
-    """
-    # f0 = f(*((floats,) + datas)) # original
-    f0 = f(floats,datas) # modified by clint to accept 'datas' as a list
-
-    grad = np.zeros((len(floats),), float)
-    ei = np.zeros((len(floats),), float)
-
-    for k in range(len(floats)):
-        ei[k] = 1.0
-        d = epsilon * ei
-        f1 = f(floats+d,datas)
-        # print "F0:",f0,"F1:",f1, "d:",d
-        grad[k] = (f1 - f0) / d[k]
-        ei[k] = 0.0
-
-    return grad
-
-def xg2ModelWF(dataTS, floats):
-    """ Crazy idea: try fitting with TWO xGauss's. """
-
-    amp, mu, sig, tau, amp2, mu2, sig2 = floats
-
-    f1 = evalXGaus(dataTS,mu,sig,tau)
-    f2 = amp2 * evalXGaus(dataTS,mu,sig2,tau) # let amp2, mu2, sig2 float
-    ftot = f1 + f2
-
-    # pin max value of function to amp
-    ftot = ftot * 1./np.sum(ftot)
-    xMax = np.argmax(ftot)
-    ftot = ftot * (amp / ftot[xMax])
-
-    return ftot
-
-def MakeTracesGlobal2():
-    """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
-    tmp1 = tmp2 = tmp3 = tmp4 = tmp5 = tmp6 = tmp7 = np.empty([1,])
-    global ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr
-    ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr = tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7
-
-def lnLike2(floats, *datas):
-    """ log-likelihood function: L(A,mu,sig,tau,A2,sig2)
-    """
-    global ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr
-    amp, mu, sig, tau, amp2, mu2, sig2 = floats
-    ampTr = np.append(ampTr, amp)
-    muTr = np.append(muTr, mu)
-    sigTr = np.append(sigTr, sig)
-    tauTr = np.append(tauTr, tau)
-    amp2Tr = np.append(amp2Tr, amp2)
-    mu2Tr = np.append(mu2Tr, mu2)
-    sig2Tr = np.append(sig2Tr, sig2)
-
-    dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
-
-    model = xg2ModelWF(dataTS, floats)
-    lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
-    return lnLike
-
 
 
 if __name__ == "__main__":
