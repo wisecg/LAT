@@ -128,7 +128,7 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    theCut += " && trapENFCal < 6 && trapENFCal > 2"
+    theCut += " && trapENFCal < 6 && trapENFCal > 1"
     print "WARNING: Custom cut in use!"
     # ============================================================
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -160,8 +160,8 @@ def main(argv):
     fitTau, fitBL = std.vector("double")(), std.vector("double")()
     matchMax, matchWidth, matchTime = std.vector("double")(), std.vector("double")(), std.vector("double")()
     pol0, pol1, pol2, pol3 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
-    fails = std.vector("int")()
-    fitChi2, fitLL = std.vector("double")(), std.vector("double")()
+    fails, fitChi2, fitLL = std.vector("int")(), std.vector("double")(), std.vector("double")()
+    wpRiseNoise = std.vector("double")()
 
     # It's not possible to put the "oTree.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = oTree.Branch("waveS1",waveS1), oTree.Branch("waveS2",waveS2)
@@ -176,6 +176,7 @@ def main(argv):
     b20, b21, b22 = oTree.Branch("matchMax", matchMax), oTree.Branch("matchWidth", matchWidth), oTree.Branch("matchTime", matchTime)
     b23, b24, b25, b26 = oTree.Branch("pol0", pol0), oTree.Branch("pol1", pol1), oTree.Branch("pol2", pol2), oTree.Branch("pol3", pol3)
     b27, b28, b29 = oTree.Branch("fails",fails), oTree.Branch("fitChi2",fitChi2), oTree.Branch("fitLL",fitLL)
+    b30 = oTree.Branch("wpRiseNoise",wpRiseNoise)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -190,7 +191,8 @@ def main(argv):
         "fitTau":[fitTau, b18], "fitBL":[fitBL,b19],
         "matchMax":[matchMax, b20], "matchWidth":[matchWidth, b21], "matchTime":[matchTime, b22],
         "pol0":[pol0, b23], "pol1":[pol1, b24], "pol2":[pol2, b25], "pol3":[pol3, b26],
-        "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29]
+        "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29],
+        "wpRiseNoise":[wpRiseNoise,b30]
     }
 
 
@@ -316,13 +318,11 @@ def main(argv):
             wpCoeff = abs(wpCoeff)
 
             # wavelet parameters
-
             waveS1[iH] = np.sum(wpCoeff[0:1,1:33])
             waveS2[iH] = np.sum(wpCoeff[0:1,33:65])
             waveS3[iH] = np.sum(wpCoeff[0:1,65:97])
             waveS4[iH] = np.sum(wpCoeff[0:1,97:-1])
             waveS5[iH] = np.sum(wpCoeff[2:-1,1:-1])
-
             S6 = np.sum(wpCoeff[2:9,1:33])
             S7 = np.sum(wpCoeff[2:9,33:65])
             S8 = np.sum(wpCoeff[2:9,65:97])
@@ -383,8 +383,13 @@ def main(argv):
             temp = xgModelWF(dataTS, floats)
             MakeTracesGlobal()
 
-            datas = [dataTS, data, dataNoise] # fit data
-            # datas = [dataTS, data_wlDenoised, denoisedNoise] # fit wavelet-denoised data
+            # get the noise of the denoised wf
+            denoisedNoise,_,_ = wl.baselineParameters(data_wlDenoised)
+
+            # NOTE: fit is to wavelet-denoised data, BECAUSE there are no HF components in the model,
+            # AND we'll still calculate fitChi2 w/r/t the data, not the denoised data.
+            # datas = [dataTS, data, dataNoise] # fit data
+            datas = [dataTS, data_wlDenoised + dataBL, denoisedNoise] # fit wavelet-denoised data w/ Bl added back in
 
             # L-BGFS-B
             bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau.  Unbounded rn.
@@ -432,13 +437,20 @@ def main(argv):
             fitStartTime = dataTS[0]
             idx = np.where(fit_blSub < 0.1)
             if len(dataTS[idx] > 0): fitStartTime = dataTS[idx][-1]
+            fitRiseTime50 = (fitMaxTime + fitStartTime)/2.
 
-            # sum all HF wavelet components for this edge
+            # bcMin is 32 samples long in the x-direction.
+            # if we make the window half as wide, it'll have the same # of coeff's as bcMin.
+            # this is still 'cheating' since we're not summing over the same rows.
             numXRows = wpCoeff.shape[1]
-            wpLoRise = int(fitStartTime/dataTS[-1] * numXRows)
-            wpHiRise = int(fitMaxTime/dataTS[-1] * numXRows)
-            wpRiseNoise = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / bcMin[iH]
+            wpCtrRise = int((fitRiseTime50 - dataTS[0]) / (dataTS[-1] - dataTS[0]) * numXRows)
+            wpLoRise = wpCtrRise - 8
+            if wpLoRise < 0: wpLoRise = 0
+            wpHiRise = wpCtrRise + 8
+            if wpHiRise > numXRows: wpHiRise = numXRows
 
+            # sum all HF wavelet components for this edge.
+            wpRiseNoise[iH] = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / (bcMin[iH])
 
             # =========================================================
 
@@ -549,19 +561,19 @@ def main(argv):
             elif plotNum==1: # wavelet plot
 
                 p[0].cla()
+                p[0].margins(x=0)
                 p[0].plot(dataTS,data_blSub,color='blue',label='data')
                 p[0].plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
-                p[0].axvline(fitStartTime,color='orange',label='risingEdge',linewidth=2)
-                p[0].axvline(fitMaxTime,color='orange',linewidth=2)
+                p[0].axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
                 p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
+                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
                 p[0].legend(loc=4)
 
                 p[1].cla()
                 p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='jet')
                 p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
                 p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
-                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise))
+                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise[iH]))
 
 
             elif plotNum==2: # time points, bandpass filters, tail slope
