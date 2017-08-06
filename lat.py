@@ -586,6 +586,7 @@ def main(argv):
             # amplitude from padded trapezoid, with t0 from short traps and a correction function
             # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 8.5, p1 ~ -0.1
             # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
+            # t0_corr = -7000+8000+2000 # no correction
             t0_corr = -7000+8000+2000 - np.amin([np.exp(8.5 - 0.1*latE),5500.])
             latEFC = pTrapInterp( np.amax([t0_SLE + t0_corr, 0.]) )
             latEAFC = pTrapInterp( np.amax([t0_ALE + t0_corr, 0.]) )
@@ -609,8 +610,7 @@ def main(argv):
                 p[0].plot(dataTS,data,'b')
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
 
-            elif plotNum==1: # wavelet plot
-
+            if plotNum==1: # wavelet plot
                 p[0].cla()
                 p[0].margins(x=0)
                 p[0].plot(dataTS,data_blSub,color='blue',label='data')
@@ -627,7 +627,7 @@ def main(argv):
                 p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise[iH]))
 
 
-            elif plotNum==2: # time points, bandpass filters, tail slope
+            if plotNum==2: # time points, bandpass filters, tail slope
                 p[0].cla()
                 p[0].plot(dataTS,data,color='blue',label='data')
                 p[0].axvline(den10[iH],color='black',label='lpTP')
@@ -646,7 +646,7 @@ def main(argv):
                 p[1].axvline(bandTime[iH],color='orange',label='bandTime')
                 p[1].legend(loc='best')
 
-            elif plotNum==3: # freq-domain matched filter
+            if plotNum==3: # freq-domain matched filter
                 p[0].cla()
                 p[0].plot(dataTS,data,'b')
                 p[0].plot(dataTS,temp,'r')
