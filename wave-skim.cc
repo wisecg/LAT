@@ -21,12 +21,21 @@
 #include "MGTWaveform.hh"
 #include "MJTMSWaveform.hh"
 #include "MJTRun.hh"
+#include "MGWFNonLinearityCorrector.hh"
+#include "MJTGretina4DigitizerData.hh"
+#include "MJTypes.hh"
 
 using namespace std;
 
-void SkimWaveforms(string theCut, string inFile, string outFile);
+void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc);
 void TCutSkimmer(string theCut, int dsNum);
 void diagnostic();
+void LoadNLCParameters(int ddID, int run, const MGVDigitizerData* dd, bool useTwoPass=true);
+
+// stuff for NLC.  made 'em global because fk it.
+map<int, MGWFNonLinearityCorrectionMap*> NLCMaps;
+map<int, MGWFNonLinearityCorrectionMap*> NLCMaps2;
+string NLCMapDir = "/project/projectdirs/majorana/data/production/NLCDB";
 
 int main(int argc, char** argv)
 {
@@ -37,12 +46,13 @@ int main(int argc, char** argv)
          << "       [-r [dsNum] [subNum] : specify DS and sub-DS]\n"
          << "       [-f [dsNum] [runNum] : specify DS and run num]\n"
          << "       [-p [inPath] [outPath]: file locations]\n"
-         << "       [-c : use calibration TCut]\n";
+         << "       [-c : use calibration TCut]\n"
+         << "       [-n : do the Radford 2-pass NLC correction]\n";
     return 1;
   }
   string inPath=".", outPath=".";
   int dsNum=-1, subNum=0, run=0;
-  bool sw=0, tcs=0, fil=0, cal=0;
+  bool sw=0, tcs=0, fil=0, cal=0, nlc=0;
   vector<string> opt(argv, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
     if (opt[i] == "-s") { sw=0; tcs=1; }
@@ -50,6 +60,7 @@ int main(int argc, char** argv)
     if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
     if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
     if (opt[i] == "-c") { cal=1; }
+    if (opt[i] == "-n") { nlc=1; }
   }
 
   // DS0-5 standard cut
@@ -76,11 +87,11 @@ int main(int argc, char** argv)
   // diagnostic();
   cout << "Scanning DS-" << dsNum << endl;
   if (tcs) TCutSkimmer(theCut, dsNum);
-  if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile);
+  if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile, nlc);
 }
 
 
-void SkimWaveforms(string theCut, string inFile, string outFile)
+void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
 {
   // Take an input skim file, copy it with a waveform branch appended.
   // NOTE: The copied vectors are NOT resized to contain only entries passing cuts.
@@ -123,6 +134,7 @@ void SkimWaveforms(string theCut, string inFile, string outFile)
   TChain *gat = new TChain("mjdTree");
   TTreeReader bReader(built);
   TTreeReader gReader(gat);
+  TTreeReaderValue<TClonesArray> dd(bReader,"fDigitizerData");
   TTreeReaderValue<TClonesArray> wfBranch(bReader,"fWaveforms");
   TTreeReaderValue<TClonesArray> wfAuxBranch(bReader,"fAuxWaveforms");
   TTreeReaderArray<double> wfChan(gReader,"channel");
@@ -171,8 +183,10 @@ void SkimWaveforms(string theCut, string inFile, string outFile)
     {
       if ( find(chanVec.begin(), chanVec.end(), wfChan[iWF]) != chanVec.end() )
       {
-        // handle multisampling
+        // don't handle multisampling
         // MGTWaveform *wave = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF));
+
+        // handle multisampling
         MGTWaveform* wave = NULL;
         if (!isMS) {
           MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF));
@@ -183,6 +197,24 @@ void SkimWaveforms(string theCut, string inFile, string outFile)
           MGTWaveform* aux = dynamic_cast<MGTWaveform*>((*wfAuxBranch).At(iWF));
           MJTMSWaveform ms(reg,aux);
           wave = dynamic_cast<MGTWaveform*>(&ms);
+        }
+
+        // do the 2-pass NLC correction from GAT-v01-06.  See below for a reference.
+        if (nlc)
+        {
+          MGVDigitizerData* d = dynamic_cast<MGVDigitizerData*>((*dd).At(iWF));
+          int ddID = d->GetID();
+          LoadNLCParameters(ddID, run, d); // Adds NLC maps for this detector/run if they don't exist already
+
+          MGWFNonLinearityCorrector* nlc = new MGWFNonLinearityCorrector();
+          nlc->SetNLCCourseFineMaps(NLCMaps[ddID], NLCMaps2[ddID]);
+          nlc->SetTimeConstant_samples(190); // 1.9 us time constant for Radford time-lagged method
+
+          MGTWaveform wf = *wave;
+          nlc->TransformInPlace(wf);
+          wave = &wf;
+
+          delete nlc;
         }
 
         // use a stack, don't clone wf's (huge memory leak)
@@ -275,25 +307,187 @@ void TCutSkimmer(string theCut, int dsNum)
 
 void diagnostic()
 {
-  TFile *f = new TFile("./data/waveSkimDS4_test.root");
-  TTree *t = (TTree*)f->Get("skimTree");
-
-  vector<MGTWaveform*> *waves=0;
-  int iEvent=0, run=0;
-  vector<double> *channel=0;
-  t->SetBranchAddress("MGTWaveforms",&waves);
-  t->SetBranchAddress("channel",&channel);
-  t->SetBranchAddress("run",&run);
-  t->SetBranchAddress("iEvent",&iEvent);
-
-  for (int i = 0; i < t->GetEntries(); i++)
+  // here's an example of grabbing an MGVDigitizerData object.
+  GATDataSet ds;
+  string path = ds.GetPathToRun(12345, GATDataSet::kBuilt);
+  TChain *b = new TChain("MGTree");
+  b->Add(path.c_str());
+  TTreeReader reader(b);
+  TTreeReaderValue<TClonesArray> dd(reader,"fDigitizerData");
+  int count = 0;
+  while (reader.Next())
   {
-    t->GetEntry(i);
-    cout << Form("i %i  iEvent %i  run %i  size channel %lu  size MGT %lu\n", i,iEvent,run,channel->size(),waves->size());
+    int nEnt = (*dd).GetEntries();
+    for (int i = 0; i < nEnt; i++)
+    {
+      MGVDigitizerData* d = dynamic_cast<MGVDigitizerData*>((*dd).At(i));
+      d->SmartDump();
+    }
+    count++;
+    if (count > 5) return;
+  }
+  return;
+}
 
-    if (channel->size() != waves->size()) {
-      cout << "     Warning!! Them sizes ain't equal!  Something went wrong filling branches.\n";
+
+void LoadNLCParameters(int ddID, int run, const MGVDigitizerData* dd, bool useTwoPass)
+{
+  // Adapted by Clint on 6 Aug. 2017 from GAT-v01-06.
+  // (There was no outside-GAT function I could call.)
+  // 'useTwoPass' is set to true by default.
+  // Direct path to the original file & GAT revision:
+  // https://github.com/mppmu/GAT/tree/de49b732d95cf78265f94033b2fc609238742e8e
+
+  MGWFNonLinearityCorrectionMap* map1 = NLCMaps[ddID];
+
+  // This is a hack. Eventually we need to have these maps in a DB and pull them out properly.
+  if(map1 == NULL)
+  {
+    map1 = new MGWFNonLinearityCorrectionMap;
+    if((run >= 6000000 && run < 60000000) || run > 60002419) {
+      static map< int, bool > seen;
+      if(!seen[run]) {
+        cout << "GATNonLinearityCorrector: No NLC files for run " << run << endl;
+        seen[run] = true;
+      }
+      NLCMaps[ddID] = map1;
       return;
+    }
+
+    int crate = MJUtil::GetCrate(ddID);
+    int card = MJUtil::GetCard(ddID);
+    int channel = MJUtil::GetChannel(ddID);
+
+    if(useTwoPass)
+    {
+      const MJTGretina4DigitizerData* g4dd = dynamic_cast<const MJTGretina4DigitizerData*>(dd);
+      uint32_t boardSN = 0;
+      if(g4dd == NULL) {
+        cout << "GATNonLinearityCorrector::LoadParameters("
+             << ddID << ", " << run << "): "
+	     << "Error: couldn't cast dd to MJTGretina4DigitizerData" << endl;
+      }
+      else boardSN = g4dd->GetBoardSerialNumber();
+
+      // The board labeled SN-021h return 0x221 when probed by ORCA
+      // Our NLC folders use the board labels so change this one.
+      if(boardSN == 0x221) boardSN = 0x21;
+
+      if(run < 6000000) {
+        if(boardSN == 0 && run < 8184) {
+      	  // No boardSN in part of DS0.
+      	  if(card == 4) boardSN = 0x1b;
+      	  else if(card == 5) boardSN = 0x19;
+      	  else if(card == 6) boardSN = 0x22;
+      	  else if(card == 7) boardSN = 0x12;
+      	  else if(card == 8) boardSN = 0x25;
+      	  else if(card == 9) boardSN = 0x26;
+      	  else if(card == 10) boardSN = 0x18;
+      	  else if(card == 11) boardSN = 0x21;
+      	  else {
+                  cout << "GATNonLinearityCorrector::LoadParameters("
+                       << ddID << ", " << run << "): "
+      		 << "Got unknown DS0 card number " << card << endl;
+      	  }
+        }
+        if(run < 11339) {
+          // card 019h is in slot 5 but Radford didn't make this NLC files,
+          // so use the ones from crate 2 slot 15
+          if(boardSN == 0x19 && card == 5) {
+            crate = 2;
+            card = 15;
+          }
+        }
+        if(run >= 11339 && run <= 11396) {
+          // in this run range, slot 5 used card 10h, whose NLCs were
+          // measured in crate 2 slot 9
+          if(boardSN == 0x10 && card == 5) {
+            crate = 2;
+            card = 9;
+          }
+        }
+        if(run >= 18643) {
+          // slot 11 changes from 014h to 029h, but 029h was only
+          // calibrated in slot 8
+          if(boardSN == 0x29 && card == 11) card = 8;
+        }
+        if(run >= 18990) {
+          // 014h is usually used in slot 13 in this run range,
+          // but 014h was only calibrated in slot 11
+          if(boardSN == 0x14 && card == 13) card = 11;
+        }
+      }
+      else { // DS4 runs
+        if(run == 60002395 || run == 60002396) {
+          // 01ah moved from slot 7 to slot 6 for 2 runs.
+          if(boardSN == 0x1a && card == 6) card = 7;
+        }
+      }
+
+      char bsnString[8];
+      if(boardSN > 0xf) sprintf(bsnString, "%03xh", boardSN);
+      else sprintf(bsnString, "%03d", boardSN);
+      char fileName1a[500];
+      sprintf(fileName1a,"%s/Boards/%s/c%dslot%d/Crate%d_GRET%d_Ch%d_part1a.dat",
+              NLCMapDir.c_str(), bsnString, crate, card, crate, card, channel);
+      map1->LoadFromCombinedFile(fileName1a);
+      NLCMaps[ddID] = map1;
+
+      MGWFNonLinearityCorrectionMap* map2 = new MGWFNonLinearityCorrectionMap;
+      char fileName2a[500];
+      sprintf(fileName2a,"%s/Boards/%s/c%dslot%d/Crate%d_GRET%d_Ch%d_part2a.dat",
+              NLCMapDir.c_str(), bsnString, crate, card, crate, card, channel);
+      map2->LoadFromCombinedFile(fileName2a);
+      NLCMaps2[ddID] = map2;
+    }
+
+    else {
+      string path = NLCMapDir;
+      if(run < 11339) path += "/Run0";
+      else if(run < 11397) path += "/Run11339";
+      else if(run < 18622) path += "/Run11397";
+      else if(run < 18643) path += "/Run18623";
+      else if(run < 18990) path += "/Run18643";
+      else if(run < 19018) path += "/Run18990";
+      else if(run < 19502) path += "/Run19018";
+      else if(run < 6000000) path += "/Run19502";
+      else if(run < 60000000) {
+        static map< int, map< int, bool> > seen;
+        if(!seen[run][ddID]) {
+          cout << "GATNonLinearityCorrector: No NLC files for run " << run << " ddID " << ddID << endl;
+          seen[run][ddID] = true;
+        }
+        return;
+      }
+      else if(run < 60002395) path += "/Run60000000";
+      else if(run < 60002397) path += "/Run60002395";
+      else if(run < 60002419) path += "/Run60002397";
+      else {
+        static map< int, map< int, bool> > seen;
+        if(!seen[run][ddID]) {
+          cout << "GATNonLinearityCorrector: No NLC files for run " << run << " ddID " << ddID << endl;
+          seen[run][ddID] = true;
+        }
+        return;
+      }
+      if(crate == 1) {
+        char upFileName[500];
+        sprintf(upFileName,"%s/Crate%d_GRET%d_Ch%d_up1.dat", path.c_str(), crate, card, channel);
+        char downFileName[500];
+        sprintf(downFileName,"%s/Crate%d_GRET%d_Ch%d_up0.dat", path.c_str(), crate, card, channel);
+        map1->LoadFromUpDownFiles(upFileName, downFileName);
+      }
+      else if(crate == 2) {
+        char combFileName[500];
+        sprintf(combFileName,"%s/Crate%d_GRET%d_Ch%d_comb.dat", path.c_str(), crate, card, channel);
+        map1->LoadFromCombinedFile(combFileName);
+      }
+      else {
+        cout << "GATNonLinearityCorrector::LoadParameters("
+             << ddID << ", " << run << "): Error: got invalide crate number "
+             << crate << endl;
+      }
+      NLCMaps[ddID] = map1;
     }
   }
 }
