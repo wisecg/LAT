@@ -191,7 +191,7 @@ def waveletTransform(signalRaw, level=4, wavelet='db2', order='freq'):
     return wp.data, yWT
 
 
-def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
+def trapFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
     """ Apply a trap filter to a waveform. """
     baseline = 0.
     decayConstant = 0.
@@ -202,6 +202,7 @@ def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
 
     trapOutput = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
     fVector = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
+
     fVector[0] = signalRaw[0] - baseline
     trapOutput[0] = (decayConstant+1.)*(signalRaw[0] - baseline)
     scratch = 0.
@@ -219,7 +220,8 @@ def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
     # Normalize and resize output
     for x in xrange(2*rampTime+flatTime, len(signalRaw)):
         trapOutput[x-(2*rampTime+flatTime)] = trapOutput[x]/norm
-    trapOutput.resize( (len(signalRaw) - (2*rampTime+flatTime), 1))
+    trapOutput.resize( (len(signalRaw) - (2*rampTime+flatTime)))
+
     return trapOutput
 
 
@@ -326,7 +328,7 @@ def peakdet(v, delta, x = None):
     return np.array(maxtab), np.array(mintab)
 
 
-def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
+def walkBackT0(trap, thresh=2., rmin=0, rmax=1000):
     """
         Leading Edge start time -- walk back from max to threshold
         Times are returned in ns
@@ -369,7 +371,7 @@ def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):
     return triggerTS, foundFirst
 
 
-def asymTrapFilt(data,ramp=200,flat=100,fall=40,padAfter=False):
+def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
     """ Computes an asymmetric trapezoidal filter """
     trap = np.zeros(len(data))
     for i in range(len(data)-1000):

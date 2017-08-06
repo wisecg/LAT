@@ -200,8 +200,8 @@ def main(argv):
     fig = plt.figure(figsize=(12,7), facecolor='w')
     p = []
     for i in range(1,8): p.append(plt.subplot())
-    if plotNum==0:
-        p[0] = plt.subplot(111)  # raw waveform
+    if plotNum==0 or plotNum==7:
+        p[0] = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
     elif plotNum==1 or plotNum==2:
         p[0] = plt.subplot(211)  # 1-wavelet, 2-time points, bandpass filters, tail slope
         p[1] = plt.subplot(212)
@@ -542,6 +542,57 @@ def main(argv):
                 errorCode[2] = 1
                 pass
 
+            # =========================================================
+
+            # new trap filters.
+
+            # calculate trapezoids
+
+            # standard trapezoid - prone to walking, less sensitive to noise.  use to find energy
+            eTrap = wl.trapFilter(data_blSub, 400, 250, 7200.)
+            eTrapTS = np.arange(0, len(eTrap)*10., 10)
+            eTrapInterp = interpolate.interp1d(eTrapTS, eTrap)
+
+            # short trapezoid - triggers more quickly, sensitive to noise.  use to find t0
+            sTrap = wl.trapFilter(data_blSub, 100, 150, 7200.)
+            sTrapTS = np.arange(0, len(sTrap)*10., 10)
+
+            # asymmetric trapezoid - used to find the t0 only
+            aTrap = wl.asymTrapFilter(data_blSub, 200, 100, 40, True)
+            aTrapTS = np.arange(0, len(aTrap)*10., 10)
+
+
+            # find leading edges (t0 times)
+
+            # limit the range from 0 to 14us, and use an ADC threshold of 2.0 (like the data) for now ...
+            t0_SLE,_ = wl.walkBackT0(sTrap, 2., 0, 1000) # (in ns) finds leading edge from short trap
+            t0_ALE,_ = wl.walkBackT0(aTrap, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
+
+            # standard energy trapezoid w/ a baseline padded waveform
+            data_pad = np.pad(data_blSub,(400,0),'symmetric')
+            pTrap = wl.trapFilter(data_pad, 400, 250, 7200.)
+            pTrapTS = np.linspace(0, len(pTrap)*10, len(pTrap))
+            pTrapInterp = interpolate.interp1d(pTrapTS, pTrap)
+
+            # calculate energy parameters
+            # standard amplitude.  basically trapEM, but w/o NL correction if the input WF doesn't have it.
+            latE = np.amax(eTrap)
+
+            # standard amplitude with t0 from the shorter traps
+            # If either fixed pickoff time (t0) is < 0, use the first sample as the amplitude (energy).
+            latEF = eTrapInterp( np.amax([t0_SLE-7000+4000+2000, 0.]) ) # This should be ~trapEF
+            latEAF = eTrapInterp( np.amax([t0_ALE-7000+4000+2000, 0.]) )
+
+            # amplitude from padded trapezoid, with t0 from short traps and a correction function
+            # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 8.5, p1 ~ -0.1
+            # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
+            t0_corr = -7000+8000+2000 - np.amin([np.exp(8.5 - 0.1*latE),5500.])
+            latEFC = pTrapInterp( np.amax([t0_SLE + t0_corr, 0.]) )
+            latEAFC = pTrapInterp( np.amax([t0_ALE + t0_corr, 0.]) )
+
+            print "trapENM %.2f || latEM %.2f  ef %.2f  eaf %.2f  efc %.2f  eafc %.2f" % (dataENM,latE,latEF,latEAF,latEFC,latEAFC)
+
+
             # ------------------------------------------------------------------------
             # End waveform processing.
 
@@ -567,7 +618,7 @@ def main(argv):
                 p[0].axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
                 p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
-                p[0].legend(loc=4)
+                p[0].legend(loc='best')
 
                 p[1].cla()
                 p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='jet')
@@ -584,7 +635,7 @@ def main(argv):
                 p[0].axvline(den90[iH],color='black')
                 p[0].plot(dataTS,fit,color='magenta',label='bestfit')
                 if errorCode[2]!=1: p[0].plot(tailTS, wl.tailModelPol(tailTS, *popt1), color='orange',linewidth=2, label='tailPol')
-                p[0].legend(loc=4)
+                p[0].legend(loc='best')
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
                 p[1].cla()
@@ -593,7 +644,7 @@ def main(argv):
                 p[1].plot(dataTS,data_filt,color='black',label='filtfilt')
                 p[1].plot(dataTS,data_bPass,color='red',label='bpass')
                 p[1].axvline(bandTime[iH],color='orange',label='bandTime')
-                p[1].legend(loc=4)
+                p[1].legend(loc='best')
 
             elif plotNum==3: # freq-domain matched filter
                 p[0].cla()
@@ -628,7 +679,7 @@ def main(argv):
                 p[0].plot(matchTS,match,color='cyan',label='match',linewidth=3)
                 p[0].set_xlabel('Time (s)')
                 p[0].set_ylabel('Voltage (arb)')
-                p[0].legend(loc=4)
+                p[0].legend(loc='best')
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENFCal,matchMax[iH],matchTime[iH],matchWidth[iH]))
 
             if plotNum==5: # bandTime plot
@@ -637,7 +688,7 @@ def main(argv):
                 p[0].plot(dataTS,data_lPass,color='magenta',label='lowpass',linewidth=4)
                 p[0].plot(dataTS,data_bPass,color='red',label='bpass',linewidth=4)
                 p[0].axvline(bandTime[iH],color='orange',label='bandTime',linewidth=4)
-                p[0].legend(loc=4)
+                p[0].legend(loc='best')
                 p[0].set_xlabel('Time (ns)')
                 p[0].set_ylabel('ADC (arb)')
                 p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
@@ -649,26 +700,40 @@ def main(argv):
                 p[0].plot(dataTS,temp,color='orange',label='xgauss guess')
                 p[0].plot(dataTS,fit,color='red',label='xgauss fit')
                 p[0].set_title("Run %d  evt %d  chan %d  trapENFCal %.1f  trapENM %.1f  deltaBL %.1f\n  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,chan,dataENFCal,dataENM,dataBL-bl,amp,mu,sig,tau,fitChi2[iH],fitSpeed))
-                p[0].legend(loc=4)
+                p[0].legend(loc='best')
                 p[1].cla()
                 p[1].plot(dataTS,data-fit,color='blue',label='residual')
-                p[1].legend(loc=1)
+                p[1].legend(loc='best')
                 p[2].cla()
                 p[2].plot(ampTr[1:],label='amp',color='red')
-                p[2].legend(loc=1)
+                p[2].legend(loc='best')
                 p[3].cla()
                 p[3].plot(muTr[1:],label='mu',color='green')
-                p[3].legend(loc=1)
+                p[3].legend(loc='best')
                 p[4].cla()
                 p[4].plot(sigTr[1:],label='sig',color='blue')
                 p[4].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-                p[4].legend(loc=1)
+                p[4].legend(loc='best')
                 p[5].cla()
                 p[5].plot(tauTr[1:],label='tau',color='black')
-                p[5].legend(loc=1)
+                p[5].legend(loc='best')
                 p[6].cla()
                 p[6].plot(blTr[1:],label='bl',color='magenta')
-                p[6].legend(loc=1)
+                p[6].legend(loc='best')
+
+            if plotNum==7: # new traps plot
+                p[0].cla()
+                p[0].plot(dataTS, data_blSub, color='blue', label='data')
+                p[0].plot(sTrapTS, sTrap, color='red', label='sTrap')
+                p[0].axvline(t0_SLE, color='red')
+                p[0].plot(aTrapTS, aTrap, color='orange', label='aTrap')
+                p[0].axvline(t0_ALE, color='orange')
+                p[0].plot(eTrapTS, eTrap, color='green', label='eTrap')
+                p[0].axhline(latE,color='green')
+                p[0].plot(pTrapTS, pTrap, color='magenta', label='pTrap')
+                p[0].axhline(latEAFC, color='magenta')
+                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f" % (dataENFCal,dataENM,latE,latEF,latEAF,latEFC,latEAFC))
+                p[0].legend(loc='best')
 
             plt.tight_layout()
             plt.pause(0.000001)
