@@ -584,12 +584,13 @@ def main(argv):
             latEAF = eTrapInterp( np.amax([t0_ALE-7000+4000+2000, 0.]) )
 
             # amplitude from padded trapezoid, with t0 from short traps and a correction function
-            # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 8.5, p1 ~ -0.1
+            # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 7.8, p1 ~ -0.45 and -0.66
             # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
             # t0_corr = -7000+8000+2000 # no correction
-            t0_corr = -7000+8000+2000 - np.amin([np.exp(8.5 - 0.1*latE),5500.])
+            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*Max[iH]),1000.])
+            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*Max[iH]),1000.])
             latEFC = pTrapInterp( np.amax([t0_SLE + t0_corr, 0.]) )
-            latEAFC = pTrapInterp( np.amax([t0_ALE + t0_corr, 0.]) )
+            latEAFC = pTrapInterp( np.amax([t0_ALE + t0A_corr, 0.]) )
 
             print "trapENM %.2f || latEM %.2f  ef %.2f  eaf %.2f  efc %.2f  eafc %.2f" % (dataENM,latE,latEF,latEAF,latEFC,latEAFC)
 
