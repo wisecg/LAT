@@ -191,7 +191,7 @@ def waveletTransform(signalRaw, level=4, wavelet='db2', order='freq'):
     return wp.data, yWT
 
 
-def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
+def trapFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
     """ Apply a trap filter to a waveform. """
     baseline = 0.
     decayConstant = 0.
@@ -202,6 +202,7 @@ def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
 
     trapOutput = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
     fVector = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
+
     fVector[0] = signalRaw[0] - baseline
     trapOutput[0] = (decayConstant+1.)*(signalRaw[0] - baseline)
     scratch = 0.
@@ -219,7 +220,8 @@ def trapezoidalFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
     # Normalize and resize output
     for x in xrange(2*rampTime+flatTime, len(signalRaw)):
         trapOutput[x-(2*rampTime+flatTime)] = trapOutput[x]/norm
-    trapOutput.resize( (len(signalRaw) - (2*rampTime+flatTime), 1))
+    trapOutput.resize( (len(signalRaw) - (2*rampTime+flatTime)))
+
     return trapOutput
 
 
@@ -277,7 +279,7 @@ def peakdet(v, delta, x = None):
     %        maxima and minima ("peaks") in the vector V.
     %        MAXTAB and MINTAB consists of two columns. Column 1
     %        contains indices in V, and column 2 the found values.
-    %      
+    %
     %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
     %        in MAXTAB and MINTAB are replaced with the corresponding
     %        X-values.
@@ -289,7 +291,7 @@ def peakdet(v, delta, x = None):
     % This function is released to the public domain; Any use is allowed.
     """
     maxtab, mintab = [], []
-       
+
     if x is None:
         x = np.arange(len(v))
     v = np.asarray(v)
@@ -302,7 +304,7 @@ def peakdet(v, delta, x = None):
 
     mn, mx, mnpos, mxpos = np.Inf, -np.Inf, np.NaN, np.NaN
     lookformax = True
-    
+
     for i in np.arange(len(v)):
         this = v[i]
         if this > mx:
@@ -326,9 +328,9 @@ def peakdet(v, delta, x = None):
     return np.array(maxtab), np.array(mintab)
 
 
-def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
-    """ 
-        Leading Edge start time -- walk back from max to threshold 
+def walkBackT0(trap, thresh=2., rmin=0, rmax=1000):
+    """
+        Leading Edge start time -- walk back from max to threshold
         Times are returned in ns
     """
     minsample = np.amax([0,rmin])
@@ -338,7 +340,7 @@ def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
     for i in range(trapMax,0,-1):
         if trap[i] <= thresh:
             foundFirst = True
-            if (trap[i+1]-trap[i]) != 0: 
+            if (trap[i+1]-trap[i]) != 0:
                 triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
             else: triggerTS = (i+1)*10
             break
@@ -346,8 +348,8 @@ def walkBackt0(trap,thresh=2., rmin=0, rmax=1000):
 
 
 def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):
-    """ 
-        Constant Fraction start time 
+    """
+        Constant Fraction start time
         1) Invert the signal
         2) Delay and sum the original + inverted
         3) Walk back from maximum to a threshold (usually zero crossing)
@@ -369,7 +371,7 @@ def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):
     return triggerTS, foundFirst
 
 
-def asymTrapFilt(data,ramp=200,flat=100,fall=40,padAfter=False):
+def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
     """ Computes an asymmetric trapezoidal filter """
     trap = np.zeros(len(data))
     for i in range(len(data)-1000):
@@ -456,7 +458,7 @@ class processWaveform:
         self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
 
         self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
-        self.waveBLSub = self.waveRaw
+        self.waveBLSub = np.copy(self.waveRaw)
         self.waveBLSub[:] = [x - self.baseAvg for x in self.waveRaw] # subtract the baseline value
 
     # constants

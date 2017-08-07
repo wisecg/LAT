@@ -3,12 +3,15 @@ import sys, time, imp, pywt
 import numpy as np
 import scipy.special as sp
 import scipy.optimize as op
+from scipy.signal import butter, lfilter, filtfilt, kaiser
+from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
 from ROOT import TFile,TTree,TEntryList,MGTWaveform,gDirectory
 wl = imp.load_source('waveLibs', '../waveLibs.py')
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
+    """ Investigate the time-domain matched filter, w/ and w/o Kaiser window. """
 
     scanSpeed = 0.2
     opt1, opt2 = "", ""
@@ -28,6 +31,7 @@ def main(argv):
 
     theCut = inputFile.Get("theCut").GetTitle()
     # theCut += " && Entry$ < 100"
+    # theCut += " && trapENFCal > 0.8 && trapENFCal < 2"
     theCut += " && trapENFCal < 6"
 
     waveTree.Draw(">>elist", theCut, "entrylist")
@@ -37,27 +41,11 @@ def main(argv):
 
     print "Using cut:\n",theCut,"\nFound",nList,"entries passing cuts."
 
-    # fit with one xgauss
     fig = plt.figure(figsize=(13,7), facecolor='w')
-    p0 = plt.subplot2grid((6,8), (0,0), colspan=8, rowspan=3) # wf plot
-    p1 = plt.subplot2grid((6,8), (3,0), colspan=8, rowspan=1) # residual
-    p2 = plt.subplot2grid((6,8), (4,0), colspan=2, rowspan=2) # traces
-    p3 = plt.subplot2grid((6,8), (4,2), colspan=2, rowspan=2)
-    p4 = plt.subplot2grid((6,8), (4,4), colspan=2, rowspan=2)
-    p5 = plt.subplot2grid((6,8), (4,6), colspan=2, rowspan=2)
-
-    # fit with two xgauss's
-    # fig = plt.figure(figsize=(11,7), facecolor='w')
-    # p0 = plt.subplot2grid((8,8), (0,0), colspan=8, rowspan=3) # wf plot
-    # p1 = plt.subplot2grid((8,8), (3,0), colspan=8, rowspan=1) # residual
-    # p2 = plt.subplot2grid((8,8), (4,0), colspan=2, rowspan=2) # traces
-    # p3 = plt.subplot2grid((8,8), (4,2), colspan=2, rowspan=2)
-    # p4 = plt.subplot2grid((8,8), (4,4), colspan=2, rowspan=2)
-    # p5 = plt.subplot2grid((8,8), (4,6), colspan=2, rowspan=2)
-    # p6 = plt.subplot2grid((8,8), (6,0), colspan=2, rowspan=2)
-    # p7 = plt.subplot2grid((8,8), (6,2), colspan=2, rowspan=2)
-    # p8 = plt.subplot2grid((8,8), (6,4), colspan=2, rowspan=2)
-
+    p0 = plt.subplot(111)
+    # p1 = plt.subplot(212)
+    # p0 = plt.subplot2grid((6,8), (0,0), colspan=8, rowspan=3) # wf plot
+    # p1 = plt.subplot2grid((6,8), (3,0), colspan=8, rowspan=3) # mf plot
     if not batMode: plt.show(block=False)
 
     # Loop over events
@@ -88,7 +76,7 @@ def main(argv):
         for iH in hitList:
             run = waveTree.run
             chan = waveTree.channel.at(iH)
-            trapENFCal = waveTree.trapENFCal.at(iH)
+            dataENF = waveTree.trapENFCal.at(iH)
             wf = waveTree.MGTWaveforms.at(iH)
             signal = wl.processWaveform(wf)
             data = signal.GetWaveBLSub()
@@ -117,20 +105,13 @@ def main(argv):
 
             # ================= run waveform fitter =================
 
-            # fit with one xgauss
             amp, mu, sig, tau = dataENM, dataTSMax, 600., -72000.
             floats = np.asarray([amp, mu, sig, tau])
             guess = xgModelWF(dataTS,floats)
             MakeTracesGlobal()
 
-            # fit with two xgauss's
-            # amp, mu, sig, tau, amp2, mu2, sig2 = dataENM, 10000., 600., -72000., 1., 10000., 10.
-            # floats = np.asarray([amp,mu,sig,tau,amp2,mu2,sig2])
-            # guess = xg2ModelWF(dataTS, floats)
-            # MakeTracesGlobal2()
-
-            datas = [dataTS, data, dataNoise] # fit data
-            # datas = [dataTS, data_wlDenoised, denoisedNoise] # fit wavelet denoised
+            # datas = [dataTS, data, dataNoise] # fit data
+            datas = [dataTS, data_wlDenoised, denoisedNoise] # fit wavelet denoised
 
             start = time.clock()
 
@@ -151,80 +132,134 @@ def main(argv):
 
             # numerical gradient - seems trustworthy
             result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=bnd)#, jac=lnLikeGrad)
-            # result = op.minimize(lnLike2, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None)#, jac=lnLikeGrad)
 
             # analytical gradient - BETA, Don't Use!
             # result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None, jac=lnLikeGrad)
 
-            stop = time.clock()
+            fitTime = time.clock() - start
 
             if not result["success"]:
                 print "fit 'fail': ", result["message"]
                 # errorCode[0] = 1
 
-            # fit with one xg
             amp, mu, sig, tau = result["x"]
             floats = [amp, mu, sig, tau]
             fit = xgModelWF(dataTS, floats)
 
-            # fit with two xg's
-            # amp, mu, sig, tau, amp2, mu2, sig2 = result["x"]
-            # floats = [amp, mu, sig, tau, amp2, mu2, sig2]
-            # fit = xg2ModelWF(dataTS, floats)
+            # log-likelihood of this fit
+            fitLL = result["fun"]
 
-            # fitchi2 and finalL
-
-            # calculate fitChi2.  Textbook is (observed - expected)^2 / expected,
+            # chi-square of this fit
+            # Textbook is (observed - expected)^2 / expected,
             # but we'll follow MGWFCalculateChiSquare.cc and do (observed - expected)^2 / NDF.
             # NOTE: we're doing the chi2 against the DATA, though the FIT is to the DENOISED DATA.
-
-            fitChi2 = np.sum(np.square(data - fit)) / len(data)
-
-            finalLL = result["fun"]
-
-            title = "Run %d  evt %d  trapENFCal %.1f  trapENM %.1f  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,trapENFCal,dataENM,amp,mu,sig,tau,fitChi2,stop-start)
-
-            # title = "%d cal %.1f  enm %.1f  amp %.2f  mu %.2f  sig %.2f  tau %.2f\namp2 %.2f  mu2 %.2f  sig2 %.2f  chi2 %.2f  spd %.3f" % (iList,trapENFCal,dataENM,amp,mu,sig,tau,amp2,mu2,sig2,fitChi2,stop-start)
-
-            print title
+            fitChi2 = np.sum(np.square(data-fit)) / len(data)
 
 
             # =======================================================
-            # plots
 
+            # time-domain matched filter
+
+            # make a longer best-fit waveform s/t it can be shifted L/R.
+            matchTS = np.append(dataTS, np.arange(dataTS[-1], dataTS[-1] + 20000, 10)) # add 2000 samples
+            match = xgModelWF(matchTS, [amp, mu+10000., sig, tau]) # shift mu accordingly
+            match = match[::-1]
+
+            # line up the max of the 'match' (flipped wf) with the max of the best-fit wf
+            fitMaxTime = dataTS[np.argmax(fit)]
+            matchMaxTime = matchTS[np.argmax(match)]
+            matchTS = matchTS + (fitMaxTime - matchMaxTime)
+
+            # windowing function
+            window = kaiser(2000, beta=8)
+            wMax = np.argmax(window)
+
+            # line up the window with the max of the match wf.
+            windowTS = matchTS
+            window = np.pad(window, ((len(matchTS)-len(window))/2, (len(matchTS)-len(window))/2), 'constant')
+            windowTS = windowTS + (fitMaxTime - matchMaxTime)
+
+            # resize match wf and the window function to have same # samples as dataTS.
+
+            if matchTS[0] <= dataTS[0] and matchTS[-1] >= dataTS[-1]:
+                idx = np.where((matchTS >= dataTS[0]) & (matchTS <= dataTS[-1]-5))
+                match, matchTS, window = match[idx], matchTS[idx], window[idx]
+
+            elif matchTS[-1] < dataTS[-1]: # too early
+                idx = np.where(matchTS >= dataTS[0])
+                tmpData, tmpWindow = match[idx], window[idx]
+                match = np.pad(tmpData, (0,len(data)-len(tmpData)), 'constant')
+                window = np.pad(tmpWindow, (0,len(data)-len(tmpWindow)), 'constant')
+                matchTS, windowTS = dataTS, dataTS
+
+            elif matchTS[0] > dataTS[0]: # too late
+                idx = np.where(matchTS <= dataTS[-1])
+                tmpData, tmpWindow = match[idx], window[idx]
+                match = np.pad(tmpData, (len(data)-len(tmpData),0), 'constant')
+                window = np.pad(tmpWindow, (len(data)-len(tmpWindow),0), 'constant')
+                matchTS, windowTS = dataTS, dataTS
+
+            # get lowpass and bandpass data
+            B3, A3 = butter(2,1e6/(1e8/2), btype='lowpass')
+            data_lPass = lfilter(B3, A3, data)
+
+            B1,A1 = butter(2, [1e5/(1e8/2),1e6/(1e8/2)], btype='bandpass')
+            data_bPass = lfilter(B1, A1, data)
+
+            # make sure match is same length as data, then compute convolution and parameters
+            matchMax, matchWidth, matchTime = -888, -888, -888
+            smoothMF, windMF = np.zeros(len(dataTS)), np.zeros(len(dataTS))
+            if len(match)!=len(data):
+                print "array mismatch: len match %i  len data %i " % (len(match),len(data))
+                # errorCode[1] = 1
+            else:
+                # compute match filter parameters
+                smoothMF = gaussian_filter(match * data_bPass,sigma=5.)
+                # smoothMF = gaussian_filter(match * data, sigma=5.)
+                matchMax = np.amax(smoothMF)
+                matchTime = matchTS[ np.argmax(smoothMF) ]
+                idx = np.where(smoothMF > matchMax/2.)
+                if len(matchTS[idx]>1): matchWidth = matchTS[idx][-1] - matchTS[idx][0]
+
+
+            # matchMaxKW, matchWidthKW, matchTimeKW = -888, -888, -888
+            # windMF, windData, windMatch = np.zeros(len(dataTS)), np.zeros(len(dataTS)), np.zeros(len(dataTS))
+            # if len(window)!=len(data):
+            #     print "window mismatch: len window %d  len data %d" % (len(window),len(data))
+            #     # errorCode[8]=1
+            # else:
+            #     windData = window * data_lPass
+            #     windMatch = window * match
+            #     windMF = gaussian_filter(windData * windMatch, sigma=5.)
+            #     matchMaxKW = np.amax(windMF)
+            #     matchTimeKW = matchTS[ np.argmax(windMF) ]
+            #     idx = np.where(windMF > matchMaxKW/2.)
+            #     if len(matchTS[idx]>1): matchWidthKW = matchTS[idx][-1] - matchTS[idx][0]
+
+            print "%d  ch %d  tENF %.2f  match max %.2f  width %.2f  time %.2f " % (iList, chan, dataENF, matchMax, matchWidth, matchTime)
+
+            # =======================================================
             if batMode: continue
 
             p0.cla()
-            p0.plot(dataTS,data,color='blue',label='data')
-            # p0.plot(dataTS,data_wlDenoised,color='orange',label='wlDenoised')
-            # p0.plot(dataTS,guess,color='orange',label='xgauss guess')
-            p0.plot(dataTS,fit,color='red',label='xgauss fit')
-            p0.set_title(title)
+            p0.plot(dataTS,data,color='blue',label='data',alpha=0.7)
+            p0.plot(dataTS,fit,color='red',label='bestfit',linewidth=3)
+            p0.plot(dataTS,data_bPass,color='green',label='bpass',linewidth=2)
+            p0.axvline(matchTime,color='orange',label='matchTime',linewidth=2)
+            p0.plot(matchTS,smoothMF,color='magenta',label='smoothMF',linewidth=3)
+            p0.plot(matchTS,match,color='cyan',label='match',linewidth=2)
+            p0.set_xlabel('Time (s)')
+            p0.set_ylabel('Voltage (arb)')
             p0.legend(loc=4)
-            p1.cla()
-            p1.plot(dataTS,data-fit,color='blue',label='residual')
-            p1.legend(loc=1)
-            p2.cla()
-            p2.plot(ampTr[1:],label='amp',color='red')
-            p2.legend(loc=1)
-            p3.cla()
-            p3.plot(muTr[1:],label='mu',color='green')
-            p3.legend(loc=1)
-            p4.cla()
-            p4.plot(sigTr[1:],label='sig',color='blue')
-            p4.legend(loc=1)
-            p5.cla()
-            p5.plot(tauTr[1:],label='tau',color='black')
-            p5.legend(loc=1)
-            # p6.cla()
-            # p6.plot(amp2Tr[1:],label='amp2',color='magenta')
-            # p6.legend(loc=1)
-            # p7.cla()
-            # p7.plot(mu2Tr[1:],label='mu2',color='cyan')
-            # p7.legend(loc=1)
-            # p8.cla()
-            # p8.plot(sig2Tr[1:],label='sig2',color='orange')
-            # p8.legend(loc=1)
+            p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iList,chan,dataENF,matchMax,matchTime,matchWidth))
+
+            # p1.cla()
+            # p1.plot(dataTS, data, color='blue',label='data', alpha=0.5)
+            # p1.plot(dataTS, window*amp, color='red', label='window*fitAmp')
+            # p1.plot(dataTS, windData, color='orange',label='windData')
+            # p1.plot(dataTS, windMatch, color='black',label='windMatch')
+            # p1.plot(dataTS, windMF, color='green', label='windMF')
+            # p1.legend(loc=4)
 
             plt.tight_layout()
             plt.pause(scanSpeed)
@@ -340,47 +375,6 @@ def numGradient(floats, f, datas, epsilon=1e-8):
         ei[k] = 0.0
 
     return grad
-
-def xg2ModelWF(dataTS, floats):
-    """ Crazy idea: try fitting with TWO xGauss's. """
-
-    amp, mu, sig, tau, amp2, mu2, sig2 = floats
-
-    f1 = evalXGaus(dataTS,mu,sig,tau)
-    f2 = amp2 * evalXGaus(dataTS,mu,sig2,tau) # let amp2, mu2, sig2 float
-    ftot = f1 + f2
-
-    # pin max value of function to amp
-    ftot = ftot * 1./np.sum(ftot)
-    xMax = np.argmax(ftot)
-    ftot = ftot * (amp / ftot[xMax])
-
-    return ftot
-
-def MakeTracesGlobal2():
-    """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
-    tmp1 = tmp2 = tmp3 = tmp4 = tmp5 = tmp6 = tmp7 = np.empty([1,])
-    global ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr
-    ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr = tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7
-
-def lnLike2(floats, *datas):
-    """ log-likelihood function: L(A,mu,sig,tau,A2,sig2)
-    """
-    global ampTr, muTr, sigTr, tauTr, amp2Tr, mu2Tr, sig2Tr
-    amp, mu, sig, tau, amp2, mu2, sig2 = floats
-    ampTr = np.append(ampTr, amp)
-    muTr = np.append(muTr, mu)
-    sigTr = np.append(sigTr, sig)
-    tauTr = np.append(tauTr, tau)
-    amp2Tr = np.append(amp2Tr, amp2)
-    mu2Tr = np.append(mu2Tr, mu2)
-    sig2Tr = np.append(sig2Tr, sig2)
-
-    dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
-
-    model = xg2ModelWF(dataTS, floats)
-    lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
-    return lnLike
 
 
 

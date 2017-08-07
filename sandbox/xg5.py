@@ -48,14 +48,12 @@ def main():
     fig = plt.figure(figsize=(13,7), facecolor='w')
     p0 = plt.subplot2grid((6,12), (0,0), colspan=12, rowspan=3) # wf plot
     p1 = plt.subplot2grid((6,12), (3,0), colspan=12, rowspan=1) # residual
-
     p2 = plt.subplot2grid((6,12), (4,0), colspan=2, rowspan=2) # traces
     p3 = plt.subplot2grid((6,12), (4,2), colspan=2, rowspan=2)
     p4 = plt.subplot2grid((6,12), (4,4), colspan=2, rowspan=2)
     p5 = plt.subplot2grid((6,12), (4,6), colspan=2, rowspan=2)
     p6 = plt.subplot2grid((6,12), (4,8), colspan=2, rowspan=2)
     p7 = plt.subplot2grid((6,12), (4,10), colspan=2, rowspan=2)
-
     p0.plot(dataTS,data,color='blue',label='data')
     p0.plot(dataTS,guess,color='orange',label='guess')
     p0.plot(dataTS,fit,color='red',label='2xgauss fit')
@@ -135,25 +133,6 @@ def MakeTracesGlobal():
     global ampTr, muTr, sigTr, tauTr, amp2Tr, sig2Tr
     ampTr, muTr, sigTr, tauTr, amp2Tr, sig2Tr = tmp1, tmp2, tmp3, tmp4, tmp5, tmp6
 
-def lnLike(floats, *datas):
-    """ log-likelihood function: L(A,mu,sig,tau)
-    To make this work with op.minimize, 'datas' is passed in as a tuple (the asterisk),
-    where the original list is the 1st element.
-    """
-    global ampTr, muTr, sigTr, tauTr, amp2Tr, sig2Tr
-    amp, mu, sig, tau, amp2, sig2 = floats
-    ampTr = np.append(ampTr, amp)
-    muTr = np.append(muTr, mu)
-    sigTr = np.append(sigTr, sig)
-    tauTr = np.append(tauTr, tau)
-    amp2Tr = np.append(amp2Tr, amp2)
-    sig2Tr = np.append(sig2Tr, sig2)
-
-    dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
-
-    model = xg2ModelWF(dataTS, floats)
-    lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
-    return lnLike
 
 def lnLikeGrad(floats, *datas):
     """ grad of log-likelihood function: grad(L(A,mu,sig,tau)) """
