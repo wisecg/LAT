@@ -401,19 +401,19 @@ def main(argv):
 
             # L-BGFS-B
             bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau.  Unbounded rn.
-            opts = {'disp': None,   # None, True to print convergence messages
-                    'maxls': 100,   # 20, max line search steps
-                    'iprint': -1,   # -1
-                    'gtol': 1e-08,  # 1e-05
-                    'eps': 1e-08,   # 1e-08
-                    'maxiter': 15000,   # 15000
-                    'ftol': 2.220446049250313e-09,
-                    'maxcor': 10,   # 10
-                    'maxfun': 15000}    # 15000
+            # opts = {'disp': None,   # None, True to print convergence messages
+            #         'maxls': 100,   # 20, max line search steps.  This option doesn't exist on PDSF (scipy 0.15)
+            #         'iprint': -1,   # -1
+            #         'gtol': 1e-08,  # 1e-05
+            #         'eps': 1e-08,   # 1e-08
+            #         'maxiter': 15000,   # 15000
+            #         'ftol': 2.220446049250313e-09,
+            #         'maxcor': 10,   # 10
+            #         'maxfun': 15000}    # 15000
 
             # numerical gradient - seems trustworthy
             start = time.clock()
-            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=opts, bounds=None)
+            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=None, bounds=None)
             fitSpeed = time.clock() - start
 
             if not result["success"]:
