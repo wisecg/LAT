@@ -225,14 +225,14 @@ def main(argv):
             data = signal.GetWaveBLSub()
 
             # Short Trapezoid 
-            shortTrap = wl.trapezoidalFilter(data, rampTime=100, flatTime=150, decayTime=7200.)
+            shortTrap = wl.trapFilter(data, rampTime=100, flatTime=150, decayTime=7200.)
             # Asymmetric Trapezoid
-            asymTrap = wl.asymTrapFilt(data, ramp=200, flat=100, fall=40, padAfter=True)
+            asymTrap = wl.asymTrapFilter(data, ramp=200, flat=100, fall=40, padAfter=True)
             # Standard Energy Trapezoid
-            longTrap = wl.trapezoidalFilter(data, rampTime=400, flatTime=250, decayTime=7200.)
+            longTrap = wl.trapFilter(data, rampTime=400, flatTime=250, decayTime=7200.)
             longTrapTS = np.linspace(0, len(longTrap)*10, len(longTrap))
             # Standard Energy Trapezoid with Baseline padded waveform
-            padTrap = wl.trapezoidalFilter(np.pad(data, (400, 0), mode='symmetric'), rampTime=400, flatTime=250, decayTime=7200.)
+            padTrap = wl.trapFilter(np.pad(data, (400, 0), mode='symmetric'), rampTime=400, flatTime=250, decayTime=7200.)
             padTrapTS = np.linspace(0, len(padTrap)*10, len(padTrap))
 
             longTrapInterp = interpolate.interp1d(longTrapTS, np.asarray(longTrap).squeeze())
@@ -240,8 +240,8 @@ def main(argv):
 
             # Limit the range from 0 to 1400 samples (0 to 14 us) -- using 2.0 threshold like data for now...
             # Returned start times are all in units of ns! 
-            LEt0,_ = wl.walkBackt0(shortTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on short trapezoid
-            Asymt0,_ = wl.walkBackt0(asymTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on asymmetric trapezoid
+            LEt0,_ = wl.walkBackT0(shortTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on short trapezoid
+            Asymt0,_ = wl.walkBackT0(asymTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on asymmetric trapezoid
 
             # Amplitude Evaluation -- Standard
             Max[iH] = np.amax(longTrap) # Basically trapENM
