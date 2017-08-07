@@ -162,6 +162,8 @@ def main(argv):
     pol0, pol1, pol2, pol3 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     fails, fitChi2, fitLL = std.vector("int")(), std.vector("double")(), std.vector("double")()
     wpRiseNoise = std.vector("double")()
+    t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
+    latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "oTree.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = oTree.Branch("waveS1",waveS1), oTree.Branch("waveS2",waveS2)
@@ -177,6 +179,8 @@ def main(argv):
     b23, b24, b25, b26 = oTree.Branch("pol0", pol0), oTree.Branch("pol1", pol1), oTree.Branch("pol2", pol2), oTree.Branch("pol3", pol3)
     b27, b28, b29 = oTree.Branch("fails",fails), oTree.Branch("fitChi2",fitChi2), oTree.Branch("fitLL",fitLL)
     b30 = oTree.Branch("wpRiseNoise",wpRiseNoise)
+    b31, b32, b33, b34 = oTree.Branch("t0_SLE",t0_SLE), oTree.Branch("t0_ALE",t0_ALE), oTree.Branch("lat",lat), oTree.Branch("latF",latF)
+    b35, b36, b37 = oTree.Branch("latAF",latAF), oTree.Branch("latFC",latFC), oTree.Branch("latAFC",latAFC)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -192,7 +196,9 @@ def main(argv):
         "matchMax":[matchMax, b20], "matchWidth":[matchWidth, b21], "matchTime":[matchTime, b22],
         "pol0":[pol0, b23], "pol1":[pol1, b24], "pol2":[pol2, b25], "pol3":[pol3, b26],
         "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29],
-        "wpRiseNoise":[wpRiseNoise,b30]
+        "wpRiseNoise":[wpRiseNoise,b30],
+        "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
+        "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37]
     }
 
 
@@ -302,9 +308,10 @@ def main(argv):
                 return
 
             # Let's start the show
-            # remove first 4 samples b/c of NLC and multisampling bug, in all datasets
+            # remove first 4 samples when we have multisampling
             # remove last 2 samples to get rid of the ADC spike at the end of all wf's.
-            removeNBeg, removeNEnd = 4, 2
+            removeNBeg, removeNEnd = 0, 2
+            if dsNum==6 or dsNum==2: removeNBeg = 4
             signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
             data = signal.GetWaveRaw()
             data_blSub = signal.GetWaveBLSub()
@@ -546,6 +553,7 @@ def main(argv):
             # =========================================================
 
             # new trap filters.
+            # params: t0_SLE, t0_ALE, lat, latF, latAF, latFC, latAFC
 
             # calculate trapezoids
 
@@ -566,8 +574,8 @@ def main(argv):
             # find leading edges (t0 times)
 
             # limit the range from 0 to 14us, and use an ADC threshold of 2.0 (like the data) for now ...
-            t0_SLE,_ = wl.walkBackT0(sTrap, 2., 0, 1000) # (in ns) finds leading edge from short trap
-            t0_ALE,_ = wl.walkBackT0(aTrap, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
+            t0_SLE[iH],_ = wl.walkBackT0(sTrap, 2., 0, 1000) # (in ns) finds leading edge from short trap
+            t0_ALE[iH],_ = wl.walkBackT0(aTrap, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
 
             # standard energy trapezoid w/ a baseline padded waveform
             data_pad = np.pad(data_blSub,(400,0),'symmetric')
@@ -577,25 +585,23 @@ def main(argv):
 
             # calculate energy parameters
             # standard amplitude.  basically trapEM, but w/o NL correction if the input WF doesn't have it.
-            latE = np.amax(eTrap)
+            lat[iH] = np.amax(eTrap)
 
             # standard amplitude with t0 from the shorter traps
             # If either fixed pickoff time (t0) is < 0, use the first sample as the amplitude (energy).
-            latEF = eTrapInterp( np.amax([t0_SLE-7000+4000+2000, 0.]) ) # This should be ~trapEF
-            latEAF = eTrapInterp( np.amax([t0_ALE-7000+4000+2000, 0.]) )
+            latF[iH] = eTrapInterp( np.amax([t0_SLE[iH]-7000+4000+2000, 0.]) ) # This should be ~trapEF
+            latAF[iH] = eTrapInterp( np.amax([t0_ALE[iH]-7000+4000+2000, 0.]) )
 
             # amplitude from padded trapezoid, with t0 from short traps and a correction function
             # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 7.8, p1 ~ -0.45 and -0.66
             # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
 
             # t0_corr = -7000+8000+2000 # no correction
-            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*latE),1000.])
-            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*latE),1000.])
+            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*lat[iH]),1000.])
+            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*lat[iH]),1000.])
 
-            latEFC = pTrapInterp( np.amax([t0_SLE + t0_corr, 0.]) )
-            latEAFC = pTrapInterp( np.amax([t0_ALE + t0A_corr, 0.]) )
-
-            print "trapENM %.2f || latEM %.2f  ef %.2f  eaf %.2f  efc %.2f  eafc %.2f" % (dataENM,latE,latEF,latEAF,latEFC,latEAFC)
+            latFC[iH] = pTrapInterp( np.amax([t0_SLE[iH] + t0_corr, 0.]) )
+            latAFC[iH] = pTrapInterp( np.amax([t0_ALE[iH] + t0A_corr, 0.]) )
 
 
             # ------------------------------------------------------------------------
@@ -729,14 +735,14 @@ def main(argv):
                 p[0].cla()
                 p[0].plot(dataTS, data_blSub, color='blue', label='data')
                 p[0].plot(sTrapTS, sTrap, color='red', label='sTrap')
-                p[0].axvline(t0_SLE, color='red')
+                p[0].axvline(t0_SLE[iH], color='red')
                 p[0].plot(aTrapTS, aTrap, color='orange', label='aTrap')
-                p[0].axvline(t0_ALE, color='orange')
+                p[0].axvline(t0_ALE[iH], color='orange')
                 p[0].plot(eTrapTS, eTrap, color='green', label='eTrap')
-                p[0].axhline(latE,color='green')
+                p[0].axhline(lat[iH],color='green')
                 p[0].plot(pTrapTS, pTrap, color='magenta', label='pTrap')
-                p[0].axhline(latEAFC, color='magenta')
-                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f" % (dataENFCal,dataENM,latE,latEF,latEAF,latEFC,latEAFC))
+                p[0].axhline(latAFC[iH], color='magenta')
+                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH]))
                 p[0].legend(loc='best')
 
             plt.tight_layout()

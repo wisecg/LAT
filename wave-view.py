@@ -36,8 +36,8 @@ def main(argv):
     # waveTree.Add("~/project/lat/latSkimDS1*")
     # inputFile = TFile("~/project/latskim/ds1NoisyRuns.root")
     # inputFile = TFile("~/project/latskim/latSkimDS5_ch626.root")
-    # inputFile = TFile("waveSkimDS5_run21975.root")
-    inputFile = TFile("waveSkimDS2_run15710.root")
+    inputFile = TFile("waveSkimDS5_run21975.root")
+    # inputFile = TFile("waveSkimDS2_run15710.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
@@ -101,7 +101,6 @@ def main(argv):
             wf = waveTree.MGTWaveforms.at(iH)
             signal = wl.processWaveform(wf)
             waveBLSub = signal.GetWaveBLSub()
-            # waveFilt = signal.GetWaveFilt()
             waveTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,energy)
 
