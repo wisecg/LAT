@@ -574,8 +574,8 @@ def main(argv):
             # find leading edges (t0 times)
 
             # limit the range from 0 to 14us, and use an ADC threshold of 2.0 (like the data) for now ...
-            t0_SLE[iH],_ = wl.walkBackT0(sTrap, 2., 0, 1000) # (in ns) finds leading edge from short trap
-            t0_ALE[iH],_ = wl.walkBackT0(aTrap, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
+            t0_SLE[iH],_ = wl.walkBackT0(sTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from short trap
+            t0_ALE[iH],_ = wl.walkBackT0(aTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
 
             # standard energy trapezoid w/ a baseline padded waveform
             data_pad = np.pad(data_blSub,(400,0),'symmetric')

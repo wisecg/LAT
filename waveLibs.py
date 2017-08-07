@@ -328,7 +328,7 @@ def peakdet(v, delta, x = None):
     return np.array(maxtab), np.array(mintab)
 
 
-def walkBackT0(trap, thresh=2., rmin=0, rmax=1000):
+def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
     """
         Leading Edge start time -- walk back from max to threshold
         Times are returned in ns
@@ -344,7 +344,12 @@ def walkBackT0(trap, thresh=2., rmin=0, rmax=1000):
                 triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
             else: triggerTS = (i+1)*10
             break
-    return triggerTS, foundFirst
+    if triggerTS >= timemax:
+        return timemax, foundFirst
+    elif triggerTS <= 0:
+        return 0., foundFirst
+    else:
+        return triggerTS, foundFirst
 
 
 def constFractiont0(trap, frac=0.1, delay=200, thresh=0., rmin=0, rmax=1000):

@@ -240,8 +240,8 @@ def main(argv):
 
             # Limit the range from 0 to 1400 samples (0 to 14 us) -- using 2.0 threshold like data for now...
             # Returned start times are all in units of ns! 
-            LEt0,_ = wl.walkBackT0(shortTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on short trapezoid
-            Asymt0,_ = wl.walkBackT0(asymTrap, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on asymmetric trapezoid
+            LEt0,_ = wl.walkBackT0(shortTrap, timemax=longTrapTS[-1]+7000-4000-2000, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on short trapezoid
+            Asymt0,_ = wl.walkBackT0(asymTrap, timemax=longTrapTS[-1]+7000-4000-2000, thresh=2.0, rmin=0, rmax=1000) # Leading-Edge on asymmetric trapezoid
 
             # Amplitude Evaluation -- Standard
             Max[iH] = np.amax(longTrap) # Basically trapENM
