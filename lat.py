@@ -302,8 +302,9 @@ def main(argv):
                 return
 
             # Let's start the show
-            removeNBeg, removeNEnd = 0, 2
-            if dsNum==2 or dsNum==6: removeNBeg = 3
+            # remove first 4 samples b/c of NLC and multisampling bug, in all datasets
+            # remove last 2 samples to get rid of the ADC spike at the end of all wf's.
+            removeNBeg, removeNEnd = 4, 2
             signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
             data = signal.GetWaveRaw()
             data_blSub = signal.GetWaveBLSub()
@@ -586,9 +587,11 @@ def main(argv):
             # amplitude from padded trapezoid, with t0 from short traps and a correction function
             # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 7.8, p1 ~ -0.45 and -0.66
             # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
+
             # t0_corr = -7000+8000+2000 # no correction
-            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*Max[iH]),1000.])
-            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*Max[iH]),1000.])
+            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*latE),1000.])
+            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*latE),1000.])
+
             latEFC = pTrapInterp( np.amax([t0_SLE + t0_corr, 0.]) )
             latEAFC = pTrapInterp( np.amax([t0_ALE + t0A_corr, 0.]) )
 

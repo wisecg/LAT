@@ -36,7 +36,8 @@ def main(argv):
     # waveTree.Add("~/project/lat/latSkimDS1*")
     # inputFile = TFile("~/project/latskim/ds1NoisyRuns.root")
     # inputFile = TFile("~/project/latskim/latSkimDS5_ch626.root")
-    inputFile = TFile("waveSkimDS5_run21975.root")
+    # inputFile = TFile("waveSkimDS5_run21975.root")
+    inputFile = TFile("waveSkimDS2_run15710.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
@@ -104,34 +105,34 @@ def main(argv):
             waveTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,energy)
 
-            # low pass filter
-            B, A = butter(2,1e6/(1e8/2), btype='lowpass')
-            data_lPass = lfilter(B, A, waveBLSub)
-
-            # wavelet packet denoised waveform
-            wp = pywt.WaveletPacket(waveBLSub, 'db2', 'symmetric', maxlevel=4)
-            nodes = wp.get_level(4, order='freq')
-            waveletYTrans = np.array([n.data for n in nodes],'d')
-            waveletYTrans = abs(waveletYTrans)
-
-            # reconstruct waveform w/ only lowest frequency.
-            new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
-            new_wp['aaa'] = wp['aaa'].data
-            data_wlDenoised = new_wp.reconstruct(update=False)
-
-            # resize in a smart way
-            diff = len(data_wlDenoised) - len(waveBLSub)
-            if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
+            # # low pass filter
+            # B, A = butter(2,1e6/(1e8/2), btype='lowpass')
+            # data_lPass = lfilter(B, A, waveBLSub)
+            #
+            # # wavelet packet denoised waveform
+            # wp = pywt.WaveletPacket(waveBLSub, 'db2', 'symmetric', maxlevel=4)
+            # nodes = wp.get_level(4, order='freq')
+            # waveletYTrans = np.array([n.data for n in nodes],'d')
+            # waveletYTrans = abs(waveletYTrans)
+            #
+            # # reconstruct waveform w/ only lowest frequency.
+            # new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
+            # new_wp['aaa'] = wp['aaa'].data
+            # data_wlDenoised = new_wp.reconstruct(update=False)
+            #
+            # # resize in a smart way
+            # diff = len(data_wlDenoised) - len(waveBLSub)
+            # if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
 
             # fill the figure
             p1.set_ydata(waveBLSub)
             p1.set_xdata(waveTS)
 
-            p2.set_ydata(data_wlDenoised)
-            p2.set_xdata(waveTS)
-
-            p3.set_ydata(data_lPass)
-            p3.set_xdata(waveTS)
+            # p2.set_ydata(data_wlDenoised)
+            # p2.set_xdata(waveTS)
+            #
+            # p3.set_ydata(data_lPass)
+            # p3.set_xdata(waveTS)
 
             xmin, xmax = np.amin(waveTS), np.amax(waveTS)
             ymin, ymax = np.amin(waveBLSub), np.amax(waveBLSub)

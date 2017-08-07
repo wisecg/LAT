@@ -3,47 +3,35 @@
 import sys, imp
 import numpy as np
 import matplotlib.pyplot as plt
-from ROOT import TFile,TTree,TEntryList,MGTWaveform,gDirectory
-from ROOT import MGWFNonLinearityCorrector,
-# from ROOT import GATNonLinearityCorrector
+from ROOT import TFile,TTree,MGTWaveform
 wl = imp.load_source('waveLibs', '../waveLibs.py')
 
 def main(argv):
-    """ GATNonLinearityCorrector is not accessible from pyroot.
-    It makes more sense to correct for NL in wave-skim anyway.
+    """ Just compare two files, one before and one after the NL correction,
+    to verify that it was actually applied.
     """
+    path1 = "waveSkimDS5_run21975_noNLC.root"
+    # path2 = "waveSkimDS5_run21975" # pass 1 NLC
+    path2 = "waveSkimDS5_run21975_NLC2.root" # pass 2 NLC
+
 
     scanSpeed = 0.2
     opt1, opt2 = "", ""
-    intMode, batMode = False, False
+    intMode, printWF, warpMode = False, False, False
     if (len(argv) >= 1): opt1 = argv[0]
     if (len(argv) >= 2): opt2 = argv[1]
     if "-i" in (opt1, opt2):
         intMode = True
         print "Interactive mode selected."
-    if "-b" in (opt1, opt2):
-        batMode = True
-        print "Batch mode selected."
 
-    inputFile = TFile("../waveSkimDS5_run21975.root")
-    waveTree = inputFile.Get("skimTree")
-    print "Found",waveTree.GetEntries(),"input entries."
+    f1 = TFile("../waveSkimDS5_run21975_noNLC.root")
+    t1 = f1.Get("skimTree")
 
-    theCut = inputFile.Get("theCut").GetTitle()
-    # theCut += " && Entry$ < 100"
-    theCut += " && trapENFCal < 6"
+    f2 = TFile("../waveSkimDS5_run21975.root")
+    t2 = f2.Get("skimTree")
 
-    waveTree.Draw(">>elist", theCut, "entrylist")
-    elist = gDirectory.Get("elist")
-    waveTree.SetEntryList(elist)
-    nList = elist.GetN()
-
-    print "Using cut:\n",theCut,"\nFound",nList,"entries passing cuts."
-
-    fig = plt.figure(figsize=(13,7), facecolor='w')
-    p0 = plt.subplot(111)
-
-    if not batMode: plt.show(block=False)
+    fig = plt.figure(figsize=(9,6),facecolor='w')
+    plt.show(block=False)
 
     # Loop over events
     iList = -1
@@ -54,42 +42,47 @@ def main(argv):
             if value=='q': break
             if value=='p': iList -= 2  # previous
             if (value.isdigit()): iList = int(value) # go to entry
-        if iList >= elist.GetN(): break
+        if iList >= t1.GetEntries(): break
 
-        entry = waveTree.GetEntryNumber(iList);
-        waveTree.LoadTree(entry)
-        waveTree.GetEntry(entry)
-        nChans = waveTree.channel.size()
-        nWFs = waveTree.MGTWaveforms.size()
-        if (nWFs==0):
-            print "Error - nWFs:",nWFs,"nChans",nChans
-            continue
-        numPass = waveTree.Draw("channel",theCut,"GOFF",1,iList)
-        chans = waveTree.GetV1()
-        chanList = list(set(int(chans[n]) for n in xrange(numPass)))
+        t1.GetEntry(iList)
+        n1 = t1.channel.size()
 
-        # Loop over hits passing cuts
-        hitList = (iH for iH in xrange(nChans) if waveTree.channel.at(iH) in chanList)  # a 'generator expression'
-        for iH in hitList:
-            run = waveTree.run
-            chan = waveTree.channel.at(iH)
-            trapENFCal = waveTree.trapENFCal.at(iH)
-            wf = waveTree.MGTWaveforms.at(iH)
-            signal = wl.processWaveform(wf)
-            data = signal.GetWaveBLSub()
-            dataTS = signal.GetTS()
-            _,dataNoise = signal.GetBaseNoise()
-            dataTSMax = waveTree.trapENMSample.at(iH)*10. - 4000
-            dataENM = waveTree.trapENM.at(iH)
+        t2.GetEntry(iList)
+        n2 = t2.channel.size()
 
+        if n1!=n2:
+            print "iList",iList,"entries don't match"
+            return
 
+        for iH in range(n1):
 
+            chan1 = t1.channel.at(iH)
+            wf1 = t1.MGTWaveforms.at(iH)
+            s1 = wl.processWaveform(wf1)
+            data1 = s1.GetWaveRaw()
+            dataTS1 = s1.GetTS()
 
-            # plots
-            p0.cla()
-            p0.plot(dataTS,data,color='blue')
+            chan2 = t2.channel.at(iH)
+            wf2 = t2.MGTWaveforms.at(iH)
+            s2 = wl.processWaveform(wf2)
+            data2 = s2.GetWaveRaw()
+            dataTS2 = s2.GetTS()
 
+            print "chan1 %d  chan2 %d" % (chan1, chan2)
+
+            print "arrays equal? ",np.array_equal(data1[3:],data2[3:])
+
+            # diffs = data1 - data2
+            # idx = np.where(abs(diffs)>0)
+            # np.set_printoptions(threshold='nan')
+            # print diffs
+
+            plt.cla()
+            plt.plot(dataTS1,data1,color='blue',label='no NLC')
+            plt.plot(dataTS2,data2,color='red',label='with NLC')
+            plt.legend(loc='best')
             plt.tight_layout()
+
             plt.pause(scanSpeed)
 
 
