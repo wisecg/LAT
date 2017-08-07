@@ -89,7 +89,7 @@ def main(argv):
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
-    gatTree, bltTree, oTree = TTree(), TTree(), TTree()
+    gatTree, bltTree, oT = TTree(), TTree(), TTree()
     theCut, inPath, outPath = "", "", ""
 
     # Set input and output files
@@ -128,7 +128,8 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    theCut += " && trapENFCal < 6 && trapENFCal > 1"
+    # theCut += " && trapENFCal < 6 && trapENFCal > 1"
+    theCut += " && trapENFCal > 50 && avse < -1"
     print "WARNING: Custom cut in use!"
     # ============================================================
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -143,9 +144,9 @@ def main(argv):
     if batMode and not intMode:
         outFile = TFile(outPath, "RECREATE")
         print "Attempting tree copy to",outPath
-        oTree = gatTree.CopyTree("")
-        oTree.Write()
-        print "Wrote",oTree.GetEntries(),"entries."
+        oT = gatTree.CopyTree("")
+        oT.Write()
+        print "Wrote",oT.GetEntries(),"entries."
         cutUsed = TNamed("theCut",theCut)
         cutUsed.Write()
 
@@ -164,23 +165,25 @@ def main(argv):
     wpRiseNoise = std.vector("double")()
     t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    nMS = std.vector("int")()
 
-    # It's not possible to put the "oTree.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
-    b1, b2 = oTree.Branch("waveS1",waveS1), oTree.Branch("waveS2",waveS2)
-    b3, b4, b5 = oTree.Branch("waveS3",waveS3), oTree.Branch("waveS4",waveS4), oTree.Branch("waveS5",waveS5)
-    b6 = oTree.Branch("tOffset",tOffset)
-    b7, b8 = oTree.Branch("bcMax",bcMax), oTree.Branch("bcMin",bcMin)
-    b9, b10 = oTree.Branch("bandMax",bandMax), oTree.Branch("bandTime",bandTime)
-    b11, b12, b13 = oTree.Branch("den10",den10), oTree.Branch("den50",den50), oTree.Branch("den90",den90)
-    b14 = oTree.Branch("oppie",oppie)
-    b15, b16, b17 = oTree.Branch("fitMu", fitMu), oTree.Branch("fitAmp", fitAmp), oTree.Branch("fitSlo", fitSlo)
-    b18, b19 = oTree.Branch("fitTau",fitTau), oTree.Branch("fitBL",fitBL)
-    b20, b21, b22 = oTree.Branch("matchMax", matchMax), oTree.Branch("matchWidth", matchWidth), oTree.Branch("matchTime", matchTime)
-    b23, b24, b25, b26 = oTree.Branch("pol0", pol0), oTree.Branch("pol1", pol1), oTree.Branch("pol2", pol2), oTree.Branch("pol3", pol3)
-    b27, b28, b29 = oTree.Branch("fails",fails), oTree.Branch("fitChi2",fitChi2), oTree.Branch("fitLL",fitLL)
-    b30 = oTree.Branch("wpRiseNoise",wpRiseNoise)
-    b31, b32, b33, b34 = oTree.Branch("t0_SLE",t0_SLE), oTree.Branch("t0_ALE",t0_ALE), oTree.Branch("lat",lat), oTree.Branch("latF",latF)
-    b35, b36, b37 = oTree.Branch("latAF",latAF), oTree.Branch("latFC",latFC), oTree.Branch("latAFC",latAFC)
+    # It's not possible to put the "oT.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
+    b1, b2 = oT.Branch("waveS1",waveS1), oT.Branch("waveS2",waveS2)
+    b3, b4, b5 = oT.Branch("waveS3",waveS3), oT.Branch("waveS4",waveS4), oT.Branch("waveS5",waveS5)
+    b6 = oT.Branch("tOffset",tOffset)
+    b7, b8 = oT.Branch("bcMax",bcMax), oT.Branch("bcMin",bcMin)
+    b9, b10 = oT.Branch("bandMax",bandMax), oT.Branch("bandTime",bandTime)
+    b11, b12, b13 = oT.Branch("den10",den10), oT.Branch("den50",den50), oT.Branch("den90",den90)
+    b14 = oT.Branch("oppie",oppie)
+    b15, b16, b17 = oT.Branch("fitMu", fitMu), oT.Branch("fitAmp", fitAmp), oT.Branch("fitSlo", fitSlo)
+    b18, b19 = oT.Branch("fitTau",fitTau), oT.Branch("fitBL",fitBL)
+    b20, b21, b22 = oT.Branch("matchMax", matchMax), oT.Branch("matchWidth", matchWidth), oT.Branch("matchTime", matchTime)
+    b23, b24, b25, b26 = oT.Branch("pol0", pol0), oT.Branch("pol1", pol1), oT.Branch("pol2", pol2), oT.Branch("pol3", pol3)
+    b27, b28, b29 = oT.Branch("fails",fails), oT.Branch("fitChi2",fitChi2), oT.Branch("fitLL",fitLL)
+    b30 = oT.Branch("wpRiseNoise",wpRiseNoise)
+    b31, b32, b33, b34 = oT.Branch("t0_SLE",t0_SLE), oT.Branch("t0_ALE",t0_ALE), oT.Branch("lat",lat), oT.Branch("latF",latF)
+    b35, b36, b37 = oT.Branch("latAF",latAF), oT.Branch("latFC",latFC), oT.Branch("latAFC",latAFC)
+    b38 = oT.Branch("nMS",nMS)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -198,7 +201,8 @@ def main(argv):
         "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29],
         "wpRiseNoise":[wpRiseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
-        "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37]
+        "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
+        "nMS":[nMS,b38]
     }
 
 
@@ -206,7 +210,7 @@ def main(argv):
     fig = plt.figure(figsize=(12,7), facecolor='w')
     p = []
     for i in range(1,8): p.append(plt.subplot())
-    if plotNum==0 or plotNum==7:
+    if plotNum==0 or plotNum==7 or plotNum==8:
         p[0] = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
     elif plotNum==1 or plotNum==2:
         p[0] = plt.subplot(211)  # 1-wavelet, 2-time points, bandpass filters, tail slope
@@ -356,6 +360,7 @@ def main(argv):
             B1,A1 = butter(2, [1e5/(1e8/2),1e6/(1e8/2)], btype='bandpass')
             data_bPass = lfilter(B1, A1, data_blSub)
 
+            # used in the multisite tagger
             B2, A2 = butter(1, 0.08)
             data_filt = filtfilt(B2, A2, data_blSub)
             data_filtDeriv = wl.wfDerivative(data_filt)
@@ -401,15 +406,6 @@ def main(argv):
 
             # L-BGFS-B
             bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau.  Unbounded rn.
-            # opts = {'disp': None,   # None, True to print convergence messages
-            #         'maxls': 100,   # 20, max line search steps.  This option doesn't exist on PDSF (scipy 0.15)
-            #         'iprint': -1,   # -1
-            #         'gtol': 1e-08,  # 1e-05
-            #         'eps': 1e-08,   # 1e-08
-            #         'maxiter': 15000,   # 15000
-            #         'ftol': 2.220446049250313e-09,
-            #         'maxcor': 10,   # 10
-            #         'maxfun': 15000}    # 15000
 
             # numerical gradient - seems trustworthy
             start = time.clock()
@@ -604,6 +600,31 @@ def main(argv):
             latAFC[iH] = pTrapInterp( np.amax([t0_ALE[iH] + t0A_corr, 0.]) )
 
 
+            # =========================================================
+
+            # the genius multisite event tagger - plot 8
+
+            # decide a threshold
+            dIdx = np.argmax(data_filtDeriv)
+            dMax = data_filtDeriv[dIdx]
+            dRMS,_,_ = wl.baselineParameters(data_filtDeriv)
+            # msThresh = np.amax([dMax * .2, dRMS * 5.])
+            # msThresh = dMax * .15
+            msThresh = 50.  # I don't know.  this seems like a good value
+
+            # run peak detect algorithm
+            maxtab,_ = wl.peakdet(data_filtDeriv, msThresh)
+
+            # profit
+            msList = []
+            for iMax in range(len(maxtab)):
+                idx = int(maxtab[iMax][0])
+                val = maxtab[iMax][1]
+                msList.append(dataTS[idx])
+                print "%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh)
+            nMS[iH] = len(maxtab)
+
+
             # ------------------------------------------------------------------------
             # End waveform processing.
 
@@ -635,7 +656,6 @@ def main(argv):
                 p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
                 p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
                 p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise[iH]))
-
 
             if plotNum==2: # time points, bandpass filters, tail slope
                 p[0].cla()
@@ -745,6 +765,14 @@ def main(argv):
                 p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH]))
                 p[0].legend(loc='best')
 
+            if plotNum==8: # multisite tag plot
+                p[0].cla()
+                p[0].plot(dataTS, data_blSub, color='blue', label='data')
+                p[0].plot(dataTS, data_filtDeriv, color='red', label='filtDeriv')
+                for mse in msList: p[0].axvline(mse, color='green')
+                p[0].axhline(msThresh,color='red')
+                p[0].legend()
+
             plt.tight_layout()
             plt.pause(0.000001)
             # ------------------------------------------------------------------------
@@ -754,13 +782,13 @@ def main(argv):
             for key in brDict:
                 brDict[key][1].Fill()
             if iList%5000 == 0 and iList!=0:
-                oTree.Write("",TObject.kOverwrite)
+                oT.Write("",TObject.kOverwrite)
                 print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
 
     # End loop over events
     if batMode and not intMode:
-        oTree.Write("",TObject.kOverwrite)
-        print "Wrote",oTree.GetBranch("channel").GetEntries(),"entries in the copied tree,"
+        oT.Write("",TObject.kOverwrite)
+        print "Wrote",oT.GetBranch("channel").GetEntries(),"entries in the copied tree,"
         print "and wrote",b1.GetEntries(),"entries in the new branches."
 
     stopT = time.clock()

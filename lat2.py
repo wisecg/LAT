@@ -30,6 +30,8 @@ def main(argv):
 
     if len(argv)==0: return
     for i,opt in enumerate(argv):
+        if opt == "-cal":
+            cal = True
         if opt == "-r":
             rangeMode, dsNum, subNum = True, int(argv[i+1]), int(argv[i+2])
             print "Scanning DS-%d sub-range %d" % (dsNum, subNum)
