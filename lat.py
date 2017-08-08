@@ -89,7 +89,7 @@ def main(argv):
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
-    gatTree, bltTree, oT = TTree(), TTree(), TTree()
+    gatTree, bltTree, out = TTree(), TTree(), TTree()
     theCut, inPath, outPath = "", "", ""
 
     # Set input and output files
@@ -145,8 +145,8 @@ def main(argv):
         outFile = TFile(outPath, "RECREATE")
         print "Attempting tree copy to",outPath
         oT = gatTree.CopyTree("")
-        oT.Write()
-        print "Wrote",oT.GetEntries(),"entries."
+        out.Write()
+        print "Wrote",out.GetEntries(),"entries."
         cutUsed = TNamed("theCut",theCut)
         cutUsed.Write()
 
@@ -167,23 +167,23 @@ def main(argv):
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
 
-    # It's not possible to put the "oT.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
-    b1, b2 = oT.Branch("waveS1",waveS1), oT.Branch("waveS2",waveS2)
-    b3, b4, b5 = oT.Branch("waveS3",waveS3), oT.Branch("waveS4",waveS4), oT.Branch("waveS5",waveS5)
-    b6 = oT.Branch("tOffset",tOffset)
-    b7, b8 = oT.Branch("bcMax",bcMax), oT.Branch("bcMin",bcMin)
-    b9, b10 = oT.Branch("bandMax",bandMax), oT.Branch("bandTime",bandTime)
-    b11, b12, b13 = oT.Branch("den10",den10), oT.Branch("den50",den50), oT.Branch("den90",den90)
-    b14 = oT.Branch("oppie",oppie)
-    b15, b16, b17 = oT.Branch("fitMu", fitMu), oT.Branch("fitAmp", fitAmp), oT.Branch("fitSlo", fitSlo)
-    b18, b19 = oT.Branch("fitTau",fitTau), oT.Branch("fitBL",fitBL)
-    b20, b21, b22 = oT.Branch("matchMax", matchMax), oT.Branch("matchWidth", matchWidth), oT.Branch("matchTime", matchTime)
-    b23, b24, b25, b26 = oT.Branch("pol0", pol0), oT.Branch("pol1", pol1), oT.Branch("pol2", pol2), oT.Branch("pol3", pol3)
-    b27, b28, b29 = oT.Branch("fails",fails), oT.Branch("fitChi2",fitChi2), oT.Branch("fitLL",fitLL)
-    b30 = oT.Branch("wpRiseNoise",wpRiseNoise)
-    b31, b32, b33, b34 = oT.Branch("t0_SLE",t0_SLE), oT.Branch("t0_ALE",t0_ALE), oT.Branch("lat",lat), oT.Branch("latF",latF)
-    b35, b36, b37 = oT.Branch("latAF",latAF), oT.Branch("latFC",latFC), oT.Branch("latAFC",latAFC)
-    b38 = oT.Branch("nMS",nMS)
+    # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
+    b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
+    b3, b4, b5 = out.Branch("waveS3",waveS3), out.Branch("waveS4",waveS4), out.Branch("waveS5",waveS5)
+    b6 = out.Branch("tOffset",tOffset)
+    b7, b8 = out.Branch("bcMax",bcMax), out.Branch("bcMin",bcMin)
+    b9, b10 = out.Branch("bandMax",bandMax), out.Branch("bandTime",bandTime)
+    b11, b12, b13 = out.Branch("den10",den10), out.Branch("den50",den50), out.Branch("den90",den90)
+    b14 = out.Branch("oppie",oppie)
+    b15, b16, b17 = out.Branch("fitMu", fitMu), out.Branch("fitAmp", fitAmp), out.Branch("fitSlo", fitSlo)
+    b18, b19 = out.Branch("fitTau",fitTau), out.Branch("fitBL",fitBL)
+    b20, b21, b22 = out.Branch("matchMax", matchMax), out.Branch("matchWidth", matchWidth), out.Branch("matchTime", matchTime)
+    b23, b24, b25, b26 = out.Branch("pol0", pol0), out.Branch("pol1", pol1), out.Branch("pol2", pol2), out.Branch("pol3", pol3)
+    b27, b28, b29 = out.Branch("fails",fails), out.Branch("fitChi2",fitChi2), out.Branch("fitLL",fitLL)
+    b30 = out.Branch("wpRiseNoise",wpRiseNoise)
+    b31, b32, b33, b34 = out.Branch("t0_SLE",t0_SLE), out.Branch("t0_ALE",t0_ALE), out.Branch("lat",lat), out.Branch("latF",latF)
+    b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
+    b38 = out.Branch("nMS",nMS)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -782,13 +782,13 @@ def main(argv):
             for key in brDict:
                 brDict[key][1].Fill()
             if iList%5000 == 0 and iList!=0:
-                oT.Write("",TObject.kOverwrite)
+                out.Write("",TObject.kOverwrite)
                 print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
 
     # End loop over events
     if batMode and not intMode:
-        oT.Write("",TObject.kOverwrite)
-        print "Wrote",oT.GetBranch("channel").GetEntries(),"entries in the copied tree,"
+        out.Write("",TObject.kOverwrite)
+        print "Wrote",out.GetBranch("channel").GetEntries(),"entries in the copied tree,"
         print "and wrote",b1.GetEntries(),"entries in the new branches."
 
     stopT = time.clock()
