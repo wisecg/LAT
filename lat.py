@@ -126,12 +126,13 @@ def main(argv):
     # ============================================================
     # Set cuts (maybe someday they should be read in ...)
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
-    # theCut += " && Entry$ < 50"
+    theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
     # theCut += " && trapENFCal < 6 && trapENFCal > 1"
-    theCut += " && trapENFCal > 50 && avse < -1"
+    # theCut += " && trapENFCal > 50 && avse < -1"
     print "WARNING: Custom cut in use!"
     # ============================================================
+
     gatTree.Draw(">>elist", theCut, "entrylist")
     elist = gDirectory.Get("elist")
     gatTree.SetEntryList(elist)
@@ -144,7 +145,7 @@ def main(argv):
     if batMode and not intMode:
         outFile = TFile(outPath, "RECREATE")
         print "Attempting tree copy to",outPath
-        oT = gatTree.CopyTree("")
+        out = gatTree.CopyTree("")
         out.Write()
         print "Wrote",out.GetEntries(),"entries."
         cutUsed = TNamed("theCut",theCut)
@@ -621,7 +622,7 @@ def main(argv):
                 idx = int(maxtab[iMax][0])
                 val = maxtab[iMax][1]
                 msList.append(dataTS[idx])
-                print "%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh)
+                # print "%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh)
             nMS[iH] = len(maxtab)
 
 

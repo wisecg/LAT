@@ -336,6 +336,17 @@ def peakdet(v, delta, x = None):
     return np.array(maxtab), np.array(mintab)
 
 
+def GetPeaks(hist, xvals, thresh):
+    """ Wrapper for peakdet function. Returns two numpy arrays."""
+    scan,_ = peakdet(hist, thresh)
+    pk1, ct1 = [], []
+    for i in range(len(scan)):
+        pk1.append( xvals[ int(scan[i][0]) ] )
+        ct1.append( scan[i][1] )
+    pk1, ct1 = np.asarray(pk1), np.asarray(ct1)
+    return pk1, ct1
+
+
 def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
     """
         Leading Edge start time -- walk back from max to threshold
