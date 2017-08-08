@@ -23,6 +23,7 @@ def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle=""):
     if yTitle!="": h1.GetYaxis().SetTitle(yTitle)
     return h1
 
+
 def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle=""):
     nameStr = str(random.uniform(1.,2.))
     h2 = TH2D(nameStr,nameStr,xbins,xlo,xhi,ybins,ylo,yhi)
@@ -30,6 +31,7 @@ def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle=""):
     if xTitle!="": h2.GetXaxis().SetTitle(xTitle)
     if yTitle!="": h2.GetYaxis().SetTitle(yTitle)
     return h2
+
 
 def Get1DBins(hist,xmin,xmax):
     bx1 = hist.FindBin(xmin)
@@ -44,6 +46,7 @@ def Get2DBins(hist,xmin,xmax,ymin,ymax):
     by2 = hist.GetYaxis().FindBin(ymax)
     return bx1, bx2, by1, by2
 
+
 def npTH1D(hist,opt=""):
     bins = hist.GetNbinsX()
     xArr = np.zeros(bins)
@@ -55,6 +58,7 @@ def npTH1D(hist,opt=""):
         yArr[i] = hist.GetBinContent(i)
     return xArr,yArr
 
+
 def integFunc(arr):
     integ = np.zeros(len(arr))
     sum = 0
@@ -62,6 +66,7 @@ def integFunc(arr):
         sum+=arr[i]
         integ[i] = sum
     return integ
+
 
 def GetIntegralPoints(hist):
     x_h0, y_h0 = npTH1D(hist)
@@ -81,9 +86,11 @@ def GetIntegralPoints(hist):
 
     return val99,val95,val01,val05,val90
 
+
 def SetPars(f1,parList):
     for idx, par in enumerate(parList):
         f1.SetParameter(idx,par)
+
 
 def GetPars(f1):
     parList = []
@@ -245,6 +252,7 @@ def MGTWFFromNpArray(npArr):
     mgtwf.SetData(vec)
     return mgtwf
 
+
 def generateSimBaseline():
     """ Generates a fake baseline from a force triggered power spectrum, based off of WC's thesis """
     from ROOT import TFile,MGTWaveformFT
@@ -274,21 +282,21 @@ def peakdet(v, delta, x = None):
     Returns two arrays
 
     function [maxtab, mintab]=peakdet(v, delta, x)
-    %PEAKDET Detect peaks in a vector
-    %        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
-    %        maxima and minima ("peaks") in the vector V.
-    %        MAXTAB and MINTAB consists of two columns. Column 1
-    %        contains indices in V, and column 2 the found values.
-    %
-    %        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
-    %        in MAXTAB and MINTAB are replaced with the corresponding
-    %        X-values.
-    %
-    %        A point is considered a maximum peak if it has the maximal
-    %        value, and was preceded (to the left) by a value lower by
-    %        DELTA.
-    % Eli Billauer, 3.4.05 (Explicitly not copyrighted).
-    % This function is released to the public domain; Any use is allowed.
+    # PEAKDET Detect peaks in a vector
+    #        [MAXTAB, MINTAB] = PEAKDET(V, DELTA) finds the local
+    #        maxima and minima ("peaks") in the vector V.
+    #        MAXTAB and MINTAB consists of two columns. Column 1
+    #        contains indices in V, and column 2 the found values.
+    #
+    #        With [MAXTAB, MINTAB] = PEAKDET(V, DELTA, X) the indices
+    #        in MAXTAB and MINTAB are replaced with the corresponding
+    #        X-values.
+    #
+    #        A point is considered a maximum peak if it has the maximal
+    #        value, and was preceded (to the left) by a value lower by
+    #        DELTA.
+    # Eli Billauer, 3.4.05 (Explicitly not copyrighted).
+    # This function is released to the public domain; Any use is allowed.
     """
     maxtab, mintab = [], []
 
@@ -392,53 +400,6 @@ def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
     return trap
 
 
-"""
-# This works FINE on my machine but not on PDSF.  Damn you, PDSF.
-def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
-    # Use pysiggen to generate a waveform w/ arb. ADC amplitude. Thanks Ben.
-
-    wf_length = samp # in tens of ns.  This sets how long a wf you will simulate
-    # r ranges from 0 to detector.detector_radius
-    # phi ranges from 0 to np.pi/4                (Clint: Limit is the pcrad, set below)
-    # z ranges from 0 to detector.detector_length (Clint: Limit is the pclen, set below)
-    # energy sets the waveform amplitude
-    # t0 sets the start point of the waveform
-    # smooth is a gaussian smoothing parameter
-    # default: r, phi, z, energy, t0, smooth = (15, np.pi/8, 15, 80, 10,15)
-
-    # Probably don't mess around with anything in this block
-    fitSamples = 1000 # ask me if you think you need to change this (you almost definitely don't)
-    timeStepSize = 1 # don't change this, you'll break everything
-    # Create a detector model (don't change any of this)
-    detName = "./data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05,2.5, 1.65)
-    detector =  Detector(detName, timeStep=timeStepSize, numSteps=fitSamples*10./timeStepSize, maxWfOutputLength=5000)
-    detector.LoadFieldsGrad("./data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
-    # Sets the impurity gradient.  Don't bother changing this
-    detector.SetFieldsGradIdx(0)
-
-    # First 3 params control the preamp shaping.
-    # The 4th param is the RC decay, you can change that if you want.
-    # params 5 and 6 are set not to do anything (theyre for the 2 rc constant decay model)
-    rc_decay = 72.6 #us
-    detector.SetTransferFunction(50, -0.814072377576, 0.82162729751, rc_decay, 1, 1)
-
-    wf_notrap = np.copy(detector.MakeSimWaveform(r, phi, z, ene, t0, wf_length, h_smoothing=smooth))
-    timesteps = np.arange(0, wf_length) * 10 # makes it so your plot is in ns
-
-    # Add charge trapping
-    # trap_constants = [8, 28,288] # these are in microseconds
-    # trap_constant_colors = ["red", "blue", "purple"]
-    # for (idx, trap_rc) in enumerate(trap_constants):
-    #     detector.trapping_rc = trap_rc
-    #     wf = np.copy(detector.MakeSimWaveform(r, phi, z, ene, t0, wf_length, h_smoothing=smooth))
-    #     ax0.plot(timesteps, wf, color = trap_constant_colors[idx],  label = "%0.1f us trapping" % trap_rc )
-    #     ax1.plot(timesteps, wf_notrap - wf, color = trap_constant_colors[idx])
-    #     print "amplitude diff: %f" % ( (np.amax(wf_notrap) - np.amax(wf)) /  np.amax(wf_notrap) )
-
-    return wf_notrap, timesteps
-"""
-
-
 class processWaveform:
     """ Handy class for auto-processing waveforms into various numpy arrays. """
     def __init__(self, wave, remLo=0, remHi=2):
@@ -510,3 +471,48 @@ class latBranch:
     # # fill the branch at event level
     # bWaveS0.Fill()
 
+"""
+def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
+    # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
+    # Use pysiggen to generate a waveform w/ arb. ADC amplitude. Thanks Ben.
+
+    wf_length = samp # in tens of ns.  This sets how long a wf you will simulate
+    # r ranges from 0 to detector.detector_radius
+    # phi ranges from 0 to np.pi/4                (Clint: Limit is the pcrad, set below)
+    # z ranges from 0 to detector.detector_length (Clint: Limit is the pclen, set below)
+    # energy sets the waveform amplitude
+    # t0 sets the start point of the waveform
+    # smooth is a gaussian smoothing parameter
+    # default: r, phi, z, energy, t0, smooth = (15, np.pi/8, 15, 80, 10,15)
+
+    # Probably don't mess around with anything in this block
+    fitSamples = 1000 # ask me if you think you need to change this (you almost definitely don't)
+    timeStepSize = 1 # don't change this, you'll break everything
+    # Create a detector model (don't change any of this)
+    detName = "./data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05,2.5, 1.65)
+    detector =  Detector(detName, timeStep=timeStepSize, numSteps=fitSamples*10./timeStepSize, maxWfOutputLength=5000)
+    detector.LoadFieldsGrad("./data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
+    # Sets the impurity gradient.  Don't bother changing this
+    detector.SetFieldsGradIdx(0)
+
+    # First 3 params control the preamp shaping.
+    # The 4th param is the RC decay, you can change that if you want.
+    # params 5 and 6 are set not to do anything (theyre for the 2 rc constant decay model)
+    rc_decay = 72.6 #us
+    detector.SetTransferFunction(50, -0.814072377576, 0.82162729751, rc_decay, 1, 1)
+
+    wf_notrap = np.copy(detector.MakeSimWaveform(r, phi, z, ene, t0, wf_length, h_smoothing=smooth))
+    timesteps = np.arange(0, wf_length) * 10 # makes it so your plot is in ns
+
+    # Add charge trapping
+    # trap_constants = [8, 28,288] # these are in microseconds
+    # trap_constant_colors = ["red", "blue", "purple"]
+    # for (idx, trap_rc) in enumerate(trap_constants):
+    #     detector.trapping_rc = trap_rc
+    #     wf = np.copy(detector.MakeSimWaveform(r, phi, z, ene, t0, wf_length, h_smoothing=smooth))
+    #     ax0.plot(timesteps, wf, color = trap_constant_colors[idx],  label = "%0.1f us trapping" % trap_rc )
+    #     ax1.plot(timesteps, wf_notrap - wf, color = trap_constant_colors[idx])
+    #     print "amplitude diff: %f" % ( (np.amax(wf_notrap) - np.amax(wf)) /  np.amax(wf_notrap) )
+
+    return wf_notrap, timesteps
+"""
