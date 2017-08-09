@@ -126,11 +126,11 @@ def main(argv):
     # ============================================================
     # Set cuts (maybe someday they should be read in ...)
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
-    theCut += " && Entry$ < 50"
+    # theCut += " && Entry$ < 50"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
     # theCut += " && trapENFCal < 6 && trapENFCal > 1"
     # theCut += " && trapENFCal > 50 && avse < -1"
-    print "WARNING: Custom cut in use!"
+    # print "WARNING: Custom cut in use!"
     # ============================================================
 
     gatTree.Draw(">>elist", theCut, "entrylist")
