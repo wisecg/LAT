@@ -355,7 +355,7 @@ def runLAT(dsNum, subNum=None, runNum=None):
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,subNum,inFile,outFile))
 
     elif subNum==None: # -run
-        files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,run),runNum)
+        files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,runNum,inFile,outFile))
