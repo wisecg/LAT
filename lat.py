@@ -653,7 +653,7 @@ def main(argv):
                 p[0].legend(loc='best')
 
                 p[1].cla()
-                p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='jet')
+                p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
                 p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
                 p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
                 p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise[iH]))
