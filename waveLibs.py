@@ -347,6 +347,11 @@ def GetPeaks(hist, xvals, thresh):
     return pk1, ct1
 
 
+def peakModel238(ene,amp,mu,sig,c1):
+    """ Gaussian plus a flat background component. """
+    return gauss_function(ene,amp,mu,sig) + c1
+
+
 def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
     """
         Leading Edge start time -- walk back from max to threshold

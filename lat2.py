@@ -4,9 +4,10 @@
 
 Calibrate energy parameters in LAT data.
 
-Two modes:
-    -cal : Scans a calibration range and updates parameters in a pandas file.
-    -upd : Updates an input file with data from the calibration database file.
+Modes:
+    -cal  : Scans a calibration range and updates parameters in a pandas file.
+    -upd  : Updates an input file with data from the calibration database file.
+    -test : IDEA: Quick check if a given range has enough events in each channel to calibrate.
 
 v1: 07 Aug 2017
 
@@ -18,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import DataSetInfo as ds
 import waveLibs as wl
-from ROOT import TFile, TTree
+from ROOT import gROOT, TFile, TTree
 from scipy.optimize import curve_fit
 
 homePath = os.path.expanduser('~')
@@ -30,6 +31,7 @@ def main(argv):
     print "========================================"
     print "LAT2 started:",time.strftime('%X %x %Z')
     startT = time.clock()
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     dsNum, subNum, runNum = -1, -1, -1
     fCal, fUpd, fSub, fRun = 0,0,0,0
@@ -74,6 +76,11 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths):
     # iPar = ["trapENM","fitAmp","lat","latFC","latAFC"]
     oPar = ["trapENMCal","fitE","latE","latFCE","latAFCE"]
 
+    # keep a figure
+    fig = plt.figure(figsize=(9,6), facecolor='w')
+    p0 = plt.subplot(111)
+    plt.show(block=False)
+
     # loop over channels
     for ch in ds.DetID[dsNum]:
 
@@ -86,61 +93,72 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths):
         if n==0:
             print "ch %d, no events found." % ch
             continue
-
         vec = latTree.GetV1()
         lst = []
         for i in range(n): lst.append(vec[i])
         arr = np.asarray(lst)
-        print len(arr),"entries."
+        print "channel",ch,": ",len(arr),"entries."
 
-        # peak finder - assume the 238 peak is the highest peak in the spectrum.
+        # peak finder - only assumes the 238 peak is the highest peak in the spectrum.
 
-        # coarse
+        # coarse step
         h1, x1 = np.histogram(arr,bins=1000)
         x1 = x1[:-1]
+        pk1, ct1 = wl.GetPeaks(h1, x1, 30)
 
-        fig = plt.figure(figsize=(9,6), facecolor='w')
-        plt.plot(x1, h1, ls='steps-post')
-        plt.show()
-
-        pk1, ct1 = wl.GetPeaks(h1, x1, 200)
         if len(pk1)<1:
-            print "Coarse couldn't find peaks, ch %d.  Continuing ..." % ch
+            print "Coarse step couldn't find peaks, ch %d.  Continuing ..." % ch
             continue
         bigPk = pk1[ np.argmax(ct1) ]
 
-        plt.axvline(bigPk, color='green')
-        plt.show()
-
-        continue
-
-        # fine
-        lo, hi = bigPk - 0.05*bigPk, bigPk + 0.05*bigPk
-        h2, x2 = np.histogram(arr, bins=100, range=(lo, hi))
+        # fine step
+        lo, hi = bigPk - 0.01*bigPk, bigPk + 0.02*bigPk
+        h2, x2 = np.histogram(arr, bins=150, range=(lo, hi))
         x2 = x2[:-1]
-        pk2, ct2 = wl.GetPeaks(h2, x2, 10)
+        pk2, ct2 = wl.GetPeaks(h2, x2, 15)
+
         if len(pk2) < 1:
-            print "Fine couldn't find peaks, ch %d.  Continuing ..." % ch
+            print "Fine step couldn't find peaks, ch %d.  Continuing ..." % ch
             continue
         bigPk = pk2[ np.argmax(ct2) ]
+        bigCt = ct2[ np.argmax(ct2) ]
 
-        if len(pk2)==2:
-            print "Ch. %d  Ratio of counts in big peak (%d) to little peak (%d) = %.2f  (Scan = %.2f sec)" % (ch,ct2[0], ct2[1], float(ct2[0])/ct2[1], time.clock()-start)
-        else:
-            print "Ch %d found %d peaks.  (Scan = %.2f sec)" % (ch, len(pk2), time.clock()-start)
+        # fit step
+        # from http://nucleardata.nuclear.lu.se/toi/radSearch.asp
+        # Pb212 : 238.6322, Ra224 : 240.9866
 
-        fig = plt.figure(figsize=(9,6), facecolor='w')
-        plt.plot(x2, h2, ls='steps-post')
-        for pk in pk2: plt.axvline(pk, color='green')
-        plt.show()
+        pars, guess = [0.,0.,0.,0.], [bigCt, bigPk, 0.8, 2.]
+        try:
+            pars,_ = curve_fit(wl.peakModel238, x2, h2, p0=guess)
+        except ValueError:
+            print "Channel %d, ValueError. ydata or xdata contain nan's." % ch
+        except RuntimeError:
+            print "Channel %d, RuntimeError.  Leastsq minimization failed." % ch
 
+        # calculate stuff
+        mu, sig = pars[1], pars[2]
+        fwhm = pars[2] * 2.3548
+        const = 238.6322 / mu
+        fitSpeed = time.clock()-start
+        idx = np.where((x2 >= mu-3.*sig) & (x2 <= mu+3.*sig))
+        nCts = np.sum(h2[idx])
+        fit = wl.peakModel238(x2, *pars)
+        chi2NDF = np.sum( np.square(h2[idx] - fit[idx]) / fit[idx] ) / (len(fit[idx]) - 4.)
 
-        # fit
+        title = "Chan %d  Uncal.Peak %.3f  Cal.Const %.3f  Cal.FWHM %.3f\n  Speed %.3f  PeakCts %d  Chi2NDF %.2f" % (ch,mu,const,fwhm*const,fitSpeed,nCts,chi2NDF)
 
+        print title
 
-
-
-        # return
+        value = raw_input()
+        if value=='q': break
+        p0.cla()
+        p0.margins(x=0,y=0)
+        p0.plot(x2, h2, ls='steps-post')
+        for pk in pk2: p0.axvline(pk, color='green')
+        p0.plot(x2, fit, color='red')
+        p0.set_title(title)
+        plt.tight_layout()
+        plt.pause(0.0000001)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):
