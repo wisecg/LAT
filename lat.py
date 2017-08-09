@@ -797,6 +797,9 @@ def main(argv):
     print float(nList)/((stopT-startT)/60.),"entries per minute."
 
 
+def evalGaus(x,mu,sig):
+    return np.exp(-((x-mu)**2./2./sig**2.))
+
 def evalXGaus(x,mu,sig,tau):
     """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
         Negative tau: Regular WF, high tail
@@ -809,7 +812,7 @@ def evalXGaus(x,mu,sig,tau):
         print "Exceeded limit ..."
         # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
-        return sig * gaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
+        return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 
 def xgModelWF(dataTS, floats):
     """ Make a model waveform: Take a timestamp vector, generate an
