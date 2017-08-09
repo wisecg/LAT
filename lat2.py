@@ -238,10 +238,11 @@ def dbStuff():
     # returns a list - multiple keys are possible in principle
     search = calDB.search(pars.key == 'ds5_idx999')
     record = search[0]
-    print record['key']
-    # print record['vals']
-    print record['vals']['640']
+    print record['key'] # returns 'key1'
+    # print record['vals'] # returns whole record
+    print record['vals']['640'] # record for just 1 channel
 
+    calRanges = ds.calRanges[dsNum] # returns a dict of cal runranges for this DS
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):
