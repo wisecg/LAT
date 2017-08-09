@@ -25,8 +25,10 @@ from shutil import copyfile
 
 homePath = os.path.expanduser('~')
 skimDir = "/global/homes/w/wisecg/project/skim"
-waveDir = "/global/homes/w/wisecg/project/waveskim"
-latDir = "/global/homes/w/wisecg/project/lat"
+# waveDir = "/global/homes/w/wisecg/project/waveskim"
+# latDir = "/global/homes/w/wisecg/project/lat"
+waveDir = "."
+latDir = "."
 
 dsMap = {0:76,1:51,2:7,3:24,4:22,5:112,6:5}
 
@@ -355,6 +357,7 @@ def runLAT(dsNum, subNum=None, runNum=None):
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,subNum,inFile,outFile))
 
     elif subNum==None: # -run
+        print "hi"
         files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
