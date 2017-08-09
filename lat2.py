@@ -16,6 +16,7 @@ v1: 07 Aug 2017
 import sys, time, os
 import numpy as np
 import pandas as pd
+import tinydb as db
 import matplotlib.pyplot as plt
 import DataSetInfo as ds
 import waveLibs as wl
@@ -34,16 +35,23 @@ def main(argv):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     dsNum, subNum, runNum = -1, -1, -1
-    fCal, fUpd, fSub, fRun = 0,0,0,0
+    fCal, fUpd, fSub, fRun, fTest, fBat = 0,0,0,0,0,0
     fPaths = [".","."]
     if len(argv)==0: return
     for i,opt in enumerate(argv):
+        if opt == "-test":
+            fTest = True
+            print "Test mode."
+            dbStuff()
         if opt == "-cal":
             fCal = True
             print "Calibration mode."
         if opt == "-sub":
             fSub = True
             print "File update mode."
+        if opt == "-b":
+            fBat = True
+            print "Batch mode."
         if opt == "-f":
             fRun = True
             print "Scanning DS-%d, run %d" % (dsNum, runNum)
@@ -54,97 +62,113 @@ def main(argv):
             fPaths = [argv[i+1], argv[i+2]]
             print "Manual I/O paths set."
 
-    if fCal: calibrateRuns(dsNum,subNum,runNum,fPaths)
+    if fCal: calibrateRuns(dsNum,subNum,runNum,fPaths,fBat)
     if fUpd: updateFile(dsNum,subNum, runNum,fPaths)
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def calibrateRuns(dsNum,subNum,runNum,fPaths):
+def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
     """ ./lat2.py -cal [options]
     Source: http://nucleardata.nuclear.lu.se/toi/radSearch.asp
     Pb212 : 238.6322, Ra224 : 240.9866
     """
 
-    # File I/O
-    inPath = "waveSkimDS5_run21975_NLC2.root"  # placeholder, latskim file goes here
+    inPath = "latSkimDS5_run21975.root"
     inFile = TFile(inPath)
-
     latTree = inFile.Get("skimTree")
     theCut = inFile.Get("theCut").GetTitle()
 
-    # parameters to calibrate:
-    iPar = ["trapENM","trapENF"]
-    # iPar = ["trapENM","fitAmp","lat","latFC","latAFC"]
-    oPar = ["trapENMCal","fitE","latE","latFCE","latAFCE"]
+    # this is the record we'll return
+    calRecord = {}
 
-    # keep a figure
     fig = plt.figure(figsize=(9,6), facecolor='w')
     p0 = plt.subplot(111)
-    plt.show(block=False)
+    if not batMode: plt.show(block=False)
 
     # loop over channels
-    for ch in ds.DetID[dsNum]:
+    for ch in sorted(ds.DetID[dsNum]):
 
+        # skip dumb stuff
         if ch%2==1: continue
-        value = raw_input()
-        if value=='q': break
+        if ch in ds.PMon[dsNum]: continue
+        if ds.CPD[dsNum][ch] == 1 or ds.CPD[dsNum][ch] == 2: continue
 
-        # can do up to 4 vars in one draw.  TODO: add multisite cut?
-        n = latTree.Draw("trapENM:trapENF", theCut + " && trapENM > 100 && channel==%d" % ch, "GOFF")
+        # set const default
+        calRecord[ch] = [-999,-999,-999,-999]
+
+        # TODO: change to multisite cut 'nMS'
+        n = latTree.Draw("trapENF:fitAmp:latAF:latAFC", theCut + " && trapENF > 100 && channel==%d && avse >-1" % ch, "GOFF")
         if n==0:
-            print "Chan %d - no events found." % ch
+            print "Chan %-4d - TotCts 0" % ch
             continue
 
+        # do fitting and pull parameters
         pk1 = peakInfo(latTree.GetV1(), n, ch)
+        if pk1.fail(): continue
+        pk2 = peakInfo(latTree.GetV2(), n, ch)
+        if pk2.fail(): continue
+        pk3 = peakInfo(latTree.GetV3(), n, ch)
+        if pk3.fail(): continue
+        pk4 = peakInfo(latTree.GetV4(), n, ch)
+        if pk4.fail(): continue
+        par1 = pk1.GetResults()
+        par2 = pk2.GetResults()
+        par3 = pk3.GetResults()
+        par4 = pk4.GetResults()
 
-        print ch, pk1.fail()
+        # write to the record
+        calRecord[ch] = [par1[1],par2[1],par3[1],par4[1]]
 
+        # print status message
+        totCts, pkCts, fitChi2 = par1[3], par1[4], par1[5]
+        print "Chan %-4d - TotCts %d  PeakCts %d  Chi2 %.2f  calRecord[%d]:[%.3f,%.3f,%.3f,%.3f]" % (ch,totCts,pkCts,fitChi2,ch,calRecord[ch][0],calRecord[ch][1],calRecord[ch][2],calRecord[ch][3])
 
-        # title = "Chan %d  Pk %.3f  Const %.3f  CalFWHM %.3f  PeakCts %d  Chi2 %.2f" % (ch,mu,const,fwhm*const,nCts,chi2NDF)
-        # print title
-        #
-        # p0.cla()
-        # p0.margins(x=0,y=0)
-        # p0.plot(xvals, hist, color='blue', ls='steps-post', label='data')
-        # p0.axvline(bigPk, color='orange', label='pkfinder')
-        # p0.axvline(mu, color='magenta', label='centroid')
-        # p0.plot(xvals, fit, color='red', label='bestfit')
-        # p0.set_title(title)
-        # p0.legend()
-        # plt.tight_layout()
-        plt.pause(0.00001)
+        # plotting
+        if not batMode:
+            mu, const, fwhm, totCts, cts, chi2, bigPk = pk1.GetResults()
+            xvals, hist, fit = pk1.GetArrays()
+
+            title = "Chan %-4d - Pk %.3f  Const %.3f  CalFWHM %.3f  TotCts %d  PeakCts %d  Chi2 %.2f" % (ch,mu,const,fwhm*const,totCts,cts,chi2)
+            print title
+
+            value = raw_input()
+            if value=='q': break
+            p0.cla()
+            p0.margins(x=0,y=0)
+            p0.plot(xvals, hist, color='blue', ls='steps-post', label='data')
+            p0.axvline(bigPk, color='orange', label='pkfinder')
+            p0.axvline(mu, color='magenta', label='centroid')
+            p0.plot(xvals, fit, color='red', label='bestfit')
+            p0.set_title(title)
+            p0.legend()
+            plt.tight_layout()
+            plt.pause(0.00001)
+
+    return calRecord
+
 
 class peakInfo:
-    """ Stores the results from 'find238Peak' """
+    """ Stores the results from find238Peak.
+        Mainly this is useful for error handling.
+    """
     def __init__(self, vec, n, ch):
 
-        r = find238Peak(vec, n, ch)
+        result = find238Peak(vec, n, ch)
 
         self.Fail = True
-        self.Ch, self.Mu, self.Fwhm = 0,0,0
-        self.Spd, self.Cts, self.Chi2 = 0,0,0
+        self.Ch, self.Mu, self.Fwhm, self.Const = 0,0,0,0
+        self.Spd, self.totCts, self.Cts, self.Chi2 = 0,0,0,0
         self.Fit, self.Hist, self.Xvals = 0,0,0
         self.BigPk = 0
-        if len(r)!=0:
+        if len(result)!=0:
             self.Fail = False
-            self.Ch, self.Mu, self.Fwhm = r[0], r[1], r[2]
-            self.Spd, self.Cts, self.Chi2 = r[3], r[4], r[5]
-            self.Fit, self.Hist, self.Xvals = r[6], r[7], r[8]
-            self.BigPk = r[9]
+            self.Ch, self.Mu, self.Fwhm, self.Const, self.Spd, self.totCts, self.Cts, self.Chi2, self.Fit, self.Hist, self.Xvals, self.BigPk = result
 
     def fail(self): return self.Fail
-    def ch(self): return self.Ch
-    def mu(self): return self.Mu
-    def fwhm(self): return self.Fwhm
-    def spd(self): return self.Spd
-    def cts(self): return self.Cts
-    def chi2(self): return self.Chi2
-    def fit(self): return self.Fit
-    def hist(self): return self.Hist
-    def xvals(self): return self.Xvals
-    def bigPk(self): return self.BigPk
+    def GetResults(self): return [self.Mu, self.Const, self.Fwhm, self.totCts, self.Cts, self.Chi2, self.BigPk]
+    def GetArrays(self): return [self.Xvals, self.Hist, self.Fit]
 
 
 def find238Peak(vec, nEnt, ch):
@@ -164,7 +188,7 @@ def find238Peak(vec, nEnt, ch):
     pks, cts = wl.GetPeaks(h1, x1, 30)
 
     if len(pks) < 1:
-        print "Chan. %d - Couldn't find peaks." % ch
+        print "Chan %-4d - TotCts %d, peakdet fail." % (ch, nEnt)
         return []
     bigPk = pks[ np.argmax(cts) ]
     bigCt = cts[ np.argmax(cts) ]
@@ -179,10 +203,10 @@ def find238Peak(vec, nEnt, ch):
     try:
         pars,_ = curve_fit(wl.peakModel238, xvals, hist, p0=guess)
     except ValueError:
-        print "Chan. %d - ValueError. ydata or xdata contain nan's." % ch
+        print "Chan. %-4d - ValueError. ydata or xdata contain nan's." % ch
         return []
     except RuntimeError:
-        print "Chan. %d - RuntimeError.  Leastsq minimization failed." % ch
+        print "Chan. %-4d - RuntimeError.  Leastsq minimization failed." % ch
         return []
 
     # calculate stuff
@@ -195,7 +219,30 @@ def find238Peak(vec, nEnt, ch):
     fit = wl.peakModel238(xvals, *pars)
     chi2NDF = np.sum( np.square(hist[idx] - fit[idx]) / fit[idx] ) / (len(fit[idx]) - 4.)
 
-    return [ch,mu,const,fwhm,fitSpeed,nCts,chi2NDF,fit,hist,xvals,bigPk]
+    return [ch,mu,fwhm,const,fitSpeed,nEnt,nCts,chi2NDF,fit,hist,xvals,bigPk]
+
+
+def dbStuff():
+    """ ./lat2.py -test """
+
+    calDB = db.TinyDB('calDB.json') # set DB file
+    pars = db.Query()
+
+    key1 = 'ds5_idx999'
+
+    if len( calDB.search(pars.key == 'ds5_idx999') )==0:
+        print "record doesn't exist, adding it ...."
+        vals = calibrateRuns(5,-1,21975,[".","."],True)
+        calDB.insert({'key':key1,"vals":vals})
+
+    # returns a list - multiple keys are possible in principle
+    search = calDB.search(pars.key == 'ds5_idx999')
+    record = search[0]
+    print record['key']
+    # print record['vals']
+    print record['vals']['640']
+
+
 
 def updateFile(dsNum,subNum,runNum,fPaths):
     """ ./lat2.py -upd [options] """
