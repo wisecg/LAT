@@ -20,6 +20,7 @@ Usage = """
 
 import sys, shlex, glob, os, re
 import subprocess as sp
+import DataSetInfo as ds
 from textwrap import dedent
 from shutil import copyfile
 
@@ -30,22 +31,6 @@ skimDir = "/global/homes/w/wisecg/project/skim"
 waveDir = "."
 latDir = "."
 
-dsMap = {0:75,1:51,2:7,3:24,4:18,5:112,6:5}
-
-dsRanges = { 0:[2580, 6963],
-             1:[9422, 14502],
-             2:[14503, 15892],
-             3:[16797, 17980],
-             4:[60000802, 60001888],
-             5:[18623, 25671],
-             6:[25672, 100000] }
-
-calMap = { 0:[2931,2940, 6854,6863],
-           1:[9497,9503, 14149,14155],
-           2:[14568,14574, 15789,15794],
-           3:[16911,16920, 17950,17959],
-           4:[60001014,60001023, 60001855,60001864],
-           5:[19055,19064, 22513,22523] }
 
 # =============================================================
 def main(argv):
@@ -93,8 +78,8 @@ def main(argv):
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
 
     # -- go running --
-    if f['a']: runSkimmer(dsNum, subNum, runNum)
-    if f['b']: runWaveSkim(dsNum, subNum, runNum)
+    if f['a']: runSkimmer(dsNum, subNum, runNum, cal=f['c'])
+    if f['b']: runWaveSkim(dsNum, subNum, runNum, cal=f['c'])
     if f['d']: qsubSplit(dsNum, subNum, runNum)
     if f['e']: writeCut(dsNum, subNum, runNum)
     if f['f']: splitTree(dsNum, subNum, runNum)
@@ -156,42 +141,92 @@ def makeScript():
 def sh(cmd):
     sp.call(shlex.split(cmd))
 
-def runSkimmer(dsNum, subNum=None, runNum=None):
+def runSkimmer(dsNum, subNum=None, runNum=None, cal=False):
     """ ./job-panda.py -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum)
         Run skim_mjd_data.
     """
+    # Calibration
+    if cal:
+        if subNum==None and runNum==None: # -ds
+            for i in range(0,len(ds.calRanges[dsNum])):
+                numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
+                if numRuns > 4:
+                    for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
+                        print "ds %i  run %i" % (dsNum,rx)
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (rx, skimDir))
+                else:
+                    for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
+                        print "ds %i  run %i" % (dsNum,rx)
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (rx, skimDir))
+        elif runNum==None: # -sub
+            numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
+            if numRuns > 4:
+                for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
+                    print "ds %i  run %i" % (dsNum,rx)
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (rx, skimDir))
+            else:
+                for rx in range(ds.calRanges[dsNum][subNum][2], ds.calRanges[dsNum][i][1]+1):
+                    print "ds %i  run %i" % (dsNum,rx)
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (rx, skimDir))
 
-    if subNum==None and runNum==None: # -ds
-        for i in range(dsMap[dsNum]+1):
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.8 %s'""" % (dsNum, i, skimDir))
+    # Background
+    else:
+        if subNum==None and runNum==None: # -ds
+            for i in range(ds.dsMap[dsNum]+1):
+                print "ds %i  sub %i" % (dsNum,i)
+                sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, i, skimDir))
+        elif runNum==None: # -sub
+            print "ds %i  sub %i" % (dsNum,subNum)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, subNum, skimDir))
+        elif subNum==None: # -run
+            print "ds %i  run %i" % (dsNum,runNum)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (runNum, skimDir))
 
-    elif runNum==None: # -sub
-        print "ds %i  sub %i" % (dsNum,subNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.8 %s'""" % (dsNum, subNum, skimDir))
 
-    elif subNum==None: # -run
-        print "ds %i  run %i" % (dsNum,runNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.8 %s'""" % (runNum, skimDir))
-
-
-def runWaveSkim(dsNum, subNum=None, runNum=None, cal=True):
-    """ ./job-panda.py -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum [-c])
+def runWaveSkim(dsNum, subNum=None, runNum=None, cal=False):
+    """ ./job-panda.py -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum [-cal])
         Run wave-skim.  Optionally set a calibration cut.
     """
+    # Calibration
+    if cal:
+        if subNum==None and runNum==None: # -ds
+            for i in range(0,len(ds.calRanges[dsNum])):
+                numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
+                if numRuns > 4:
+                    for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
+                        print "ds %i  run %i" % (dsNum,rx)
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
+                else:
+                    for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
+                        print "ds %i  run %i" % (dsNum,rx)
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
 
-    if subNum==None and runNum==None: # -ds
-        for i in range(dsMap[dsNum]+1):
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -r %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
+        elif runNum==None: # -sub
+            numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
+            if numRuns > 4:
+                for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
+                    print "ds %i  run %i" % (dsNum,rx)
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
+            else:
+                for rx in range(ds.calRanges[dsNum][subNum][2], ds.calRanges[dsNum][subNum][1]+1):
+                    print "ds %i  run %i" % (dsNum,rx)
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )        
 
-    elif runNum==None: # -sub
-        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -r %d %d -p %s %s'""" % (dsNum, subNum, skimDir, waveDir) )
-
-    elif subNum==None: # -run
-        cmd = """qsub -l h_vmem=2G qsub-job.sh './wave-skim -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir)
-        if cal: cmd += " -c'"
-        else: cmd += "'"
-        sh(cmd)
+        elif subNum==None: # -run
+            print "ds %i  run %i" % (dsNum,runNum)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir) )
+    # Background
+    else:
+        if subNum==None and runNum==None: # -ds
+            for i in range(ds.dsMap[dsNum]+1):
+                print "ds %i  sub %i" % (dsNum,i)
+                sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
+        elif runNum==None: # -sub
+            print "ds %i  sub %i" % (dsNum,subNum)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, subNum, skimDir, waveDir) )
+        elif subNum==None: # -run
+            print "ds %i  run %i" % (dsNum,runNum)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir) )
 
 
 def qsubSplit(dsNum, subNum=None, runNum=None):
@@ -200,7 +235,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None):
     Submit jobs to the cluster that call splitTree for each run.
     """
     if subNum==None and runNum==None: # -ds
-        for i in range(dsMap[dsNum]+1):
+        for i in range(ds.dsMap[dsNum]+1):
 
             inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
             fileSize = os.path.getsize(inPath)/1e6 # mb
@@ -307,7 +342,7 @@ def writeCut(dsNum, subNum=None, runNum=None):
     mainList = {}
 
     if subNum==None and runNum==None: # -ds
-        for i in range(dsMap[dsNum]+1):
+        for i in range(ds.dsMap[dsNum]+1):
             inPath = "%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
             fileList = getFileList(inPath,i,True,dsNum)
             mainList.update(fileList)
@@ -343,7 +378,7 @@ def runLAT(dsNum, subNum=None, runNum=None):
     """ ./job-panda.py -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) """
 
     if subNum==None and runNum==None: # -ds
-        for i in range(dsMap[dsNum]+1):
+        for i in range(ds.dsMap[dsNum]+1):
             files = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,i,idx)
@@ -446,13 +481,13 @@ def pushOneRun():
 
 
 def printCalFileSizes():
-    for dsNum in calMap:
+    for dsNum in ds.calMap:
         totalSize = 0
         runList = []
 
-        for i in xrange(0,len(calMap[dsNum]),2):
-            lower = calMap[dsNum][i]
-            upper = calMap[dsNum][i+1]
+        for i in xrange(0,len(ds.calMap[dsNum]),2):
+            lower = ds.calMap[dsNum][i]
+            upper = ds.calMap[dsNum][i+1]
             for j in xrange(lower,upper+1):
                 runList.append(j)
 
@@ -476,7 +511,7 @@ def printCalFileSizes():
 
 def printFileSizes():
 
-    for dsNum, subDS in dsMap.iteritems():
+    for dsNum, subDS in ds.dsMap.iteritems():
         totalSize = 0
 
         for subNum in range(subDS+1):
@@ -572,7 +607,6 @@ def applyChannelCut(dsNum,ch):
     This is painfully slow, so the next function is a wrapper script to submit these jobs.
     """
     from ROOT import TFile, TChain, TTree, TEntryList, TNamed, TObject, gDirectory
-    import DataSetInfo as ds
 
     # -- Load this DS --
     inPath = homePath + "/project/lat/latSkimDS%d*.root" % dsNum
@@ -625,7 +659,6 @@ def applyCuts(dsNum):
     """ ./job-panda.py -applyCuts [dsNum]
     Submits a bunch of applyChannelCut jobs to the queue.
     """
-    import DataSetInfo as ds
     for ch in ds.GetGoodChanList(dsNum):
         sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -applyChannelCut %d %d'""" % (dsNum,ch))
 
@@ -635,7 +668,6 @@ def cleanUpCuts(dsNum):
     applyCuts made a big mess on the queues.  Stupid nodes can't handle it.
     """
     import re
-    import DataSetInfo as ds
     from ROOT import TFile, TChain, TTree, TEntryList, TNamed, TObject, gDirectory
 
     print "Scanning DS-%d" % dsNum
@@ -733,7 +765,6 @@ def getEff():
     then calculate the efficiency curve based on the sigma value
     and convolve it with the histogram points.
     """
-    import DataSetInfo as ds
     import numpy as np
     import waveLibs as wl
     import scipy.special as spec
