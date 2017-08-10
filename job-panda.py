@@ -30,7 +30,7 @@ skimDir = "/global/homes/w/wisecg/project/skim"
 waveDir = "."
 latDir = "."
 
-dsMap = {0:76,1:51,2:7,3:24,4:22,5:112,6:5}
+dsMap = {0:75,1:51,2:7,3:24,4:18,5:112,6:5}
 
 dsRanges = { 0:[2580, 6963],
              1:[9422, 14502],
