@@ -63,28 +63,28 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
 
   runTime_s = 0, startTime0 = 0;
   if(dsNum == 0) {
-    runTime_s = 3968742;
+    runTime_s = 3969654;
     startTime0 = 1435687000; // start time of run 2580
   }
   else if(dsNum == 1) {
-    runTime_s = 5088354; //was 4728790; before blinding
+    runTime_s = 5088323; //was 4728790; before blinding
     startTime0 = 1452643100; // start time of run 9422
   }
   else if (dsNum == 2) {
-    runTime_s = 830952;
+    runTime_s = 830947;
     startTime0 = 1464956900; // start time of run 14775
   }
   else if(dsNum == 3) {
-    runTime_s = 2581525;//1549710;
+    runTime_s = 2581517;//1549710;
     startTime0 = 1472169600; // start time of run 16797
   }
   else if(dsNum == 4) {
 //    runTime_s = 2047670;//1460390;
-    runTime_s = 1660145;
+    runTime_s = 1660154;
     startTime0 = 1472169600; // start time of run 60000802
   }
   else if (dsNum == 5) {
-    runTime_s = 10520106;
+    runTime_s = 10482213;
     startTime0 = 1476396800; // start time of run 18623
   }
   else if (dsNum == 6) {
@@ -95,7 +95,7 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
 }
 
 
-void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
+void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
 {
   map<int, vector<int> > runRanges;
 
@@ -313,10 +313,10 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
     {1, {18654,18685}},
     {2, {18686,18703, 18707,18707, 18752,18752}},
     {3, {18761,18783}},
-    {4, {18803,18834}},
+    {4, {18808,18834}},
     {5, {18835,18838, 18844,18844, 18883,18914}},
     {6, {18915,18918, 18920,18951, 18952,18957}},
-    {7, {19240,19240, 19264,19280, 19304,19318}},
+    {7, {19240,19240, 19264,19280, 19305,19318}},
     {8, {19320,19351}},
     {9, {19352,19383}},
     {10, {19384,19385, 19387,19415}},
@@ -331,7 +331,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
     {19, {19862,19893}},
     {20, {19894,19899, 19901,19907}},
     {21, {19968,19998}},
-    {22, {19999,19999, 20020,20040}},
+    {22, {19999,19999, 20021,20040}},
     {23, {20074,20105}},
     {24, {20106,20130, 20132,20134}},
     {25, {20136,20167}},
@@ -339,13 +339,13 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
     {27, {20218,20237}},
     {28, {20239,20270}},
     {29, {20271,20286, 20311,20316, 20319,20332}},
-    {30, {20334,20365}},
+    {30, {20335,20365}},
     {31, {20366,20375, 20377,20397}},
     {32, {20398,20415}},
     {33, {20417,20445}},
     {34, {20483,20487, 20489,20491, 20494,20509}},
     {35, {20522,20537}},
-    {36, {20611,20629, 20635,20635, 20639,20639, 20643,20643, 20685,20691}},
+    {36, {20611,20629, 20686,20691}},
     {37, {20755,20756, 20758,20786}},
     {38, {20787,20795, 20797,20828}},
     {39, {20829,20860}},
@@ -359,7 +359,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
     {47, {21060,21091}},
     {48, {21092,21104}},
     {49, {21106,21136}},
-    {50, {21148,21150, 21157,21167, 21169,21178, 21201,21201}},
+    {50, {21158,21167, 21169,21178, 21201,21201}},
     {51, {21217,21248}},
     {52, {21249,21278}},
     {53, {21280,21311}},
@@ -377,7 +377,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
     {65, {21747,21776}},
     {66, {21778,21800, 21833,21837}},
     {67, {21839,21853, 21856,21857, 21862,21879}},
-    {68, {21891,21908, 21921,21937}},
+    {68, {21891,21893, 21895,21908, 21922,21937}},
     {69, {21940,21940, 21953,21968}},
     {70, {22001,22032}},
     {71, {22033,22064}},
@@ -441,8 +441,14 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum)
 
   // Now add the runs to the GATDataSet object
   // Increment by 2, always assume pairwise
-  for (size_t i = 0; i < runRanges[subNum].size(); i+=2)
-    ds.AddRunRange(runRanges[subNum][i], runRanges[subNum][i+1]);
+  // If subDS number is <0, add all subDSs in the DS
+  if(subNum<0)
+    for(auto& subDS : runRanges)
+      for (size_t i = 0; i < subDS.second.size(); i+=2)
+	ds.AddRunRange(subDS.second[i], subDS.second[i+1]);
+  else
+    for (size_t i = 0; i < runRanges[subNum].size(); i+=2)
+      ds.AddRunRange(runRanges[subNum][i], runRanges[subNum][i+1]);
 }
 
 
@@ -1319,6 +1325,14 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
      {697, { 9.16943e-06, -9.66639e-06, 7.03233e-05}}
      };
    }
+   if(run <= 3664){ 
+      DCR[692] =  { 4.81401e-05, -3.28825e-05, 0.000118458};
+      DCR[693] =  { 2.92883e-05, -9.87323e-06, 5.25524e-05};
+    }
+   if(run>=4004 && run <= 4908){ 
+      DCR[692] =  { 5.55901e-05, -3.27923e-05, 0.000117376};
+      DCR[693] =  { 2.59878e-05, -9.84651e-06, 5.10247e-05};
+    }
   }
   else if (dsNum == 1){
    DCR = {
@@ -1392,6 +1406,17 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
     {692, { 3.50633e-05, -3.26518e-05, 0.000123765}},
     {693, { 2.29114e-05, -9.81051e-06, 5.06333e-05}},
     };
+   }
+   if (run> 10278 && run < 11507){
+    DCR[594] = { 2.96403e-05, -3.35123e-05, 0.000105365};
+   }
+
+   if (run>= 9938  && run <= 10278){
+    DCR[594] = { 2.93477e-05, -3.32266e-05, 0.000100086};
+   }
+   if (run >= 13395){ 
+    DCR[626] = { 1.78799e-05, -3.11522e-05, 0.000111311};
+    DCR[627] = { 1.13795e-05, -9.20676e-06, 5.22142e-05};
    }
   }
   else if (dsNum == 2) DCR = {
@@ -1662,7 +1687,7 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       {1333, { 7.10822e-05, -9.81521e-06, 8.47117e-05}},
       };
     }
-    if(run>=25490){
+    if(run>=25479){
       DCR = {
       {584, { 4.40882e-05, -3.23e-05, 0.000122132}},
       {585, { 4.05615e-05, -9.55069e-06, 5.19826e-05}},
@@ -1740,6 +1765,19 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       {1333, { 6.19838e-05, -9.67661e-06, 7.48408e-05}},
       };
     }
+   if(run>=22636 && run <= 24105){ 
+      DCR[674] =  { -7.56191e-06, -3.34978e-05, 0.000102015};
+      DCR[675] =  { 9.01334e-06, -9.99713e-06, 4.67391e-05};
+    }
+   if(run>=22636 && run <= 23176){ 
+      DCR[690] = { 1.51783e-05, -3.22531e-05, 0.000280346};
+      DCR[691] = { 9.55238e-06, -9.58005e-06, 9.49695e-05};
+    }
+   if(run>=23509 && run <= 25489){ 
+      DCR[690] = { 2.88637e-05, -3.21623e-05, 9.33066e-05};
+      DCR[691] = { 1.2952e-05, -9.55379e-06, 4.75052e-05};
+    }
+
   }
   else if (dsNum == 6) DCR = {
     {584, { 1.91896e-05, -2.7837e-05, 4.47459e-05}},
@@ -3387,6 +3425,43 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
         {693, { -5.95285e-05}}
       };
     }
+   else if (run >= 13420){ 
+      DCR = {
+        {578, { -0.000140846}},
+        {579, { -5.8586e-05}},
+        {580, { -0.000210818}},
+        {581, { -7.02975e-05}},
+        {582, { -0.000202476}},
+        {592, { -0.00039136}},
+        {593, { -0.000119394}},
+        {594, { -0.000120384 }},
+        {598, { -0.000191925}},
+        {599, { -6.1098e-05}},
+        {600, { -0.000666066}},
+        {601, { -0.000222009}},
+        {608, { -0.000271631}},
+        {609, { -9.05718e-05}},
+        {610, { -0.000147766}},
+        {611, { -5.7889e-05}},
+        {626, { -0.000114614}},
+        {627, { -5.19008e-05}},
+        {632, { -0.000301465}},
+        {633, { -0.000107522}},
+        {640, { -0.000227829}},
+        {641, { -6.4084e-05}},
+        {648, { -0.00073158}},
+        {649, { -0.000183137}},
+        {664, { -0.00023121}},
+        {665, { -7.21975e-05}},
+        {672, { -0.000103541}},
+        {673, { -6.45125e-05}},
+        {690, { -0.000167508}},
+        {691, { -6.64909e-05}},
+        {692, { -0.000145448}},
+        {693, { -5.95285e-05}}
+      };
+    }
+
   }
   else if (dsNum == 2) DCR = {
     {578, { -4.30553e-05}},
@@ -3656,7 +3731,7 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       {1333, { -8.84585e-05}},
       };
     }
-    if(run>=25490){
+    if(run>=25479){
       DCR = {
       {584, { -0.000188901}},
       {585, { -6.31137e-05}},
