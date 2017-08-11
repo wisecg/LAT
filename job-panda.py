@@ -195,22 +195,22 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, cal=False):
                 if numRuns > 4:
                     for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
                         print "ds %i  run %i" % (dsNum,rx)
-                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
                 else:
                     for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
                         print "ds %i  run %i" % (dsNum,rx)
-                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
+                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
 
         elif runNum==None: # -sub
             numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
             if numRuns > 4:
                 for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
                     print "ds %i  run %i" % (dsNum,rx)
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
             else:
                 for rx in range(ds.calRanges[dsNum][subNum][2], ds.calRanges[dsNum][subNum][1]+1):
                     print "ds %i  run %i" % (dsNum,rx)
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -r %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )        
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )        
 
         elif subNum==None: # -run
             print "ds %i  run %i" % (dsNum,runNum)
