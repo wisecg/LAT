@@ -310,7 +310,7 @@ def splitTree(dsNum, subNum=None, runNum=None):
 
 
 def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -writeCut (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum)
+    """ ./job-panda.py -writeCut (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
 
     Assumes the cut used in the FIRST file (even in the whole DS) should be applied
     to ALL files.  This should be a relatively safe assumption for now (except maybe
@@ -320,21 +320,26 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
 
     mainList = {}
 
-    if subNum==None and runNum==None: # -ds
+    if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
             inPath = "%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
             fileList = getFileList(inPath,i,True,dsNum)
             mainList.update(fileList)
 
-    elif runNum==None: # -sub
+    elif not calList and runNum==None: # -sub
         inPath = "%s/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
         fileList = getFileList(inPath,subNum,True,dsNum)
         mainList.update(fileList)
 
-    elif subNum==None: # -run
+    elif not calList and subNum==None: # -run
         inPath = "%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
         fileList = getFileList(inPath,runNum,True,dsNum)
         mainList.update(fileList)
+    else:
+        for i in calList:
+            inPath = "%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,i)
+            fileList = getFileList(inPath,i,True,dsNum)
+            mainList.update(fileList)        
 
     # Pull the cut off the FIRST file and add it to the sub-files
     if len(mainList) <= 1: return
@@ -354,9 +359,9 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) """
+    """ ./job-panda.py -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal] """
 
-    if subNum==None and runNum==None: # -ds
+    if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
             files = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
@@ -364,18 +369,25 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                 # print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
 
-    elif runNum==None: # -sub
+    elif not calList and runNum==None: # -sub
         files = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,subNum,idx)
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,subNum,inFile,outFile))
 
-    elif subNum==None: # -run
+    elif not calList and subNum==None: # -run
         print "hi"
         files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,runNum,inFile,outFile))
+    else:
+        for i in calList:
+            files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,i),i)
+            for idx, inFile in sorted(files.iteritems()):
+                outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,i,idx)
+                print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))            
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
