@@ -239,7 +239,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
             fileSize = os.path.getsize(inPath)/1e6 # mb
             if (fileSize < 45):
-                copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
             else:
                 print "ds %i  sub %i" % (dsNum,i)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, i))            
