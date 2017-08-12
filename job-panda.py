@@ -24,11 +24,12 @@ from textwrap import dedent
 from shutil import copyfile
 
 homePath = os.path.expanduser('~')
-skimDir = "/global/homes/w/wisecg/project/skim"
+# skimDir = "/global/homes/w/wisecg/project/skim"
 # waveDir = "/global/homes/w/wisecg/project/waveskim"
 # latDir = "/global/homes/w/wisecg/project/lat"
-waveDir = "."
-latDir = "."
+skimDir = "/projecta/projectdirs/majorana/users/bxyzhu/skim"
+waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
+latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
 
 
 # =============================================================
@@ -198,7 +199,7 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
     else: # -cal
         for i in calList:
             print "(cal) ds %i  run %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s""" % (dsNum, i, skimDir, waveDir) )
+            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
 
 def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
@@ -206,7 +207,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     Submit jobs to the cluster that call splitTree for each run.
     """
 
-    if subNum==None and runNum==None: # -ds
+    if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
             inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
             fileSize = os.path.getsize(inPath)/1e6 # mb
@@ -216,7 +217,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
                 print "ds %i  sub %i" % (dsNum,i)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, i))
 
-    elif runNum==None: # -sub
+    elif not calList and runNum==None: # -sub
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
         fileSize = os.path.getsize(inPath)/1e6 # mb
         if (fileSize < 45):
@@ -225,7 +226,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             print "ds %i  sub %i" % (dsNum,i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, subNum))
 
-    elif subNum==None: # -run
+    elif not calList and subNum==None: # -run
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,runNum)
         fileSize = os.path.getsize(inPath)/1e6 # mb
         if (fileSize < 45):
@@ -233,10 +234,19 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         else:
             print "ds %i  sub %i" % (dsNum,i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, runNum))
+    else: # -cal
+        for i in calList:
+            inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
+            fileSize = os.path.getsize(inPath)/1e6 # mb
+            if (fileSize < 45):
+                copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+            else:
+                print "ds %i  sub %i" % (dsNum,i)
+                sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, i))            
 
 
-def splitTree(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+def splitTree(dsNum, subNum=None, runNum=None):
+    """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum subNum)
 
     NOTE: For a waveSkim input file of 120k entries, and 150MB file size,
     testing of LAT indicates it will do about ~6000 entries/hr.
@@ -266,7 +276,7 @@ def splitTree(dsNum, subNum=None, runNum=None, calList=[]):
 
     elif subNum==None:
         inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
-        outPath = "%s/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
+        outPath = "%s/split/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
 
         fileList = getFileList("%s/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,subNum),subNum)
         for key in fileList: os.remove(fileList[key])
