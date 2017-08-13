@@ -102,9 +102,9 @@ def main(argv):
     if f['a']: runSkimmer(dsNum, subNum, runNum, calList=calList)
     if f['b']: runWaveSkim(dsNum, subNum, runNum, calList=calList)
     if f['d']: qsubSplit(dsNum, subNum, runNum, calList=calList)
-    if f['e']: writeCut(dsNum, subNum, runNum)
-    if f['f']: splitTree(dsNum, subNum, runNum)
-    if f['g']: runLAT(dsNum, subNum, runNum)
+    if f['e']: writeCut(dsNum, subNum, runNum, calList=calList)
+    if f['f']: splitTree(dsNum, subNum, runNum, calList=calList)
+    if f['g']: runLAT(dsNum, subNum, runNum, calList=calList)
     # mega modes
     if f['i']:
         for i in range(0,5+1): runLAT(i)
@@ -187,52 +187,6 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Run wave-skim.  Optionally set a calibration cut.
     """
-<<<<<<< HEAD
-    # Calibration
-    if cal:
-        if subNum==None and runNum==None: # -ds
-            for i in range(0,len(ds.calRanges[dsNum])):
-                numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
-                if numRuns > 4:
-                    for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
-                        print "ds %i  run %i" % (dsNum,rx)
-                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
-                else:
-                    for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
-                        print "ds %i  run %i" % (dsNum,rx)
-                        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
-
-        elif runNum==None: # -sub
-            numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
-            if numRuns > 4:
-                for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
-                    print "ds %i  run %i" % (dsNum,rx)
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
-            else:
-                for rx in range(ds.calRanges[dsNum][subNum][2], ds.calRanges[dsNum][subNum][1]+1):
-                    print "ds %i  run %i" % (dsNum,rx)
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, rx, skimDir, waveDir) )
-
-        elif subNum==None: # -run
-            print "ds %i  run %i" % (dsNum,runNum)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir) )
-    # Background
-    else:
-        if subNum==None and runNum==None: # -ds
-            for i in range(ds.dsMap[dsNum]+1):
-                print "ds %i  sub %i" % (dsNum,i)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
-        elif runNum==None: # -sub
-            print "ds %i  sub %i" % (dsNum,subNum)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, subNum, skimDir, waveDir) )
-        elif subNum==None: # -run
-            print "ds %i  run %i" % (dsNum,runNum)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir) )
-
-
-def qsubSplit(dsNum, subNum=None, runNum=None):
-    """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum)
-=======
     if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
             print "ds %i  sub %i" % (dsNum,i)
@@ -250,7 +204,6 @@ def qsubSplit(dsNum, subNum=None, runNum=None):
 
 def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
->>>>>>> 07a87c81d2f51b62edc42952dac0f38446354010
 
     Submit jobs to the cluster that call splitTree for each run.
     """
@@ -275,7 +228,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, subNum))
 
     elif not calList and subNum==None: # -run
-        inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,runNum)
+        inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
         fileSize = os.path.getsize(inPath)/1e6 # mb
         if (fileSize < 45):
             copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
@@ -287,7 +240,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
             fileSize = os.path.getsize(inPath)/1e6 # mb
             if (fileSize < 45):
-                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (waveDir, dsNum, i))
             else:
                 print "ds %i  sub %i" % (dsNum,i)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, i))
@@ -326,7 +279,7 @@ def splitTree(dsNum, subNum=None, runNum=None):
         inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
         outPath = "%s/split/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
 
-        fileList = getFileList("%s/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,subNum),subNum)
+        fileList = getFileList("%s/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,runNum),runNum)
         for key in fileList: os.remove(fileList[key])
 
 
@@ -370,22 +323,22 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
 
     if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
-            inPath = "%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
+            inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
             fileList = getFileList(inPath,i,True,dsNum)
             mainList.update(fileList)
 
     elif not calList and runNum==None: # -sub
-        inPath = "%s/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
+        inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
         fileList = getFileList(inPath,subNum,True,dsNum)
         mainList.update(fileList)
 
     elif not calList and subNum==None: # -run
-        inPath = "%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
+        inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
         fileList = getFileList(inPath,runNum,True,dsNum)
         mainList.update(fileList)
     else:
         for i in calList:
-            inPath = "%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,i)
+            inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i)
             fileList = getFileList(inPath,i,True,dsNum)
             mainList.update(fileList)
 
