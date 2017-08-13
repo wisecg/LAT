@@ -213,7 +213,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
             fileSize = os.path.getsize(inPath)/1e6 # mb
             if (fileSize < 45):
-                copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
             else:
                 print "ds %i  sub %i" % (dsNum,i)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, i))
@@ -222,7 +222,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
         fileSize = os.path.getsize(inPath)/1e6 # mb
         if (fileSize < 45):
-            copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
+            copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
         else:
             print "ds %i  sub %i" % (dsNum,i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, subNum))
@@ -231,7 +231,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
         fileSize = os.path.getsize(inPath)/1e6 # mb
         if (fileSize < 45):
-            copyfile(inPath, "%s/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
+            copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
         else:
             print "ds %i  sub %i" % (dsNum,i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, runNum))
@@ -270,16 +270,16 @@ def splitTree(dsNum, subNum=None, runNum=None):
     inPath, outPath = "", ""
     if runNum==None:
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
-        outPath = "%s/splitSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
+        outPath = "%s/split/splitSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
 
-        fileList = getFileList("%s/splitSkimDS%d_%d*.root" % (waveDir,dsNum,subNum),subNum)
+        fileList = getFileList("%s/split/splitSkimDS%d_%d*.root" % (waveDir,dsNum,subNum),subNum)
         for key in fileList: os.remove(fileList[key])
 
     elif subNum==None:
         inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
         outPath = "%s/split/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
 
-        fileList = getFileList("%s/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,runNum),runNum)
+        fileList = getFileList("%s/split/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,runNum),runNum)
         for key in fileList: os.remove(fileList[key])
 
 
@@ -364,31 +364,31 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
 
     if not calList and subNum==None and runNum==None: # -ds
         for i in range(ds.dsMap[dsNum]+1):
-            files = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
+            files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,i,idx)
                 # print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
                 sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
 
     elif not calList and runNum==None: # -sub
-        files = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
+        files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,subNum,idx)
             sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,subNum,inFile,outFile))
 
     elif not calList and subNum==None: # -run
         print "hi"
-        files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
+        files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
         for idx, inFile in sorted(files.iteritems()):
             outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,runNum,inFile,outFile))
+            sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,runNum,inFile,outFile))
     else:
         for i in calList:
-            files = getFileList("%s/splitSkimDS%d_run%d*" % (waveDir,dsNum,i),i)
+            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,i,idx)
-                print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
+                print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
