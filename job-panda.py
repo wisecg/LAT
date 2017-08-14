@@ -49,6 +49,7 @@ def main(argv):
         if opt == "-purge": purgeLogs()
         if opt == "-makeScript": makeScript()
         if opt == "-checkLogs": checkLogErrors()
+        if opt == "-checkLogsPython": checkLogErrorsPython()
         if opt == "-skimLAT": skimLAT(argv[i+1],argv[i+2],argv[i+3])
         if opt == "-getEff": getEff()
         if opt == "-cleanlat" : cleanlat()
@@ -404,8 +405,6 @@ def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
             else:
                 files["DS%d_%d_%d" % (dsNum,subNum,ints[2])] = fl
 
-
-
     return files
 
 
@@ -449,6 +448,25 @@ def checkLogErrors():
     # This isn't really complete. but you get the idea.  error checking via bash inside python is kind of a PITA.
     # Maybe it would be better to just have python look at the files directly.
 
+def checkLogErrorsPython():
+    """ Usage: ./job-panda -checkLogsPython
+        Globs together log files and then searches for "Error", returning the failed ROOT files
+
+    """
+    print ("Checking log errors ...")
+    ErrList = []
+
+    for fl in glob.glob("./logs/*"):
+        if 'Error' in open(fl, 'r').read():
+            ErrList.append(fl)
+
+    for errFile in ErrList:
+        fErr = open(errFile,'r')
+        for lineErr in fErr:
+            if '/lat.py -b' in lineErr:
+                print 'Error from: ', lineErr
+            if 'Error' in lineErr:
+                print lineErr
 
 def pushOneRun():
     """ ./job-panda.py -push
