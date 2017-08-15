@@ -457,8 +457,9 @@ def checkLogErrorsPython():
     ErrList = []
 
     for fl in glob.glob("./logs/*"):
+        fErr = open(fl,'r').read()
         if 'Error' in open(fl, 'r').read():
-            ErrList.append(fl)
+            print ErrList.append(fl)
 
     for errFile in ErrList:
         fErr = open(errFile,'r')
