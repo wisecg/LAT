@@ -31,7 +31,7 @@ homePath = os.path.expanduser('~')
 skimDir = "/projecta/projectdirs/majorana/users/bxyzhu/skim"
 waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
 latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
-
+pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
 
 # =============================================================
 def main(argv):
@@ -42,7 +42,7 @@ def main(argv):
 
     # hey, let's get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
-    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n'),False) # make a bunch of bools
+    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
 
         if opt == "-clean": cleanUp()
@@ -69,6 +69,7 @@ def main(argv):
         if opt == "-megaWave":  f['k'] = True
         if opt == "-megaCut":   f['l'] = True
         if opt == "-megaSplit": f['m'] = True
+        if opt == "-pandify":   f['p'] = True
 
         if opt == "-ds": dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
@@ -104,8 +105,9 @@ def main(argv):
     if f['b']: runWaveSkim(dsNum, subNum, runNum, calList=calList)
     if f['d']: qsubSplit(dsNum, subNum, runNum, calList=calList)
     if f['e']: writeCut(dsNum, subNum, runNum, calList=calList)
-    if f['f']: splitTree(dsNum, subNum, runNum, calList=calList)
+    if f['f']: splitTree(dsNum, subNum, runNum)
     if f['g']: runLAT(dsNum, subNum, runNum, calList=calList)
+    if f['p']: pandifySkim(dsNum, subNum, runNum, calList=calList)
     # mega modes
     if f['i']:
         for i in range(0,5+1): runLAT(i)
@@ -904,6 +906,27 @@ def threshCut():
             sarr = [str(a) for a in runChanPairs[run]]
             text_file.write(str(run) + ' ' + (' '.join(sarr)) + "\n")
         text_file.close()
+
+
+def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
+    """ ./job-panda.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+        Run skim_mjd_data.
+    """
+
+    if not calList and subNum==None and runNum==None: # -ds
+        for i in range(ds.dsMap[dsNum]+1):
+            print "ds %i  sub %i" % (dsNum,i)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
+    elif not calList and runNum==None: # -sub
+        print "ds %i  sub %i" % (dsNum,subNum)
+        sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (dsNum, subNum, waveDir, pandaDir))
+    elif not calList and subNum==None: # -run
+        print "ds %i  run %i" % (dsNum,runNum)
+        sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, runNum, waveDir, pandaDir))
+    else:
+        for i in calList:
+            print "(cal) ds %i  run %i" % (dsNum, i)
+            sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ import waveLibs as wl
 	Events become unpacked, as in multi-hit events are just separated as single events
 	Using the Draw command for building event lists makes the processing significantly slower
 
-	Usage: ./ROOTtoPandas.py -s [DS #] [SubDS #]
+	Usage: ./ROOTtoPandas.py -ws [DS #] [SubDS #]
 	Usage: ./ROOTtoPandas.py -f [DS #] [Run #]
 	Option "-l": Saves LAT parameters
 	Option "-p": Saves wavelet packet parameters
@@ -59,7 +59,8 @@ def main(argv):
 	gatTree = inFile.Get("skimTree")
 	theCut = inFile.Get("theCut").GetTitle()
 
-	theCut += "&& trapETailMin < 0.5"
+	# Get rid of some crap
+	theCut += "&& trapETailMin < 1.0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
