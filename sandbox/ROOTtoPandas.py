@@ -32,7 +32,7 @@ def main(argv):
 	for i,opt in enumerate(argv):
 		if opt == "-f":
 			dsNum, runNum = int(argv[i+1]), int(argv[i+2])
-			inFileName = 'latSkimDS%d_run%d.root' % (dsNum, runNum)
+			inFileName = 'waveSkimDS%d_run%d.root' % (dsNum, runNum)
 			print "Scanning DS-%d, run %d" % (dsNum, runNum)
 		if opt == "-ws":
 			dsNum, subNum = int(argv[i+1]), int(argv[i+2])
@@ -59,8 +59,8 @@ def main(argv):
 	gatTree = inFile.Get("skimTree")
 	theCut = inFile.Get("theCut").GetTitle()
 
-	# Get rid of some crap
-	theCut += "&& trapETailMin < 1.0"
+	# Make files smaller for tests
+	theCut += "&& trapETailMin < 0.5 && trapENFCal > 1.0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -88,11 +88,12 @@ def main(argv):
 	fitSlo, matchMax, matchWidth = std.vector("double")(), std.vector("double")(), std.vector("double")()
 	matchTime, fitMax, pol0 = std.vector("double")(), std.vector("double")(), std.vector("double")()
 	pol1, pol2, exp0, exp1 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
+	avse, dcr99 = std.vector("double")(), std.vector("double")()
 
 	# Create map of branches to put into dataframe
 	# This map is only for branches that we want to keep!
 	keepMapBase = {
-		'trapENFCal':gatTree.trapENFCal, 'triggerTrapt0':gatTree.triggerTrapt0, "channel":gatTree.channel, "run":gatTree.run, "mHL":gatTree.mHL, "C":gatTree.C
+		'trapENFCal':gatTree.trapENFCal, 'triggerTrapt0':gatTree.triggerTrapt0, "channel":gatTree.channel, "run":gatTree.run, "mHL":gatTree.mHL, "C":gatTree.C, "avse":gatTree.avse, "dcr99":gatTree.dcr99
 		}
 
 	keepMapLAT = {}
@@ -112,6 +113,10 @@ def main(argv):
 		wf = gatTree.MGTWaveforms.at(0)
 		signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
 		data = signal.GetWaveBLSub()
+
+		# Save entire array into one column
+		# branchMap['wave'] = np.zeros((nList,len(data)))
+		# Save individual samples as column
 		for idx,sample in enumerate(data):
 			branchMap["wave%d"%(idx)] = np.zeros(nList)
 	if savePacket:
@@ -145,6 +150,7 @@ def main(argv):
 				if key == 'run' or key == 'mHL': branchMap[key][iList] = branch
 				else: branchMap[key][iList] = branch.at(iH)
 			if saveWave:
+				# branchMap['wave'][iList] = wave
 				for idx, val in enumerate(wave):
 					branchMap['wave%d'%(idx)][iList] = val
 			if savePacket:
