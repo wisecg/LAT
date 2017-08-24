@@ -8,10 +8,11 @@ sns.set_style('whitegrid')
 
 def main(argv):
 
-    dsList = [0, 1, 2, 3, 5]
-    # dsList = [4, 5]
 
-    theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isNat && !muVeto && mHL==1 && C==1"
+    # dsList, module = [0, 1, 2, 3, 5], 1
+    dsList, module = [4, 5], 2
+
+    theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isNat && !muVeto && mHL==1 && C==%d"%(module)
 
     nuCut = theCut + "&&trapENFCal>1000&&trapENFCal<1400&&avse>-1&&dcr99<0"
     alphaCut = theCut + "&&trapENFCal>2000&&trapENFCal<3000&&avse>-1&&dcr99>=0"
@@ -28,6 +29,7 @@ def main(argv):
     sortgetot = []
     pgetot = []
     ksresultTot = []
+    endTime = []
 
     print "Using cut for two nu: ", nuCut
     print "Using cut for alpha: ", alphaCut
@@ -64,11 +66,12 @@ def main(argv):
         palpha = 1. * np.arange(len(alphaList)) / (len(alphaList) - 1)
         pge = 1. * np.arange(len(geList)) / (len(geList) - 1)
 
-        ksresult = ks_2samp(nuList, alphaList)
-        # ksresult = ks_2samp(nuList, geList)
+        # ksresult = ks_2samp(nuList, alphaList)
+        ksresult = ks_2samp(nuList, geList)
         ksresultTot.append(ksresult)
 
-        print "Statistic:",ksresult[0], " p-value:", ksresult[1]
+        # Save the ending time of each dataset (maximum time of last event of the 3 distributions)
+        endTime.append( np.amax( [sortnu[-1], sortalpha[-1], sortge[-1]] ) )
 
         sortnutot.extend(sortnu)
         pnutot.extend([x+idx for x in pnu])
@@ -79,19 +82,38 @@ def main(argv):
         sortgetot.extend(sortge)
         pgetot.extend([x+idx for x in pge])
 
+    # This is CDFs if we combine all of the datasets
+    pnuSumTot = 1. * np.arange(len(sortnutot)) / (len(sortnutot) - 1)
+    palphaSumTot = 1. * np.arange(len(sortalphatot)) / (len(sortalphatot) - 1)
+    pgeSumTot = 1. * np.arange(len(sortgetot)) / (len(sortgetot) - 1)
+
+    ksSumResult = ks_2samp(sortnutot, sortgetot)
+
+    nuDate = np.asarray(sortnutot, dtype='datetime64[s]')
+    alphaDate = np.asarray(sortalphatot, dtype='datetime64[s]')
+    geDate = np.asarray(sortgetot, dtype='datetime64[s]')
+    endDate = np.asarray(endTime, dtype='datetime64[s]')
 
     fig = plt.figure(figsize=(9,6))
     a1 = plt.subplot(111)
-    a1.plot(sortnutot, pnutot, color='green', label="2nbb")
-    a1.plot(sortalphatot, palphatot, color='blue', label="DCR rejected")
-    a1.plot(sortgetot, pgetot, color='purple', label="Ge68")
-    a1.set_xlabel("UnixTime")
+    # Using r in front changes to latex
+    # a1.plot(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
+    # a1.plot(alphaDate, palphatot, color='blue', label="DCR rejected")
+
+    a1.plot(nuDate, pnuSumTot, color='green', label=r"$2\nu\beta\beta$")
+    a1.plot(geDate, pgeSumTot, color='purple', label=r"$^{68}$Ge")
+
+    a1.set_xlabel("Date")
     a1.set_ylabel("CDF")
-    plt.title("All DS (M1)")
+    for idx, ds in enumerate(dsList[:-1]):
+        a1.axvline(endDate[idx], color='red', alpha=0.5, linestyle=':')
+
+    plt.title("All DS (M%d Natural)"%(module))
     a1.legend(loc=4)
-    labelText = ""
-    for idx, ksres in enumerate(ksresultTot):
-        labelText = labelText + "DS%d -- KS statistic: %.3f p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    # labelText = ""
+    # for idx, ksres in enumerate(ksresultTot):
+        # labelText = labelText + "DS%d -- KS statistic: %.3f p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    labelText = "KS statistic: %.3f p-value: %.3f \n"%(ksSumResult[0], ksSumResult[1])
     a1.text(0.05, 0.95, labelText, transform=a1.transAxes, fontsize=12, verticalalignment='top' )
     plt.tight_layout()
     plt.show()
