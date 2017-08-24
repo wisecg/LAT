@@ -1,3 +1,4 @@
+#!/usr/common/usg/software/python/2.7.9/bin/python
 #!/usr/local/bin/python
 """
 ===================== LAT2.py =====================
@@ -7,7 +8,7 @@ Calibrate energy parameters in LAT data.
 Modes:
     -cal  : Scans a calibration range and updates parameters in a pandas file.
     -upd  : Updates an input file with data from the calibration database file.
-    -test : IDEA: Quick check if a given range has enough events in each channel to calibrate.
+    -test : TODO: Quick check if a given range has enough events in each channel to calibrate.
 
 v1: 07 Aug 2017
 
@@ -242,6 +243,7 @@ def dbStuff():
     # print record['vals'] # returns whole record
     print record['vals']['640'] # record for just 1 channel
 
+    dsNum = 5
     calRanges = ds.calRanges[dsNum] # returns a dict of cal runranges for this DS
 
 
