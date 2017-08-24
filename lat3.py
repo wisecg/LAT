@@ -6,6 +6,8 @@ PLACEHOLDER CODE.  THIS SHOULD BE A LAT SKIMMER,
 WHICH READS DATASETINFO.PY AND PRODUCES CHANNEL-SPECIFIC
 FILES WITH RUN CUTS APPLIED.
 
+or should this be where "tuneCuts" is done?
+
 v1: 07 Aug 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========

@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 import sys, pywt, random
 import numpy as np
+import tinydb as db
 from scipy.fftpack import fft
 from scipy.optimize import curve_fit
 from scipy.ndimage.filters import gaussian_filter
@@ -12,7 +13,6 @@ from ROOT import MGTWaveform
 A collection of 'useful' crap.
 C. Wiseman, B. Zhu
 v1. 20 March 2017
-v2. 21 June 2017
 """
 
 def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle=""):
@@ -532,3 +532,153 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
 
     return wf_notrap, timesteps
 """
+
+def getDBKeys(removeDups=False):
+    """ Print all keys in the DB. Can also remove duplicates. """
+    calDB = db.TinyDB('calDB.json')
+
+    keys = []
+    for item in calDB:
+        d = dict(item)
+        for keyType, key in d.iteritems():
+            if type(key)==unicode:
+                print key
+                keys.append(key)
+
+    duplicates = set([x for x in keys if keys.count(x) > 1])
+    if len(duplicates) > 0:
+        print "Duplicate entries found:"
+        print duplicates
+        if removeDups:
+            print "Removing all duplicates..."
+            for dup in duplicates: delDBRecord(dup)
+
+    return keys
+
+
+def delDBRecord(key):
+    """ Delete a database record, if it exists. """
+    calDB = db.TinyDB('calDB.json')
+    pars = db.Query()
+
+    if len( calDB.search(pars.key == key)) == 0:
+        print "Record '%s' doesn't exist." % key
+    else:
+        print "Removing key:",key
+        calDB.remove(pars.key==key)
+
+
+def setDBCalTable(forceUpdate=False, startOver=False):
+    """ Create/update the lookup table for calibration records.
+    Right now, we're not distinguishing between M1 and M2 calibrations,
+    and hoping we get enough entries in the TChains to calibrate all channels.
+    This also avoids having to add fields like "m1, m2, m1m2" to the input list in data/calRanges.txt .
+    """
+    calDB = db.TinyDB('calDB.json')
+    if startOver: calDB.purge() # be careful ...
+    pars = db.Query()
+
+    # load dicts and update DB
+    key, idx, vals = " ", -1, {}
+    f = open("data/calRanges.txt",'r')
+    for l in f:
+        line = l.rstrip()
+        if len(line)==0: continue
+        if len(line)==1:
+            key = "ds%s_calIdx" % line
+
+            if len( calDB.search(pars.key == key) )==0:
+                print "Record '%s' doesn't exist." % key
+                if forceUpdate:
+                    print "Adding this element: ",key,vals
+                    calDB.insert({'key':key,'vals':vals})
+            else:
+                print "Record '%s' exists." % key
+                if forceUpdate:
+                    print "Overwriting it. Adding this element:",key,vals
+                    calDB.update({'key':key,'vals':vals}, pars.key==key)
+
+            key, idx, vals = " ", -1, {}
+            continue
+
+        ints = [int(n) for n in line.split()]
+        idx += 1
+        vals[idx] = ints
+
+
+def getDBCalTable(dsNum):
+    """ Return a dict for a dataset. """
+    calDB = db.TinyDB('calDB.json')
+    pars = db.Query()
+
+    key = "ds%d_calIdx" % dsNum
+    recList = calDB.search(pars.key==key)
+    nRec = len(recList)
+    if nRec==0:
+        print "Record %s doesn't exist in the DB."
+    elif nRec==1:
+        print "Found record.\n%s" % key
+        rec = recList[0]['vals']
+
+        # sort the TinyDB string keys numerically (obvs only works for integer keys)
+        for key in sorted([int(k) for k in rec]):
+            print key, rec[u'%d' % key]
+
+    else:
+        print "Found multiple records for '%s'.  Need to do some cleanup!!"
+        for rec in recList:
+            for key in sorted([int(k) for k in rec]):
+                print key, rec[u'%d' % key]
+            print " "
+
+
+def setDBCalRecord(entry, forceUpdate=False):
+    """ Takes results from LAT2::calibrateRuns and adds an entry to the DB. """
+    calDB = db.TinyDB('calDB.json')
+    pars = db.Query()
+
+    key, vals = entry["key"], entry["vals"]
+    recList = calDB.search(pars.key==key)
+    nRec = len(recList)
+    if nRec == 0:
+        print "Record '%s' doesn't exist in the DB  Adding it ..." % key
+        calDB.insert(entry)
+    elif nRec == 1:
+        prevRec = recList[0]['vals']
+        if prevRec!=vals:
+            print "An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate)
+            if forceUpdate:
+                print "Updating record: ",key
+                calDB.update(entry, pars.key==key)
+    else:
+        print "WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!"
+
+
+def getDBCalRecord(key):
+    """ View a particular calibration record. """
+
+    calDB = db.TinyDB('calDB.json')
+    pars = db.Query()
+
+    recList = calDB.search(pars.key == key)
+    nRec = len(recList)
+    if nRec == 0:
+        print "Record %s doesn't exist" % key
+        return
+    elif nRec == 1:
+        print "Found record:\n%s" % key
+        rec = recList[0]['vals']  # whole record
+
+        # sort the TinyDB string keys numerically (obvs only works for integer keys)
+        for key in sorted([int(k) for k in rec]):
+            print key, rec[u'%d' % key]
+    else:
+        print "WARNING: Found multiple records for key: %s.  Need to do some cleanup!" % key
+        for rec in recList:
+            for key in sorted([int(k) for k in rec]):
+                print key, rec[u'%d' % key]
+            print " "
+
+
+# def setDBCutRecord(key):
+# def getDBCutRecord(key):

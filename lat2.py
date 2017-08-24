@@ -8,20 +8,21 @@ Calibrate energy parameters in LAT data.
 Modes:
     -cal  : Scans a calibration range and updates parameters in a pandas file.
     -upd  : Updates an input file with data from the calibration database file.
-    -test : TODO: Quick check if a given range has enough events in each channel to calibrate.
+    -test : Database stuff.
+    TODO: Quick check if a given range has enough events in each channel to calibrate.
 
 v1: 07 Aug 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
-import sys, time, os
+import sys, time, os, glob
 import numpy as np
 import pandas as pd
 import tinydb as db
 import matplotlib.pyplot as plt
 import DataSetInfo as ds
 import waveLibs as wl
-from ROOT import gROOT, TFile, TTree
+from ROOT import gROOT, TFile, TChain
 from scipy.optimize import curve_fit
 
 homePath = os.path.expanduser('~')
@@ -35,36 +36,37 @@ def main(argv):
     startT = time.clock()
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
-    dsNum, subNum, runNum = -1, -1, -1
-    fCal, fUpd, fSub, fRun, fTest, fBat = 0,0,0,0,0,0
+    dsNum, subNum, runNum = None,None,None
+    fCal, fUpd, fBat = 0,0,0
     fPaths = [".","."]
     if len(argv)==0: return
     for i,opt in enumerate(argv):
-        if opt == "-test":
-            fTest = True
-            print "Test mode."
-            dbStuff()
         if opt == "-cal":
             fCal = True
             print "Calibration mode."
-        if opt == "-sub":
-            fSub = True
+        if opt == "-upd":
+            fUpd = True
             print "File update mode."
         if opt == "-b":
             fBat = True
             print "Batch mode."
         if opt == "-f":
-            fRun = True
             print "Scanning DS-%d, run %d" % (dsNum, runNum)
         if opt == "-s":
-            fSub, dsNum, subNum = True, int(argv[i+1]), int(argv[i+2])
+            dsNum, subNum = True, int(argv[i+1]), int(argv[i+2])
             print "Scanning DS-%d sub-range %d" % (dsNum, subNum)
         if opt == "-p":
             fPaths = [argv[i+1], argv[i+2]]
             print "Manual I/O paths set."
+        if opt == "-test":
+            testDB()
 
-    if fCal: calibrateRuns(dsNum,subNum,runNum,fPaths,fBat)
-    if fUpd: updateFile(dsNum,subNum, runNum,fPaths)
+    if fCal:
+        rec = calibrateRuns(dsNum,subNum,runNum,fPaths,fBat)
+        wl.setCalRecord(rec,forceUpdate=False)
+
+    if fUpd:
+        updateFile(dsNum,subNum, runNum,fPaths)
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -76,12 +78,17 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
     Pb212 : 238.6322, Ra224 : 240.9866
     """
 
-    inPath = "latSkimDS5_run21975.root"
-    inFile = TFile(inPath)
-    latTree = inFile.Get("skimTree")
-    theCut = inFile.Get("theCut").GetTitle()
+    # TODO: TChain, job-panda handling
+    dsNum = 5
+    inPath = "/projecta/projectdirs/majorana/users/bxyzhu/cal-lat/latSkimDS5_run254*"
+    fList = glob.glob(inPath)
+    f1 = TFile(fList[0])
+    theCut = f1.Get("theCut").GetTitle()
+    latTree = TChain("skimTree")
+    latTree.Add(inPath)
 
     # this is the record we'll return
+    key = "ds%d_idx%d" % (dsNum,888)
     calRecord = {}
 
     fig = plt.figure(figsize=(9,6), facecolor='w')
@@ -97,7 +104,7 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
         if ds.CPD[dsNum][ch] == 1 or ds.CPD[dsNum][ch] == 2: continue
 
         # set const default
-        calRecord[ch] = [-999,-999,-999,-999]
+        calRecord[ch] = [None,None,None,None]
 
         # TODO: change to multisite cut 'nMS'
         n = latTree.Draw("trapENF:fitAmp:latAF:latAFC", theCut + " && trapENF > 100 && channel==%d && avse >-1" % ch, "GOFF")
@@ -147,7 +154,7 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
             plt.tight_layout()
             plt.pause(0.00001)
 
-    return calRecord
+    return {"key":key,"vals":calRecord}
 
 
 class peakInfo:
@@ -223,33 +230,18 @@ def find238Peak(vec, nEnt, ch):
     return [ch,mu,fwhm,const,fitSpeed,nEnt,nCts,chi2NDF,fit,hist,xvals,bigPk]
 
 
-def dbStuff():
-    """ ./lat2.py -test """
-
-    calDB = db.TinyDB('calDB.json') # set DB file
-    pars = db.Query()
-
-    key1 = 'ds5_idx999'
-
-    if len( calDB.search(pars.key == 'ds5_idx999') )==0:
-        print "record doesn't exist, adding it ...."
-        vals = calibrateRuns(5,-1,21975,[".","."],True)
-        calDB.insert({'key':key1,"vals":vals})
-
-    # returns a list - multiple keys are possible in principle
-    search = calDB.search(pars.key == 'ds5_idx999')
-    record = search[0]
-    print record['key'] # returns 'key1'
-    # print record['vals'] # returns whole record
-    print record['vals']['640'] # record for just 1 channel
-
-    dsNum = 5
-    calRanges = ds.calRanges[dsNum] # returns a dict of cal runranges for this DS
+def testDB():
+    """ ./lat2.py -test
+    Do database stuff. """
+    # wl.setDBCalTable()
+    wl.getDBKeys()
+    # wl.getDBCalRecord("ds5_idx999")
+    # wl.delDBRecord("ds5_idx999")
+    # wl.getDBCalTable(5)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):
     """ ./lat2.py -upd [options] """
-
     print "hi"
 
 
