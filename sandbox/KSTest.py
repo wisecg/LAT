@@ -9,10 +9,10 @@ sns.set_style('whitegrid')
 def main(argv):
 
 
-    # dsList, module = [0, 1, 2, 3, 5], 1
-    dsList, module = [4, 5], 2
+    dsList, module = [0, 1, 2, 3], 1
+    # dsList, module = [4, 5], 2
 
-    theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isNat && !muVeto && mHL==1 && C==%d"%(module)
+    theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && C==%d"%(module)
 
     nuCut = theCut + "&&trapENFCal>1000&&trapENFCal<1400&&avse>-1&&dcr99<0"
     alphaCut = theCut + "&&trapENFCal>2000&&trapENFCal<3000&&avse>-1&&dcr99>=0"
@@ -97,23 +97,23 @@ def main(argv):
     fig = plt.figure(figsize=(9,6))
     a1 = plt.subplot(111)
     # Using r in front changes to latex
-    # a1.plot(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
-    # a1.plot(alphaDate, palphatot, color='blue', label="DCR rejected")
+    a1.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
+    a1.step(alphaDate, palphatot, color='blue', label="DCR rejected")
 
-    a1.plot(nuDate, pnuSumTot, color='green', label=r"$2\nu\beta\beta$")
-    a1.plot(geDate, pgeSumTot, color='purple', label=r"$^{68}$Ge")
+    # a1.step(nuDate, pnuSumTot, color='green', label=r"$2\nu\beta\beta$")
+    # a1.step(geDate, pgeSumTot, color='purple', label=r"$^{68}$Ge")
 
     a1.set_xlabel("Date")
     a1.set_ylabel("CDF")
     for idx, ds in enumerate(dsList[:-1]):
         a1.axvline(endDate[idx], color='red', alpha=0.5, linestyle=':')
 
-    plt.title("All DS (M%d Natural)"%(module))
+    plt.title("All DS (M%d Enriched)"%(module))
     a1.legend(loc=4)
-    # labelText = ""
-    # for idx, ksres in enumerate(ksresultTot):
-        # labelText = labelText + "DS%d -- KS statistic: %.3f p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
-    labelText = "KS statistic: %.3f p-value: %.3f \n"%(ksSumResult[0], ksSumResult[1])
+    labelText = ""
+    for idx, ksres in enumerate(ksresultTot):
+        labelText = labelText + "DS%d -- KS statistic: %.3f p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    # labelText = "KS statistic: %.3f p-value: %.3f \n"%(ksSumResult[0], ksSumResult[1])
     a1.text(0.05, 0.95, labelText, transform=a1.transAxes, fontsize=12, verticalalignment='top' )
     plt.tight_layout()
     plt.show()
