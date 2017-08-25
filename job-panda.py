@@ -71,7 +71,7 @@ def main(argv):
         if opt == "-pandify":   f['p'] = True
 
         if opt == "-cal":       f['c'] = True
-        if opt == "-clist":     f['q'] = True
+        if opt == "-force":     f['q'] = True
 
         if opt == "-ds": dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
@@ -124,7 +124,7 @@ def main(argv):
         for i in range(0,5+1): writeCut(i)
 
     # LAT2 calibration jobs
-    if f['c']: runCal(dsNum)
+    if f['c']: runCal(dsNum, subNum, f['q'])
 
     # print "Done! Job Panda loves you."
 # =============================================================
@@ -478,21 +478,13 @@ def checkLogErrorsPython():
 
 
 def pushOneRun():
-    """ ./job-panda.py -push
-
-    # Idea: Run a single run through the entire skim-clean routine.
-    # Right now: must be two stages, because we have to split the wave-skim tree into multiple files to make LAT run fast.
-    """
+    """ ./job-panda.py -push """
     dsNum = 5
     rlo, rhi = 21970, 21998
-
     for run in range(rlo,rhi+1):
-
         jobStr = ""
-
         # jobStr += "'./skim_mjd_data -n -l -t 0.8 -f %d %s'" % (run,skimDir)
         # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -n -l -t 0.8 -f %d %s' """ % (run,homePath+"/project/cal-skim/"))
-
         inPath = homePath + "/project/cal-skim/"
         outPath = homePath + "/project/cal-waveskim/"
         jobStr += "'./wave-skim -f %d %d -p %s %s'" % (dsNum,run,inPath,outPath)
@@ -935,30 +927,44 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
             sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
 
 
-def runCal(dsNum, calIdx=None):
-    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx]) """
+def runCal(dsNum, calIdx=None, forceUpdate=False):
+    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx])  -force (optional)
+        Run LAT2 in cal mode.
+    """
     import waveLibs as wl
+    if forceUpdate: print "Force updating DB entries."
 
     # get calIdx's for this dataset from the DB
     calTable = wl.getDBCalTable(dsNum)
     calIdxs = calTable.keys()
 
-    # run LAT2 in cal mode
-
     # -ds
     if calIdx==None:
         for idx in calIdxs:
-            print "ds %d  calIdx %d"  % (dsNum, idx)
-            # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, i, skimDir))
+            print "======================================"
+            rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, idx) )
 
+            if rec==None or forceUpdate:
+                if forceUpdate:
+                    # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, idx) )
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, idx))
+                else:
+                    # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, idx) )
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, idx))
     # -sub
     else:
         if calIdx not in calIdxs:
             print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
             return
 
-        print "ds %d  calIdx %d" % (dsNum, calIdx)
-        sh("""./lat2.py -cal -b -s %d %d""" % (dsNum, calIdx) )
+        rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, calIdx) )
+        if rec==None or forceUpdate:
+            if forceUpdate:
+                # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, calIdx) )
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, calIdx))
+            else:
+                # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, calIdx) )
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, calIdx))
 
 
 if __name__ == "__main__":

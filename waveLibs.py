@@ -654,7 +654,6 @@ def getDBRunCoverage(dsNum, runNum):
         return calIdx
 
 
-
 def setDBCalRecord(entry, forceUpdate=False):
     """ Takes results from LAT2::calibrateRuns and adds an entry to the DB. """
     calDB = db.TinyDB('calDB.json')
@@ -693,8 +692,11 @@ def getDBCalRecord(key):
         rec = recList[0]['vals']  # whole record
 
         # sort the TinyDB string keys numerically (obvs only works for integer keys)
+        result = {}
         for key in sorted([int(k) for k in rec]):
             print key, rec[u'%d' % key]
+            result[key] = rec[u'%d' % key]
+        return result
     else:
         print "WARNING: Found multiple records for key: %s.  Need to do some cleanup!" % key
         for rec in recList:
