@@ -42,7 +42,7 @@ def main(argv):
 
     # hey, let's get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
-    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p'),False) # make a bunch of bools
+    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
 
         if opt == "-clean": cleanUp()
@@ -58,7 +58,6 @@ def main(argv):
 
         if opt == "-skim":      f['a'] = True
         if opt == "-wave":      f['b'] = True
-        if opt == "-cal":       f['c'] = True
         if opt == "-qsubSplit": f['d'] = True
         if opt == "-writeCut":  f['e'] = True
         if opt == "-split":     f['f'] = True
@@ -71,6 +70,9 @@ def main(argv):
         if opt == "-megaSplit": f['m'] = True
         if opt == "-pandify":   f['p'] = True
 
+        if opt == "-cal":       f['c'] = True
+        if opt == "-clist":     f['q'] = True
+
         if opt == "-ds": dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
         if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
@@ -82,7 +84,7 @@ def main(argv):
 
     # -- create calibration run list --
     calList = []
-    if f['c'] and subNum==None and runNum==None: # -ds
+    if f['q'] and subNum==None and runNum==None: # -ds
         for i in range(0,len(ds.calRanges[dsNum])):
             numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
             if numRuns > 4:
@@ -91,12 +93,12 @@ def main(argv):
             else:
                 for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
                     calList.append(rx)
-    elif f['c'] and runNum==None: # -sub
+    elif f['q'] and runNum==None: # -sub
         numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
         if numRuns > 4:
             for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
                 calList.append(rx)
-    elif f['c'] and subNum==None: # -run
+    elif f['q'] and subNum==None: # -run
         calList.append(runNum)
 
 
@@ -108,6 +110,7 @@ def main(argv):
     if f['f']: splitTree(dsNum, subNum, runNum)
     if f['g']: runLAT(dsNum, subNum, runNum, calList=calList)
     if f['p']: pandifySkim(dsNum, subNum, runNum, calList=calList)
+
     # mega modes
     if f['i']:
         for i in range(0,5+1): runLAT(i)
@@ -120,11 +123,14 @@ def main(argv):
     if f['l']:
         for i in range(0,5+1): writeCut(i)
 
-    # if c: combineLatOutput()
-    # TODO: if you're going to submit a c++ job, do a make first?
+    # LAT2 calibration jobs
+    if f['c']: runCal(dsNum)
 
     # print "Done! Job Panda loves you."
 # =============================================================
+
+def sh(cmd):
+    sp.call(shlex.split(cmd))
 
 
 def makeScript():
@@ -161,9 +167,6 @@ def makeScript():
     outFile.write(script)
     outFile.close()
 
-
-def sh(cmd):
-    sp.call(shlex.split(cmd))
 
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
@@ -204,6 +207,7 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
         for i in calList:
             print "(cal) ds %i  run %i" % (dsNum,i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
+
 
 def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
@@ -450,6 +454,7 @@ def checkLogErrors():
     # This isn't really complete. but you get the idea.  error checking via bash inside python is kind of a PITA.
     # Maybe it would be better to just have python look at the files directly.
 
+
 def checkLogErrorsPython():
     """ Usage: ./job-panda -checkLogsPython
         Globs together log files and then searches for "Error", returning the failed ROOT files
@@ -470,6 +475,7 @@ def checkLogErrorsPython():
                 print 'Error from: ', lineErr
             if 'Error' in lineErr:
                 print lineErr
+
 
 def pushOneRun():
     """ ./job-panda.py -push
@@ -927,6 +933,32 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
         for i in calList:
             print "(cal) ds %i  run %i" % (dsNum, i)
             sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
+
+
+def runCal(dsNum, calIdx=None):
+    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx]) """
+    import waveLibs as wl
+
+    # get calIdx's for this dataset from the DB
+    calTable = wl.getDBCalTable(dsNum)
+    calIdxs = calTable.keys()
+
+    # run LAT2 in cal mode
+
+    # -ds
+    if calIdx==None:
+        for idx in calIdxs:
+            print "ds %d  calIdx %d"  % (dsNum, idx)
+            # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, i, skimDir))
+
+    # -sub
+    else:
+        if calIdx not in calIdxs:
+            print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
+            return
+
+        print "ds %d  calIdx %d" % (dsNum, calIdx)
+        sh("""./lat2.py -cal -b -s %d %d""" % (dsNum, calIdx) )
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ def main(argv):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     dsNum, subNum, runNum = None,None,None
-    fCal, fUpd, fBat = 0,0,0
+    fCal, fUpd, fBat, fFor, fPlt = 0,0,0,0,0
     fPaths = [".","."]
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -50,10 +50,19 @@ def main(argv):
         if opt == "-b":
             fBat = True
             print "Batch mode."
+        if opt == "-p":
+            fPlt = True
+            print "Writing plots mode."
+        if opt == "-force":
+            fFor = True
+            print "Force DB update mode."
+        if opt == "-d":
+            dsNum = int(argv[i+1])
+            print "Scanning DS-%d" % (dsNum)
         if opt == "-f":
             print "Scanning DS-%d, run %d" % (dsNum, runNum)
         if opt == "-s":
-            dsNum, subNum = True, int(argv[i+1]), int(argv[i+2])
+            dsNum, subNum = int(argv[i+1]), int(argv[i+2])
             print "Scanning DS-%d sub-range %d" % (dsNum, subNum)
         if opt == "-p":
             fPaths = [argv[i+1], argv[i+2]]
@@ -62,8 +71,8 @@ def main(argv):
             testDB()
 
     if fCal:
-        rec = calibrateRuns(dsNum,subNum,runNum,fPaths,fBat)
-        wl.setCalRecord(rec,forceUpdate=False)
+        rec = calibrateRuns(dsNum,subNum,fPaths,fBat,fPlt)
+        wl.setDBCalRecord(rec,fFor)
 
     if fUpd:
         updateFile(dsNum,subNum, runNum,fPaths)
@@ -72,23 +81,40 @@ def main(argv):
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
+def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig):
     """ ./lat2.py -cal [options]
     Source: http://nucleardata.nuclear.lu.se/toi/radSearch.asp
     Pb212 : 238.6322, Ra224 : 240.9866
-    """
 
-    # TODO: TChain, job-panda handling
-    dsNum = 5
-    inPath = "/projecta/projectdirs/majorana/users/bxyzhu/cal-lat/latSkimDS5_run254*"
-    fList = glob.glob(inPath)
-    f1 = TFile(fList[0])
-    theCut = f1.Get("theCut").GetTitle()
+    """
     latTree = TChain("skimTree")
-    latTree.Add(inPath)
+
+    # chain together all available cal runs for this calIdx
+    calTable = wl.getDBCalTable(dsNum)
+    calRuns = [ calTable[calIdx][0], calTable[calIdx][1] ]
+    inPath = "/projecta/projectdirs/majorana/users/bxyzhu/cal-lat/latSkimDS%d*" % dsNum
+    fList = glob.glob(inPath)
+    fPass = []
+    for f in fList:
+        f0 = f.split('/')
+        f1 = f0[len(f0)-1]
+        f2 = f1[f1.find('run')+3:f.find('.root')-5].split('_')
+        runNum = int(f2[0])
+        if calRuns[0] <= runNum <= calRuns[1]:
+            latTree.Add(f)
+            fPass.append(f)
+    if latTree.GetNtrees()==0:
+        print "No cal runs found for DS-%d, calIdx %d, run range [%d, %d].  Exiting..." % (dsNum, calIdx, calRuns[0], calRuns[1])
+        exit(1)
+    print "Found %d files for calIdx %d, run range [%d, %d]:" % (latTree.GetNtrees(), calIdx, calRuns[0], calRuns[1])
+    for f in fPass: print f
+
+    # get the cut used to make the files
+    f1 = TFile(fPass[0])
+    theCut = f1.Get("theCut").GetTitle()
 
     # this is the record we'll return
-    key = "ds%d_idx%d" % (dsNum,888)
+    key = "ds%d_idx%d" % (dsNum,calIdx)
     calRecord = {}
 
     fig = plt.figure(figsize=(9,6), facecolor='w')
@@ -96,6 +122,7 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
     if not batMode: plt.show(block=False)
 
     # loop over channels
+    cpd = ds.CPD[dsNum]
     for ch in sorted(ds.DetID[dsNum]):
 
         # skip dumb stuff
@@ -104,22 +131,25 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
         if ds.CPD[dsNum][ch] == 1 or ds.CPD[dsNum][ch] == 2: continue
 
         # set const default
-        calRecord[ch] = [None,None,None,None]
+        calRecord[ch] = [-1,-1,-1,-1]
+
+        # get det pos
+        pos = "C%sP%sD%s" % (str(cpd[ch])[0],str(cpd[ch])[1],str(cpd[ch])[2])
 
         # TODO: change to multisite cut 'nMS'
         n = latTree.Draw("trapENF:fitAmp:latAF:latAFC", theCut + " && trapENF > 100 && channel==%d && avse >-1" % ch, "GOFF")
         if n==0:
-            print "Chan %-4d - TotCts 0" % ch
+            print "%s  Chan %-4d - TotCts 0" % (pos, ch)
             continue
 
         # do fitting and pull parameters
-        pk1 = peakInfo(latTree.GetV1(), n, ch)
+        pk1 = peakInfo(latTree.GetV1(), n, ch, dsNum)
         if pk1.fail(): continue
-        pk2 = peakInfo(latTree.GetV2(), n, ch)
+        pk2 = peakInfo(latTree.GetV2(), n, ch, dsNum)
         if pk2.fail(): continue
-        pk3 = peakInfo(latTree.GetV3(), n, ch)
+        pk3 = peakInfo(latTree.GetV3(), n, ch, dsNum)
         if pk3.fail(): continue
-        pk4 = peakInfo(latTree.GetV4(), n, ch)
+        pk4 = peakInfo(latTree.GetV4(), n, ch, dsNum)
         if pk4.fail(): continue
         par1 = pk1.GetResults()
         par2 = pk2.GetResults()
@@ -131,28 +161,31 @@ def calibrateRuns(dsNum,subNum,runNum,fPaths,batMode):
 
         # print status message
         totCts, pkCts, fitChi2 = par1[3], par1[4], par1[5]
-        print "Chan %-4d - TotCts %d  PeakCts %d  Chi2 %.2f  calRecord[%d]:[%.3f,%.3f,%.3f,%.3f]" % (ch,totCts,pkCts,fitChi2,ch,calRecord[ch][0],calRecord[ch][1],calRecord[ch][2],calRecord[ch][3])
+
+        print "%s  Chan %-4d - TotCts %-5d  PeakCts %-4d  pk%%/tot %-5.3f  Chi2 %-3.2f  calRecord[%d]:[%.3f,%.3f,%.3f,%.3f]" % (pos,ch,totCts,pkCts,100.*(pkCts)/totCts,fitChi2,ch,calRecord[ch][0],calRecord[ch][1],calRecord[ch][2],calRecord[ch][3])
 
         # plotting
+        # (-b -p : save but don't display plots.  -b don't save or display, -p display and save, no opts: display only)
+        if batMode and not saveFig: continue
         if not batMode:
-            mu, const, fwhm, totCts, cts, chi2, bigPk = pk1.GetResults()
-            xvals, hist, fit = pk1.GetArrays()
-
-            title = "Chan %-4d - Pk %.3f  Const %.3f  CalFWHM %.3f  TotCts %d  PeakCts %d  Chi2 %.2f" % (ch,mu,const,fwhm*const,totCts,cts,chi2)
-            print title
-
             value = raw_input()
             if value=='q': break
-            p0.cla()
-            p0.margins(x=0,y=0)
-            p0.plot(xvals, hist, color='blue', ls='steps-post', label='data')
-            p0.axvline(bigPk, color='orange', label='pkfinder')
-            p0.axvline(mu, color='magenta', label='centroid')
-            p0.plot(xvals, fit, color='red', label='bestfit')
-            p0.set_title(title)
-            p0.legend()
-            plt.tight_layout()
-            plt.pause(0.00001)
+
+        mu, const, fwhm, totCts, cts, chi2, bigPk = pk1.GetResults()
+        xvals, hist, fit = pk1.GetArrays()
+        title = "%s (%-4d)  Pk %.3f  c %.3f  calFWHM %.3f  cTot %d  cPk %d  Chi2 %.2f" % (pos,ch,mu,const,fwhm*const,totCts,cts,chi2)
+        p0.cla()
+        p0.margins(x=0,y=0)
+        p0.plot(xvals, hist, color='blue', ls='steps-post', label='data')
+        p0.axvline(bigPk, color='orange', label='pkfinder')
+        p0.axvline(mu, color='magenta', label='centroid')
+        p0.plot(xvals, fit, color='red', label='bestfit')
+        p0.set_title(title)
+        p0.legend()
+        plt.tight_layout()
+
+        if not batMode: plt.pause(0.00001)
+        if saveFig: plt.savefig("./plots/ds%d_idx%d_ch%d.pdf" % (dsNum, calIdx, ch))
 
     return {"key":key,"vals":calRecord}
 
@@ -161,9 +194,9 @@ class peakInfo:
     """ Stores the results from find238Peak.
         Mainly this is useful for error handling.
     """
-    def __init__(self, vec, n, ch):
+    def __init__(self, vec, n, ch, dsNum):
 
-        result = find238Peak(vec, n, ch)
+        result = find238Peak(vec, n, ch, dsNum)
 
         self.Fail = True
         self.Ch, self.Mu, self.Fwhm, self.Const = 0,0,0,0
@@ -179,11 +212,15 @@ class peakInfo:
     def GetArrays(self): return [self.Xvals, self.Hist, self.Fit]
 
 
-def find238Peak(vec, nEnt, ch):
+def find238Peak(vec, nEnt, ch, dsNum):
     """ Assumes that the 238 peak is the highest peak in the spectrum.
         This means you have to feed it a cal file truncated at 250 kev.
     """
     start = time.clock()
+
+    # get det position
+    cpd = ds.CPD[dsNum]
+    pos = "C%sP%sD%s" % (str(cpd[ch])[0],str(cpd[ch])[1],str(cpd[ch])[2])
 
     # read in raw data from a tree.GetVX() object
     lst = []
@@ -196,7 +233,7 @@ def find238Peak(vec, nEnt, ch):
     pks, cts = wl.GetPeaks(h1, x1, 30)
 
     if len(pks) < 1:
-        print "Chan %-4d - TotCts %d, peakdet fail." % (ch, nEnt)
+        print "%s  Chan %-4d - TotCts %-5d  Peakdet fail." % (pos, ch, nEnt)
         return []
     bigPk = pks[ np.argmax(cts) ]
     bigCt = cts[ np.argmax(cts) ]
@@ -234,10 +271,11 @@ def testDB():
     """ ./lat2.py -test
     Do database stuff. """
     # wl.setDBCalTable()
-    wl.getDBKeys()
-    # wl.getDBCalRecord("ds5_idx999")
-    # wl.delDBRecord("ds5_idx999")
+    # wl.getDBKeys()
+    wl.getDBCalRecord("ds1_idx0")
+    # wl.delDBRecord("ds1_idx0")
     # wl.getDBCalTable(5)
+    # wl.getDBRunCoverage(1,9999)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):

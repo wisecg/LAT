@@ -9,6 +9,7 @@ from scipy import signal as sg
 # from pysiggen import Detector
 from ROOT import TTree, std, TH1D, TH2D
 from ROOT import MGTWaveform
+import DataSetInfo as ds
 """
 A collection of 'useful' crap.
 C. Wiseman, B. Zhu
@@ -606,30 +607,52 @@ def setDBCalTable(forceUpdate=False, startOver=False):
         vals[idx] = ints
 
 
-def getDBCalTable(dsNum):
+def getDBCalTable(dsNum,verbose=False):
     """ Return a dict for a dataset. """
     calDB = db.TinyDB('calDB.json')
     pars = db.Query()
+
+    result = {}
 
     key = "ds%d_calIdx" % dsNum
     recList = calDB.search(pars.key==key)
     nRec = len(recList)
     if nRec==0:
-        print "Record %s doesn't exist in the DB."
+        print "Record %s doesn't exist in the DB." % key
     elif nRec==1:
         print "Found record.\n%s" % key
         rec = recList[0]['vals']
 
         # sort the TinyDB string keys numerically (obvs only works for integer keys)
         for key in sorted([int(k) for k in rec]):
-            print key, rec[u'%d' % key]
+            if verbose: print key, rec[u'%d' % key]
+            result[key] = rec[u'%d' % key]
+        return result
 
     else:
         print "Found multiple records for '%s'.  Need to do some cleanup!!"
         for rec in recList:
-            for key in sorted([int(k) for k in rec]):
-                print key, rec[u'%d' % key]
-            print " "
+            if verbose:
+                for key in sorted([int(k) for k in rec]):
+                    print key, rec[u'%d' % key]
+                print " "
+
+
+def getDBRunCoverage(dsNum, runNum):
+    """ Figure out which calIdx a run is in. """
+
+    found, calIdx = False, -1
+    calTable = getDBCalTable(dsNum)
+    for key in calTable:
+        if runNum >= calTable[key][2] and runNum <= calTable[key][3]:
+            found, calIdx = True, key
+            break
+    if not found:
+        print "Couldn't find run coverage for run", runNum
+    else:
+        print "Run %d is in calIdx %d" % (runNum, calIdx)
+        return calIdx
+
 
 
 def setDBCalRecord(entry, forceUpdate=False):
