@@ -9,8 +9,8 @@ sns.set_style('whitegrid')
 def main(argv):
 
 
-    dsList, module = [0, 1, 2, 3], 1
-    # dsList, module = [4, 5], 2
+    # dsList, module = [0, 1, 2, 3, 5], 1
+    dsList, module = [4, 5], 2
 
     theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && C==%d"%(module)
 
@@ -66,8 +66,8 @@ def main(argv):
         palpha = 1. * np.arange(len(alphaList)) / (len(alphaList) - 1)
         pge = 1. * np.arange(len(geList)) / (len(geList) - 1)
 
-        # ksresult = ks_2samp(nuList, alphaList)
-        ksresult = ks_2samp(nuList, geList)
+        ksresult = ks_2samp(nuList, alphaList)
+        # ksresult = ks_2samp(nuList, geList)
         ksresultTot.append(ksresult)
 
         # Save the ending time of each dataset (maximum time of last event of the 3 distributions)
