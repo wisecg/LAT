@@ -8,7 +8,7 @@ import waveLibs as wl
 
 """
     This script is for simple Poisson counting of regions after successive cuts
-    Can also draw spectra with cuts
+    Can also draw spectra with cuts -- but it's suuuuper slow
 
 """
 
@@ -96,19 +96,28 @@ def main(argv):
             for idx3, eRange in enumerate(EnergyList):
                 countDict[ch][idx2].append( float(bkgTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
 
+    # This should probably be saved into a better format for easier access -- probably dataframe
     print countDict
 
     # Merge histograms into a list of histograms per cut
     if specMode:
+        gStyle.SetOptStat(0)
+        c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
+        c1.SetLogy()
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
             hList[idx2] = hDict[chList[0]][idx2]
             for idx, ch in enumerate(chList[1:]):
                 hList[idx2].Add(hDict[ch][idx2])
 
-    print hList
-    for histo in hList:
-        print 'Integral: ', histo.Integral()
+            hList[idx2].SetTitle("")
+            hList[idx2].GetXaxis().SetTitle("Energy (keV)")
+            hList[idx2].GetYaxis().SetTitle("Counts/ %d keV"%((upper-lower)/bins))
+            hList[idx2].SetLineColor(idx2+1)
+            hList[idx2].Draw("SAME")
+
+        c1.SaveAs("./plots/SpecTest.pdf")
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
