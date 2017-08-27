@@ -101,7 +101,7 @@ def main(argv):
 
     # Merge histograms into a list of histograms per cut
     if specMode:
-        gStyle.SetOptStat(0)
+        ROOT.gStyle.SetOptStat(0)
         c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
         c1.SetLogy()
         for idx2,cuts in enumerate(cutList):
