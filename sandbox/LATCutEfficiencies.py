@@ -84,6 +84,7 @@ def main(argv):
             totalCut = megaCut.replace(" ", "") + runCut[:-2] + ")"
 
         cutList = [channelCut, PSA1, PSA2, PSA3, PSA4, PSA5, megaCut, totalCut]
+        cutNames = ["Basic cut", "+tailSlope", "+bandTime", "+bcTime", "+bcMax", "+noiseWeight", "+fitSlo", "+threshold"]
 
         for idx2,cuts in enumerate(cutList):
             # For each cut, append empty list
@@ -104,6 +105,8 @@ def main(argv):
         ROOT.gStyle.SetOptStat(0)
         c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
         c1.SetLogy()
+        leg1 = ROOT.TLegend(0.6, 0.6, 0.89, 0.89)
+        leg1.SetBorderSize(0)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
             hList[idx2] = hDict[chList[0]][idx2]
@@ -113,8 +116,9 @@ def main(argv):
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
             hList[idx2].GetYaxis().SetTitle("Counts/ %d keV"%((upper-lower)/bins))
-            hList[idx2].SetLineColor(idx2+1)
+            hList[idx2].SetLineColorAlpha(idx2+1, 0.5)
             hList[idx2].Draw("SAME")
+            leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
         c1.SaveAs("./plots/SpecTest.pdf")
 
