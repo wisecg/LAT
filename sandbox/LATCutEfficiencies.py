@@ -120,6 +120,7 @@ def main(argv):
             hList[idx2].Draw("SAME")
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
+        leg1.Draw()
         c1.SaveAs("./plots/SpecTest.pdf")
 
 
