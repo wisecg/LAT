@@ -8,13 +8,14 @@ import waveLibs as wl
 
 """
     This script is for simple Poisson counting of regions after successive cuts
+    Saves the data to a CSV file
     Can also draw spectra with cuts -- but it's suuuuper slow
 
 """
 
 def main(argv):
 
-    inDir, outDir = ".", "."
+    inDir, outDir = ".", "./plots"
     specMode = False
     dsNum = 1
     dType = "Nat"
@@ -49,14 +50,16 @@ def main(argv):
     bkgTree = ROOT.TChain("skimTree")
     bkgTree.Add(inPath)
 
-    hList = []
-    hDict = {}
-    countDict = {}
+    # List of histograms (for summing together) and Dictionary of histograms (for different cuts)
+    hList, hDict = [], {}
+
+    cutNames = ["BasicCut", "+tailSlope", "+bandTime", "+bcTime", "+bcMax", "+noiseWeight", "+fitSlo", "+threshold"]
+    # Create a list of DataFrames for each channel to concatenate at the end
+    dfList = []
+
     for idx,ch in enumerate(chList):
         # Create new key for dictionaries according to channel
         hDict[ch] = []
-        countDict[ch] = []
-
         # Get threshold info
         goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)
 
@@ -78,27 +81,32 @@ def main(argv):
         megaCut = channelCut + bandTimeCut + noiseWtCut + tailSlopeCut + bcTimeCut + fitSloCut
 
         runCut = "&&("
-        for idx,runRange in enumerate(goodRuns[ch]):
+        for idx2,runRange in enumerate(goodRuns[ch]):
             runCut += "(run>=%d&&run<=%d)||" % (runRange[0],runRange[1])
             # Strip all spaces to save space
             totalCut = megaCut.replace(" ", "") + runCut[:-2] + ")"
 
+        # Save all cuts into a list to iterate through
         cutList = [channelCut, PSA1, PSA2, PSA3, PSA4, PSA5, megaCut, totalCut]
-        cutNames = ["Basic cut", "+tailSlope", "+bandTime", "+bcTime", "+bcMax", "+noiseWeight", "+fitSlo", "+threshold"]
-
+        # Create dummy list and series to store into DataFrame later
+        cutMatrix= []
         for idx2,cuts in enumerate(cutList):
-            # For each cut, append empty list
-            countDict[ch].append([])
+            cutMatrix.append([])
             if specMode:
                 hDict[ch].append(ROOT.TH1D())
                 hDict[ch][idx2] = wl.H1D(bkgTree,"h0-Ch%d-%d"%(ch,idx2),bins,lower,upper,"trapENFCal",cuts)
 
             # For each energy range and each cut, get number of events and fill to list
             for idx3, eRange in enumerate(EnergyList):
-                countDict[ch][idx2].append( float(bkgTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
+                cutMatrix[idx2].append( float(bkgTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
 
-    # This should probably be saved into a better format for easier access -- probably dataframe
-    print countDict
+        # Create dataframe, add two additional columns with channel # and cut range
+        dfList.append( pd.DataFrame(np.transpose(np.array(cutMatrix)), columns = cutNames) )
+        dfList[idx].loc[:,'Channel'] = ch
+        dfList[idx].loc[:, 'Energy Range'] = pd.Series(EnergyList, index=dfList[idx].index)
+
+    dfTot = pd.concat(dfList)
+    dfTot.to_csv("%s/SpecList.csv"%(outDir), sep='\t')
 
     # Merge histograms into a list of histograms per cut
     if specMode:
@@ -121,7 +129,7 @@ def main(argv):
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
         leg1.Draw()
-        c1.SaveAs("./plots/SpecTest.pdf")
+        c1.SaveAs("%s/SpecTest.pdf"%(outDir))
 
 
 if __name__ == "__main__":
