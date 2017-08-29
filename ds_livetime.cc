@@ -51,12 +51,19 @@ double getVectorUncertainty(vector<double> aVector);
 double getVectorAverage(vector<double> aVector);
 vector<uint32_t> getBestIDs(vector<uint32_t> input);
 
+bool check_num(std::string const &in) {
+    char *end;
+    strtol(in.c_str(), &end, 10);
+    return !in.empty() && *end == '\0';
+}
+
 int main(int argc, char** argv)
 {
   // "let's get some (m)args"
   if (argc < 2) {
 		cout << "Usage: ./ds_livetime [dsNum] [options]\n"
          << " Options:\n"
+         << "   [dsNum]: 0-5, 5a, 5b, 6\n"
          << "   -raw: Only get raw duration\n"
          << "   -gds: Get livetime from GATDataSet\n"
          << "   -db1 ['options in quotes']: Get run list from runDB and quit\n"
@@ -70,9 +77,15 @@ int main(int argc, char** argv)
          << "    Ex.2: ./ds_livetime 5 -db1 'dataset 3'\n";
 		return 1;
 	}
-  int dsNum = stoi(argv[1]);
+  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, ds5a=0, ds5b=0;
+  int dsNum;
+  string dsStr = argv[1];
+  if (check_num(dsStr)) dsNum = stoi(dsStr);
+  else {
+    if (dsStr=="5a") { dsNum=5; ds5a=1; }
+    if (dsStr=="5b") { dsNum=5; ds5b=1; }
+  }
   string runDBOpt = "";
-  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0;
   vector<string> opt(argv+1, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
     if (opt[i] == "-raw") { raw=1; }
@@ -87,7 +100,10 @@ int main(int argc, char** argv)
     vector<int> runList;
     GATDataSet ds;
     cout << "Scanning DS-" << dsNum << endl;
-    for (int rs = 0; rs <= GetDataSetSequences(dsNum); rs++) LoadDataSet(ds, dsNum, rs);
+    if      (ds5a) { cout << "5A\n"; for (int rs = 0; rs <= 79; rs++) LoadDataSet(ds, dsNum, rs); }
+    else if (ds5b) { cout << "5B\n"; for (int rs = 80; rs <= 112; rs++) LoadDataSet(ds, dsNum, rs); }
+    else         for (int rs = 0; rs <= GetDataSetSequences(dsNum); rs++) LoadDataSet(ds, dsNum, rs);
+
     for (size_t i = 0; i < ds.GetNRuns(); i++) runList.push_back(ds.GetRunNumber(i));
     map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT);
 
@@ -402,7 +418,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     }
 
     // Now try and load a channel selection object and pop any other bad detectors
-    string chSelPath = Form("/global/projecta/projectdirs/majorana/users/jwmyslik/analysis/channelselection/DS%i/v_20170510-00001",dsNum);
+    string chSelPath = GetChannelSelectionPath(dsNum);
     if (FILE *file = fopen(chSelPath.c_str(), "r")) {
       fclose(file);
       GATChannelSelectionInfo ch_select (chSelPath, run);
