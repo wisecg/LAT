@@ -1,4 +1,4 @@
-## LAT (Low-Energy Analysis Toolkit)
+# LAT (Low-Energy Analysis Toolkit)
 
 Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy data.
 
@@ -14,6 +14,6 @@ Some general properties of the data are contained in 'DataSetInfo.py', while man
 
 There are a lot of half-baked ideas, some useful, in the folder 'sandbox'.
 
-# Contributors
+### Authors
 
 LAT was written by Clint Wiseman and Brian Zhu, with lots of input from the Majorana Collaboration.
