@@ -10,4 +10,6 @@ The bookeeping and many miscellaneous tasks are covered by 'job-panda.py', and m
 
 Some general properties of the data are contained in 'DataSetInfo.py', while many more are stored in the calibration database file 'calDB.json'.  See waveLibs and LAT2 for examples of accessing and updating the database.
 
+There are a lot of half-baked ideas, some useful, in the folder 'sandbox'.
+
 LAT was written by Clint Wiseman and Brian Zhu, with input from the Majorana Collaboration.
