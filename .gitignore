@@ -1,3 +1,5 @@
+.*
+!/.gitignore
 *.pyc
 *.root
 *.o
@@ -6,4 +8,3 @@ skim_mjd_data
 ds_livetime
 logs/*
 plots/*
-.depend
