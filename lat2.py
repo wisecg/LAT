@@ -6,7 +6,7 @@
 Calibrate energy parameters in LAT data.
 
 Modes:
-    -cal  : Scans a calibration range and updates parameters in a pandas file.
+    -cal  : Scans a calibration range and updates parameters in a TinyDB file.
     -upd  : Updates an input file with data from the calibration database file.
     -test : Database stuff.
     TODO: Quick check if a given range has enough events in each channel to calibrate.
@@ -17,7 +17,6 @@ v1: 07 Aug 2017
 """
 import sys, time, os, glob
 import numpy as np
-import pandas as pd
 import tinydb as db
 import DataSetInfo as ds
 import waveLibs as wl
@@ -36,7 +35,7 @@ def main(argv):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     dsNum, subNum, runNum = None,None,None
-    fCal, fUpd, fBat, fFor, fPlt = 0,0,0,0,0
+    fCal, fUpd, fBat, fFor, fPlt, fRaw = 0,0,0,0,0,0
     fPaths = [".","."]
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -46,13 +45,15 @@ def main(argv):
         if opt == "-upd":
             fUpd = True
             print "File update mode."
-
         if opt == "-p":
             fPlt = True
             print "Writing plots mode."
         if opt == "-force":
             fFor = True
             print "Force DB update mode."
+        if opt == "-raw":
+            fRaw = True
+            print "Printing raw peakfinder plots."
         if opt == "-d":
             dsNum = int(argv[i+1])
             print "Scanning DS-%d" % (dsNum)
@@ -70,12 +71,14 @@ def main(argv):
             fBat = True
             import matplotlib
             if os.environ.get('DISPLAY','') == '':
-                print('No display found. Using non-interactive Agg backend')
+                print "No display found. Using non-interactive Agg backend"
                 matplotlib.use('Agg')
             print "Batch mode selected."
+    global plt
+    import matplotlib.pyplot as plt
 
     if fCal:
-        rec = calibrateRuns(dsNum,subNum,fPaths,fBat,fPlt)
+        rec = calibrateRuns(dsNum,subNum,fPaths,fBat,fPlt,fRaw)
         wl.setDBCalRecord(rec,fFor)
 
     if fUpd:
@@ -85,12 +88,11 @@ def main(argv):
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig):
+def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig,plotRaw):
     """ ./lat2.py -cal [options]
     Source: http://nucleardata.nuclear.lu.se/toi/radSearch.asp
     Pb212 : 238.6322, Ra224 : 240.9866
     """
-    import matplotlib.pyplot as plt
     latTree = TChain("skimTree")
 
     # chain together all available cal runs for this calIdx
@@ -113,7 +115,6 @@ def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig):
     print "Found %d files for calIdx %d, run range [%d, %d]:" % (latTree.GetNtrees(), calIdx, calRuns[0], calRuns[1])
     for f in fPass: print f
 
-    # get the cut used to make the files
     f1 = TFile(fPass[0])
     theCut = f1.Get("theCut").GetTitle()
 
@@ -122,6 +123,7 @@ def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig):
     calRecord = {}
 
     fig = plt.figure(figsize=(10,7), facecolor='w')
+    # p0 = plt.subplot(111)
     p0 = plt.subplot(221)
     p1 = plt.subplot(222)
     p2 = plt.subplot(223)
@@ -129,174 +131,207 @@ def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig):
     if not batMode: plt.show(block=False)
 
     # loop over channels
+    counter = 0
     cpd = ds.CPD[dsNum]
     for ch in sorted(ds.DetID[dsNum]):
 
-        # skip dumb stuff
+        # skip dumb stuff and get det pos
         if ch%2==1: continue
         if ch in ds.PMon[dsNum]: continue
         if ds.CPD[dsNum][ch] == 1 or ds.CPD[dsNum][ch] == 2: continue
-
-        # set const default
-        calRecord[ch] = [-1,-1,-1,-1]
-
-        # get det pos
         pos = "C%sP%sD%s" % (str(cpd[ch])[0],str(cpd[ch])[1],str(cpd[ch])[2])
 
-        # TODO: change to multisite cut 'nMS'
-        n = latTree.Draw("trapENF:fitAmp:latAF:latAFC", theCut + " && trapENF > 100 && channel==%d && avse >-1" % ch, "GOFF")
+        calRecord[ch] = [-1,-1,-1,-1]
+
+        n = latTree.Draw("trapENF:fitAmp:latAF:latAFC", theCut + " && fitAmp > 50 && fitAmp < 1000 && channel==%d && avse >-1" % ch, "GOFF")
         if n==0:
-            print "%s  Chan %-4d - TotCts 0" % (pos, ch)
+            print "%s  Chan %-4d - totCts 0" % (pos, ch)
             continue
 
-        # do fitting and pull parameters.  Bail if any fit fails.
-        pk1 = peakInfo(latTree.GetV1(), n, ch, dsNum)
-        pk2 = peakInfo(latTree.GetV2(), n, ch, dsNum)
-        pk3 = peakInfo(latTree.GetV3(), n, ch, dsNum)
-        pk4 = peakInfo(latTree.GetV4(), n, ch, dsNum)
-        par1 = pk1.GetResults()
-        par2 = pk2.GetResults()
-        par3 = pk3.GetResults()
-        par4 = pk4.GetResults()
+        if not batMode:
+            if counter!=0:
+                value = raw_input()
+                if value=='q': exit(1)
+            counter += 1
 
-        # write to the record
-        calRecord[ch] = [par1[1],par2[1],par3[1],par4[1]]
+        # do fitting and pull parameters.
+        fit2 = True
+        pk1 = peakFit(latTree.GetV1(), n, ch, dsNum, "trapENF", plotRaw)
+        pk2 = peakFit(latTree.GetV2(), n, ch, dsNum, "fitAmp", plotRaw)
+        pk3 = peakFit(latTree.GetV3(), n, ch, dsNum, "latAF", plotRaw)
+        pk4 = peakFit(latTree.GetV4(), n, ch, dsNum, "latAFC", plotRaw)
 
-        # print status message
-        totCts, pkCts, fitChi2 = par1[3], par1[4], par1[5]
+        r1 = pk1.GetResults()
+        r2 = pk2.GetResults()
+        r3 = pk3.GetResults()
+        r4 = pk4.GetResults()
+
+        calRecord[ch] = [r1[0],r2[0],r3[0],r4[0]]
+
         if pk1.fail() or pk2.fail() or pk3.fail() or pk4.fail():
-            print "%s  Chan %-4d - TotCts %-5d  Fails: trapENF %d  fitAmp %d  latAF %d  latAFC %d" % (pos,ch,n,pk1.fail(),pk2.fail(),pk3.fail(),pk4.fail())
+            print "%s  Chan %-4d - totCts %-5d  Fails: trapENF %d  fitAmp %d  latAF %d  latAFC %d" % (pos,ch,n,pk1.fail(),pk2.fail(),pk3.fail(),pk4.fail())
         else:
-            print "%s  Chan %-4d - TotCts %-5d  PeakCts %-4d  pk%%/tot %-5.3f  Chi2 %-3.2f  calRecord[%d]:[%.3f,%.3f,%.3f,%.3f]" % (pos,ch,totCts,pkCts,100.*(pkCts)/totCts,fitChi2,ch,calRecord[ch][0],calRecord[ch][1],calRecord[ch][2],calRecord[ch][3])
+            print "%s  Chan %-4d - totCts %-5d  modes (%d %d %d %d)  calRecord:[%.3f,%.3f,%.3f,%.3f]" % (pos,ch,n,r1[7],r2[7],r3[7],r4[7],r1[0],r2[0],r3[0],r4[0])
 
         # plotting
-        # (-b -p : save but don't display plots.  -b don't save or display, -p display and save, no opts: display only)
         if batMode and not saveFig: continue
-        if not batMode:
-            value = raw_input()
-            if value=='q': break
-
         p0.cla()
-        mu, const, fwhm, totCts, cts, chi2, bigPk = pk1.GetResults()
-        xvals, hist, fit = pk1.GetArrays()
-        p0.margins(x=0,y=0)
-        p0.plot(xvals, hist, color='blue', ls='steps-post', label='trapENF (%d cts)' % cts)
-        p0.axvline(bigPk, color='orange', label='pkfinder: %.3f' % bigPk)
-        p0.axvline(mu, color='magenta', label='centroid: %.3f' % mu)
-        p0.plot(xvals, fit, color='red', label='bestfit\nchi2: %.3f\nconst: %.3f\ncalFWHM %.2f keV' % (chi2,const,const*fwhm))
-        p0.legend(loc='best',fontsize=10)
-
+        pk1.GetPlot(p0)
         p1.cla()
-        mu, const, fwhm, totCts, cts, chi2, bigPk = pk2.GetResults()
-        xvals, hist, fit = pk2.GetArrays()
-        p1.margins(x=0,y=0)
-        p1.plot(xvals, hist, color='blue', ls='steps-post', label='fitAmp (%d cts)' % cts)
-        p1.axvline(bigPk, color='orange', label='pkfinder: %.3f' % bigPk)
-        p1.axvline(mu, color='magenta', label='centroid: %.3f' % mu)
-        p1.plot(xvals, fit, color='red', label='bestfit\nchi2: %.3f\nconst: %.3f\ncalFWHM %.2f keV' % (chi2,const,const*fwhm))
-        p1.legend(loc='best',fontsize=10)
-
+        pk2.GetPlot(p1)
         p2.cla()
-        mu, const, fwhm, totCts, cts, chi2, bigPk = pk3.GetResults()
-        xvals, hist, fit = pk3.GetArrays()
-        p2.margins(x=0,y=0)
-        p2.plot(xvals, hist, color='blue', ls='steps-post', label='latAF (%d cts)' % cts)
-        p2.axvline(bigPk, color='orange', label='pkfinder: %.3f' % bigPk)
-        p2.axvline(mu, color='magenta', label='centroid: %.3f' % mu)
-        p2.plot(xvals, fit, color='red', label='bestfit\nchi2: %.3f\nconst: %.3f\ncalFWHM %.2f keV' % (chi2,const,const*fwhm))
-        p2.legend(loc='best',fontsize=10)
-
+        pk3.GetPlot(p2)
         p3.cla()
-        mu, const, fwhm, totCts, cts, chi2, bigPk = pk4.GetResults()
-        xvals, hist, fit = pk4.GetArrays()
-        p3.margins(x=0,y=0)
-        p3.plot(xvals, hist, color='blue', ls='steps-post', label='latAFC (%d cts)' % cts)
-        p3.axvline(bigPk, color='orange', label='pkfinder: %.3f' % bigPk)
-        p3.axvline(mu, color='magenta', label='centroid: %.3f' % mu)
-        p3.plot(xvals, fit, color='red', label='bestfit\nchi2: %.3f\nconst: %.3f\ncalFWHM %.2f keV' % (chi2,const,const*fwhm))
-        p3.legend(loc='best',fontsize=10)
-
+        pk4.GetPlot(p3)
         plt.tight_layout(rect=[0,0,1,0.97])
         plt.suptitle("DS-%d  %s (%d)  calIdx %d" % (dsNum,pos,ch,calIdx))
-
         if not batMode: plt.pause(0.00001)
-        if saveFig: plt.savefig("./plots/ds%d_idx%d_ch%d.pdf" % (dsNum, calIdx, ch))
+        if saveFig:
+            plt.savefig("./plots/ds%d_idx%d_ch%d.pdf" % (dsNum, calIdx, ch))
 
     return {"key":key,"vals":calRecord}
 
 
-class peakInfo:
-    """ Stores the results from find238Peak.
-        Mainly this is useful for error handling.
-    """
-    def __init__(self, vec, n, ch, dsNum):
+class peakFit:
+    """ For the fitting routine. """
+    def __init__(self, vec, n, ch, dsNum, name, plotRaw=False):
+        self.Name = name
+        res = self.find238Peak(vec, n, ch, dsNum, plotRaw)
+        self.fitFail, self.ch, self.nTot, self.nPkCts, self.chi2, self.rawX, self.rawH, self.rawMu, self.rawThr, self.pks, self.fineX, self.fineH, self.fitFunc, self.fitMu, self.fitFWHM, self.calConst, self.fitMode = res
 
-        result = find238Peak(vec, n, ch, dsNum)
-        self.Fail = result[0]
-        self.Ch, self.Mu, self.Fwhm, self.Const = 0,0,0,-1
-        self.Spd, self.totCts, self.Cts, self.Chi2 = 0,0,0,0
-        self.Fit, self.Hist, self.Xvals = 0,0,0
-        self.BigPk = 0
-        if not self.Fail:
-            self.Fail, self.Ch, self.Mu, self.Fwhm, self.Const, self.Spd, self.totCts, self.Cts, self.Chi2, self.Fit, self.Hist, self.Xvals, self.BigPk = result
+    def fail(self): return self.fitFail
+    def GetResults(self): return [self.calConst, self.fitMu, self.fitFWHM, self.nTot, self.nPkCts, self.chi2, self.rawMu, self.fitMode]
+    def GetRawArrays(self): return [self.rawX, self.rawH]
+    def GetFitArrays(self): return [self.fineX, self.fineH, self.fitFunc]
+    def GetPlot(self, ax=None):
+        """ If the fit fails, show the raw histogram. """
+        if ax is None:
+            ax = plt.gca()
+        const, mu, fwhm, nTot, nPk, chi2, rawMu, fitMode = self.GetResults()
+        if self.fitFail:
+            xvals, hist = self.GetRawArrays()
+            ax.margins(x=0.01,y=0.15)
+            ax.plot(xvals, hist, color='red', ls='steps-post', label='%s:%dcts\npkThr:%.1f' % (self.Name,nTot,self.rawThr))
+            for pk in self.pks:
+                ax.axvline(pk,label="pk @ %.1f" % pk)
+            ax.legend(loc='best',fontsize=10)
+            return ax
+        else:
+            xvals, hist, fit = self.GetFitArrays()
+            ax.margins(x=0.01,y=0.1)
+            ax.plot(xvals, hist, color='blue', ls='steps-post', label='%s (%d nPk)' % (self.Name,nPk))
+            ax.axvline(rawMu, color='orange', label='muGuess: %.3f' % rawMu)
+            ax.axvline(mu, color='magenta', label='muFit: %.3f' % mu)
+            ax.plot(xvals, fit, color='red', label='bestfit\nchi2: %.3f\nconst: %.3f\ncalFWHM %.2f keV' % (chi2,const,const*fwhm))
+            ax.legend(loc='best',fontsize=10)
+            return ax
 
-    def fail(self): return self.Fail
-    def GetResults(self): return [self.Mu, self.Const, self.Fwhm, self.totCts, self.Cts, self.Chi2, self.BigPk]
-    def GetArrays(self): return [self.Xvals, self.Hist, self.Fit]
+    def find238Peak(self, vec, nTot, ch, dsNum, plotRaw=False):
+        """ Assumes that the 238 peak is the highest energy peak in the spectrum.
+            This means you have to feed it a cal file truncated at 250 kev.
+            Return list:
+            [fitFail,ch,nTot,nPkCts,chi2,rawX,rawH,rawMu,rawThr,pks,fineX,fineH,fitFunc,fitMu,fitFWHM,calConst,fitMode]
+        """
+        # get det position
+        cpd = ds.CPD[dsNum]
+        pos = "C%sP%sD%s" % (str(cpd[ch])[0],str(cpd[ch])[1],str(cpd[ch])[2])
 
+        # read in raw data from a tree.GetVX() object
+        lst = []
+        for i in range(nTot): lst.append(vec[i])
+        arr = np.asarray(lst)
 
-def find238Peak(vec, nEnt, ch, dsNum):
-    """ Assumes that the 238 peak is the highest peak in the spectrum.
-        This means you have to feed it a cal file truncated at 250 kev.
-    """
-    start = time.clock()
+        # coarse histogram & peak detection w/ dynamic threshold
+        nBins = 70
+        rawH, rawX = np.histogram(arr,bins=nBins)
+        rawX = rawX[:-1]
+        idx = np.where(rawH>10) # eliminate outliers
+        avgCts = np.sum(rawH[idx][10:20])/10.
+        rawThr = avgCts * 0.5
+        if rawThr <= 0:
+            print "Bad peakdet rawThreshold: rawThr %.1f  avgCts %d" % (rawThr,avgCts)
+            rawThr = 50
+        pks, cts = wl.GetPeaks(rawH, rawX, rawThr)
+        rawMu = 0
+        if len(pks > 0): rawMu = pks[-1]
+        if plotRaw or len(pks) < 1:
+            return [True,ch,nTot,0,-1,rawX,rawH,rawMu,rawThr,pks,np.zeros(1),np.zeros(1),np.zeros(1),0,0,-1,0]
 
-    # get det position
-    cpd = ds.CPD[dsNum]
-    pos = "C%sP%sD%s" % (str(cpd[ch])[0],str(cpd[ch])[1],str(cpd[ch])[2])
+        # fine histogram.  Assume the last peak in pks is the 238 peak.
+        # adjust the first guess into the bin center
+        pkGuess = pks[-1] + (rawX[-1]-rawX[0])/float(nBins)/2.
+        lo, hi = pks[-1] - 0.02*pks[-1], pks[-1] + 0.03*pks[-1]
+        fineH, fineX = np.histogram(arr, bins=100, range=(lo,hi))
+        fineX = fineX[:-1]
 
-    # read in raw data from a tree.GetVX() object
-    lst = []
-    for i in range(nEnt): lst.append(vec[i])
-    arr = np.asarray(lst)
+        # fit step.  Try fitting w/ a couple different models before giving up.
+        rawMu = fineX[np.argmax(fineH[1:-2])]
+        rawCt = fineH[np.argmax(fineH[1:-2])]
 
-    # coarse histogram
-    h1, x1 = np.histogram(arr,bins=1500)
-    x1 = x1[:-1]
-    pks, cts = wl.GetPeaks(h1, x1, 30)
-    if len(pks) < 1:
-        return [True,ch,-1,-1,-1,0,nEnt,0,-1,np.zeros(len(x1)),h1,x1,-1]
+        pars, guess = [],[]
 
-    # fine histogram
-    bigPk = pks[ np.argmax(cts) ]
-    bigCt = cts[ np.argmax(cts) ]
-    lo, hi = bigPk - 0.01*bigPk, bigPk + 0.02*bigPk
-    hist, xvals = np.histogram(arr, bins=150, range=(lo,hi))
-    xvals = xvals[:-1]
+        fitMode = 0
+        try:
+            # a1, c0, mu, sig, c1, tau, c2, a2, b
+            pars, guess = [0.]*10, [rawCt, 1., rawMu, 0.8, 10., 100., 0.1, 0.1*rawCt, 5.]
+            pars,_ = curve_fit(wl.peakModel238240, fineX, fineH, p0=guess)
+            fitMode = 1
+        except RuntimeError: pass
+        if fitMode==0:
+            try:
+                # a1,c0,mu,sig,c1,tau,c2,b
+                pars, guess = [0.]*8, [rawCt, 1., rawMu, 0.8, 10., 100., 0.1, 5.]
+                pars,_ = curve_fit(wl.peakModel238_2, fineX, fineH, p0=guess)
+                fitMode = 2
+            except RuntimeError: pass
+        if fitMode==0:
+            try:
+                # a, mu, sig, tau
+                pars, guess = [0.]*4, [rawCt, rawMu, 0.8, 2.]
+                pars,_ = curve_fit(wl.peakModel238, fineX, fineH, p0=guess)
+                fitMode = 3
+            except ValueError:
+                print "%s  Chan. %-4d - ValueError. ydata or xdata contain nan's." % (pos,ch)
+                return [True,ch,nTot,0,-1,rawX,rawH,rawMu,rawThr,pks,np.zeros(1),np.zeros(1),np.zeros(1),0,0,-1,0]
+            except RuntimeError:
+                print "%s  Chan. %-4d - RuntimeError.  Leastsq minimization failed." % (pos,ch)
+                return [True,ch,nTot,0,-1,rawX,rawH,rawMu,rawThr,pks,np.zeros(1),np.zeros(1),np.zeros(1),0,0,-1,0]
 
-    # fit step
-    pars, guess = [0.,0.,0.,0.], [bigCt, bigPk, 0.8, 2.]
-    try:
-        pars,_ = curve_fit(wl.peakModel238, xvals, hist, p0=guess)
-    except ValueError:
-        print "Chan. %-4d - ValueError. ydata or xdata contain nan's." % ch
-        return [True,ch,-1,-1,-1,0,nEnt,0,-1,np.zeros(len(x1)),h1,x1,-1]
-    except RuntimeError:
-        print "Chan. %-4d - RuntimeError.  Leastsq minimization failed." % ch
-        return [True,ch,-1,-1,-1,0,nEnt,0,-1,np.zeros(len(x1)),h1,x1,-1]
+        # calculate stuff
+        fitFunc = np.zeros(1)
+        fitMu, sig, fitFWHM = 0.,0.,0.
 
-    # calculate stuff
-    mu, sig = pars[1], pars[2]
-    fwhm = pars[2] * 2.3548
-    const = 238.6322 / mu
-    fitSpeed = time.clock()-start
-    idx = np.where((xvals >= mu-3.*sig) & (xvals <= mu+3.*sig))
-    nCts = np.sum(hist[idx])
-    fit = wl.peakModel238(xvals, *pars)
-    chi2NDF = np.sum( np.square(hist[idx] - fit[idx]) / fit[idx] ) / (len(fit[idx]) - 4.)
+        if fitMode==1:
+            fitMu, sig, fitFWHM = pars[2], pars[3], 2.3548 * pars[3]
+            fitFunc = wl.peakModel238240(fineX, *pars)
+        elif fitMode==2:
+            fitMu, sig, fitFWHM = pars[2], pars[3], 2.3548 * pars[3]
+            fitFunc = wl.peakModel238_2(fineX, *pars)
+        elif fitMode==3:
+            fitMu, sig, fitFWHM = pars[1], pars[2], pars[2] * 2.3548
+            fitFunc = wl.peakModel238(fineX, *pars)
 
-    # fit success!
-    return [False,ch,mu,fwhm,const,fitSpeed,nEnt,nCts,chi2NDF,fit,hist,xvals,bigPk]
+        if fitMu==0: print "fitmu is zero.  mode is ",fitMode
+        calConst = 238.6322 / fitMu
+
+        idx = np.where((fineX >= fitMu-3.*sig) & (fineX <= fitMu+3.*sig))
+        nPkCts = np.sum(fineH[idx])
+        denom = len(fitFunc[idx]) - 4.
+        if denom == 0: denom = 1
+        chi2 = np.sum( np.square(fineH[idx] - fitFunc[idx]) / fitFunc[idx] ) / denom
+
+        # consistency checks
+        # TODO: a more verbose error message?
+        fitFail = False
+        err = self.Name + " Error: "
+        if fitMu < 400: err += "fitMu=%.1f  " % fitMu
+        if nPkCts < 100: err += "nPkCts=%d  " % nPkCts
+        if chi2 < 0: err += "chi2=%.1f  " % chi2
+        if fitMu < 400 or nPkCts < 100 or chi2 < 0:
+            print err
+            fitFail = True
+
+        return [fitFail,ch,nTot,nPkCts,chi2,rawX,rawH,rawMu,rawThr,pks,fineX,fineH,fitFunc,fitMu,fitFWHM,calConst,fitMode]
 
 
 def testDB():

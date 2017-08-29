@@ -6,10 +6,12 @@ from scipy.fftpack import fft
 from scipy.optimize import curve_fit
 from scipy.ndimage.filters import gaussian_filter
 from scipy import signal as sg
+import scipy.special as sp
 # from pysiggen import Detector
 from ROOT import TTree, std, TH1D, TH2D
 from ROOT import MGTWaveform
 import DataSetInfo as ds
+limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 """
 A collection of 'useful' crap.
 C. Wiseman, B. Zhu
@@ -104,6 +106,21 @@ def GetPars(f1):
 def gauss_function(x, a, x0, sigma):
     """ Just a simple gaussian. """
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
+
+
+def evalXGaus(x,mu,sig,tau):
+    """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
+        Negative tau: Regular WF, high tail
+        Positive tau: Backwards WF, low tail
+    """
+    tmp = (x-mu + sig**2./2./tau)/tau
+    if all(tmp < limit):
+        return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
+    else:
+        print "Exceeded limit ..."
+        # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
+        den = 1./(sig + tau*(x-mu)/sig)
+        return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 
 
 def tailModelExp(t, a, b):
@@ -351,6 +368,41 @@ def GetPeaks(hist, xvals, thresh):
 def peakModel238(ene,amp,mu,sig,c1):
     """ Gaussian plus a flat background component. """
     return gauss_function(ene,amp,mu,sig) + c1
+
+
+def peakModel238240(x,a1,c0,mu,sig,c1,tau,c2,a2,b):
+    """ Combined 238 + 240 peak model.
+        Source: http://nucleardata.nuclear.lu.se/toi/radSearch.asp
+    Parameter [guess value] [description]
+    Pb212 (238.6322 keV) - Gaussian + xGauss backward step + erfc forward step
+        a1  100.   overall amplitude
+        c0  1.     gaussian amplitude
+        mu  pkFit  238 peak mean in raw 'x' units, input from peakFit
+        sig 0.4    width
+        c1  10.    xgauss amplitude
+        tau 100.   decay constant of xgauss function
+        c2  0.1    erfc amplitude
+    Ra224 (240.9866 keV) - Gaussian only (it's a much smaller contribution)
+        a2  0.1*a1 240 peak amplitude
+    Linear BG
+        # m  -0.001  slope
+        b  5.      offset
+    """
+    f0 = gauss_function(x,c0,mu,sig)
+    f1 = evalXGaus(x,mu,sig,tau)
+    f2 = sp.erfc((x-mu)/sig/np.sqrt(2.))
+    mu240 = 240.9866 / (238.6322 / mu) # peak/gain
+    f3 = gauss_function(x,a2,mu240,sig)
+    return a1 * (f0 + c1*f1 + c2*f2) + f3 + b
+
+
+def peakModel238_2(x,a1,c0,mu,sig,c1,tau,c2,b):
+    """ See above. """
+    f0 = gauss_function(x,c0,mu,sig)
+    f1 = evalXGaus(x,mu,sig,tau)
+    f2 = sp.erfc((x-mu)/sig/np.sqrt(2.))
+    return a1 * (f0 + c1*f1 + c2*f2) + b
+
 
 
 def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
