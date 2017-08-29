@@ -1,4 +1,6 @@
-LAT (Low-Energy Analysis Toolkit) is intended to do a complete analysis of Majorana Demonstrator DS0-5 data.
+## LAT (Low-Energy Analysis Toolkit)
+
+Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy data.
 
 The structure is mainly:
 - skim_mjd_data (produce low energy skim files w/ special options to reduce threshold)
@@ -12,4 +14,6 @@ Some general properties of the data are contained in 'DataSetInfo.py', while man
 
 There are a lot of half-baked ideas, some useful, in the folder 'sandbox'.
 
-LAT was written by Clint Wiseman and Brian Zhu, with input from the Majorana Collaboration.
+# Contributors
+
+LAT was written by Clint Wiseman and Brian Zhu, with lots of input from the Majorana Collaboration.
