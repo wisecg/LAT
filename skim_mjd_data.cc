@@ -284,7 +284,7 @@ int main(int argc, const char** argv)
 
   // output - time variables
   double runTime_s=0, startTime=0, startTime0=0, stopTime=0, startClockTime,
-    clockTime, localTime, dtPulserGlobal = 0;
+    clockTime, localTime, dtPulserGlobal;
   vector<double> tOffset, blrwfFMR50, triggerTrapt0, dtPulserCard;
   vector<int> trapENMSample;
   TTimeStamp globalTime;
@@ -303,15 +303,17 @@ int main(int argc, const char** argv)
   if (lowEnergy){
     skimTree->Branch("trapENMSample", &trapENMSample);
     skimTree->Branch("blrwfFMR50",&blrwfFMR50);
-  	skimTree->Branch("dtPulserGlobal",&dtPulserGlobal, "dtPulserGlobal/D");
+    skimTree->Branch("dtPulserGlobal",&dtPulserGlobal, "dtPulserGlobal/D");
   	skimTree->Branch("dtPulserCard",&dtPulserCard);
   }
 
   // output - energy variables
-  vector<double> trapECal, onBoardE, trapENFCal, trapENMCal, trapENF, trapENM;
+  vector<double> trapECal, onBoardE, trapENFCal, trapENMCal, trapENF, trapENM, trapENFCalC, trapENMCalC;
   double sumEH=0, sumEL=0, sumEHClean=0, sumELClean=0, sumEHL=0;
   skimTree->Branch("trapENFCal", &trapENFCal);
   skimTree->Branch("trapENMCal", &trapENMCal);
+  skimTree->Branch("trapENFCalC", &trapENFCalC);
+  skimTree->Branch("trapENMCalC", &trapENMCalC);
   if(!smallOutput) {
     skimTree->Branch("trapECal", &trapECal);
     skimTree->Branch("onBoardE", &onBoardE);
@@ -495,10 +497,9 @@ int main(int argc, const char** argv)
   MJTChannelMap *chMap = (MJTChannelMap*)bltFile->Get("ChannelMap");
   vector<uint32_t> pulserMons = chMap->GetPulserChanList();
 
-  // Dummy variables for time of pulser event
-  double dummydTGlobal = -1.; 
+  // Variables for time of pulser event (dtPulser)
+  double dummydTGlobal = -1.;
   map<int, double> dummydTCard = {};
-
   katrin::KTable chTable = chMap->GetTable();
   map<int, int> pulserCardMap = {};
   vector<katrin::KVariant> chVMEVec = chTable.GetColumn("kVME");
@@ -507,11 +508,12 @@ int main(int argc, const char** argv)
   vector<katrin::KVariant> chIDLoVec = chTable.GetColumn("kIDLo");
   for(size_t i = 0; i < chSlotVec.size(); i++)
   {
-  	// dummydTCard has key: 100*VME + cardSlot to differentiate between M1 and M2
-  	dummydTCard.insert(make_pair((int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble(), -1.));
-  	pulserCardMap[(int)chIDHiVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
-  	pulserCardMap[(int)chIDLoVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
+    // dummydTCard has key: 100*VME + cardSlot to differentiate between M1 and M2
+    dummydTCard.insert(make_pair((int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble(), -1.));
+    pulserCardMap[(int)chIDHiVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
+    pulserCardMap[(int)chIDLoVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
   }
+
 
   gatReader.SetTree(gatChain); // reset the reader
   gROOT->cd(tdir->GetPath());
@@ -556,23 +558,14 @@ int main(int argc, const char** argv)
     }
 
     // Skip this event if it is a pulser event as identified by Pinghan
-    if(*eventDC1BitsIn & kPinghanPulserMask) {
-    	if(lowEnergy)
-    	{
-			dummydTGlobal = (double)*globalTimeIn;
-      		for (size_t i = 0; i < (*channelIn).size(); i++) 
-      		{
-      			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
-      			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
-      		}
-    	}
-    	continue;
-    }
+    if(*eventDC1BitsIn & kPinghanPulserMask) continue;
 
     // Clear all hit-level vector variables
     iHit.resize(0);
     trapENFCal.resize(0);
     trapENMCal.resize(0);
+    trapENFCalC.resize(0);
+    trapENMCalC.resize(0);
     channel.resize(0);
     pos.resize(0);
     det.resize(0);
@@ -778,6 +771,9 @@ int main(int argc, const char** argv)
       mAct_g.push_back(actM4Det_g[hitDetID]);
       isGood.push_back(!detIDIsVetoOnly[hitDetID]);
 
+      trapENFCalC.push_back(GetENFC(hitCh, dsNum, hitENFCal, run));
+      trapENMCalC.push_back(GetENMC(hitCh, dsNum, hitENMCal, run));
+
       //============================================================================
       // FIXME: Temporary change to fix some data cleaning bits at the skim
       // level, until it makes sense to reprocess to fix them in GAT.
@@ -853,7 +849,7 @@ int main(int argc, const char** argv)
         threshKeV.push_back((*threshKeVIn)[i]);
         threshSigma.push_back((*threshSigmaIn)[i]);
         dtPulserGlobal = (double)globalTime - dummydTGlobal;
-		dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
+	      dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
       }
 
       double dtmu = 0; // same calculation as above, only for each hit
@@ -901,6 +897,5 @@ int main(int argc, const char** argv)
   cout << skimTree->GetEntries() << " entries saved.\n";
 
   fOut->Close();
-
   return 0;
 }

@@ -2,59 +2,52 @@
 #!/usr/local/bin/python
 """
 ========================= job-panda.py ========================
-A cute and adorable way to do various low-energy tasks.
+A cute and adorable way to do various low-energy processing tasks.
+
+The functions are arranged mostly sequentially, i.e. this file
+documents the "procedure" necessary to produce LAT data,
+starting from running skim_mjd_data.
 
 Dependencies:
 - skim_mjd_data.cc & DataSetInfo.hh
-  (very slightly modified from this revision:
-  https://github.com/mppmu/GAT/commit/3bad1ebe7b9d0d8984d3861764f8d34e9955f284)
 - wave-skim.cc
 - lat.py, waveModel.py, waveLibs.py
 
 =================== C. Wiseman, 2 June 2017 ===================
 """
-Usage = """
-./job-panda.py [options]
-[opt1]: ... eh. TBD.
-"""
-
 import sys, shlex, glob, os, re
 import subprocess as sp
 import DataSetInfo as ds
-from textwrap import dedent
-from shutil import copyfile
 
-homePath = os.path.expanduser('~')
-# skimDir = "/global/homes/w/wisecg/project/skim"
-# waveDir = "/global/homes/w/wisecg/project/waveskim"
-# latDir = "/global/homes/w/wisecg/project/lat"
-skimDir = "/projecta/projectdirs/majorana/users/bxyzhu/skim"
-waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
-latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
-pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
+homeDir    = os.path.expanduser('~')
+skimDir    = home+"/project/bg-skim"
+waveDir    = home+"/project/bg-wave" # split files are in waveDir/split
+latDir     = home+"/project/bg-lat"
+calSkimDir = home+"/project/cal-skim"
+calWaveDir = home+"/project/cal-wave"
+calLatDir  = home+"/project/cal-lat"
+pandaDir   = home+"/project/panda-skim"
+# skimDir = "/projecta/projectdirs/majorana/users/bxyzhu/skim"
+# waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
+# latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
+# pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
+qsubStr = "qsub -l h_vmem=2G qsub-job.sh"
 
 # =============================================================
 def main(argv):
 
     if len(argv)==0:
-        print Usage
+        print "Read the main function, broh!"
         return
 
-    # hey, let's get some margs
+    # get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
     f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
 
-        if opt == "-clean": cleanUp()
-        if opt == "-purge": purgeLogs()
-        if opt == "-makeScript": makeScript()
-        if opt == "-checkLogs": checkLogErrors()
-        if opt == "-checkLogsPython": checkLogErrorsPython()
-        if opt == "-skimLAT": skimLAT(argv[i+1],argv[i+2],argv[i+3])
-        if opt == "-getEff": getEff()
-        if opt == "-cleanlat" : cleanlat()
-        if opt == "-threshCut" : threshCut()
-        if opt == "-push" : pushOneRun()
+        if opt == "-ds": dsNum = int(argv[i+1])
+        if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
+        if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
 
         if opt == "-skim":      f['a'] = True
         if opt == "-wave":      f['b'] = True
@@ -63,6 +56,7 @@ def main(argv):
         if opt == "-split":     f['f'] = True
         if opt == "-lat":       f['g'] = True
         if opt == "-merge":     f['h'] = True
+
         if opt == "-megaLAT":   f['i'] = True
         if opt == "-megaSkim":  f['j'] = True
         if opt == "-megaWave":  f['k'] = True
@@ -71,36 +65,28 @@ def main(argv):
         if opt == "-pandify":   f['p'] = True
 
         if opt == "-cal":       f['c'] = True
+        if opt == "-lat2":      f['n'] = True
         if opt == "-force":     f['q'] = True
 
-        if opt == "-ds": dsNum = int(argv[i+1])
-        if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
-        if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
-
+        # one-offs
+        if opt == "-purge": purgeLogs()
+        if opt == "-makeScript": makeScript()
+        if opt == "-checkLogs": checkLogErrors()
+        if opt == "-checkLogs2": checkLogErrors2()
+        if opt == "-skimLAT": skimLAT(argv[i+1],argv[i+2],argv[i+3])
+        if opt == "-getEff": getEff()
+        if opt == "-threshCut" : threshCut()
+        if opt == "-push" : pushOneRun()
         if opt == "-tuneCuts": tuneCuts(argv[i+1],dsNum)
         if opt == "-applyChannelCut" : applyChannelCut(int(argv[i+1]),int(argv[i+2]))
         if opt == "-applyCuts": applyCuts(int(argv[i+1]))
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
 
-    # -- create calibration run list --
-    calList = []
-    if f['q'] and subNum==None and runNum==None: # -ds
-        for i in range(0,len(ds.calRanges[dsNum])):
-            numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
-            if numRuns > 4:
-                for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
-                    calList.append(rx)
-            else:
-                for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
-                    calList.append(rx)
-    elif f['q'] and runNum==None: # -sub
-        numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
-        if numRuns > 4:
-            for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
-                calList.append(rx)
-    elif f['q'] and subNum==None: # -run
-        calList.append(runNum)
 
+    # -- calibration stuff --
+    calList = []
+    if f['c']: calList = getCalRunList(dsNum,subNum,runNum)
+    if f['n']: runCal(dsNum, subNum, f['q'])
 
     # -- go running --
     if f['a']: runSkimmer(dsNum, subNum, runNum, calList=calList)
@@ -111,7 +97,7 @@ def main(argv):
     if f['g']: runLAT(dsNum, subNum, runNum, calList=calList)
     if f['p']: pandifySkim(dsNum, subNum, runNum, calList=calList)
 
-    # mega modes
+    # -- mega modes --
     if f['i']:
         for i in range(0,5+1): runLAT(i)
     if f['j']:
@@ -123,21 +109,21 @@ def main(argv):
     if f['l']:
         for i in range(0,5+1): writeCut(i)
 
-    # LAT2 calibration jobs
-    if f['c']: runCal(dsNum, subNum, f['q'])
-
     # print "Done! Job Panda loves you."
 # =============================================================
 
 def sh(cmd):
+    """ Just a quick way to call the shell."""
     sp.call(shlex.split(cmd))
 
 
 def makeScript():
-    """ Makes a qsub submission script that job-panda can use.
-    Only need to do this once.
-    Don't forget to change the user-specific things at the top!"""
-
+    """ ./job-panda.py -makeScript
+        Makes a qsub submission script that job-panda can use.
+        Only need to do this once.
+        Don't forget to change the user-specific things at the top!
+    """
+    from textwrap import dedent
     print "Generating qsub submission script, 'qsub-job.sh'"
 
     outFile = open('qsub-job.sh','w+')
@@ -168,107 +154,87 @@ def makeScript():
     outFile.close()
 
 
+def purgeLogs():
+    print "Purging logs ..."
+    for fl in glob.glob("./logs/*"): os.remove(fl)
+
+
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-        Run skim_mjd_data.
+        Submit skim_mjd_data jobs.
     """
+    sh("make -s")
 
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, i, skimDir))
-    elif not calList and runNum==None: # -sub
-        print "ds %i  sub %i" % (dsNum,subNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (dsNum, subNum, skimDir))
-    elif not calList and subNum==None: # -run
-        print "ds %i  run %i" % (dsNum,runNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (runNum, skimDir))
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, i, skimDir))
+        # -sub
+        elif runNum==None:
+            sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, subNum, skimDir))
+        # -run
+        elif subNum==None:
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, runNum, skimDir))
+    # cal
     else:
         for i in calList:
-            print "(cal) ds %i  run %i" % (dsNum, i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (i, skimDir))
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, i, skimDir))
 
 
 def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-        Run wave-skim.  Optionally set a calibration cut.
+        Submit wave-skim jobs.
     """
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
-    elif not calList and runNum==None: # -sub
-        print "ds %i  sub %i" % (dsNum,subNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -r %d %d -p %s %s'""" % (dsNum, subNum, skimDir, waveDir) )
-    elif not calList and subNum==None: # -run
-        print "ds %i  run %i" % (dsNum,runNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -f %d %d -p %s %s""" % (dsNum, runNum, skimDir, waveDir) )
-    else: # -cal
+    sh("make -s")
+
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (qsubStr, dsNum, i, skimDir, waveDir) )
+        # -sub
+        elif runNum==None:
+            sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (qsubStr, dsNum, subNum, skimDir, waveDir) )
+        # -run
+        elif subNum==None:
+            sh("""%s './wave-skim -n -f %d %d -p %s %s""" % (qsubStr, dsNum, runNum, skimDir, waveDir) )
+    # cal
+    else:
         for i in calList:
             print "(cal) ds %i  run %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './wave-skim -n -c -f %d %d -p %s %s'""" % (dsNum, i, skimDir, waveDir) )
+            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, i, skimDir, waveDir) )
 
 
-def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-
-    Submit jobs to the cluster that call splitTree for each run.
+def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
+    """ Creates a dict of files w/ the format {'DSX_X_X':filePath.}
+        Used to combine and split apart files during the LAT processing.
+        Used by: splitTree, writeCut, runLAT.
     """
-
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
-            fileSize = os.path.getsize(inPath)/1e6 # mb
-            if (fileSize < 45):
-                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+    files = {}
+    for fl in glob.glob(filePathRegexString):
+        int(re.search(r'\d+',fl).group())
+        ints = map(int, re.findall(r'\d+',fl))
+        if (ints[1]==subNum):
+            if (len(ints)==2):
+                ints.append(0)
+            if not uniqueKey:
+                files[ints[2]] = fl # zero index
             else:
-                print "ds %i  sub %i" % (dsNum,i)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, i))
-
-    elif not calList and runNum==None: # -sub
-        inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
-        fileSize = os.path.getsize(inPath)/1e6 # mb
-        if (fileSize < 45):
-            copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
-        else:
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -sub %d %d'""" % (dsNum, subNum))
-
-    elif not calList and subNum==None: # -run
-        inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
-        fileSize = os.path.getsize(inPath)/1e6 # mb
-        if (fileSize < 45):
-            copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
-        else:
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, runNum))
-    else: # -cal
-        for i in calList:
-            inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
-            fileSize = os.path.getsize(inPath)/1e6 # mb
-            if (fileSize < 45):
-                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (waveDir, dsNum, i))
-            else:
-                print "ds %i  sub %i" % (dsNum,i)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './job-panda.py -split -run %d %d'""" % (dsNum, i))
+                files["DS%d_%d_%d" % (dsNum,subNum,ints[2])] = fl
+    return files
 
 
 def splitTree(dsNum, subNum=None, runNum=None):
     """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum subNum)
 
-    NOTE: For a waveSkim input file of 120k entries, and 150MB file size,
-    testing of LAT indicates it will do about ~6000 entries/hr.
-    So a 50MB waveSkim input file will take 6.66 hrs to process.
-    If the input file is 2GB (worst case), then it will be split into
-    312 output files.  This will make the logs hard to grep for errors,
-    but not impossible.
-
-    NOTE: This is relatively slow (has to loop over entries).  If you call it with qsubSplit,
-    each run will be submitted to the grid, and job-panda will split the files for you in parallel.
-    So this function is only intended to operate on ONE file at a time.
-
-    NOTE: I learned later (farther down in job-panda) that TTree::CopyTree can also be used to pass a cut.
-    I don't know if it would play nice with the file splitting that's going on here though.
+        Split a SINGLE waveSkim file into small (~50MB) files to speed up LAT parallel processing.
+        Can call 'qsubSplit' instead to submit each run in the list as a job, splitting the files in parallel.
+        NOTE: The cut written into the first file is NOT copied into the additional files
+              (I couldnt get it to work within this function -- kept getting "file not closed" errors.)
+              To clean up, do that with the 'writeCut' function below, potentially AFTER a big parallel job.
     """
     from ROOT import TFile, TTree, gDirectory, TEntryList, TNamed, TObject, gROOT
 
@@ -278,17 +244,13 @@ def splitTree(dsNum, subNum=None, runNum=None):
     if runNum==None:
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
         outPath = "%s/split/splitSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
-
         fileList = getFileList("%s/split/splitSkimDS%d_%d*.root" % (waveDir,dsNum,subNum),subNum)
         for key in fileList: os.remove(fileList[key])
-
     elif subNum==None:
         inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
         outPath = "%s/split/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
-
         fileList = getFileList("%s/split/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,runNum),runNum)
         for key in fileList: os.remove(fileList[key])
-
 
     inFile = TFile(inPath)
     bigTree = inFile.Get("skimTree")
@@ -306,43 +268,76 @@ def splitTree(dsNum, subNum=None, runNum=None):
     lilTree = bigTree.CopyTree("") # this does NOT write the cut into the extra files
     lilTree.Write("",TObject.kOverwrite)
 
-    # can't get this to work within this function -- get "file not closed" errors.
-    # Have to do it separately in the "writeCut" function below.
-    # gROOT.Reset()
-    # files2 = getFileList("%s/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
-    # for idx, inFile in sorted(files2.iteritems()):
-    #     print "inFile:",inFile
-    #     outFile2 = TFile(inFile,"UPDATE")
-    #     thisCut = TNamed("theCut",theCut)
-    #     thisCut.Write("",TObject.kOverwrite)
+
+def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
+    """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+        Submit jobs that call splitTree for each run, splitting files into small (~50MB) chunks.
+        NOTE: The data cleaning cut is NOT written into the output files and the
+              function 'writeCut' must be called after these jobs are done.
+    """
+    from shutil import copyfile
+
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
+                if (os.path.getsize(inPath)/1e6 < 45):
+                    copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
+                else:
+                    sh("""%s './job-panda.py -split -sub %d %d'""" % (qsubStr, dsNum, i))
+        # -sub
+        elif runNum==None:
+            inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
+            if (os.path.getsize(inPath)/1e6 < 45):
+                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
+            else:
+                sh("""%s './job-panda.py -split -sub %d %d'""" % (qsubStr, dsNum, subNum))
+        # -run
+        elif subNum==None:
+            inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
+            if (os.path.getsize(inPath)/1e6 < 45):
+                copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
+            else:
+                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, runNum))
+    # cal
+    else:
+        for i in calList:
+            inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
+            if (os.path.getsize(inPath)/1e6 < 45):
+                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (waveDir, dsNum, i))
+            else:
+                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, i))
 
 
 def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -writeCut (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-
-    Assumes the cut used in the FIRST file (even in the whole DS) should be applied
-    to ALL files.  This should be a relatively safe assumption for now (except maybe
-    if we decide to split DS5 ...)
+        Assumes the cut used in the FIRST file (even in the whole DS) should be applied
+        to ALL files.  This should be a relatively safe assumption.
     """
     from ROOT import TFile, TNamed, TObject
-
     mainList = {}
 
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
-            fileList = getFileList(inPath,i,True,dsNum)
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i)
+                fileList = getFileList(inPath,i,True,dsNum)
+                mainList.update(fileList)
+        # -sub
+        if runNum==None:
+            inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
+            fileList = getFileList(inPath,subNum,True,dsNum)
             mainList.update(fileList)
-
-    elif not calList and runNum==None: # -sub
-        inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
-        fileList = getFileList(inPath,subNum,True,dsNum)
-        mainList.update(fileList)
-
-    elif not calList and subNum==None: # -run
-        inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
-        fileList = getFileList(inPath,runNum,True,dsNum)
-        mainList.update(fileList)
+        # -run
+        if subNum==None:
+            inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
+            fileList = getFileList(inPath,runNum,True,dsNum)
+            mainList.update(fileList)
+    # cal
     else:
         for i in calList:
             inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i)
@@ -350,8 +345,9 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
             mainList.update(fileList)
 
     # Pull the cut off the FIRST file and add it to the sub-files
-    if len(mainList) <= 1: return
-
+    if len(mainList) <= 1:
+        print "No files found!  Exiting..."
+        exit(1)
     theCut = ""
     foundFirst = False
     for key, inFile in sorted(mainList.iteritems()):
@@ -367,65 +363,44 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal] """
-
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
+    """ ./job-panda.py -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+        Runs LAT on splitSkim output.  Does not combine output files back together.
+    """
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
+                for idx, inFile in sorted(files.iteritems()):
+                    outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,i,idx)
+                    sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
+        # -sub
+        elif runNum==None:
+            files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
             for idx, inFile in sorted(files.iteritems()):
-                outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,i,idx)
-                # print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
-
-    elif not calList and runNum==None: # -sub
-        files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
-        for idx, inFile in sorted(files.iteritems()):
-            outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,subNum,idx)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -r %d %d -p %s %s'""" % (dsNum,subNum,inFile,outFile))
-
-    elif not calList and subNum==None: # -run
-        print "hi"
-        files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
-        for idx, inFile in sorted(files.iteritems()):
-            outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,runNum,inFile,outFile))
+                outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,subNum,idx)
+                sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (qsubStr,dsNum,subNum,inFile,outFile))
+        # -run
+        elif subNum==None:
+            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
+            for idx, inFile in sorted(files.iteritems()):
+                outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
+                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,runNum,inFile,outFile))
+    # cal
     else:
         for i in calList:
             files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,i,idx)
-                print """qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,i,inFile,outFile)
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat.py -b -f %d %d -p %s %s'""" % (dsNum,i,inFile,outFile))
-
-
-def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
-    files = {}
-    for fl in glob.glob(filePathRegexString):
-        int(re.search(r'\d+',fl).group())
-        ints = map(int, re.findall(r'\d+',fl))
-        if (ints[1]==subNum):
-            if (len(ints)==2): ints.append(0)
-
-            if not uniqueKey:
-                files[ints[2]] = fl # zero index
-            else:
-                files["DS%d_%d_%d" % (dsNum,subNum,ints[2])] = fl
-
-    return files
-
-
-def cleanUp():
-    print "Cleaning up ..."
-    sh("make clean"); sh("make -s")
-
-
-def purgeLogs():
-    print "Purging logs ..."
-    for fl in glob.glob("./logs/*"): os.remove(fl)
+                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
 
 
 def checkLogErrors():
-    print "Checking log errors ..."
+    """ ./job-panda.py -checkLogs
+        This isn't really complete. but you get the idea.  Error checking via bash inside python is kind of a PITA.
+        Maybe it would be better to just have python look at the files directly.
+    """
 
     # Shell commands
     c1 = "ls -F ./logs/ | grep -v / | wc -l" # count total files
@@ -442,7 +417,7 @@ def checkLogErrors():
     num = int(output.strip('\n'))
     print num
 
-    # make a dummy bash script
+    # make a dummy bash script that runs all the shell commands.  who knows if this is smart or not
     outFile = open('logCheck.sh','w+')
     dummyScript = "#!/bin/bash \n %s \n %s \n %s \n %s \n %s \n" % (c1,c2,c3,c4,c5)
     outFile.write(dummyScript)
@@ -451,18 +426,14 @@ def checkLogErrors():
     sh('./logCheck.sh')
     os.remove('logCheck.sh')
 
-    # This isn't really complete. but you get the idea.  error checking via bash inside python is kind of a PITA.
-    # Maybe it would be better to just have python look at the files directly.
 
-
-def checkLogErrorsPython():
-    """ Usage: ./job-panda -checkLogsPython
-        Globs together log files and then searches for "Error", returning the failed ROOT files
-
+def checkLogErrors2():
+    """ Usage: ./job-panda -checkLogs2
+        Globs together log files and then searches for "Error", returning the failed ROOT files.
     """
-    print ("Checking log errors ...")
-    ErrList = []
+    print "Checking log errors ..."
 
+    ErrList = []
     for fl in glob.glob("./logs/*"):
         fErr = open(fl,'r').read()
         if 'Error' in open(fl, 'r').read():
@@ -477,100 +448,21 @@ def checkLogErrorsPython():
                 print lineErr
 
 
-def pushOneRun():
-    """ ./job-panda.py -push """
-    dsNum = 5
-    rlo, rhi = 21970, 21998
-    for run in range(rlo,rhi+1):
-        jobStr = ""
-        # jobStr += "'./skim_mjd_data -n -l -t 0.8 -f %d %s'" % (run,skimDir)
-        # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -n -l -t 0.8 -f %d %s' """ % (run,homePath+"/project/cal-skim/"))
-        inPath = homePath + "/project/cal-skim/"
-        outPath = homePath + "/project/cal-waveskim/"
-        jobStr += "'./wave-skim -f %d %d -p %s %s'" % (dsNum,run,inPath,outPath)
-        sh(""" qsub -l h_vmem=2G qsub-job.sh '%s'""" % (jobStr))
-
-
-def printCalFileSizes():
-    for dsNum in ds.calMap:
-        totalSize = 0
-        runList = []
-
-        for i in xrange(0,len(ds.calMap[dsNum]),2):
-            lower = ds.calMap[dsNum][i]
-            upper = ds.calMap[dsNum][i+1]
-            for j in xrange(lower,upper+1):
-                runList.append(j)
-
-        for run in runList:
-            inPath = "/global/homes/w/wisecg/project/v1-cal-waveskim/waveSkimDS%d_run%d.root" % (dsNum, run)
-            inFile = TFile()
-            try:
-                infile = TFile(inPath)
-                inFile = TFile(inPath)
-                gatTree = inFile.Get("skimTree")
-                nEnt = gatTree.GetEntriesFast()
-                fileSize = os.path.getsize(inPath)/1e6 # mb
-                totalSize += fileSize
-                print "DS%d, run %d: entries %d  size %.0f" % (dsNum,run,nEnt,fileSize)
-            except:
-                AttributeError
-                print "file ain't exist"
-
-        print "Total Size: %.0f\n" % totalSize
-
-
-def printFileSizes():
-
-    for dsNum, subDS in ds.dsMap.iteritems():
-        totalSize = 0
-
-        for subNum in range(subDS+1):
-            waveSkimPath = "/global/homes/w/wisecg/project/waveskim/waveSkimDS%d_%d.root" % (dsNum, subNum)
-            skimPath = "/global/homes/w/wisecg/project/skim/skimDS%d_%d_low.root" % (dsNum, subNum)
-
-            wFile = TFile(waveSkimPath)
-            theCut = wFile.Get("theCut").GetTitle()
-            wTree = wFile.Get("skimTree")
-            wEnt = wTree.GetEntriesFast()
-
-            sFile = TFile(skimPath)
-            sTree = sFile.Get("skimTree")
-            # sTree.Draw(">>elist",theCut,"entrylist")
-            # elist = gDirectory.Get("elist")
-            # sTree.SetEntryList(elist)
-            # nList = elist.GetN()
-            sEnt = sTree.GetEntriesFast()
-
-            sSize = os.path.getsize(skimPath)/1e6 # mb
-            wSize = os.path.getsize(waveSkimPath)/1e6
-
-            if wEnt > 100000:
-                print "DS%d-%d:  sEnt %-8d  wEnt %-8d  s/w %-4.1f  sSize %-4d  wSize %-4d" % (dsNum,subNum,sEnt,wEnt,sEnt/wEnt,sSize,wSize)
-
-            totalSize += fileSize
-
-            if nEnt > 100000:
-                print "DS%d-%d: entries %d  size %.0f" % (dsNum,subNum,nEnt,fileSize)
-                # print "%d %.1f" % (nEnt,fileSize)
-                # print "%.1f," % fileSize
-
-        print "Total Size: %.0f\n" % totalSize
-
-
 def skimLAT(inPath,outPath,thisCut):
-    """ EXAMPLE:
-    ./job-panda.py -skimLAT '/Users/wisecg/project/lat/latSkimDS1*.root' "ds1NoisyRuns.root" " && (run==12736||run==12767||run==13005)"
-    Note that you can't use a tilde at the beginning.
+    """ ./job-panda.py -skimLat [inDir] [outFile] [custom TCut]
+        Chains together a given set of LAT files and makes an output file w/ a custom TCut.
+        This is handy for quick processing of a particular interesting subset,
+        but NOT intended to do any final data production.
+        EXAMPLE:
+            ./job-panda.py -skimLAT '/Users/wisecg/project/lat/latSkimDS1*.root' "ds1NoisyRuns.root" " && (run==12736||run==12767||run==13005)"
+        Note that you can't use a tilde at the beginning.
     """
     from ROOT import TFile, TChain, TTree, TEntryList, TNamed, TObject, gDirectory
 
     fileList = glob.glob(inPath)
-
     cutFile = TFile(fileList[0])
     fileCut = cutFile.Get("theCut").GetTitle()
     theCut = fileCut + thisCut
-
     print "Skimming %d files from %s, with this cut:\n%s" % (len(fileList),inPath,theCut)
 
     bigChain = TChain("skimTree")
@@ -586,10 +478,25 @@ def skimLAT(inPath,outPath,thisCut):
     lilTree.Write("",TObject.kOverwrite)
     thisCut = TNamed("theCut",theCut)
     thisCut.Write("",TObject.kOverwrite)
-
     print "Wrote",lilTree.GetEntries(),"entries to the cut tree."
 
     outFile.Close()
+
+
+def pushOneRun():
+    """ ./job-panda.py -push
+    IDEA:  can you make one node do everything necessary to LAT-process 1 run?
+    """
+    # dsNum = 5
+    # rlo, rhi = 21970, 21998
+    # for run in range(rlo,rhi+1):
+    #     jobStr = ""
+    #     # jobStr += "'./skim_mjd_data -n -l -t 0.8 -f %d %s'" % (run,skimDir)
+    #     # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -n -l -t 0.8 -f %d %s' """ % (run,homePath+"/project/cal-skim/"))
+    #     inPath = homePath + "/project/cal-skim/"
+    #     outPath = homePath + "/project/cal-waveskim/"
+    #     jobStr += "'./wave-skim -f %d %d -p %s %s'" % (dsNum,run,inPath,outPath)
+    #     sh(""" qsub -l h_vmem=2G qsub-job.sh '%s'""" % (jobStr))
 
 
 def tuneCuts(argString,dsNum=None):
@@ -844,8 +751,10 @@ def getEff():
 
 
 def threshCut():
-    """ ./job-panda.py -threshCut """
+    """ ./job-panda.py -threshCut
+        Applies
 
+    """
     import numpy as np
     import pandas as pd
     import os
@@ -908,23 +817,52 @@ def threshCut():
 
 def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-        Run skim_mjd_data.
+        Run ROOTtoPandas jobs.
     """
-
-    if not calList and subNum==None and runNum==None: # -ds
-        for i in range(ds.dsMap[dsNum]+1):
-            print "ds %i  sub %i" % (dsNum,i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
-    elif not calList and runNum==None: # -sub
-        print "ds %i  sub %i" % (dsNum,subNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (dsNum, subNum, waveDir, pandaDir))
-    elif not calList and subNum==None: # -run
-        print "ds %i  run %i" % (dsNum,runNum)
-        sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, runNum, waveDir, pandaDir))
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, waveDir, pandaDir))
+        # -sub
+        elif runNum==None:
+            sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (qsubStr, dsNum, subNum, waveDir, pandaDir))
+        # -run
+        elif subNum==None:
+            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, runNum, waveDir, pandaDir))
+    # cal
     else:
         for i in calList:
-            print "(cal) ds %i  run %i" % (dsNum, i)
-            sh("""qsub -l h_vmem=2G qsub-job.sh './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (dsNum, i, waveDir, pandaDir))
+            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, waveDir, pandaDir))
+
+
+def getCalRunList(dsNum,subNum=None,runNum=None):
+    calList = []
+
+    # -ds
+    if subNum==None and runNum==None:
+        for i in range(0,len(ds.calRanges[dsNum])):
+            numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
+            if numRuns > 4:
+                for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
+                    calList.append(rx)
+            else:
+                for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
+                    calList.append(rx)
+
+    # -sub
+    elif runNum==None:
+        numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
+        if numRuns > 4:
+            for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
+                calList.append(rx)
+
+    # -run
+    elif subNum==None: # -run
+        calList.append(runNum)
+
+    return calList
 
 
 def runCal(dsNum, calIdx=None, forceUpdate=False):
@@ -965,6 +903,8 @@ def runCal(dsNum, calIdx=None, forceUpdate=False):
             else:
                 # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, calIdx) )
                 sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, calIdx))
+
+
 
 
 if __name__ == "__main__":

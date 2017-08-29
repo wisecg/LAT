@@ -339,7 +339,8 @@ def testDB():
     Do database stuff. """
     # wl.setDBCalTable()
     # wl.getDBKeys()
-    wl.getDBCalRecord("ds1_idx3")
+    # wl.getDBCalRecord("ds1_idx0")
+    wl.getDBCalRecord("ds1_calIdx")
     # wl.delDBRecord("ds1_idx0")
     # wl.getDBCalTable(5)
     # wl.getDBRunCoverage(1,9999)

@@ -1056,4 +1056,11 @@ wave-skim.o: wave-skim.cc \
  /global/homes/w/wisecg/mgsw/MGDO/Majorana/MJTRun.hh \
  /global/homes/w/wisecg/mgsw/MGDO/Root/MGTRun.hh \
  /global/homes/w/wisecg/mgsw/MGDO/Base/MGRun.hh \
- /global/homes/w/wisecg/mgsw/MGDO/Base/MGTypes.hh
+ /global/homes/w/wisecg/mgsw/MGDO/Base/MGTypes.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Transforms/MGWFNonLinearityCorrector.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Base/MGVWaveformTransformer.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Base/MGWaveform.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Majorana/MJTGretina4DigitizerData.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Root/MGTVDigitizerData.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Base/MGVDigitizerData.hh \
+ /global/homes/w/wisecg/mgsw/MGDO/Majorana/MJTypes.hh
