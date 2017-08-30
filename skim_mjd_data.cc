@@ -300,11 +300,11 @@ int main(int argc, const char** argv)
   skimTree->Branch("globalTime", &globalTime);
   skimTree->Branch("tOffset", &tOffset);
   skimTree->Branch("triggerTrapt0",&triggerTrapt0);
+  skimTree->Branch("dtPulserGlobal",&dtPulserGlobal, "dtPulserGlobal/D");
+  skimTree->Branch("dtPulserCard",&dtPulserCard);
   if (lowEnergy){
     skimTree->Branch("trapENMSample", &trapENMSample);
     skimTree->Branch("blrwfFMR50",&blrwfFMR50);
-    skimTree->Branch("dtPulserGlobal",&dtPulserGlobal, "dtPulserGlobal/D");
-  	skimTree->Branch("dtPulserCard",&dtPulserCard);
   }
 
   // output - energy variables
@@ -521,6 +521,7 @@ int main(int argc, const char** argv)
   // Loop over events
   double runSave = -1;
   int run_count = 0;
+  bool lnFillCoverage = true;
   while(gatReader.Next())
   {
     // stuff to do on run boundaries
@@ -554,6 +555,13 @@ int main(int argc, const char** argv)
         run_count++;
         detIDIsVetoOnly=fix_detIDisVetoOnly[*runIn];
         detIDIsBad=fix_detIDisBad[*runIn];
+      }
+
+      // Check if we are covered by the LN fill tag.
+      bool runCov = GetLNRunCoverage(dsNum,*runIn);
+      if (!runCov && lnFillCoverage) {
+        cout << Form("WARNING:  LN fill tag does not cover DS-%i, run %i.  Further warnings will be suppressed.\n",dsNum,(int)*runIn);
+        lnFillCoverage = false;
       }
     }
 
@@ -590,6 +598,7 @@ int main(int argc, const char** argv)
     dcr90.resize(0);
     dcrctc90.resize(0);
     triggerTrapt0.resize(0);
+    dtPulserCard.resize(0);
     if (!simulatedInput) dtmu_s.resize(0);
     if (!smallOutput) {
       trapECal.resize(0);
@@ -613,7 +622,6 @@ int main(int argc, const char** argv)
       d2wf0MHzTo50MHzPower.resize(0);
       threshKeV.resize(0);
       threshSigma.resize(0);
-      dtPulserCard.resize(0);
     }
 
     // Copy event-level info to output variables
@@ -829,13 +837,15 @@ int main(int argc, const char** argv)
       dcr90.push_back(GetDCR90(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
       dcr95.push_back(GetDCR95(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
       dcrctc90.push_back(GetDCRCTC90(hitCh, (*dcrSlopeIn)[i], hitENFCal, hitENMCal, dsNum));
+      triggerTrapt0.push_back((*triggerTrapt0In)[i]);
+      dtPulserGlobal = (double)globalTime - dummydTGlobal;
+      dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
       if(!smallOutput){
         dcr85.push_back(GetDCR85(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
         dcr98.push_back(GetDCR98(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
         dcr995.push_back(GetDCR995(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
         dcr999.push_back(GetDCR999(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
       }
-      triggerTrapt0.push_back((*triggerTrapt0In)[i]);
       if (lowEnergy) {
         trapENF.push_back((*trapENFIn)[i]);
         trapENM.push_back((*trapENMIn)[i]);
@@ -848,8 +858,6 @@ int main(int argc, const char** argv)
         d2wf0MHzTo50MHzPower.push_back((*d2wf0MHzTo50MHzPowerIn)[i]);
         threshKeV.push_back((*threshKeVIn)[i]);
         threshSigma.push_back((*threshSigmaIn)[i]);
-        dtPulserGlobal = (double)globalTime - dummydTGlobal;
-	      dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
       }
 
       double dtmu = 0; // same calculation as above, only for each hit

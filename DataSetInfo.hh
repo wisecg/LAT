@@ -31,6 +31,8 @@ using namespace std;
 // GetDCR* - DCR parameters
 // LoadDS4MuonList - Static muon list for DS-4, calculated manually
 //                   by $GATDIR/mjd-veto/skim-veto.cc
+// GetLNRunCoverage - Given a run and DS number, verify that this run is covered
+//                    by the most recent LN Fill Tag.
 // LoadLNFillTimes1 - Returns a vector of M1 LN fills.
 // LoadLNFillTimes2 - Returns a vector of M2 LN fills.
 //
@@ -39,11 +41,11 @@ using namespace std;
 // When LoadDataSet is updated, this must be updated as well.
 int FindDataSet(int run)
 {
-  if (run >= 2580 && run <= 6963)   return 0;
-  if (run >= 9422 && run <= 14502)  return 1;
+  if (run >= 2361 && run <= 7635)   return 0;
+  if (run >= 9034 && run <= 14502)  return 1;
   if (run >= 14503 && run <= 15892) return 2;
-  if (run >= 16797 && run <= 17980) return 3;
-  if (run >= 60000802 && run <= 60001888) return 4;
+  if (run >= 16797 && run <= 18351) return 3;
+  if (run >= 60000791 && run <= 60001926) return 4;
   if (run >= 18623 && run <= 25671) return 5;
   if (run >= 25672 && run <= 100000) return 6;
   cout << "Error: Can't find a dataset for run " << run << endl;
@@ -81,7 +83,7 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
     startTime0 = 1472169600; // start time of run 16797
   }
   else if(dsNum == 4) {
-//    runTime_s = 2047670;//1460390;
+    // runTime_s = 2047670;//1460390;
     runTime_s = 1660154;
     startTime0 = 1472169600; // start time of run 60000802
   }
@@ -301,12 +303,12 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
     {16, {60001625,60001655}},
     {17, {60001656,60001686}},
     {18, {60001687,60001714}},
-/*
+    /*
     {19, {60001756,60001786}},
     {20, {60001787,60001817}},
     {21, {60001818,60001848, 60001849,60001853}},
     {22, {60001874,60001888}}
-*/
+    */
   };
 
   // DS5 (P3LQK)
@@ -603,7 +605,51 @@ map<int,bool> LoadVetoDetectorMap(int dsNum)
   return detIDIsVetoOnly;
 }
 
-std::string GetChannelSelectionPath(int dsNum){
+
+std::string GetChannelSelectionPath(int dsNum, int officialVersion = -1){
+
+    //First, check whether an official version has been requested.
+    //Official versions start at 1, and get a version tag of the form
+    //v_00000001-<officialVersion, with leading zeros to a total of 5 digits>
+    //e.g. v_00000001-00001 for the first official version.
+    //They are stored in $MJDDATADIR/surfmjd/analysis/channelselection,
+    //using the same directory structure as current versions.  This way the
+    //official record is kept in the official place, and if development
+    //versions are also being put there in the future, the automatic "most
+    //recent version" check will not clash with the existence of official
+    //versions.  Furthermore, v_00000000 series versions can be reserved for
+    //testing purposes.
+    //=======================================================================
+    //Log which official version corresponds to which final analysis here.
+    //=======================================================================
+    //v_00000001-00001: 2017 neutrinoless double beta decay paper
+    //-----------------------------------------------------------------------
+    if(officialVersion > 0){
+
+        char const* tmpPath = std::getenv("MJDDATADIR");
+
+        //If MJDDATADIR is somehow not set, default to looking at the most
+        //recent version.
+        if(tmpPath == NULL){
+            std::cout << "ERROR: Environment variable MJDDATADIR not set, so cannot find official channel selection version." << std::endl;
+            std::cout << "Defaulting to most recent version of channel selection." << std::endl;
+        }
+
+        //Otherwise, built the correct path to the files, and return that.
+        else{
+
+            std::string pathToFiles(tmpPath);
+            std::string verString = std::to_string(officialVersion);
+            std::string fullVerString = std::string(5-verString.length(),'0') + verString;
+            pathToFiles += "/surfmjd/analysis/channelselection/DS" + std::to_string(dsNum) + "/v_00000001-" + fullVerString;
+
+            //We now have the full path to the files for this dataset.  Return
+            //it.
+            return pathToFiles;
+        }
+
+
+    }
 
     //Where the channel selection information is stored.
     std::string baseDir("/global/projecta/projectdirs/majorana/users/jwmyslik/analysis/channelselection/");
@@ -672,6 +718,7 @@ std::string GetChannelSelectionPath(int dsNum){
     }
 }
 
+
 map<int, bool> LoadEnrNatMap()
 {
   // "1" denotes enriched, "0" denotes natural.
@@ -732,6 +779,7 @@ void GetVetoActiveMass(map<int,double> actM4Det_g, map<int,bool> detIDIsVetoOnly
     }
   }
 }
+
 
 double GetENFC(int chan, int dsNum, double trapENF, int run)
 {
@@ -1289,11 +1337,12 @@ double GetENFC(int chan, int dsNum, double trapENF, int run)
   else if (dsNum == 6) {
     return trapENF;
   }
-  else return 0; 
+  else return 0;
   if (calPars.find(chan) == calPars.end()) return 0.0;
   double result = trapENF * calPars[chan][1] + calPars[chan][0];
-  return result; 
+  return result;
 }
+
 
 double GetENMC(int chan, int dsNum, double trapENM, int run)
 {
@@ -1302,7 +1351,7 @@ double GetENMC(int chan, int dsNum, double trapENM, int run)
     calPars = {
     {692, {0.0725279, 0.999578}},
     {693, {-0.0591719, 1.00014}},
-    {690, {0.0865662, 0.999791}}, 
+    {690, {0.0865662, 0.999791}},
     {691, {0.0559577, 0.999739}},
     {688, {0.234182, 0.999495}},
     {689, {-0.196996, 1}},
@@ -1667,7 +1716,7 @@ double GetENMC(int chan, int dsNum, double trapENM, int run)
     {674, {0.123529988311052, 0.999848699958647}},
     {675, {0.0786039892224676, 0.999855099395274}},
     {672, {0.0579874550412561, 0.999750236610478}},
-    {673, {0.178110796202961, 0.999485062090153}}, 
+    {673, {0.178110796202961, 0.999485062090153}},
     {1124, {0.109594985434287, 0.999725165913281}},
     {1125, {0.135152067598322, 0.999649777238863}},
     {1126, {0.173735061153065, 0.999313687329799}},
@@ -1857,6 +1906,7 @@ double GetENMC(int chan, int dsNum, double trapENM, int run)
   double result = trapENM * calPars[chan][1] + calPars[chan][0];
   return result;
 }
+
 
 double GetAvsE(int chan, double TSCurrent50nsMax, double TSCurrent100nsMax, double TSCurrent200nsMax,
   double trapENF, double trapENFCal, int dsNum, int run)
@@ -2451,11 +2501,11 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
      {697, { 9.16943e-06, -9.66639e-06, 7.03233e-05}}
      };
    }
-   if(run <= 3664){ 
+   if(run <= 3664){
       DCR[692] =  { 4.81401e-05, -3.28825e-05, 0.000118458};
       DCR[693] =  { 2.92883e-05, -9.87323e-06, 5.25524e-05};
     }
-   if(run>=4004 && run <= 4908){ 
+   if(run>=4004 && run <= 4908){
       DCR[692] =  { 5.55901e-05, -3.27923e-05, 0.000117376};
       DCR[693] =  { 2.59878e-05, -9.84651e-06, 5.10247e-05};
     }
@@ -2540,11 +2590,11 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
    if (run>= 9938  && run <= 10278){
     DCR[594] = { 2.93477e-05, -3.32266e-05, 0.000100086};
    }
-   if (run >= 13395 && run <= 14188){ 
+   if (run >= 13395 && run <= 14188){
     DCR[626] = { 1.78799e-05, -3.11522e-05, 0.000111311};
     DCR[627] = { 1.13795e-05, -9.20676e-06, 5.22142e-05};
    }
-   if (run >= 14189){ 
+   if (run >= 14189){
     DCR[626] = { 1.61082e-05, -3.10571e-05, 0.000110021};
     DCR[627] = { 8.36929e-06, -9.17697e-06, 5.20649e-05};
    }
@@ -2895,11 +2945,11 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       {1333, { 6.19838e-05, -9.67661e-06, 7.48408e-05}},
       };
     }
-   if(run>=22636 && run <= 24105){ 
+   if(run>=22636 && run <= 24105){
       DCR[674] =  { -7.56191e-06, -3.34978e-05, 0.000102015};
       DCR[675] =  { 9.01334e-06, -9.99713e-06, 4.67391e-05};
     }
-   if(run>=22636 && run <= 23176){ 
+   if(run>=22636 && run <= 23176){
       DCR[690] = { 1.51783e-05, -3.22531e-05, 0.000280346};
       DCR[691] = { 9.55238e-06, -9.58005e-06, 9.49695e-05};
       DCR[1232] = { 4.20482e-05, -3.24187e-05, 9.35519e-05};
@@ -2907,11 +2957,11 @@ double GetDCR90(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       DCR[1236] = { 1.83871e-05, -3.30946e-05, 9.63378e-05};
       DCR[1237] = { 2.38044e-05, -9.76866e-06, 4.56341e-05};
     }
-   if(run>=23509 && run <= 25489){ 
+   if(run>=23509 && run <= 25489){
       DCR[690] = { 2.88637e-05, -3.21623e-05, 9.33066e-05};
       DCR[691] = { 1.2952e-05, -9.55379e-06, 4.75052e-05};
     }
-   if(run>=23929 && run <= 24101){ 
+   if(run>=23929 && run <= 24101){
       DCR[1106] = { 4.59361e-05, -3.11932e-05, 0.000159795};
       DCR[1107] = { 3.01309e-05, -9.25533e-06, 5.93021e-05};
       DCR[1298] = { 1.68334e-05, -3.22735e-05, 0.000175847};
@@ -3970,6 +4020,8 @@ double GetDCR95(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
   double dcr90val = GetDCR90(chan, nlcblrwfSlope, trapMax, dsNum, run);
   return dcr90val + DCR[chan][0];
 }
+
+
 double GetDCR98(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int run)
 {
   map<int,vector<double>> DCR;
@@ -4500,11 +4552,11 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
         {697, { -6.98959e-05}}
       };
     }
-   if(run <= 3664){ 
+   if(run <= 3664){
       DCR[692] =  { -0.000275003};
       DCR[693] =  { -9.514e-05};
     }
-   if(run>=4004 && run <= 4908){ 
+   if(run>=4004 && run <= 4908){
       DCR[692] = { -0.000267185} ;
       DCR[693] = { -0.000125962} ;
     }
@@ -4588,11 +4640,11 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
     DCR[594] = { -0.000125231};
    }
 
-   if (run >= 13395 && run<= 14188){ 
+   if (run >= 13395 && run<= 14188){
     DCR[626] = { -0.000114614};
     DCR[627] = { -5.19008e-05};
    }
-   if (run >= 14189){ 
+   if (run >= 14189){
     DCR[626] = { -0.000301366};
     DCR[627] = { -0.000104924};
    }
@@ -4944,11 +4996,11 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       {1333, { -0.000284505}},
       };
     }
-   if(run>=22636 && run <= 24105){ 
+   if(run>=22636 && run <= 24105){
       DCR[674] = { -0.000111103};
       DCR[675] = { -4.05466e-05};
     }
-   if(run>=22636 && run <= 23176){ 
+   if(run>=22636 && run <= 23176){
       DCR[690] = { -0.000369} ;
       DCR[691] = { -7.56327e-05} ;
       DCR[1232] = { -0.00107856} ;
@@ -4956,11 +5008,11 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
       DCR[1236] = { -0.000989138};
       DCR[1237] = { -0.000279291};
     }
-   if(run>=23509 && run <= 25489){ 
+   if(run>=23509 && run <= 25489){
       DCR[690] = { -0.000164785};
       DCR[691] = { -6.69951e-05};
     }
-   if(run>=23929 && run <= 24101){ 
+   if(run>=23929 && run <= 24101){
       DCR[1106] = { -0.000140808};
       DCR[1107] = { -7.12686e-05};
       DCR[1298] = { -0.000128537};
@@ -5059,6 +5111,8 @@ double GetDCR99(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int r
   double dcr90val = GetDCR90(chan, nlcblrwfSlope, trapMax, dsNum, run);
   return dcr90val + DCR[chan][0];
 }
+
+
 double GetDCR995(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int run)
 {
   map<int,vector<double>> DCR;
@@ -5490,6 +5544,7 @@ double GetDCR995(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int 
   return dcr90val + DCR[chan][0];
 }
 
+
 double GetDCR999(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int run)
 {
   map<int,vector<double>> DCR;
@@ -5920,6 +5975,24 @@ double GetDCR999(int chan, double nlcblrwfSlope, double trapMax, int dsNum, int 
   double dcr90val = GetDCR90(chan, nlcblrwfSlope, trapMax, dsNum, run);
   return dcr90val + DCR[chan][0];
 }
+
+
+bool GetLNRunCoverage(int dsNum, int run) {
+  // Requested by Jason at the internal 0nbb review, 30 Aug. 2017.
+  // Given a run and DS number, verify that this run is covered by the most recent LN Fill Tag.
+  // This function MUST be updated manually when 'LoadLNFillTimes1/2' are updated.
+
+  // LN tag was most recently run on 20 Jul 2017, for DS0-5.
+  if (dsNum==0 && run >= 2580 && run <= 6963) return true;
+  if (dsNum==1 && run >= 9422 && run <= 14502)  return true;
+  if (dsNum==2 && run >= 14503 && run <= 15892) return true;
+  if (dsNum==3 && run >= 16797 && run <= 17908) return true;
+  if (dsNum==4 && run >= 60000802 && run <= 60001888) return true;
+  if (dsNum==5 && run >= 18623 && run < 25671) return true;
+  if (dsNum==6) return false;
+  return false;
+}
+
 
 void LoadDS4MuonList(vector<int> &muRuns, vector<double> &muRunTStarts,
   vector<double> &muTimes,vector<int> &muTypes, vector<double> &muUncert)
