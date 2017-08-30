@@ -498,6 +498,7 @@ int main(int argc, const char** argv)
   vector<uint32_t> pulserMons = chMap->GetPulserChanList();
 
   // Variables for time of pulser event (dtPulser)
+  // This assumes the Gretina card/settings map doesn't change for this skim period.
   double dummydTGlobal = -1.;
   map<int, double> dummydTCard = {};
   katrin::KTable chTable = chMap->GetTable();
@@ -513,7 +514,6 @@ int main(int argc, const char** argv)
     pulserCardMap[(int)chIDHiVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
     pulserCardMap[(int)chIDLoVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
   }
-
 
   gatReader.SetTree(gatChain); // reset the reader
   gROOT->cd(tdir->GetPath());
@@ -566,7 +566,17 @@ int main(int argc, const char** argv)
     }
 
     // Skip this event if it is a pulser event as identified by Pinghan
-    if(*eventDC1BitsIn & kPinghanPulserMask) continue;
+    // But still use it to update the dtPulser variables.
+    if(*eventDC1BitsIn & kPinghanPulserMask)
+    {
+      dummydTGlobal = (double)*globalTimeIn;
+      		for (size_t i = 0; i < (*channelIn).size(); i++) {
+      			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
+      			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
+      		}
+    	}
+      continue;
+    }
 
     // Clear all hit-level vector variables
     iHit.resize(0);
