@@ -499,7 +499,7 @@ int main(int argc, const char** argv)
 
   // Variables for time of pulser event (dtPulser)
   // This assumes the Gretina card/settings map doesn't change for this skim period.
-  double dummydTGlobal = -1.;
+  double dummyDTGlobal = -1.;
   map<int, double> dummydTCard = {};
   katrin::KTable chTable = chMap->GetTable();
   map<int, int> pulserCardMap = {};
@@ -569,7 +569,8 @@ int main(int argc, const char** argv)
     // But still use it to update the dtPulser variables.
     if(*eventDC1BitsIn & kPinghanPulserMask)
     {
-      dummydTGlobal = (double)*globalTimeIn;
+      dummyDTGlobal = (double)*globalTimeIn;
+      // cout << (int)dummyDTGlobal << endl;
   		for (size_t i = 0; i < (*channelIn).size(); i++) {
   			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
   			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
@@ -847,7 +848,7 @@ int main(int argc, const char** argv)
       dcr95.push_back(GetDCR95(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
       dcrctc90.push_back(GetDCRCTC90(hitCh, (*dcrSlopeIn)[i], hitENFCal, hitENMCal, dsNum));
       triggerTrapt0.push_back((*triggerTrapt0In)[i]);
-      dtPulserGlobal = (double)globalTime - dummydTGlobal;
+      dtPulserGlobal = (double)globalTime - dummyDTGlobal;
       dtPulserCard.push_back((double)globalTime + tOffset[i]/CLHEP::s - dummydTCard[pulserCardMap[hitCh]]);
       if(!smallOutput){
         dcr85.push_back(GetDCR85(hitCh, (*dcrSlopeIn)[i], hitENMCal, dsNum, run));
