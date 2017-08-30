@@ -570,11 +570,10 @@ int main(int argc, const char** argv)
     if(*eventDC1BitsIn & kPinghanPulserMask)
     {
       dummydTGlobal = (double)*globalTimeIn;
-      		for (size_t i = 0; i < (*channelIn).size(); i++) {
-      			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
-      			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
-      		}
-    	}
+  		for (size_t i = 0; i < (*channelIn).size(); i++) {
+  			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
+  			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
+  		}
       continue;
     }
 
