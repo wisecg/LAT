@@ -60,7 +60,7 @@ def main(argv):
 	theCut = inFile.Get("theCut").GetTitle()
 
 	# Make files smaller for tests
-	theCut += "&& trapETailMin < 0.5 && trapENFCal > 1.0"
+	theCut += "&& trapETailMin < 0.5 && trapENFCal > 10.0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -69,6 +69,9 @@ def main(argv):
 	nList = elist.GetN()
 	print "Found",gatTree.GetEntries(),"input entries."
 	print "Found",nList,"entries passing cuts."
+
+	# Divide up run for chunk-writing
+	nDivis, nChunk = nList//5000, 5000
 
 	# Gimmicky but works... this bypasses creating the branches...
 	gatTree.GetEntry(0)
@@ -104,73 +107,83 @@ def main(argv):
 	keepMap = dict(keepMapBase)
 	keepMap.update(keepMapLAT)
 
-	# Create empty dictionary of branch names and arrays of values
-	branchMap = {}
-	removeNBeg, removeNEnd = 0, 2
-	for branch in gatTree.GetListOfBranches():
-		if branch.GetName() in keepMap: branchMap[branch.GetName()] = np.zeros(nList)
-	if saveWave:
-		wf = gatTree.MGTWaveforms.at(0)
-		signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-		data = signal.GetWaveBLSub()
-
-		# Save entire array into one column
-		# branchMap['wave'] = np.zeros((nList,len(data)))
-		# Save individual samples as column
-		for idx,sample in enumerate(data):
-			branchMap["wave%d"%(idx)] = np.zeros(nList)
-	if savePacket:
-		for xsample in range(0, 16):
-			for ysample in range(0, 128):
-				branchMap["wp%d_%d"%(xsample, ysample)] = np.zeros(nList)
-
-    # Loop over events
-	print "Starting event loop ..."
-	iList = -1
-	while True:
-		iList += 1
-		if iList >= nList: break
-		entry = gatTree.GetEntryNumber(iList)
-		gatTree.LoadTree(entry)
-		gatTree.GetEntry(entry)
-		nChans = gatTree.channel.size()
-		numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
-		chans = gatTree.GetV1()
-		chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-		hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
-		for iH in hitList:
-			wp = []
-			wave = []
-			if savePacket or saveWave:
-				wf = gatTree.MGTWaveforms.at(iH)
-				signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-				wave = signal.GetWaveBLSub()
-			for key, branch in keepMap.items():
-			# Save branches that aren't vector<Template> (so far only run and mHL)
-				if key == 'run' or key == 'mHL': branchMap[key][iList] = branch
-				else: branchMap[key][iList] = branch.at(iH)
-			if saveWave:
-				# branchMap['wave'][iList] = wave
-				for idx, val in enumerate(wave):
-					branchMap['wave%d'%(idx)][iList] = val
-			if savePacket:
-				packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
-				nodes = packet.get_level(4, order='freq')
-				wp = np.array([n.data for n in nodes],'d')
-				wp = abs(wp)
-				for (x, y), val in np.ndenumerate(wp):
-					branchMap['wp%d_%d'%(x, y)][iList] = val
-
-		if iList%5000 == 0 and iList!=0:
-			print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
-
-	# Convert dictionary to Pandas DataFrame
-	df = pd.DataFrame(branchMap)
-	print df.head()
-	print df.shape
+	dfList = []
 	print 'Writing to: ', '%s/%s.h5' % (outDir,inFileName.split('.')[0])
 	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]))
-	store.put('skimTree', df)
+	iList = -1
+	for chunk in xrange(0,nDivis):
+		# Select size to save, depending on remaining events
+		chunkSize = np.amin([nList-chunk*nChunk, nChunk])
+		# Create empty dictionary of branch names and arrays of values
+		branchMap = {}
+		removeNBeg, removeNEnd = 0, 2
+		for branch in gatTree.GetListOfBranches():
+			if branch.GetName() in keepMap: branchMap[branch.GetName()] = np.zeros(chunkSize)
+		if saveWave:
+			wf = gatTree.MGTWaveforms.at(0)
+			signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
+			data = signal.GetWaveBLSub()
+			# Save individual samples as column
+			for idx,sample in enumerate(data):
+				branchMap["wave%d"%(idx)] = np.zeros(chunkSize)
+		# Save wavelet packet values as columns
+		if savePacket:
+			for xsample in range(0, 16):
+				for ysample in range(0, 128):
+					branchMap["wp%d_%d"%(xsample, ysample)] = np.zeros(chunkSize)
+
+    	# Loop over events
+		print "Looping chunk ", chunk
+		iChunk = -1
+		while True:
+			iList += 1
+			iChunk += 1
+			if iList >= np.amin([(chunk+1)*nChunk, nList]): break
+			entry = gatTree.GetEntryNumber(iList)
+			gatTree.LoadTree(entry)
+			gatTree.GetEntry(entry)
+			nChans = gatTree.channel.size()
+			numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
+			chans = gatTree.GetV1()
+			chanList = list(set(int(chans[n]) for n in xrange(numPass)))
+			hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
+			for iH in hitList:
+				wp = []
+				wave = []
+				if savePacket or saveWave:
+					wf = gatTree.MGTWaveforms.at(iH)
+					signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
+					wave = signal.GetWaveBLSub()
+				for key, branch in keepMap.items():
+					# Save branches that aren't vector<Template> (so far only run and mHL)
+					if key == 'run' or key == 'mHL': branchMap[key][iChunk] = branch
+				else: branchMap[key][iChunk] = branch.at(iH)
+				if saveWave:
+					# branchMap['wave'][iChunk] = wave
+					for idx, val in enumerate(wave):
+						branchMap['wave%d'%(idx)][iChunk] = val
+				if savePacket:
+					packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
+					nodes = packet.get_level(4, order='freq')
+					wp = np.array([n.data for n in nodes],'d')
+					wp = abs(wp)
+					for (x, y), val in np.ndenumerate(wp):
+						branchMap['wp%d_%d'%(x, y)][iChunk] = val
+
+			if iList%5000 == 0 and iList!=0:
+				print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
+
+			# Convert dictionary to Pandas DataFrame
+		df = pd.DataFrame(branchMap)
+		df.to_hdf(store, key = 'skimTree%d'%(chunk), mode = 'a')
+
+		# store.append('skimTree', df)
+		# dfList.append(pd.DataFrame(branchMap))
+			# print dfList.head()
+			# print dfList.shape
+		# store.put('skimTree', df, append=True)
+	# dfTot = pdf.concat(dfList)
+	# store.append('skimTree', dfTot)
 	store.close()
 	stopT = time.clock()
 	print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
