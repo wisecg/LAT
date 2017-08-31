@@ -16,4 +16,4 @@ There are a lot of half-baked ideas, some useful, in the folder 'sandbox'.
 
 ### Authors
 
-LAT was written by Clint Wiseman and Brian Zhu, with lots of input from the Majorana Collaboration.
+LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, with lots of input from the Majorana Collaboration.
