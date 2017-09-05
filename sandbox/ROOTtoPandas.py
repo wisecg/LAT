@@ -73,7 +73,7 @@ def main(argv):
 	# Test purposes
 	# nList = 50000
 	# Divide up run for chunk-writing
-	nDivis, nChunk = nList//2000, 2000
+	nDivis, nChunk = nList//5000, 5000
 
 	# Gimmicky but works... this bypasses creating the branches...
 	gatTree.GetEntry(0)
@@ -112,7 +112,7 @@ def main(argv):
 
 	dfList = []
 	print 'Writing to: ', '%s/%s.h5' % (outDir,inFileName.split('.')[0])
-	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]), 'w')
+	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]), 'w', complevel=9, complib='blosc')
 	iList, iChunk = -1, -1
 	# Loop through number of chunks
 	for chunk in xrange(0,nDivis):
@@ -183,7 +183,7 @@ def main(argv):
 		# Convert dictionary to Pandas DataFrame -- make sure to set the index correctly
 		df = pd.DataFrame(branchMap)
 		df.index = pd.Series(df.index) + chunk*chunkSize
-		store.append('skimTree', df)
+		store.append('skimTree', df, complevel=9, complib='blosc')
 
 	store.close()
 	stopT = time.clock()

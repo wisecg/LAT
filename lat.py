@@ -570,12 +570,12 @@ def main(argv):
 
             # find leading edges (t0 times)
 
-            # limit the range from 0 to 14us, and use an ADC threshold of 2.0 (like the data) for now ...
+            # limit the range from 0 to 10us, and use an ADC threshold of 2.0 (like the data) for now ...
             t0_SLE[iH],_ = wl.walkBackT0(sTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from short trap
             t0_ALE[iH],_ = wl.walkBackT0(aTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
 
             # standard energy trapezoid w/ a baseline padded waveform
-            data_pad = np.pad(data_blSub,(400,0),'symmetric')
+            data_pad = np.pad(data_blSub,(200,0),'symmetric')
             pTrap = wl.trapFilter(data_pad, 400, 250, 7200.)
             pTrapTS = np.linspace(0, len(pTrap)*10, len(pTrap))
             pTrapInterp = interpolate.interp1d(pTrapTS, pTrap)
@@ -593,9 +593,9 @@ def main(argv):
             # function is under development.  currently: f() = exp(p0 + p1*E), p0 ~ 7.8, p1 ~ -0.45 and -0.66
             # functional walk back distance is *either* the minimum of the function value, or 5500 (standard value)
 
-            # t0_corr = -7000+8000+2000 # no correction
-            t0_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.45*lat[iH]),1000.])
-            t0A_corr = -7000+8000+2000 - np.amin([np.exp(7.8 - 0.66*lat[iH]),1000.])
+            # t0_corr = -7000+6000+2000 # no correction
+            t0_corr = -7000+6000+2000 - np.amin([np.exp(7.8 - 0.45*lat[iH]),1000.])
+            t0A_corr = -7000+6000+2000 - np.amin([np.exp(7.8 - 0.66*lat[iH]),1000.])
 
             latFC[iH] = pTrapInterp( np.amax([t0_SLE[iH] + t0_corr, 0.]) )
             latAFC[iH] = pTrapInterp( np.amax([t0_ALE[iH] + t0A_corr, 0.]) )
