@@ -60,7 +60,7 @@ def main(argv):
 	theCut = inFile.Get("theCut").GetTitle()
 
 	# Make files smaller for tests
-	theCut += "&& trapETailMin < 0.5 && trapENFCal > 10.0"
+	theCut += "&& trapETailMin < 0.5 && trapENFCal > 100.0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -70,12 +70,15 @@ def main(argv):
 	print "Found",gatTree.GetEntries(),"input entries."
 	print "Found",nList,"entries passing cuts."
 
+	# Test purposes
+	# nList = 50000
 	# Divide up run for chunk-writing
-	nDivis, nChunk = nList//5000, 5000
+	nDivis, nChunk = nList//2000, 2000
 
 	# Gimmicky but works... this bypasses creating the branches...
 	gatTree.GetEntry(0)
 
+	# Mess of various branches
 	channel, fails, C = std.vector("int")(), std.vector("int")(), std.vector("int")()
 	threshKeV, threshSigma = std.vector("double")(), std.vector("double")()
 	kvorrT = std.vector("double")()
@@ -109,8 +112,9 @@ def main(argv):
 
 	dfList = []
 	print 'Writing to: ', '%s/%s.h5' % (outDir,inFileName.split('.')[0])
-	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]))
-	iList = -1
+	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]), 'w')
+	iList, iChunk = -1, -1
+	# Loop through number of chunks
 	for chunk in xrange(0,nDivis):
 		# Select size to save, depending on remaining events
 		chunkSize = np.amin([nList-chunk*nChunk, nChunk])
@@ -125,6 +129,7 @@ def main(argv):
 			data = signal.GetWaveBLSub()
 			# Save individual samples as column
 			for idx,sample in enumerate(data):
+				if idx < 400 or idx > 1600: continue
 				branchMap["wave%d"%(idx)] = np.zeros(chunkSize)
 		# Save wavelet packet values as columns
 		if savePacket:
@@ -134,11 +139,10 @@ def main(argv):
 
     	# Loop over events
 		print "Looping chunk ", chunk
-		iChunk = -1
 		while True:
 			iList += 1
 			iChunk += 1
-			if iList >= np.amin([(chunk+1)*nChunk, nList]): break
+			if iList >= nList: break
 			entry = gatTree.GetEntryNumber(iList)
 			gatTree.LoadTree(entry)
 			gatTree.GetEntry(entry)
@@ -157,10 +161,12 @@ def main(argv):
 				for key, branch in keepMap.items():
 					# Save branches that aren't vector<Template> (so far only run and mHL)
 					if key == 'run' or key == 'mHL': branchMap[key][iChunk] = branch
-				else: branchMap[key][iChunk] = branch.at(iH)
+					else: branchMap[key][iChunk] = branch.at(iH)
 				if saveWave:
 					# branchMap['wave'][iChunk] = wave
 					for idx, val in enumerate(wave):
+						# Skip some samples because they're useless
+						if idx < 400 or idx > 1600: continue
 						branchMap['wave%d'%(idx)][iChunk] = val
 				if savePacket:
 					packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
@@ -169,21 +175,16 @@ def main(argv):
 					wp = abs(wp)
 					for (x, y), val in np.ndenumerate(wp):
 						branchMap['wp%d_%d'%(x, y)][iChunk] = val
-
-			if iList%5000 == 0 and iList!=0:
-				print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
-
-			# Convert dictionary to Pandas DataFrame
+			if iList == (chunk+1)*nChunk-1:
+				iChunk = -1
+				break
+		if iList%5000 == 0 and iList!=0:
+			print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
+		# Convert dictionary to Pandas DataFrame -- make sure to set the index correctly
 		df = pd.DataFrame(branchMap)
-		df.to_hdf(store, key = 'skimTree%d'%(chunk), mode = 'a')
+		df.index = pd.Series(df.index) + chunk*chunkSize
+		store.append('skimTree', df)
 
-		# store.append('skimTree', df)
-		# dfList.append(pd.DataFrame(branchMap))
-			# print dfList.head()
-			# print dfList.shape
-		# store.put('skimTree', df, append=True)
-	# dfTot = pdf.concat(dfList)
-	# store.append('skimTree', dfTot)
 	store.close()
 	stopT = time.clock()
 	print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
