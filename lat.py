@@ -430,7 +430,7 @@ def main(argv):
             # Textbook is (observed - expected)^2 / expected,
             # but we'll follow MGWFCalculateChiSquare.cc and do (observed - expected)^2 / NDF.
             # NOTE: we're doing the chi2 against the DATA, though the FIT is to the DENOISED DATA.
-            fitChi2[iH] = np.sum(np.square(data-fit)) / len(data)
+            fitChi2[iH] = np.sum(np.square(data-fit)) / (len(data)-1)/dataNoise
 
 
             # get wavelet coeff's for rising edge only.  normalize to bcMin
@@ -570,9 +570,9 @@ def main(argv):
 
             # find leading edges (t0 times)
 
-            # limit the range from 0 to 10us, and use an ADC threshold of 2.0 (like the data) for now ...
-            t0_SLE[iH],_ = wl.walkBackT0(sTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from short trap
-            t0_ALE[iH],_ = wl.walkBackT0(aTrap, eTrapTS[-1]+7000-4000-2000, 2., 0, 1000) # (in ns) finds leading edge from asymmetric trap
+            # limit the range from 0 to 10us, and use an ADC threshold of 1.0 as suggested by DCR
+            t0_SLE[iH],_ = wl.walkBackT0(sTrap, eTrapTS[-1]+7000-4000-2000, 1., 0, 1000) # (in ns) finds leading edge from short trap
+            t0_ALE[iH],_ = wl.walkBackT0(aTrap, eTrapTS[-1]+7000-4000-2000, 1., 0, 1000) # (in ns) finds leading edge from asymmetric trap
 
             # standard energy trapezoid w/ a baseline padded waveform
             data_pad = np.pad(data_blSub,(200,0),'symmetric')
