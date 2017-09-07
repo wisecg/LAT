@@ -39,7 +39,6 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 import scipy.special as sp
 import waveLibs as wl
-import waveModel as wm
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
@@ -47,7 +46,7 @@ def main(argv):
     print "LAT started:",time.strftime('%X %x %Z')
     startT = time.clock()
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
-
+    global batMode
     # let's get some (m)args
     intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode = False, False, False, False, False, False, False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
@@ -395,7 +394,7 @@ def main(argv):
             amp, mu, sig, tau, bl = dataENM, dataTSMax, 600., -72000., dataBL
             floats = np.asarray([amp, mu, sig, tau, bl])
             temp = xgModelWF(dataTS, floats)
-            MakeTracesGlobal()
+            if not batMode: MakeTracesGlobal()
 
             # get the noise of the denoised wf
             denoisedNoise,_,_ = wl.baselineParameters(data_wlDenoised)
@@ -420,7 +419,7 @@ def main(argv):
             # save parameters
             amp, mu, sig, tau, bl = result["x"]
             fitMu[iH], fitAmp[iH], fitSlo[iH], fitTau[iH], fitBL[iH] = mu, amp, sig, tau, bl
-            floats = [amp, mu, sig, tau, bl]
+            floats = np.asarray([amp, mu, sig, tau, bl])
             fit = xgModelWF(dataTS, floats)
 
             # log-likelihood of this fit
@@ -833,7 +832,7 @@ def xgModelWF(dataTS, floats):
 
 def MakeTracesGlobal():
     """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
-    tmp1 = tmp2 = tmp3 = tmp4 = tmp5 = np.empty([1,])
+    tmp1, tmp2, tmp3, tmp4, tmp5 = [], [], [], [], []
     global ampTr, muTr, sigTr, tauTr, blTr
     ampTr, muTr, sigTr, tauTr, blTr = tmp1, tmp2, tmp3, tmp4, tmp5
 
@@ -843,13 +842,15 @@ def lnLike(floats, *datas):
     where the original list is the 1st element.
     """
     # Add to traces.
-    global ampTr, muTr, sigTr, tauTr, blTr
-    amp, mu, sig, tau, bl = floats
-    ampTr = np.append(ampTr, amp)
-    muTr = np.append(muTr, mu)
-    sigTr = np.append(sigTr, sig)
-    tauTr = np.append(tauTr, tau)
-    blTr = np.append(blTr, bl)
+    global batMode
+    if not batMode:
+        global ampTr, muTr, sigTr, tauTr, blTr
+        amp, mu, sig, tau, bl = floats
+        ampTr.append(amp)
+        muTr.append(mu)
+        sigTr.append(sig)
+        tauTr.append(tau)
+        blTr.append(bl)
 
     dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
 
