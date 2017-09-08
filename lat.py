@@ -849,12 +849,13 @@ def lnLike(floats, *datas):
         ampTr.append(amp)
         muTr.append(mu)
         sigTr.append(sig)
-        tauTr.append(tau)
+        # tauTr.append(tau)
+        tauTr.append(-72000)
         blTr.append(bl)
 
     dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
 
-    model = xgModelWF(dataTS, floats)
+    model = xgModelWF(dataTS, [amp, mu, sig, -72000, bl])
     lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
     return lnLike
 
