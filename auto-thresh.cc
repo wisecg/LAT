@@ -3,7 +3,8 @@
 // output of process_mjd_cal (pass 1 gat)
 // and the APDB (MkCookie must be run recently)
 // B. Zhu, C. Wiseman
-// 2017/2/28
+// v1. 2017/2/28
+// v2. 2017/6/01 - changed to run over data subsets (as defined in DataSetInfo.hh)
 
 #include <iostream>
 #include <vector>
@@ -27,9 +28,7 @@
 #include "MJAnalysisDoc.hh"
 #include "MJAnalysisParameters.hh"
 #include "MJTRun.hh"
-
 #include "DataSetInfo.hh"
-
 
 using namespace std;
 using namespace MJDB;
@@ -40,7 +39,7 @@ vector<double> ThreshTrapezoidalFilter( const vector<double>& anInput, double Ra
 int main(int argc, char** argv)
 {
   if (argc < 3) {
-    cout << "Usage: ./auto-threshv2 [dsNum] [subNum] \n";
+    cout << "Usage: ./auto-thresh [dsNum] [subNum] \n";
     return 1;
   }
   int dsNum = stoi(argv[1]);
@@ -72,7 +71,7 @@ void FindThresholds(int dsNum, int subNum)
   vector<double> CalScale(0);
   vector<int> numTrigger(0);
   vector<int> numNoise(0);
-  
+
   fThreshTree->Branch("runMin", &runMin, "runMin/I");
   fThreshTree->Branch("runMax", &runMax, "runMax/I");
   fThreshTree->Branch("channelList", &channelList );
@@ -87,7 +86,7 @@ void FindThresholds(int dsNum, int subNum)
   fThreshTree->Branch("CalOffset", &CalOffset);
   fThreshTree->Branch("CalScale", &CalScale);
   fThreshTree->Branch("numTrigger", &numTrigger);
-  fThreshTree->Branch("numNoise", &numNoise);  
+  fThreshTree->Branch("numNoise", &numNoise);
 
   MJTChannelSettings *chanSet= ds.GetChannelSettings();
   vector<uint32_t> en = chanSet->GetEnabledIDList();
@@ -108,7 +107,7 @@ void FindThresholds(int dsNum, int subNum)
   // Get channel and energy estimator
   TChain *gatChain = ds.GetGatifiedChain(false);
   TTreeReader gReader(gatChain);
-  TTreeReaderValue<double> runIn(gReader, "run");  
+  TTreeReaderValue<double> runIn(gReader, "run");
   TTreeReaderArray<double> wfChan(gReader,"channel");
   TTreeReaderArray<double> wfENF(gReader,"trapENM");
   int nEntries = gatChain->GetEntries();

@@ -18,6 +18,7 @@ using namespace std;
 // GetTotalActiveMass - Total active mass for each dataset.
 //                      This could be calculated instead of hardcoded in the future.
 // LoadActiveMasses - Returns a map of all active masses.
+// LoadActiveMassUncertainties - Returns a map of all active mass uncertainties.
 // LoadBadDetectorMap - Returns a map of bad (i.e. not biased, unusuable) detectors.
 // LoadVetoDetectorMap - Returns a map of veto-only detectors.
 // GetChannelSelectionPath - Returns a string with the path to the highest
@@ -71,7 +72,7 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
     startTime0 = 1435687000; // start time of run 2580
   }
   else if(dsNum == 1) {
-    runTime_s = 5081121; //was 4728790; before blinding
+    runTime_s = 5077520; //was 4728790; before blinding
     startTime0 = 1452643100; // start time of run 9422
   }
   else if (dsNum == 2) {
@@ -84,11 +85,11 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
   }
   else if(dsNum == 4) {
     // runTime_s = 2047670;//1460390;
-    runTime_s = 1660154;
+    runTime_s = 1654247;
     startTime0 = 1472169600; // start time of run 60000802
   }
   else if (dsNum == 5) {
-    runTime_s = 10464940;
+    runTime_s = 10461454;
     startTime0 = 1476396800; // start time of run 18623
   }
   else if (dsNum == 6) {
@@ -229,7 +230,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
     {39, {13029,13053, 13055,13056}},
     {40, {13066,13070, 13076,13092, 13094,13096}},
     {41, {13100,13115, 13117,13119, 13123,13137}},
-    {42, {13148,13150, 13154,13156, 13186,13189, 13191,13211}},
+    {42, {13148,13150, 13154,13156, 13186,13189, 13191,13204, 13206,13211}},
     {43, {13212,13242}},
     {44, {13243,13275}},
     {45, {13276,13287, 13306,13311, 13313,13325}},
@@ -286,7 +287,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
   else if(dsNum == 4) runRanges = {
     {0, {60000802,60000821, 60000823,60000823, 60000827,60000828, 60000830,60000830}},
     {1, {60000970,60001000}},
-    {2, {60001001,60001011, 60001013,60001013}},
+    {2, {60001001,60001010}},
     {3, {60001033,60001054, 60001056,60001062}},
     {4, {60001063,60001086}},
     {5, {60001088,60001093}},
@@ -396,7 +397,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
     {80, {22400,22428}},
     {81, {22430,22463}},
     {82, {22464,22488}},
-    {83, {22490,22512, 22636,22644, 22646,22650}},
+    {83, {22490,22512, 22636,22644, 22647,22650}},
     {84, {22652,22653, 22655,22670, 22673,22674}},
     {85, {22678,22711}},
     {86, {22712,22742}},
@@ -537,6 +538,55 @@ map<int,double> LoadActiveMasses(int dsNum)
   else cout << "Error: LoadActiveMasses(): unknown dataset number: " << dsNum << endl;
 
   return activeMassForDetID_g;
+}
+
+
+map<int,double> LoadActiveMassUncertainties(int dsNum)
+{
+  map<int,double> activeMassUncForDetID_g;
+  if (dsNum==0 || dsNum==1 || dsNum==2 || dsNum==3) {
+    activeMassUncForDetID_g = {
+      {1426981, 10}, {1425750, 13}, {1426612, 12}, {1425380, 13},       // C1P1
+      {28474, 13}, {1426640, 11}, {1426650, 11}, {1426622, 10},         // C1P2
+      {28480, 13}, {1426980, 12}, {1425381, 13}, {1425730, 14},         // C1P3
+      {28455, 13}, {28470, 13}, {28463, 13}, {28465, 12}, {28469, 13},  // C1P4
+      {28477, 13}, {1425751, 11}, {1426610, 11}, {1425731, 13},         // C1P5
+      {1425742, 11}, {1426611, 12}, {1425740, 11}, {1426620, 9.4},      // C1P6
+      {28482, 13}, {1425741, 11}, {1426621, 9}, {1425370, 13} };        // C1P7
+  }
+  else if (dsNum == 4) {
+    activeMassUncForDetID_g = {
+      {28459, 13}, {1426641, 9}, {1427481, 12}, {1427480, 12},          // C2P1
+      {28481, 13}, {28576, 13}, {28594, 13}, {28595, 13}, {28461, 13},  // C2P2
+      {1427490, 12}, {1427491, 11}, {1428530, 12},                      // C2P3
+      {28607, 13}, {28456, 13}, {28621, 13}, {28466, 13}, {28473, 13},  // C2P4
+      {28487, 13}, {1426651, 10}, {1428531, 13}, {1427120, 11},         // C2P5
+      {1235170, 8.4}, {1429091, 12}, {1429092, 11}, {1426652, 11},      // C2P6
+      {28619, 13}, {1427121, 12}, {1429090, 10}, {28717, 13} };         // C2P7
+  }
+  else if (dsNum == 5 || dsNum == 6) {
+    activeMassUncForDetID_g = {
+      // M1
+      {1426981, 10}, {1425750, 13}, {1426612, 12}, {1425380, 13},       // C1P1
+      {28474, 13}, {1426640, 11}, {1426650, 11}, {1426622, 10},         // C1P2
+      {28480, 13}, {1426980, 12}, {1425381, 13}, {1425730, 14},         // C1P3
+      {28455, 13}, {28470, 13}, {28463, 13}, {28465, 12}, {28469, 13},  // C1P4
+      {28477, 13}, {1425751, 11}, {1426610, 11}, {1425731, 13},         // C1P5
+      {1425742, 11}, {1426611, 12}, {1425740, 11}, {1426620, 9.4},      // C1P6
+      {28482, 13}, {1425741, 11}, {1426621, 9}, {1425370, 13},        // C1P7
+      // M2
+      {28459, 13}, {1426641, 9}, {1427481, 12}, {1427480, 12},          // C2P1
+      {28481, 13}, {28576, 13}, {28594, 13}, {28595, 13}, {28461, 13},  // C2P2
+      {1427490, 12}, {1427491, 11}, {1428530, 12},                      // C2P3
+      {28607, 13}, {28456, 13}, {28621, 13}, {28466, 13}, {28473, 13},  // C2P4
+      {28487, 13}, {1426651, 10}, {1428531, 13}, {1427120, 11},         // C2P5
+      {1235170, 8.4}, {1429091, 12}, {1429092, 11}, {1426652, 11},      // C2P6
+      {28619, 13}, {1427121, 12}, {1429090, 10}, {28717, 13}            // C2P7
+    };
+  }
+  else cout << "Error: LoadActiveMassUncertainties(): unknown dataset number: " << dsNum << endl;
+
+  return activeMassUncForDetID_g;
 }
 
 
@@ -5986,7 +6036,7 @@ bool GetLNRunCoverage(int dsNum, int run) {
   if (dsNum==0 && run >= 2580 && run <= 6963) return true;
   if (dsNum==1 && run >= 9422 && run <= 14502)  return true;
   if (dsNum==2 && run >= 14503 && run <= 15892) return true;
-  if (dsNum==3 && run >= 16797 && run <= 17908) return true;
+  if (dsNum==3 && run >= 16797 && run <= 17980) return true;
   if (dsNum==4 && run >= 60000802 && run <= 60001888) return true;
   if (dsNum==5 && run >= 18623 && run < 25671) return true;
   if (dsNum==6) return false;
