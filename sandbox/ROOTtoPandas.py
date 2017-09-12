@@ -60,7 +60,7 @@ def main(argv):
 	theCut = inFile.Get("theCut").GetTitle()
 
 	# Make files smaller for tests
-	theCut += "&& trapETailMin < 0.5 && trapENFCal > 100.0"
+	theCut += " && trapENFCal > 50.0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -163,11 +163,12 @@ def main(argv):
 					if key == 'run' or key == 'mHL': branchMap[key][iChunk] = branch
 					else: branchMap[key][iChunk] = branch.at(iH)
 				if saveWave:
-					# branchMap['wave'][iChunk] = wave
+					# Normalize waveform according to maximum ADC value
+					norm = np.amax(np.abs(wave))
 					for idx, val in enumerate(wave):
 						# Skip some samples because they're useless
 						if idx < 400 or idx > 1600: continue
-						branchMap['wave%d'%(idx)][iChunk] = val
+						branchMap['wave%d'%(idx)][iChunk] = val/norm
 				if savePacket:
 					packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
 					nodes = packet.get_level(4, order='freq')
