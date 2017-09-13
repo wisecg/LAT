@@ -60,7 +60,7 @@ def main(argv):
 	theCut = inFile.Get("theCut").GetTitle()
 
 	# Make files smaller for tests
-	theCut += " && trapENFCal > 50.0"
+	theCut += " && trapENFCal > 100.0 && channel == 626"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -115,21 +115,23 @@ def main(argv):
 	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]), 'w', complevel=9, complib='blosc')
 	iList, iChunk = -1, -1
 	# Loop through number of chunks
-	for chunk in xrange(0,nDivis):
+	print 'Splitting to %d chunks of chunksize %d'%(nDivis, nChunk)
+	for chunk in xrange(0,nDivis+1):
 		# Select size to save, depending on remaining events
 		chunkSize = np.amin([nList-chunk*nChunk, nChunk])
 		# Create empty dictionary of branch names and arrays of values
 		branchMap = {}
-		removeNBeg, removeNEnd = 0, 2
+		removeNBeg, removeNEnd = 10, 10
 		for branch in gatTree.GetListOfBranches():
 			if branch.GetName() in keepMap: branchMap[branch.GetName()] = np.zeros(chunkSize)
 		if saveWave:
-			wf = gatTree.MGTWaveforms.at(0)
-			signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-			data = signal.GetWaveBLSub()
+			# wf = gatTree.MGTWaveforms.at(0)
+			# signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
+			# data = signal.GetWaveBLSub()
 			# Save individual samples as column
-			for idx,sample in enumerate(data):
-				if idx < 400 or idx > 1600: continue
+			# for idx,sample in enumerate(data):
+				# if idx < 400 or idx > 1600: continue
+			for idx in xrange(0, 800):
 				branchMap["wave%d"%(idx)] = np.zeros(chunkSize)
 		# Save wavelet packet values as columns
 		if savePacket:
@@ -164,11 +166,13 @@ def main(argv):
 					else: branchMap[key][iChunk] = branch.at(iH)
 				if saveWave:
 					# Normalize waveform according to maximum ADC value
-					norm = np.amax(np.abs(wave))
-					for idx, val in enumerate(wave):
-						# Skip some samples because they're useless
-						if idx < 400 or idx > 1600: continue
-						branchMap['wave%d'%(idx)][iChunk] = val/norm
+					norm = np.amax(wave[400:-400])
+					wave /= norm
+					# Find 50% mark
+					mid = np.where(wave[400:-400] > 0.5)
+					for idx, val in enumerate( wave[mid[0][0]:mid[0][0]+800 ] ):
+						# Fill 800 samples around the 50% mark of the waveform
+						branchMap['wave%d'%(idx)][iChunk] = val
 				if savePacket:
 					packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
 					nodes = packet.get_level(4, order='freq')
