@@ -19,14 +19,14 @@ dsRanges = { 0:[2571, 7614],
              4:[60000791, 60002394],
              5:[18623, 23958] }
 
-calIdx = {}
-calIdx["ds0_m1"] =
-calIdx["ds1_m1"] =
-calIdx["ds2_m1"] =
-calIdx["ds3_m1"] =
-calIdx["ds4_m2"] =
-calIdx["ds5_m1"] =
-calIdx["ds5_m2"] = 
+# calIdx = {}
+# calIdx["ds0_m1"] =
+# calIdx["ds1_m1"] =
+# calIdx["ds2_m1"] =
+# calIdx["ds3_m1"] =
+# calIdx["ds4_m2"] =
+# calIdx["ds5_m1"] =
+# calIdx["ds5_m2"] =
 
 
 # proposal:
