@@ -21,10 +21,10 @@ import DataSetInfo as ds
 
 home    = os.path.expanduser('~')
 skimDir    = home+"/project/bg-skim"
-waveDir    = home+"/project/bg-wave" # split files are in waveDir/split
+waveDir    = home+"/project/bg-waves" # split files are in waveDir/split
 latDir     = home+"/project/bg-lat"
 calSkimDir = home+"/project/cal-skim"
-calWaveDir = home+"/project/cal-wave"
+calWaveDir = home+"/project/cal-waves"
 calLatDir  = home+"/project/cal-lat"
 pandaDir   = home+"/project/panda-skim"
 # skimDir = "/projecta/projectdirs/majorana/users/bxyzhu/skim"
