@@ -31,8 +31,8 @@ pandaDir   = home+"/project/panda-skim"
 # waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
 # latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
 # pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
-qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
-# qsubStr = "sbatch slurm-job.sh" # SLURM
+# qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
+qsubStr = "sbatch slurm-job.sh" # SLURM mode
 
 # =============================================================
 def main(argv):
@@ -87,8 +87,8 @@ def main(argv):
 
     # -- calibration stuff --
     calList = []
-    if f['c']: calList = getCalRunList(dsNum,subNum,runNum)
-    if f['n']: runCal(dsNum, subNum, f['q'])
+    if f['c']: calList = getCalRunList(dsNum,subNum)
+    if f['n']: runLAT2Cal(dsNum, subNum, f['q'])
 
     # -- go running --
     if f['a']: runSkimmer(dsNum, subNum, runNum, calList=calList)
@@ -198,6 +198,45 @@ def makeScript():
 def purgeLogs():
     print "Purging logs ..."
     for fl in glob.glob("./logs/*"): os.remove(fl)
+
+
+def getCalRunList(dsNum=None,subNum=None):
+    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx])
+        Create a calibration run list, using the CalInfo object in DataSetInfo.py .
+        Note that the -sub option is re-defined here to mean a calibration range idx.
+        Note that running with -cal alone will create a list for all datasets (mega mode).
+    """
+    runLimit = 10 # yeah I'm hardcoding this, sue me.
+    calList = []
+    calInfo = ds.CalInfo()
+    calKeys = calInfo.GetKeys(dsNum)
+
+    for key in calKeys:
+        print "key:",key
+
+        # -cal (mega mode)
+        if dsNum==None:
+            for idx in range(calInfo.GetIdxs(key)):
+                lst = calInfo.GetCalList(key,idx,runLimit)
+                print lst
+                calList += lst
+        # -ds
+        elif subNum==None:
+            for idx in range(calInfo.GetIdxs(key)):
+                lst = calInfo.GetCalList(key,idx,runLimit)
+                print lst
+                calList += lst
+        # -sub
+        else:
+            lst = calInfo.GetCalList(key,subNum,runLimit)
+            if lst==None: continue
+            print lst
+            calList += lst
+
+    # remove any duplicates, but there probably aren't any
+    calList = sorted(list(set(calList)))
+
+    return calList
 
 
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
@@ -487,6 +526,46 @@ def checkLogErrors2():
                 print 'Error from: ', lineErr
             if 'Error' in lineErr:
                 print lineErr
+
+
+def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
+    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx])  -force (optional)
+        Run LAT2 in cal mode.
+    """
+    import waveLibs as wl
+    if forceUpdate: print "Force updating DB entries."
+
+    # get calIdx's for this dataset from the DB
+    calTable = wl.getDBCalTable(dsNum)
+    calIdxs = calTable.keys()
+
+    # -ds
+    if calIdx==None:
+        for idx in calIdxs:
+            print "======================================"
+            rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, idx) )
+
+            if rec==None or forceUpdate:
+                if forceUpdate:
+                    # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, idx) )
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, idx))
+                else:
+                    # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, idx) )
+                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, idx))
+    # -sub
+    else:
+        if calIdx not in calIdxs:
+            print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
+            return
+
+        rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, calIdx) )
+        if rec==None or forceUpdate:
+            if forceUpdate:
+                # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, calIdx) )
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, calIdx))
+            else:
+                # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, calIdx) )
+                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, calIdx))
 
 
 def skimLAT(inPath,outPath,thisCut):
@@ -876,75 +955,6 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
     else:
         for i in calList:
             sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, waveDir, pandaDir))
-
-
-def getCalRunList(dsNum,subNum=None,runNum=None):
-    calList = []
-
-    # -ds
-    if subNum==None and runNum==None:
-        for i in range(0,len(ds.calRanges[dsNum])):
-            numRuns = ds.calRanges[dsNum][i][1] - ds.calRanges[dsNum][i][0]
-            if numRuns > 4:
-                for rx in range(ds.calRanges[dsNum][i][0]+numRuns/2-2, ds.calRanges[dsNum][i][0]+numRuns/2+2):
-                    calList.append(rx)
-            else:
-                for rx in range(ds.calRanges[dsNum][i][2], ds.calRanges[dsNum][i][1]+1):
-                    calList.append(rx)
-
-    # -sub
-    elif runNum==None:
-        numRuns = ds.calRanges[dsNum][subNum][1] - ds.calRanges[dsNum][subNum][0]
-        if numRuns > 4:
-            for rx in range(ds.calRanges[dsNum][subNum][0]+numRuns/2-2, ds.calRanges[dsNum][subNum][0]+numRuns/2+2):
-                calList.append(rx)
-
-    # -run
-    elif subNum==None: # -run
-        calList.append(runNum)
-
-    return calList
-
-
-def runCal(dsNum, calIdx=None, forceUpdate=False):
-    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx])  -force (optional)
-        Run LAT2 in cal mode.
-    """
-    import waveLibs as wl
-    if forceUpdate: print "Force updating DB entries."
-
-    # get calIdx's for this dataset from the DB
-    calTable = wl.getDBCalTable(dsNum)
-    calIdxs = calTable.keys()
-
-    # -ds
-    if calIdx==None:
-        for idx in calIdxs:
-            print "======================================"
-            rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, idx) )
-
-            if rec==None or forceUpdate:
-                if forceUpdate:
-                    # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, idx) )
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, idx))
-                else:
-                    # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, idx) )
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, idx))
-    # -sub
-    else:
-        if calIdx not in calIdxs:
-            print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
-            return
-
-        rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, calIdx) )
-        if rec==None or forceUpdate:
-            if forceUpdate:
-                # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, calIdx) )
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, calIdx))
-            else:
-                # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, calIdx) )
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, calIdx))
-
 
 
 

@@ -206,7 +206,16 @@ class CalInfo:
     def GetMasterList(self): return self.master
     def GetCovArr(self,key): return self.covIdx[key]
     def GetIdxs(self,key): return len(self.covIdx[key])
-    def GetKeys(self): return sorted(self.master.keys())
+
+    def GetKeys(self,dsNum=None):
+        keyList = sorted(self.master.keys())
+        if dsNum==None:
+            return keyList
+        else:
+            thisDSList = []
+            for key in keyList:
+                if "ds%d" % dsNum in key: thisDSList.append(key)
+            return thisDSList
 
     def GetCalIdx(self,key,run):
         """ Look up the calibration index corresponding to a particular run. """
@@ -233,6 +242,8 @@ class CalInfo:
             return None
         else:
             runList = []
+            if idx not in self.master[key]:
+                return None
             lst = self.master[key][idx][0]
             for i in xrange(0,len(lst),2):
                 lo, hi = lst[i], lst[i+1]
