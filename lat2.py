@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 #!/usr/common/usg/software/python/2.7.9/bin/python
 #!/usr/local/bin/python
 """
@@ -340,10 +341,17 @@ def testDB():
     # wl.setDBCalTable()
     # wl.getDBKeys()
     # wl.getDBCalRecord("ds1_idx0")
-    wl.getDBCalRecord("ds1_calIdx")
+    # wl.getDBCalRecord("ds1_calIdx")
     # wl.delDBRecord("ds1_idx0")
     # wl.getDBCalTable(5)
     # wl.getDBRunCoverage(1,9999)
+
+    cal = ds.CalInfo()
+
+    key, run = "ds5_m1",999999
+
+    print cal.GetCovArr(key)
+    print run,cal.GetCalIdx(run,key)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):
