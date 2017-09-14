@@ -31,8 +31,8 @@ pandaDir   = home+"/project/panda-skim"
 # waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
 # latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
 # pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
-# qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
-qsubStr = "sbatch slurm-job.sh" # SLURM
+qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
+# qsubStr = "sbatch slurm-job.sh" # SLURM
 
 # =============================================================
 def main(argv):
