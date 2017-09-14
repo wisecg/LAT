@@ -195,7 +195,7 @@ class CalInfo:
             13: [[23498,23509],23482,23958]
             }
 
-        # Track all the 'hi' run coverage numbers for superfast run range lookups
+        # Track all the 'hi' run coverage numbers for fast run range lookups
         self.covIdx = {}
         for key in self.master:
             tmp = []
@@ -203,35 +203,43 @@ class CalInfo:
                 tmp.append(self.master[key][idx][2])
             self.covIdx[key] = np.asarray(tmp)
 
-    def GetCovArr(self,key):
-        return self.covIdx[key]
+    def GetMasterList(self): return self.master
+    def GetCovArr(self,key): return self.covIdx[key]
+    def GetIdxs(self,key): return len(self.covIdx[key])
+    def GetKeys(self): return sorted(self.master.keys())
 
-    def GetCalIdx(self,run,key):
-        """ Lookup the calibration index corresponding to a particular run. """
-        if key in self.covIdx:
-            return np.searchsorted(self.covIdx[key], run)
-        else:
+    def GetCalIdx(self,key,run):
+        """ Look up the calibration index corresponding to a particular run. """
+        if key not in self.covIdx:
+            print "Key %s not found in master list!" % key
             return None
+        else:
+            idx = np.searchsorted(self.covIdx[key], run)
+            if idx not in self.master[key]:
+                print "Run %d out of range of key %s.  calIdx was %d" % (run, key, idx)
+                return None
+            lst = self.master[key][idx]
+            lo, hi = lst[1], lst[2]
+            if lo <= run <= hi:
+                return idx
+            else:
+                print "Run %d not found with key %s, lo=%d hi=%d" % (run,key,lo,hi)
+                return None
 
-    def GetCalList(self,key,idx,runLimit=10):
+    def GetCalList(self,key,idx,runLimit=None):
         """ Generate a list of runs for a given calibration index. """
-        if key in self.master:
-            runList = []
-            tmp = self.master[key][idx][0]
-            for i in xrange(0,len(tmp),2):
-                lo, hi = tmp[i], tmp[i+1]
-                runList += range(lo, hi+1)
-            return runList
-        else:
+        if key not in self.master:
+            print "Key %s not found in master list!" % key
             return None
-
-
-
-
-
-
-
-
+        else:
+            runList = []
+            lst = self.master[key][idx][0]
+            for i in xrange(0,len(lst),2):
+                lo, hi = lst[i], lst[i+1]
+                runList += range(lo, hi+1)
+            if runLimit is not None:
+                del runList[10:]
+            return runList
 
 
 # ==================================================================================

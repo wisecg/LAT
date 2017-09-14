@@ -1,6 +1,5 @@
 #!/usr/local/bin/python
 #!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
 """
 ===================== LAT2.py =====================
 
@@ -10,7 +9,6 @@ Modes:
     -cal  : Scans a calibration range and updates parameters in a TinyDB file.
     -upd  : Updates an input file with data from the calibration database file.
     -test : Database stuff.
-    TODO: Quick check if a given range has enough events in each channel to calibrate.
 
 v1: 07 Aug 2017
 
@@ -348,10 +346,24 @@ def testDB():
 
     cal = ds.CalInfo()
 
-    key, run = "ds5_m1",999999
+    # get a cal index for a run
+    # key, run = "ds1_m1",10770
+    # print cal.GetCalIdx(key,run)
 
-    print cal.GetCovArr(key)
-    print run,cal.GetCalIdx(run,key)
+    # generate a list of cal runs for a given index
+    # key, idx = "ds3_m1",4
+    # print cal.GetCalList(key,idx,runLimit=10)
+
+    # generate cal runs for a given dataset
+    # key = "ds2_m1"
+    # for idx in range(cal.GetIdxs(key)):
+        # print cal.GetCalList(key,idx,runLimit=10)
+
+    # generate all possible cal runs
+    for key in cal.GetKeys():
+        print key
+        for idx in range(cal.GetIdxs(key)):
+            print cal.GetCalList(key,idx,runLimit=10)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):
