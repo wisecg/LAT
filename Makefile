@@ -2,7 +2,7 @@ include $(MGDODIR)/buildTools/config.mk
 
 # Give the list of applications, which must be the stems of cc files with 'main'.  There
 # can be more than one.  In our example, this means there is a test.cc and a test1.cc
-APPS = skim_mjd_data wave-skim ds_livetime auto-thresh
+APPS = skim_mjd_data wave-skim ds_livetime auto-thresh pkFit
 
 # The next three lines are important
 SHLIB =

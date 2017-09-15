@@ -3,10 +3,12 @@
 Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy data.
 
 The structure is mainly:
+- job-panda (do file management, submit jobs, lots of misc things.)
 - skim_mjd_data (produce low energy skim files w/ special options to reduce threshold)
 - wave-skim (grab all waveforms for hits passing basic data cleaning cuts)
 - lat, lat2, lat3 (perform secondary waveform processing)
 - ds_livetime (calculate livetime of final analysis)
+- specFit (unbinned likelihood fits to final spectra)
 
 The bookeeping and many miscellaneous tasks are covered by 'job-panda.py', and most of the miscellaneous functions are stored in 'waveLibs.py'.  
 
