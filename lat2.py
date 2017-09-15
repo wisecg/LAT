@@ -360,10 +360,10 @@ def testDB():
         # print cal.GetCalList(key,idx,runLimit=10)
 
     # generate all possible cal runs
-    for key in cal.GetKeys():
-        print key
-        for idx in range(cal.GetIdxs(key)):
-            print cal.GetCalList(key,idx,runLimit=10)
+    # for key in cal.GetKeys():
+        # print key
+        # for idx in range(cal.GetIdxs(key)):
+            # print cal.GetCalList(key,idx,runLimit=10)
 
 
 def updateFile(dsNum,subNum,runNum,fPaths):

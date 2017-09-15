@@ -260,7 +260,7 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, i, skimDir))
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, i, calSkimDir))
 
 
 def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
@@ -284,8 +284,7 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            print "(cal) ds %i  run %i" % (dsNum,i)
-            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, i, skimDir, waveDir) )
+            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, i, calSkimDir, calWaveDir) )
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
@@ -384,9 +383,9 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,i)
+            inPath = "%s/waveSkimDS%d_run%d.root" % (calWaveDir,dsNum,i)
             if (os.path.getsize(inPath)/1e6 < 45):
-                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (waveDir, dsNum, i))
+                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (calWaveDir, dsNum, i))
             else:
                 sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, i))
 
@@ -420,7 +419,7 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i)
+            inPath = "%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,i)
             fileList = getFileList(inPath,i,True,dsNum)
             mainList.update(fileList)
 
@@ -470,9 +469,9 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,i),i)
+            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
-                outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,i,idx)
+                outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLATDir,dsNum,i,idx)
                 sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
 
 
@@ -954,7 +953,7 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
-            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, waveDir, pandaDir))
+            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, calWaveDir, pandaDir))
 
 
 
