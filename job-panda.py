@@ -75,6 +75,7 @@ def main(argv):
         if opt == "-makeSlurm": makeSlurm()
         if opt == "-checkLogs": checkLogErrors()
         if opt == "-checkLogs2": checkLogErrors2()
+        if opt == "-checkFiles": checkFiles()
         if opt == "-skimLAT": skimLAT(argv[i+1],argv[i+2],argv[i+3])
         if opt == "-getEff": getEff()
         if opt == "-threshCut" : threshCut()
@@ -531,6 +532,78 @@ def checkLogErrors2():
                 print 'Error from: ', lineErr
             if 'Error' in lineErr:
                 print lineErr
+
+
+def checkFiles():
+    """ ./job-panda.py -checkFiles """
+    from ROOT import TFile, TTree
+    import os.path, imp
+    import DataSetInfo as ds
+
+    # Check BG skim and waveskim files
+    dsMap = {0:75,1:51,2:7,3:24,4:18,5:112}
+    for ds in dsMap:
+        for sub in range(dsMap[ds]+1):
+
+            # check skims
+            fileName = "/global/homes/w/wisecg/project/bg-skim/skimDS%d_%d_low.root" % (ds,sub)
+            if not os.path.isfile(fileName):
+                print "file not found! name:", fileName
+                continue
+            f1 = TFile(fileName)
+            t1 = f1.Get("skimTree")
+            n1 = t1.GetEntriesFast()
+            print "DS %d  sub %d  skim entries %d" % (ds, sub, n1)
+            if n1==0:
+                print "no skim entries found! file:", fileName
+                continue
+
+            # check waveskims
+            fileName = "/global/homes/w/wisecg/project/bg-waves/waveSkimDS%d_%d.root" % (ds,sub)
+            if not os.path.isfile(fileName):
+                print "file not found! name:", fileName
+                continue
+            f2 = TFile(fileName)
+            t2 = f2.Get("skimTree")
+            n2 = t2.GetEntriesFast()
+            print "DS %d  sub %d  wave entries %d" % (ds, sub, n2)
+            if n2==0:
+                print "no waveskim entries found! file:", fileName
+                continue
+
+    # Check CAL skim and waveskim files
+    calList = getCalRunList(dsNum=None) # none checks all ds's
+    for run in calList:
+        dsNum=-1
+        for key in ds.dsRanges:
+            if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
+                dsNum=key
+
+        # check skims
+        fileName = "/global/homes/w/wisecg/project/cal-skim/skimDS%d_run%d_low.root" % (dsNum,run)
+        if not os.path.isfile(fileName):
+            print "file not found! name:", fileName
+            continue
+        f1 = TFile(fileName)
+        t1 = f1.Get("skimTree")
+        n1 = t1.GetEntriesFast()
+        print "DS %d  run %d  skim entries %d" % (dsNum, run, n1)
+        if n1==0:
+            print "no skim entries found! file:", fileName
+            continue
+
+        # check waveskims
+        fileName = "/global/homes/w/wisecg/project/cal-waves/waveSkimDS%d_run%d.root" % (dsNum,run)
+        if not os.path.isfile(fileName):
+            print "file not found! name:", fileName
+            continue
+        f2 = TFile(fileName)
+        t2 = f2.Get("skimTree")
+        n2 = t2.GetEntriesFast()
+        print "DS %d  run %d  wave entries %d" % (dsNum, run, n2)
+        if n2==0:
+            print "no waveskim entries found! file:", fileName
+            continue
 
 
 def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
