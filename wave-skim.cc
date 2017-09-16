@@ -210,9 +210,7 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
           nlc->SetNLCCourseFineMaps(NLCMaps[ddID], NLCMaps2[ddID]);
           nlc->SetTimeConstant_samples(190); // 1.9 us time constant for Radford time-lagged method
 
-          MGTWaveform wf = *wave;
-          nlc->TransformInPlace(wf);
-          wave = &wf;
+          nlc->TransformInPlace(*wave);
 
           delete nlc;
         }
