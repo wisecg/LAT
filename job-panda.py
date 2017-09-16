@@ -259,8 +259,8 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
             sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, runNum, skimDir))
     # cal
     else:
-        for i in calList:
-            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, i, calSkimDir))
+        for run in calList:
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, run, calSkimDir))
 
 
 def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
@@ -283,8 +283,11 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
             sh("""%s './wave-skim -n -f %d %d -p %s %s""" % (qsubStr, dsNum, runNum, skimDir, waveDir) )
     # cal
     else:
-        for i in calList:
-            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, i, calSkimDir, calWaveDir) )
+        for run in calList:
+            for key in ds.dsRanges:
+                if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
+                    dsNum=key
+            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, run, calSkimDir, calWaveDir) )
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
@@ -469,6 +472,9 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for i in calList:
+            for key in ds.dsRanges:
+                if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
+                    dsNum=key
             files = getFileList("%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,i),i)
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLATDir,dsNum,i,idx)

@@ -7,5 +7,6 @@ wave-skim
 skim_mjd_data
 ds_livetime
 auto-thresh
+specFit
 logs/*
 plots/*

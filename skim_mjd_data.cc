@@ -167,8 +167,8 @@ int main(int argc, const char** argv)
     LoadDS4MuonList(muRuns,muRunTStarts,muTimes,muTypes,muUncert);
   size_t iMu = 0, nMu = muTimes.size();
   if(nMu == 0 && !simulatedInput) {
-    cout << "couldn't load mu data" << endl;
-    return 0;
+    cout << "WARNING: couldn't load mu data" << endl;
+    // return 0;
   }
   cout << "Muon list has " << muRuns.size() << " entries.\n";
   // for (int i = 0; i < (int)muRuns.size(); i++)
@@ -651,28 +651,31 @@ int main(int argc, const char** argv)
     // Event timing and vetos
     if (!simulatedInput)
     {
-      // Calculate muon veto tag based on the FIRST HIT in the event.
-      // 1. Find the most recent muon to this event
-      while(1) {
-          if(iMu >= nMu-1) break;
-          double tmuUnc = 1.e-8; // normally 10ns uncertainty
-          if (muUncert[iMu+1] > tmuUnc) tmuUnc = muUncert[iMu+1];
-          if (muRuns[iMu+1] > run) break;
-          else if (muRuns[iMu+1]==run && (muTimes[iMu+1]-tmuUnc) > clockTime) break;
-          // printf("Inc:iMu+1 %-4lu  gRun %-4i  mRun %-4i  tGe %-8.3f  tMu %-8.3f  dtRun %-8.0f  dtEvent %-8.0f\n" ,iMu+1, run, muRuns[iMu+1], clockTime, muTimes[iMu], muRunTStarts[iMu+1]-startTime, (muTimes[iMu+1] - tmuUnc) - clockTime);
-          iMu++;
-        }
-      // 2. Calculate time since last muon, apply coincidence window, assign to output.
-      // NOTE: If there has been a clock reset since the last muon hit, this delta-t will be incorrect.
-      // NOTE: DS-4 uses a larger window due to sync issues.
-      double dtmu = 0;
-      if (!isCRMode) dtmu = (startTime - muRunTStarts[iMu]) + (clockTime - muTimes[iMu]);
-      else           dtmu = clockTime - muTimes[iMu];
-      if (dsNum == 4) muVeto = (dtmu > -3.*(muUncert[iMu]) && dtmu < (4. + muUncert[iMu]));
-      else            muVeto = (dtmu > -1.*(muUncert[iMu]) && dtmu < (1. + muUncert[iMu]));
-      muType = muTypes[iMu];
-      muTUnc = muUncert[iMu];
-      // if (muVeto) printf("Coin: iMu %-4lu  det %i  gRun %-4i  mRun %-5i  tGe %-7.3f  tMu %-7.3f  veto? %i  dtmu %.2f +/- %.2f\n", iMu,hitCh,run,muRuns[iMu],clockTime,muTimes[iMu],muVeto,dtmu,muUncert[iMu]);
+      if (nMu!=0)
+      {
+        // Calculate muon veto tag based on the FIRST HIT in the event.
+        // 1. Find the most recent muon to this event
+        while(1) {
+            if(iMu >= nMu-1) break;
+            double tmuUnc = 1.e-8; // normally 10ns uncertainty
+            if (muUncert[iMu+1] > tmuUnc) tmuUnc = muUncert[iMu+1];
+            if (muRuns[iMu+1] > run) break;
+            else if (muRuns[iMu+1]==run && (muTimes[iMu+1]-tmuUnc) > clockTime) break;
+            // printf("Inc:iMu+1 %-4lu  gRun %-4i  mRun %-4i  tGe %-8.3f  tMu %-8.3f  dtRun %-8.0f  dtEvent %-8.0f\n" ,iMu+1, run, muRuns[iMu+1], clockTime, muTimes[iMu], muRunTStarts[iMu+1]-startTime, (muTimes[iMu+1] - tmuUnc) - clockTime);
+            iMu++;
+          }
+        // 2. Calculate time since last muon, apply coincidence window, assign to output.
+        // NOTE: If there has been a clock reset since the last muon hit, this delta-t will be incorrect.
+        // NOTE: DS-4 uses a larger window due to sync issues.
+        double dtmu = 0;
+        if (!isCRMode) dtmu = (startTime - muRunTStarts[iMu]) + (clockTime - muTimes[iMu]);
+        else           dtmu = clockTime - muTimes[iMu];
+        if (dsNum == 4) muVeto = (dtmu > -3.*(muUncert[iMu]) && dtmu < (4. + muUncert[iMu]));
+        else            muVeto = (dtmu > -1.*(muUncert[iMu]) && dtmu < (1. + muUncert[iMu]));
+        muType = muTypes[iMu];
+        muTUnc = muUncert[iMu];
+        // if (muVeto) printf("Coin: iMu %-4lu  det %i  gRun %-4i  mRun %-5i  tGe %-7.3f  tMu %-7.3f  veto? %i  dtmu %.2f +/- %.2f\n", iMu,hitCh,run,muRuns[iMu],clockTime,muTimes[iMu],muVeto,dtmu,muUncert[iMu]);
+      }
 
       // Calculate LN fill tag.
       isLNFill1 = 0, isLNFill2 = 0;
@@ -788,7 +791,6 @@ int main(int argc, const char** argv)
       isNat.push_back((*detNameIn)[i][0] == 'B');
       mAct_g.push_back(actM4Det_g[hitDetID]);
       isGood.push_back(!detIDIsVetoOnly[hitDetID]);
-
       trapENFCalC.push_back(GetENFC(hitCh, dsNum, hitENFCal, run));
       trapENMCalC.push_back(GetENMC(hitCh, dsNum, hitENMCal, run));
 
@@ -870,11 +872,13 @@ int main(int argc, const char** argv)
         threshSigma.push_back((*threshSigmaIn)[i]);
       }
 
-      double dtmu = 0; // same calculation as above, only for each hit
-      double hitTS = clockTime + tOffset[i]/CLHEP::s;
-      if (!isCRMode) dtmu = (startTime - muRunTStarts[iMu]) + (hitTS - muTimes[iMu]);
-      else           dtmu = hitTS - muTimes[iMu];
-      dtmu_s.push_back(dtmu);
+      if (nMu!=0) {
+        double dtmu = 0; // same calculation as above, only for each hit
+        double hitTS = clockTime + tOffset[i]/CLHEP::s;
+        if (!isCRMode) dtmu = (startTime - muRunTStarts[iMu]) + (hitTS - muTimes[iMu]);
+        else           dtmu = hitTS - muTimes[iMu];
+        dtmu_s.push_back(dtmu);
+      }
 
       // Granularity (multiplicity) and sum energy calculation
       if(hitCh%2 == 0) {
