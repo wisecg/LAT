@@ -1,6 +1,7 @@
 #!/usr/common/usg/software/python/2.7.9/bin/python
 from ROOT import TFile, TTree
-import os.path
+import os.path, imp
+dsi = imp.load_source('DataSetInfo', '../DataSetInfo.py')
 
 def main():
     """ Two ideas here:
@@ -20,28 +21,117 @@ def main():
 
     also, this should be moved to job-panda once it's working well.
     """
+    # checkBkgFiles()
+    checkCalFiles()
+
+
+def checkBkgFiles():
 
     dsMap = {0:75,1:51,2:7,3:24,4:18,5:112}
-
     for ds in dsMap:
         for sub in range(dsMap[ds]+1):
 
-            # make sure bg skims exist
+            # check skims
             fileName = "/global/homes/w/wisecg/project/bg-skim/skimDS%d_%d_low.root" % (ds,sub)
             if not os.path.isfile(fileName):
                 print "file not found! name:", fileName
                 continue
-            f = TFile(fileName)
-            t = f.Get("skimTree")
-            n = t.GetEntriesFast()
-            print "DS %d  sub %d  entries %d" % (ds, sub, n)
-            if n==0:
-                print "no entries found! file:", fileName
+            f1 = TFile(fileName)
+            t1 = f1.Get("skimTree")
+            n1 = t1.GetEntriesFast()
+            print "DS %d  sub %d  skim entries %d" % (ds, sub, n1)
+            if n1==0:
+                print "no skim entries found! file:", fileName
+                continue
+
+            # check waveskims
+            fileName = "/global/homes/w/wisecg/project/bg-waves/waveSkimDS%d_%d.root" % (ds,sub)
+            if not os.path.isfile(fileName):
+                print "file not found! name:", fileName
+                continue
+            f2 = TFile(fileName)
+            t2 = f2.Get("skimTree")
+            n2 = t2.GetEntriesFast()
+            print "DS %d  sub %d  wave entries %d" % (ds, sub, n2)
+            if n2==0:
+                print "no waveskim entries found! file:", fileName
                 continue
 
 
+def getCalRunList(dsNum=None,subNum=None):
+    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx])
+        Create a calibration run list, using the CalInfo object in DataSetInfo.py .
+        Note that the -sub option is re-defined here to mean a calibration range idx.
+        Note that running with -cal alone will create a list for all datasets (mega mode).
+    """
+    runLimit = 10 # yeah I'm hardcoding this, sue me.
+    calList = []
+    calInfo = dsi.CalInfo()
+    calKeys = calInfo.GetKeys(dsNum)
+
+    for key in calKeys:
+        print "key:",key
+
+        # -cal (mega mode)
+        if dsNum==None:
+            for idx in range(calInfo.GetIdxs(key)):
+                lst = calInfo.GetCalList(key,idx,runLimit)
+                print lst
+                calList += lst
+        # -ds
+        elif subNum==None:
+            for idx in range(calInfo.GetIdxs(key)):
+                lst = calInfo.GetCalList(key,idx,runLimit)
+                print lst
+                calList += lst
+        # -sub
+        else:
+            lst = calInfo.GetCalList(key,subNum,runLimit)
+            if lst==None: continue
+            print lst
+            calList += lst
+
+    # remove any duplicates, but there probably aren't any
+    calList = sorted(list(set(calList)))
+
+    return calList
 
 
+def checkCalFiles():
+
+    calList = getCalRunList(dsNum=3)
+
+    for run in calList:
+        dsNum=-1
+        for key in dsi.dsRanges:
+            if dsi.dsRanges[key][0] <= run <= dsi.dsRanges[key][1]:
+                dsNum=key
+
+        # check skims
+        fileName = "/global/homes/w/wisecg/project/cal-skim/skimDS%d_run%d_low.root" % (dsNum,run)
+        if not os.path.isfile(fileName):
+            print "file not found! name:", fileName
+            continue
+        f1 = TFile(fileName)
+        t1 = f1.Get("skimTree")
+        n1 = t1.GetEntriesFast()
+        print "DS %d  run %d  skim entries %d" % (dsNum, run, n1)
+        if n1==0:
+            print "no skim entries found! file:", fileName
+            continue
+
+        # check waveskims
+        fileName = "/global/homes/w/wisecg/project/cal-waves/waveSkimDS%d_run%d.root" % (dsNum,run)
+        if not os.path.isfile(fileName):
+            print "file not found! name:", fileName
+            continue
+        f2 = TFile(fileName)
+        t2 = f2.Get("skimTree")
+        n2 = t2.GetEntriesFast()
+        print "DS %d  run %d  wave entries %d" % (dsNum, run, n2)
+        if n2==0:
+            print "no waveskim entries found! file:", fileName
+            continue
 
 
 if __name__ == "__main__":
