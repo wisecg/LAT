@@ -404,7 +404,6 @@ def peakModel238_2(x,a1,c0,mu,sig,c1,tau,c2,b):
     return a1 * (f0 + c1*f1 + c2*f2) + b
 
 
-
 def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
     """
         Leading Edge start time -- walk back from max to threshold
