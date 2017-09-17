@@ -3,6 +3,7 @@ import sys, imp
 import numpy as np
 from scipy.signal import periodogram
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import ROOT
 from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
@@ -21,7 +22,10 @@ def main(argv):
 
     # Set input file and cuts
     # inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10851.root")
-    inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10852.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857_WithNLC.root")
+    inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
@@ -39,10 +43,11 @@ def main(argv):
 
     # Make a figure
     fig = plt.figure(figsize=(12,7), facecolor='w')
-    gs = gridspec.GridSpec(2, 2, height_ratios=[2, 3])
-    p0 = plt.subplot(gs[:,0]) # power spec
-    p1 = plt.subplot(gs[0,1]) # baseline
-    p2 = plt.subplot(gs[1,1]) # full waveform
+    p0 = plt.subplot(111)
+    # gs = gridspec.GridSpec(2, 2, height_ratios=[2, 3])
+    # p0 = plt.subplot(gs[:,0]) # power spec
+    # p1 = plt.subplot(gs[0,1]) # baseline
+    # p2 = plt.subplot(gs[1,1]) # full waveform
     plt.show(block=False)
 
     # Loop over events
@@ -83,6 +88,11 @@ def main(argv):
             dataTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,dataENFCal)
 
+            # bl = data[0]
+            # idx = np.where(data > 100000)
+            # data[idx] = bl
+
+            """
             # -- apply notch filter --
             # This algorithm was adapted from code by Ben Shanks, who was nice enough to share.
 
@@ -116,28 +126,25 @@ def main(argv):
             ax_twin.set_ylabel('Filter Amplitude [dB]', color='r')
             ax_twin.tick_params('y', colors='r')
             ax_twin.set_title(label="Q=%0.1f"%Q)
-
-
-
-
+            """
 
 
             # -- plotting --
 
             # -- power spec --
-            p0.cla()
-            p0.axvline(notch_freq, color="green", ls="--")
+            # p0.cla()
+            # p0.axvline(notch_freq, color="green", ls="--")
 
 
             # -- baseline --
-            p1.cla()
+            p0.cla()
             # p0.margins(x=0)
             p0.plot(dataTS,data,color='blue',label='data')
             p0.set_title("Run %d  Entry %d  Channel %d  Energy %.2f" % (run,iList,chan,dataENFCal))
             p0.legend(loc='best')
 
             # -- full waveform --
-            p2.cla()
+            # p2.cla()
 
             plt.pause(scanSpeed)
 
