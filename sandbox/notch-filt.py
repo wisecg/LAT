@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import sys, imp
 import numpy as np
-from scipy.signal import butter, lfilter
+from scipy.signal import periodogram
 import matplotlib.pyplot as plt
 import ROOT
 from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform
@@ -20,8 +20,8 @@ def main(argv):
         print "Interactive mode selected."
 
     # Set input file and cuts
-    inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10851.root")
-    # inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10851.root")
+    inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
@@ -38,8 +38,11 @@ def main(argv):
     print "Found",nList,"entries passing cuts."
 
     # Make a figure
-    fig = plt.figure(figsize=(8,5), facecolor='w')
-    p0 = plt.subplot(111)
+    fig = plt.figure(figsize=(12,7), facecolor='w')
+    gs = gridspec.GridSpec(2, 2, height_ratios=[2, 3])
+    p0 = plt.subplot(gs[:,0]) # power spec
+    p1 = plt.subplot(gs[0,1]) # baseline
+    p2 = plt.subplot(gs[1,1]) # full waveform
     plt.show(block=False)
 
     # Loop over events
@@ -80,15 +83,61 @@ def main(argv):
             dataTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,dataENFCal)
 
-            # -- apply filters --
+            # -- apply notch filter --
+            # This algorithm was adapted from code by Ben Shanks, who was nice enough to share.
+
+            # only look at power spectrum before the rising edge
+            bl = data[:800]
+            xf,power = periodogram(bl, fs=1E8)
+
+            # find the preferred notch frequency: highest freq peak after some min freq
+            min_freq = 0.25E7
+            xf_idx_min = np.argmax(xf > min_freq)
+
+            notch_freq = xf[ np.argmax(power[xf_idx_min:])+xf_idx_min ]
+
+            # express that frequency as a fraction of the nyquist frequency (half the sampling rate)
+            nyquist = 0.5*1E8
+            w0 = notch_freq/nyquist
+
+            # "quality factor" which determines width of notch
+            Q = 10
+
+            num, den = signal.iirnotch(w0, Q)
+
+            ax1.plot(xf, power)
+            ax1.set_ylabel('Noise Amplitude', color='b')
+            ax1.tick_params('y', colors='b')
+
+            ax_twin = ax1.twinx()
+            w, h = signal.freqz(num, den)
+            freq = w*1E8/(2*np.pi)
+            ax_twin.plot(freq, 20*np.log10(abs(h)), color='red', ls=":", label="Notch")
+            ax_twin.set_ylabel('Filter Amplitude [dB]', color='r')
+            ax_twin.tick_params('y', colors='r')
+            ax_twin.set_title(label="Q=%0.1f"%Q)
+
+
+
+
 
 
             # -- plotting --
+
+            # -- power spec --
             p0.cla()
-            p0.margins(x=0)
+            p0.axvline(notch_freq, color="green", ls="--")
+
+
+            # -- baseline --
+            p1.cla()
+            # p0.margins(x=0)
             p0.plot(dataTS,data,color='blue',label='data')
             p0.set_title("Run %d  Entry %d  Channel %d  Energy %.2f" % (run,iList,chan,dataENFCal))
             p0.legend(loc='best')
+
+            # -- full waveform --
+            p2.cla()
 
             plt.pause(scanSpeed)
 
