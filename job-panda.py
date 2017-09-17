@@ -541,38 +541,39 @@ def checkFiles():
     import DataSetInfo as ds
 
     # Check BG skim and waveskim files
-    dsMap = {0:75,1:51,2:7,3:24,4:18,5:112}
-    for ds in dsMap:
-        for sub in range(dsMap[ds]+1):
+    # dsMap = {0:75,1:51,2:7,3:24,4:18,5:112}
+    dsMap = {2:7}
+    for dsNum in dsMap:
+        for sub in range(dsMap[dsNum]+1):
 
             # check skims
-            fileName = "/global/homes/w/wisecg/project/bg-skim/skimDS%d_%d_low.root" % (ds,sub)
+            fileName = "/global/homes/w/wisecg/project/bg-skim/skimDS%d_%d_low.root" % (dsNum,sub)
             if not os.path.isfile(fileName):
                 print "file not found! name:", fileName
                 continue
             f1 = TFile(fileName)
             t1 = f1.Get("skimTree")
             n1 = t1.GetEntriesFast()
-            print "DS %d  sub %d  skim entries %d" % (ds, sub, n1)
+            print "DS %d  sub %d  skim entries %d" % (dsNum, sub, n1)
             if n1==0:
                 print "no skim entries found! file:", fileName
                 continue
 
             # check waveskims
-            fileName = "/global/homes/w/wisecg/project/bg-waves/waveSkimDS%d_%d.root" % (ds,sub)
+            fileName = "/global/homes/w/wisecg/project/bg-waves/waveSkimDS%d_%d.root" % (dsNum,sub)
             if not os.path.isfile(fileName):
                 print "file not found! name:", fileName
                 continue
             f2 = TFile(fileName)
             t2 = f2.Get("skimTree")
             n2 = t2.GetEntriesFast()
-            print "DS %d  sub %d  wave entries %d" % (ds, sub, n2)
+            print "DS %d  sub %d  wave entries %d" % (dsNum, sub, n2)
             if n2==0:
                 print "no waveskim entries found! file:", fileName
                 continue
 
     # Check CAL skim and waveskim files
-    calList = getCalRunList(dsNum=None) # none checks all ds's
+    calList = getCalRunList(dsNum=2) # None checks all ds's
     for run in calList:
         dsNum=-1
         for key in ds.dsRanges:

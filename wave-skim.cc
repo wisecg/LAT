@@ -1,4 +1,4 @@
-// Identify events in skim data passing
+ // Identify events in skim data passing
 // a given TCut, and append the corresponding waveforms
 // from built data into a new file.
 // C. Wiseman, 1/18/2017
@@ -60,7 +60,10 @@ int main(int argc, char** argv)
     if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
     if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
     if (opt[i] == "-c") { cal=1; }
-    if (opt[i] == "-n") { nlc=1; }
+    if (opt[i] == "-n") {
+      cout << "Performing Pass-2 Nonlinearity Correction ...\n";
+      nlc=1;
+    }
   }
 
   // DS0-5 standard cut
@@ -74,6 +77,10 @@ int main(int argc, char** argv)
 
   // Special E=0 cut
   // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+
+  // Special DEBUG cut
+  if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && Entry$ < 100";
+  cout << "WARNING: Special DEBUG cut in use.\n";
 
   // Set file I/O
   string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
@@ -192,9 +199,10 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
           MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF));
           wave = reg;
         }
-        else {
-          MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF));
-          MGTWaveform* aux = dynamic_cast<MGTWaveform*>((*wfAuxBranch).At(iWF));
+        else if (!isMS && !nlc) {
+          // this introduces weird artifacts ==0 in the first few entries
+          MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF)); // downsampled wf
+          MGTWaveform* aux = dynamic_cast<MGTWaveform*>((*wfAuxBranch).At(iWF)); // fully sampled wf
           MJTMSWaveform ms(reg,aux);
           wave = dynamic_cast<MGTWaveform*>(&ms);
         }
@@ -210,7 +218,22 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
           nlc->SetNLCCourseFineMaps(NLCMaps[ddID], NLCMaps2[ddID]);
           nlc->SetTimeConstant_samples(190); // 1.9 us time constant for Radford time-lagged method
 
-          nlc->TransformInPlace(*wave);
+          // don't do this - causes zeros @ beginning of wf & introduces weird artifacts in DS2
+          // MGTWaveform wf = *wave;
+          // nlc->TransformInPlace(wf);
+          // wave = &wf;
+
+          // In multisampled mode, we only can do the NLC on the fully sampled part of the WF.
+          if (isMS) {
+              MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF));  // downsampled wf
+              MGTWaveform* aux = dynamic_cast<MGTWaveform*>((*wfAuxBranch).At(iWF));  // fully sampled wf
+              nlc->TransformInPlace(*aux);
+              MJTMSWaveform ms(reg,aux);
+              wave = dynamic_cast<MGTWaveform*>(&ms);
+          }
+          else {
+            nlc->TransformInPlace(*wave); // preferred method
+          }
 
           delete nlc;
         }
@@ -235,7 +258,7 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
     waveVector->clear();
 
     // update progress and save
-    if (i%5000==0 && i!=0) {
+    if (i%10000==0 && i!=0) {
       cout << i << " saved, " << 100*i/(double)cutTree->GetEntries() << "% done.\n";
       cutTree->Write("", TObject::kOverwrite);
     }
@@ -249,6 +272,7 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
   // delete ds;
   cout << "Wrote file: " << outFile << endl;
 }
+
 
 void TCutSkimmer(string theCut, int dsNum)
 {
@@ -302,6 +326,7 @@ void TCutSkimmer(string theCut, int dsNum)
     f2->Close();
   }
 }
+
 
 void diagnostic()
 {
@@ -482,7 +507,7 @@ void LoadNLCParameters(int ddID, int run, const MGVDigitizerData* dd, bool useTw
       }
       else {
         cout << "GATNonLinearityCorrector::LoadParameters("
-             << ddID << ", " << run << "): Error: got invalide crate number "
+             << ddID << ", " << run << "): Error: got invalid crate number "
              << crate << endl;
       }
       NLCMaps[ddID] = map1;
