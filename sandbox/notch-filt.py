@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import sys, imp
 import numpy as np
-from scipy.signal import periodogram
+import scipy.signal as sig
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import ROOT
@@ -24,13 +24,13 @@ def main(argv):
     # inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10851.root")
     # inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10852.root")
     # inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857_WithNLC.root")
-    inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857.root")
-    # inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857.root")
+    inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
     theCut = inputFile.Get("theCut").GetTitle()
-    # theCut += " && trapENFCal  1.1"
+    theCut += " && trapENFCal < 30"
     # theCut = " trapENFCal > 0.5 && trapENFCal < 10"
 
     # Print cut and events passing cut
@@ -43,9 +43,13 @@ def main(argv):
 
     # Make a figure
     fig = plt.figure(figsize=(12,7), facecolor='w')
-    p0 = plt.subplot(111)
+    # p0 = plt.subplot(111) # just a wf, for that test with ian
+    p0 = plt.subplot(211)
+    p0_twin = p0.twinx()
+    p1 = plt.subplot(212)
     # gs = gridspec.GridSpec(2, 2, height_ratios=[2, 3])
     # p0 = plt.subplot(gs[:,0]) # power spec
+    # p0_twin = p0.twinx()
     # p1 = plt.subplot(gs[0,1]) # baseline
     # p2 = plt.subplot(gs[1,1]) # full waveform
     plt.show(block=False)
@@ -88,22 +92,22 @@ def main(argv):
             dataTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,dataENFCal)
 
-            # bl = data[0]
-            # idx = np.where(data > 100000)
-            # data[idx] = bl
+            # -- for that ds2 debug thing with ian --
+            # print signal.GetOffset()
+            # print data[:10]
+            # print dataTS[:10]
 
-            """
             # -- apply notch filter --
             # This algorithm was adapted from code by Ben Shanks, who was nice enough to share.
 
             # only look at power spectrum before the rising edge
-            bl = data[:800]
-            xf,power = periodogram(bl, fs=1E8)
+            # bl = data[:800]
+            bl = data
+            xf,power = sig.periodogram(bl, fs=1E8)
 
-            # find the preferred notch frequency: highest freq peak after some min freq
+            # find the preferred notch frequency: highest freq peak after some min freq (25 MHz)
             min_freq = 0.25E7
             xf_idx_min = np.argmax(xf > min_freq)
-
             notch_freq = xf[ np.argmax(power[xf_idx_min:])+xf_idx_min ]
 
             # express that frequency as a fraction of the nyquist frequency (half the sampling rate)
@@ -111,41 +115,57 @@ def main(argv):
             w0 = notch_freq/nyquist
 
             # "quality factor" which determines width of notch
-            Q = 10
+            Q = 5.
+            num, den = sig.iirnotch(w0, Q)
 
-            num, den = signal.iirnotch(w0, Q)
+            # get the notch filter'd signal
+            notched_signal = sig.lfilter(num, den, data)
 
-            ax1.plot(xf, power)
-            ax1.set_ylabel('Noise Amplitude', color='b')
-            ax1.tick_params('y', colors='b')
+            # Our preamp has a lo-pass cutoff of ~25 MHz, so in theory,
+            # we can try to filter out some higher freq. noise without messing anything up
 
-            ax_twin = ax1.twinx()
-            w, h = signal.freqz(num, den)
-            freq = w*1E8/(2*np.pi)
-            ax_twin.plot(freq, 20*np.log10(abs(h)), color='red', ls=":", label="Notch")
-            ax_twin.set_ylabel('Filter Amplitude [dB]', color='r')
-            ax_twin.tick_params('y', colors='r')
-            ax_twin.set_title(label="Q=%0.1f"%Q)
-            """
+            # do a butterworth filter to kill higher freq noise
+            # wcrit = 4E7/nyquist
+            # num,den = signal.butter(10, wcrit)
+            # notch_butter_signal = signal.lfilter(num,den, notched_signal)
+            #
+            # w, h = signal.freqz(num, den)
+            # freq = w*1E8/(2*np.pi)
+            # ax_twin.plot(freq, 20*np.log10(abs(h)), color='g', ls=":", label="Butter")
 
 
             # -- plotting --
 
             # -- power spec --
-            # p0.cla()
-            # p0.axvline(notch_freq, color="green", ls="--")
+            p0.cla()
+            p0.set_yscale('log')
+            p0.plot(xf[2:], power[2:], color='blue',linewidth=2)
+            p0.set_ylabel('Noise Amplitude', color='b')
+            p0.tick_params('y', colors='b')
+            p0.axvline(notch_freq, color="green", ls="--")
+            p0.axvline(min_freq,color='red')
+
+            p0_twin.cla()
+            w, h = sig.freqz(num, den)
+            freq = w*1E8/(2*np.pi)
+            p0_twin.plot(freq, 20*np.log10(abs(h)), color='red', ls=":", label="Notch")
+            p0_twin.set_ylabel('Filter Amplitude [dB]', color='r')
+            p0_twin.tick_params('y', colors='r')
+            p0_twin.set_title(label="Q=%0.1f"%Q)
 
 
             # -- baseline --
-            p0.cla()
-            # p0.margins(x=0)
-            p0.plot(dataTS,data,color='blue',label='data')
-            p0.set_title("Run %d  Entry %d  Channel %d  Energy %.2f" % (run,iList,chan,dataENFCal))
-            p0.legend(loc='best')
+            p1.cla()
+            # p1.margins(x=0)
+            p1.plot(dataTS,data,color='blue',label='data')
+            p1.plot(dataTS,notched_signal,color='orange',label='notch',alpha=0.8)
+            p1.set_title("Run %d  Entry %d  Channel %d  Energy %.2f" % (run,iList,chan,dataENFCal))
+            p1.legend(loc='best')
 
             # -- full waveform --
             # p2.cla()
 
+            plt.tight_layout()
             plt.pause(scanSpeed)
 
 
