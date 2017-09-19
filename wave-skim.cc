@@ -79,8 +79,8 @@ int main(int argc, char** argv)
  // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
  // Special DEBUG cut
- if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && Entry$ < 100";
- cout << "WARNING: Special DEBUG cut in use.\n";
+ // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && Entry$ < 100";
+ // cout << "WARNING: Special DEBUG cut in use.\n";
 
  // Set file I/O
  string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
@@ -203,29 +203,9 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
        else if (!nlc) {
          MGTWaveform* reg = dynamic_cast<MGTWaveform*>((*wfBranch).At(iWF)); // downsampled wf
          MGTWaveform* aux = dynamic_cast<MGTWaveform*>((*wfAuxBranch).At(iWF)); // fully sampled wf
-
-         wave = aux;
-
-         // MJTMSWaveform ms(reg,aux);
-         // ms.SetWFEncScheme(MGTWaveform::kDiffVarInt);
-
-         // cout << "MS ";
-         // for (int k=0; k < 10; k++) cout << ms[k] << " ";
-         // cout << endl;
-
-         // wave = dynamic_cast<MGTWaveform*>(&ms);
-
-         // cout << "WF ";
-         // for (int k=0; k < 10; k++) cout << wave->At(k) << " ";
-         // cout << endl;
-
-         vector<double> tmp = (*wave).GetVectorData();
-         cout << "1st 10: ";
-         for (int k = 0; k < 10; k++) cout << tmp[k] << " ";
-         cout << " ||| last 10: ";
-         for (int k = tmp.size()-10; k < tmp.size(); k++) cout << tmp[k] << " ";
-         cout << endl;
-
+         MJTMSWaveform ms(reg,aux);
+         ms.SetWFEncScheme(MGTWaveform::kDiffVarInt);
+         wave = dynamic_cast<MGTWaveform*>(&ms);
        }
 
        // do the 2-pass NLC correction from GAT-v01-06.  See below for a reference.
