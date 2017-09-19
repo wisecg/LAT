@@ -311,12 +311,12 @@ def main(argv):
                 print "ERROR -- Vector matching failed.  iList %d  run %d  iEvent %d" % (iList,run,iEvent)
                 return
 
-            # Let's start the show
-            # remove first 4 samples when we have multisampling
-            # remove last 2 samples to get rid of the ADC spike at the end of all wf's.
-            removeNBeg, removeNEnd = 0, 2
-            if dsNum==6 or dsNum==2: removeNBeg = 4
-            signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
+            # Let's start the show - grab a waveform.
+            # Remove first 4 samples when we have multisampling
+            # Remove last 2 samples to get rid of the ADC spike at the end of all wf's.
+            truncLo, truncHi = 0, 2
+            if dsNum==6 or dsNum==2: truncLo = 4
+            signal = wl.processWaveform(wf,truncLo,truncHi)
             data = signal.GetWaveRaw()
             data_blSub = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
