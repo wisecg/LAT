@@ -10,3 +10,5 @@ auto-thresh
 specFit
 logs/*
 plots/*
+qsub-job.sh
+slurm-job.sh
