@@ -469,39 +469,39 @@ def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
 
 
 class processWaveform:
-    """ Handy class for auto-processing waveforms into various numpy arrays. """
+    """ Auto-processes waveforms into python-friendly formats.
+
+    NOTE: DS2 (multisampling) waveform bug (cf. wave-skim.cc):
+       -> All samples from regular and aux waveforms work correctly with GetVectorData in PyROOT.
+       -> Combining them into an MJTMSWaveform and then casting to MGTWaveform causes the first
+          4 samples to be set to zero with GetVectorData in PyROOT.  (They are actually nonzero.)
+       -> This problem doesn't exist on the C++ side. There's got to be something wrong with the python wrapper.
+       -> The easiest workaround is just to set remLo=4 for MS data.
+    """
     def __init__(self, wave, remLo=0, remHi=2):
-
-        self.waveMGT = wave                            # input an MGTWaveform object
-        self.offset = self.waveMGT.GetTOffset()        # time offset [ns]
+        # initialize
+        self.waveMGT = wave
+        self.offset = wave.GetTOffset()
+        self.period = wave.GetSamplingPeriod()
+        self.length = wave.GetLength()
         vec = wave.GetVectorData()
-        npArr = np.fromiter(vec, dtype=np.double)      # raw numpy array
+        npArr = np.fromiter(vec, dtype=np.double, count=self.length)
+        ts = np.arange(self.offset, self.offset + self.length * self.period, self.period) # superfast!
 
-        hist = wave.GimmeUniqueHist()                  # get timestamp limits and make an array
-        self.start = hist.GetXaxis().GetXmin() + 5     # add 5 ns to make it start at 0 (default is -5.)
-        self.stop = hist.GetXaxis().GetXmax() + 5.
-        self.binsPerNS = (self.stop - self.start) / hist.GetNbinsX()
-        ts = np.arange(self.start,self.stop,self.binsPerNS)
-
-        removeSamples = [] # resize the waveform
+        # resize the waveform
+        removeSamples = []
         if remLo > 0: removeSamples += [i for i in range(0,remLo+1)]
         if remHi > 0: removeSamples += [npArr.size - i for i in range(1,remHi+1)]
-        # print "removing:",removeSamples
-
         self.ts = np.delete(ts,removeSamples)
         self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
 
+        # compute baseline and noise
         self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
-        self.waveBLSub = np.copy(self.waveRaw)
-        self.waveBLSub[:] = [x - self.baseAvg for x in self.waveRaw] # subtract the baseline value
+        self.waveBLSub = np.copy(self.waveRaw) - self.baseAvg
 
     # constants
     def GetOffset(self): return self.offset
-    def GetStartTime(self): return self.start
-    def GetStopTime(self): return self.stop
-    def GetBins(self): return self.binsPerNS
     def GetBaseNoise(self): return self.baseAvg, self.noiseAvg
-    def GetWindowIndex(self): return self.loWin, self.hiWin
 
     # arrays
     def GetTS(self): return self.ts

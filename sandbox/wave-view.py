@@ -1,14 +1,15 @@
 #!/usr/local/bin/python
-import sys, pywt
+import sys, pywt, imp
 from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform
 import ROOT
-import waveLibs as wl
+# import waveLibs as wl
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
+wl = imp.load_source('waveLibs', '../waveLibs.py')
 import numpy as np
 from scipy.signal import butter, lfilter
 
 def main(argv):
     """Interactive-draw or rapid-draw waveforms that pass a given TCut.
-
        Bug: Doesn't always work with a TChain.  Add input files together
        with hadd and use a single TFile.
     """
@@ -34,10 +35,10 @@ def main(argv):
     # Set input file and cuts
     # waveTree = TChain("skimTree") # NOTE: Can't always recognize MGTWaveforms branch
     # waveTree.Add("~/project/lat/latSkimDS1*")
-    # inputFile = TFile("~/project/latskim/ds1NoisyRuns.root")
-    # inputFile = TFile("~/project/latskim/latSkimDS5_ch626.root")
-    inputFile = TFile("waveSkimDS5_run21975.root")
-    # inputFile = TFile("waveSkimDS2_run15710.root")
+    inputFile = TFile("~/project/cal-waves/waveSkimDS1_run10851.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS2_run14857.root")
+    # inputFile = TFile("~/project/cal-waves/waveSkimDS5_run23895.root")
+
     waveTree = inputFile.Get("skimTree")
     print "Found",waveTree.GetEntries(),"input entries."
 
@@ -55,7 +56,7 @@ def main(argv):
 
 
     # Make a figure (only setting data in the loop is faster)
-    fig = plt.figure(figsize=(8,5), facecolor='w')
+    fig = plt.figure(figsize=(10,7), facecolor='w')
     a1 = plt.subplot(111)
     a1.set_xlabel("time (ns)")
     a1.set_ylabel("ADC")
@@ -99,8 +100,9 @@ def main(argv):
             chan = waveTree.channel.at(iH)
             energy = waveTree.trapENFCal.at(iH)
             wf = waveTree.MGTWaveforms.at(iH)
-            signal = wl.processWaveform(wf)
-            waveBLSub = signal.GetWaveBLSub()
+            signal = wl.processWaveform(wf,0,0)
+            # waveBLSub = signal.GetWaveBLSub()
+            waveRaw = signal.GetWaveRaw()
             waveTS = signal.GetTS()
             print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,energy)
 
@@ -123,8 +125,13 @@ def main(argv):
             # diff = len(data_wlDenoised) - len(waveBLSub)
             # if diff > 0: data_wlDenoised = data_wlDenoised[diff:]
 
-            # fill the figure
-            p1.set_ydata(waveBLSub)
+            # print signal.GetOffset()
+            # print waveTS[:10]
+            # print waveRaw[:10]
+
+            # -- fill the figure --
+            # p1.set_ydata(waveBLSub)
+            p1.set_ydata(waveRaw)
             p1.set_xdata(waveTS)
 
             # p2.set_ydata(data_wlDenoised)
@@ -134,16 +141,15 @@ def main(argv):
             # p3.set_xdata(waveTS)
 
             xmin, xmax = np.amin(waveTS), np.amax(waveTS)
-            ymin, ymax = np.amin(waveBLSub), np.amax(waveBLSub)
+            ymin, ymax = np.amin(waveRaw), np.amax(waveRaw)
             a1.set_xlim([xmin,xmax])
             a1.set_ylim([ymin-abs(0.1*ymin),ymax+abs(0.1*ymax)])
             plt.title("Run %d  Channel %d  Entry %d  trapENFCal %.1f" % (run,chan,iList,energy))
 
             if warpMode:
-                # faster, requires TkAgg backend, doesn't update axes
+                # superfast, requires TkAgg backend, doesn't update axes
                 a1.draw_artist(a1.patch)
                 a1.draw_artist(p1)
-                # a1.draw_artist(a1.yaxis) # doesn't work
                 fig.canvas.blit(a1.bbox)
                 fig.canvas.flush_events()
             else:
