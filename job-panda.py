@@ -311,7 +311,7 @@ def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
 
 
 def splitTree(dsNum, subNum=None, runNum=None):
-    """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum subNum)
+    """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum runNum)
 
         Split a SINGLE waveSkim file into small (~50MB) files to speed up LAT parallel processing.
         Can call 'qsubSplit' instead to submit each run in the list as a job, splitting the files in parallel.
@@ -325,14 +325,16 @@ def splitTree(dsNum, subNum=None, runNum=None):
     # try before you attempt a copy (avoid the double underscore)
     inPath, outPath = "", ""
     if runNum==None:
+        # bg mode
         inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
         outPath = "%s/split/splitSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
         fileList = getFileList("%s/split/splitSkimDS%d_%d*.root" % (waveDir,dsNum,subNum),subNum)
         for key in fileList: os.remove(fileList[key])
     elif subNum==None:
-        inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
-        outPath = "%s/split/splitSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
-        fileList = getFileList("%s/split/splitSkimDS%d_run%d*.root" % (waveDir,dsNum,runNum),runNum)
+        # cal mode
+        inPath = "%s/waveSkimDS%d_run%d.root" % (calWaveDir,dsNum,runNum)
+        outPath = "%s/split/splitSkimDS%d_run%d.root" % (calWaveDir,dsNum,runNum)
+        fileList = getFileList("%s/split/splitSkimDS%d_run%d*.root" % (calWaveDir,dsNum,runNum),runNum)
         for key in fileList: os.remove(fileList[key])
 
     inFile = TFile(inPath)
@@ -354,7 +356,7 @@ def splitTree(dsNum, subNum=None, runNum=None):
 
 def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -qsubSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-        Submit jobs that call splitTree for each run, splitting files into small (~50MB) chunks.
+        Submit jobs that call splitTree for each run, splitting files into small (~100MB) chunks.
         NOTE: The data cleaning cut is NOT written into the output files and the
               function 'writeCut' must be called after these jobs are done.
     """
@@ -366,6 +368,9 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
                 inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,i)
+                if not os.path.isfile(inPath):
+                    print "File",inPath,"not found. Continuing ..."
+                    continue
                 if (os.path.getsize(inPath)/1e6 < 45):
                     copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
                 else:
@@ -373,6 +378,9 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         # -sub
         elif runNum==None:
             inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
+            if not os.path.isfile(inPath):
+                print "File",inPath,"not found."
+                return
             if (os.path.getsize(inPath)/1e6 < 45):
                 copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
             else:
@@ -380,18 +388,27 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
         # -run
         elif subNum==None:
             inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
+            if not os.path.isfile(inPath):
+                print "File",inPath,"not found."
+                return
             if (os.path.getsize(inPath)/1e6 < 45):
                 copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
             else:
                 sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, runNum))
     # cal
     else:
-        for i in calList:
-            inPath = "%s/waveSkimDS%d_run%d.root" % (calWaveDir,dsNum,i)
+        for run in calList:
+            for key in ds.dsRanges:
+                if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
+                    dsNum=key
+            inPath = "%s/waveSkimDS%d_run%d.root" % (calWaveDir,dsNum,run)
+            if not os.path.isfile(inPath):
+                print "File",inPath,"not found. Continuing ..."
+                continue
             if (os.path.getsize(inPath)/1e6 < 45):
-                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (calWaveDir, dsNum, i))
+                copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (calWaveDir, dsNum, run))
             else:
-                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, i))
+                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, run))
 
 
 def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
@@ -411,20 +428,23 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
                 fileList = getFileList(inPath,i,True,dsNum)
                 mainList.update(fileList)
         # -sub
-        if runNum==None:
+        elif runNum==None:
             inPath = "%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum)
             fileList = getFileList(inPath,subNum,True,dsNum)
             mainList.update(fileList)
         # -run
-        if subNum==None:
+        elif subNum==None:
             inPath = "%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum)
             fileList = getFileList(inPath,runNum,True,dsNum)
             mainList.update(fileList)
     # cal
     else:
-        for i in calList:
-            inPath = "%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,i)
-            fileList = getFileList(inPath,i,True,dsNum)
+        for run in calList:
+            for key in ds.dsRanges:
+                if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
+                    dsNum=key
+            inPath = "%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,run)
+            fileList = getFileList(inPath,run,True,dsNum)
             mainList.update(fileList)
 
     # Pull the cut off the FIRST file and add it to the sub-files
@@ -480,6 +500,13 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
             for idx, inFile in sorted(files.iteritems()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLATDir,dsNum,i,idx)
                 sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
+
+
+def mergeLAT():
+    """ It seems like a good idea, right?
+        Merging all the LAT files back together after splitting?
+    """
+    print "hey"
 
 
 def checkLogErrors():
