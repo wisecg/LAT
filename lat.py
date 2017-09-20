@@ -162,7 +162,7 @@ def main(argv):
     matchMax, matchWidth, matchTime = std.vector("double")(), std.vector("double")(), std.vector("double")()
     pol0, pol1, pol2, pol3 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     fails, fitChi2, fitLL = std.vector("int")(), std.vector("double")(), std.vector("double")()
-    wpRiseNoise = std.vector("double")()
+    riseNoise = std.vector("double")()
     t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
@@ -180,7 +180,7 @@ def main(argv):
     b20, b21, b22 = out.Branch("matchMax", matchMax), out.Branch("matchWidth", matchWidth), out.Branch("matchTime", matchTime)
     b23, b24, b25, b26 = out.Branch("pol0", pol0), out.Branch("pol1", pol1), out.Branch("pol2", pol2), out.Branch("pol3", pol3)
     b27, b28, b29 = out.Branch("fails",fails), out.Branch("fitChi2",fitChi2), out.Branch("fitLL",fitLL)
-    b30 = out.Branch("wpRiseNoise",wpRiseNoise)
+    b30 = out.Branch("riseNoise",riseNoise)
     b31, b32, b33, b34 = out.Branch("t0_SLE",t0_SLE), out.Branch("t0_ALE",t0_ALE), out.Branch("lat",lat), out.Branch("latF",latF)
     b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
     b38 = out.Branch("nMS",nMS)
@@ -199,7 +199,7 @@ def main(argv):
         "matchMax":[matchMax, b20], "matchWidth":[matchWidth, b21], "matchTime":[matchTime, b22],
         "pol0":[pol0, b23], "pol1":[pol1, b24], "pol2":[pol2, b25], "pol3":[pol3, b26],
         "fails":[fails,b27], "fitChi2":[fitChi2,b28], "fitLL":[fitLL,b29],
-        "wpRiseNoise":[wpRiseNoise,b30],
+        "riseNoise":[riseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
         "nMS":[nMS,b38]
@@ -454,7 +454,7 @@ def main(argv):
             if wpHiRise > numXRows: wpHiRise = numXRows
 
             # sum all HF wavelet components for this edge.
-            wpRiseNoise[iH] = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / (bcMin[iH])
+            riseNoise[iH] = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / (bcMin[iH])
 
             # =========================================================
 
@@ -655,7 +655,7 @@ def main(argv):
                 p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
                 p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
                 p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
-                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  wpRiseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], wpRiseNoise[iH]))
+                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
 
             if plotNum==2: # time points, bandpass filters, tail slope
                 p[0].cla()
@@ -841,21 +841,23 @@ def lnLike(floats, *datas):
     To make this work with op.minimize, 'datas' is passed in as a tuple (the asterisk),
     where the original list is the 1st element.
     """
-    # Add to traces.
+    amp, mu, sig, tau, bl = floats
+    tau = -72000. # manually fix tau
+
+    # Only fill traces when we're not in batch mode
     global batMode
     if not batMode:
         global ampTr, muTr, sigTr, tauTr, blTr
-        amp, mu, sig, tau, bl = floats
+
         ampTr.append(amp)
         muTr.append(mu)
         sigTr.append(sig)
-        # tauTr.append(tau)
-        tauTr.append(-72000)
+        tauTr.append(tau)
         blTr.append(bl)
 
     dataTS, data, dataNoise = datas[0][0], datas[0][1], datas[0][2]
 
-    model = xgModelWF(dataTS, [amp, mu, sig, -72000, bl])
+    model = xgModelWF(dataTS, [amp, mu, sig, tau, bl])
     lnLike = 0.5 * np.sum ( np.power((data-model)/dataNoise, 2) - np.log( 1 / np.power(dataNoise,2) ) )
     return lnLike
 
