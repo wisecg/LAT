@@ -808,7 +808,7 @@ def evalXGaus(x,mu,sig,tau):
     if all(tmp < limit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
     else:
-        print "Exceeded limit ..."
+        #print "Exceeded limit ..."
         # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
