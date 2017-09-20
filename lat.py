@@ -848,7 +848,6 @@ def lnLike(floats, *datas):
     global batMode
     if not batMode:
         global ampTr, muTr, sigTr, tauTr, blTr
-
         ampTr.append(amp)
         muTr.append(mu)
         sigTr.append(sig)
