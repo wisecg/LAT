@@ -404,22 +404,30 @@ def peakModel238_2(x,a1,c0,mu,sig,c1,tau,c2,b):
     return a1 * (f0 + c1*f1 + c2*f2) + b
 
 
-def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000):
+def walkBackT0(trap, timemax=10000., thresh=2., rmin=0, rmax=1000, forward=False):
     """
-        Leading Edge start time -- walk back from max to threshold
+        Leading Edge start time -- walk back or forward from a maximum to threshold
         Times are returned in ns
     """
     minsample = np.amax([0,rmin])
     maxsample = np.amin([len(trap),rmax])
     trapMax = np.argmax(trap[minsample:maxsample])
     foundFirst, triggerTS = False, 0
-    for i in range(trapMax,0,-1):
+    sampleArr = []
+    if forward:
+        sampleArr = range(trapMax,maxsample)
+    else:
+        sampleArr = range(trapMax,minsample,-1)
+    for idx, i in enumerate(sampleArr):
+        # If passed threshold, means we walked past the sample that crossed
         if trap[i] <= thresh:
             foundFirst = True
-            if (trap[i+1]-trap[i]) != 0:
-                triggerTS = ((thresh-trap[i])*((i+1)-i)/(trap[i+1]-trap[i]) + i)*10
+            # Interpolate between the current and previous sample if the difference isn't zero
+            if (trap[sampleArr[idx]]-trap[sampleArr[idx-1]]) != 0:
+                triggerTS = ((thresh-trap[sampleArr[idx]]) * (sampleArr[idx]-sampleArr[idx-1])/(trap[sampleArr[idx]]-trap[sampleArr[idx-1]]) + i)*10
             else: triggerTS = (i+1)*10
             break
+    # Save-guards if the t0 goes out of range for picking off on the large trapezoid
     if triggerTS >= timemax:
         return timemax, foundFirst
     elif triggerTS <= 0:
