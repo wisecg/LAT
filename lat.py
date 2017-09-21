@@ -166,6 +166,7 @@ def main(argv):
     t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
+    tE50, latE50 = std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
@@ -184,6 +185,7 @@ def main(argv):
     b31, b32, b33, b34 = out.Branch("t0_SLE",t0_SLE), out.Branch("t0_ALE",t0_ALE), out.Branch("lat",lat), out.Branch("latF",latF)
     b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
     b38 = out.Branch("nMS",nMS)
+    b39, b40 = out.Branch("tE50", tE50), out.Branch("latE50", latE50)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -202,7 +204,7 @@ def main(argv):
         "riseNoise":[riseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
-        "nMS":[nMS,b38]
+        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40]
     }
 
 
@@ -583,6 +585,18 @@ def main(argv):
             # standard amplitude.  basically trapEM, but w/o NL correction if the input WF doesn't have it.
             lat[iH] = np.amax(eTrap)
 
+            # Calculate DCR suggested amplitude, using the 50% to the left and right of the maximum point
+            t0_F50,t0fail1 = wl.walkBackT0(pTrap, thresh=lat[iH]*0.5, rmin=0, rmax=len(pTrap)-1)
+            t0_B50,t0fail2 = wl.walkBackT0(pTrap, thresh=lat[iH]*0.5, rmin=0, rmax=len(pTrap)-1, forward=True)
+            t0_E50 = (t0_F50 + t0_B50)/2.0
+
+            #TODO -- if it's necessary due to the trigger walk, we could potentially add a way to recursively increase the threshold until a timepoint is found, however it will still always fail for most noise events
+            if not t0fail1 or not t0fail2:
+                latE50[iH] = 0 # Set amplitude to 0 if one of the evaluations failed
+            else:
+                latE50[iH] = pTrapInterp(t0_E50) # Maybe I should call this latDCR50 to confuse people
+            tE50[iH] = t0_B50 - t0_F50 # Save the difference between the middle points, can be used as a cut later
+
             # standard amplitude with t0 from the shorter traps
             # If either fixed pickoff time (t0) is < 0, use the first sample as the amplitude (energy).
             latF[iH] = eTrapInterp( np.amax([t0_SLE[iH]-7000+4000+2000, 0.]) ) # This should be ~trapEF
@@ -762,7 +776,8 @@ def main(argv):
                 p[0].axhline(lat[iH],color='green')
                 p[0].plot(pTrapTS, pTrap, color='magenta', label='pTrap')
                 p[0].axhline(latAFC[iH], color='magenta')
-                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH]))
+                p[0].axhline(latE50[iH], color='cyan')
+                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f  latE50 %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH], latE50[iH]))
                 p[0].legend(loc='best')
 
             if plotNum==8: # multisite tag plot
