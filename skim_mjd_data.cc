@@ -31,6 +31,9 @@
 using namespace std;
 using namespace CLHEP;
 
+// NOTE: This is identical to the skimmer code used for the 0nbb analysis,
+// with the 1 exception that "GetChannelSelectionPath" points at the OFFICIAL channel selection files.
+
 // TODO: The "noSkip" option is enabled by default.
 //       Once we trust the saturated WF tag, this should be changed back.
 
@@ -436,7 +439,7 @@ int main(int argc, const char** argv)
   if (dsNum==1 || dsNum==5) {
 
     //Get the most recent channel selection file location for this dataset.
-    std::string channelSelectionPath = GetChannelSelectionPath(dsNum);
+    std::string channelSelectionPath = GetChannelSelectionPath(dsNum,1);
 
     //Print out the channel selection path once for record keeping.
     std::cout << "Channel selection files are being read from: " << std::endl;

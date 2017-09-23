@@ -131,7 +131,7 @@ def makeSlurm():
     outFile = open('slurm-job.sh','w+')
     slurm_file_text = """
     #!/bin/bash -l
-    #SBATCH -t 2:00:00  --ntasks=1
+    #SBATCH -t 8:00:00  --ntasks=1
     #SBATCH --mem 3400
     #SBATCH --account=majorana
     #SBATCH --workdir=/global/homes/w/wisecg/lat
@@ -492,14 +492,14 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                 sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,runNum,inFile,outFile))
     # cal
     else:
-        for i in calList:
+        for run in calList:
             for key in ds.dsRanges:
                 if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
                     dsNum=key
-            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,i),i)
+            files = getFileList("%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,run),run)
             for idx, inFile in sorted(files.iteritems()):
-                outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLATDir,dsNum,i,idx)
-                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
+                outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLatDir,dsNum,run,idx)
+                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,run,inFile,outFile))
 
 
 def mergeLAT():
