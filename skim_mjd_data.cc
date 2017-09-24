@@ -33,6 +33,7 @@ using namespace CLHEP;
 
 // NOTE: This is identical to the skimmer code used for the 0nbb analysis,
 // with the 1 exception that "GetChannelSelectionPath" points at the OFFICIAL channel selection files.
+// And we're applying channel selection to ALL datasets, not just 1 and 5.
 
 // TODO: The "noSkip" option is enabled by default.
 //       Once we trust the saturated WF tag, this should be changed back.
@@ -436,49 +437,45 @@ int main(int argc, const char** argv)
   vector<double> M2_mass_nat(ds.GetNRuns(), 0);
   vector<double> M1_mass_veto(ds.GetNRuns(), 0);
   vector<double> M2_mass_veto(ds.GetNRuns(), 0);
-  if (dsNum==1 || dsNum==5) {
 
-    //Get the most recent channel selection file location for this dataset.
-    std::string channelSelectionPath = GetChannelSelectionPath(dsNum,1);
+  // Load official 0nbb paper channel selection files
+  string channelSelectionPath = GetChannelSelectionPath(dsNum,1);
+  cout << "Channel selection files are being read from: " << endl;
+  cout << channelSelectionPath << endl;
 
-    //Print out the channel selection path once for record keeping.
-    std::cout << "Channel selection files are being read from: " << std::endl;
-    std::cout << channelSelectionPath << std::endl;
-
-    for (size_t irun=0; irun<ds.GetNRuns(); irun++)
+  for (size_t irun=0; irun<ds.GetNRuns(); irun++)
+  {
+    int run_num = ds.GetRunNumber(irun);
+    TDirectory* tdir = gROOT->CurrentDirectory();
+    GATChannelSelectionInfo ch_select (channelSelectionPath.c_str(), run_num);
+    vector<int> DetIDList = ch_select.GetDetIDList();
+    gROOT->cd(tdir->GetPath());
+    for (size_t ich=0; ich < DetIDList.size(); ich++)
     {
-      int run_num = ds.GetRunNumber(irun);
-      TDirectory* tdir = gROOT->CurrentDirectory();
-      GATChannelSelectionInfo ch_select (channelSelectionPath.c_str(), run_num);
-      vector<int> DetIDList = ch_select.GetDetIDList();
-      gROOT->cd(tdir->GetPath());
-      for (size_t ich=0; ich < DetIDList.size(); ich++)
-      {
-        int detID = DetIDList[ich];
-        string det = to_string(detID);
-        char detType = det.at(0);
-        pair<int,int> ch_pair = ch_select.GetChannelsFromDetID(detID);
-        tuple<int, int, int, int> CPDG = ch_select.GetCPDGFromChannel(ch_pair.first);
-        bool fix_veto = (ch_select.GetDetIsVetoOnly(detID) || detIDIsVetoOnly[detID]);
-        bool fix_bad = (ch_select.GetDetIsBad(detID) || detIDIsBad[detID]);
-        fix_detIDisVetoOnly[run_num][detID]= fix_veto;
-        fix_detIDisBad[run_num][detID] = fix_bad;
-        if(!fix_veto && !fix_bad) {
-          if ((get<0>(CPDG))==1) {
-            M1_mass_tot[irun] += actM4Det_g[detID];
-            if (detType=='1') M1_mass_enr[irun] += actM4Det_g[detID];
-            else if (detType=='2') M1_mass_nat[irun] += actM4Det_g[detID];
-          }
-          else if ((get<0>(CPDG))==2) {
-            M2_mass_tot[irun] += actM4Det_g[detID];
-            if (detType=='1') M2_mass_enr[irun] += actM4Det_g[detID];
-            else if (detType=='2') M2_mass_nat[irun] += actM4Det_g[detID];
-          }
+      int detID = DetIDList[ich];
+      string det = to_string(detID);
+      char detType = det.at(0);
+      pair<int,int> ch_pair = ch_select.GetChannelsFromDetID(detID);
+      tuple<int, int, int, int> CPDG = ch_select.GetCPDGFromChannel(ch_pair.first);
+      bool fix_veto = (ch_select.GetDetIsVetoOnly(detID) || detIDIsVetoOnly[detID]);
+      bool fix_bad = (ch_select.GetDetIsBad(detID) || detIDIsBad[detID]);
+      fix_detIDisVetoOnly[run_num][detID]= fix_veto;
+      fix_detIDisBad[run_num][detID] = fix_bad;
+      if(!fix_veto && !fix_bad) {
+        if ((get<0>(CPDG))==1) {
+          M1_mass_tot[irun] += actM4Det_g[detID];
+          if (detType=='1') M1_mass_enr[irun] += actM4Det_g[detID];
+          else if (detType=='2') M1_mass_nat[irun] += actM4Det_g[detID];
         }
-        else if (fix_veto) {
-          if ((get<0>(CPDG))==1) M1_mass_veto[irun] += actM4Det_g[detID];
-          else if ((get<0>(CPDG))==2) M2_mass_veto[irun] += actM4Det_g[detID];
+        else if ((get<0>(CPDG))==2) {
+          M2_mass_tot[irun] += actM4Det_g[detID];
+          if (detType=='1') M2_mass_enr[irun] += actM4Det_g[detID];
+          else if (detType=='2') M2_mass_nat[irun] += actM4Det_g[detID];
         }
+      }
+      else if (fix_veto) {
+        if ((get<0>(CPDG))==1) M1_mass_veto[irun] += actM4Det_g[detID];
+        else if ((get<0>(CPDG))==2) M2_mass_veto[irun] += actM4Det_g[detID];
       }
     }
   }
@@ -802,7 +799,7 @@ int main(int argc, const char** argv)
       // level, until it makes sense to reprocess to fix them in GAT.
       // Break out wfDCBitsIn into something more readable.
       unsigned int wfDCBitsVal = (*wfDCBitsIn)[i];
-      std::bitset<32> wfDCBitset(wfDCBitsVal);
+      bitset<32> wfDCBitset(wfDCBitsVal);
 
       //If the pileup waveforms bit (8) has been set, set it to false, then
       //update wfDCBitsVal.

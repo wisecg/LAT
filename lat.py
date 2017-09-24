@@ -30,7 +30,7 @@ v2: 04 Aug 2017 - improvements to wf fitting, handle multisampling, etc.
 ================ C. Wiseman (USC), B. Zhu (LANL) ================
 """
 import sys, time, os, pywt
-from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject
+from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject, gROOT
 from ROOT import GATDataSet, MGTEvent, MGTWaveform, MGWFTimePointCalculator
 import numpy as np
 from scipy.signal import butter, lfilter, filtfilt
@@ -78,9 +78,9 @@ def main(argv):
         if opt == "-b":
             batMode = True
             import matplotlib
-            if os.environ.get('DISPLAY','') == '':
-                print('No display found. Using non-interactive Agg backend')
-                matplotlib.use('Agg')
+            # if os.environ.get('DISPLAY','') == '':
+                # print('No display found. Using non-interactive Agg backend')
+            matplotlib.use('Agg')
             print "Batch mode selected.  A new file will be created."
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
