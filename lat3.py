@@ -14,6 +14,7 @@ v1: 07 Aug 2017
 """
 import sys, time, ROOT
 import numpy as np
+from DataSetInfo import CalInfo
 
 def main(argv):
 
@@ -21,7 +22,9 @@ def main(argv):
     print "LAT3 started:",time.strftime('%X %x %Z')
     startT = time.clock()
 
-    dsNum, subNum = -1, -1
+    inDir, outDir = ".", "."
+    cInfo = CalInfo()
+    dsNum, subNumm, modNum = -1, -1, -1
     calTree = ROOT.TChain("skimTree")
     customPar = ""
     parList = []
@@ -31,26 +34,38 @@ def main(argv):
     for i, opt in enumerate(argv):
         if opt == "-all":
             # Add all parameters
-            parList.append('bcMax')
+            # parList.append()
             print "Tuning all cuts"
         if opt == "-bcMax":
             parList.append('bcMax')
             print "Tuning bcMax"
+        if opt == "-noiseWeight":
+            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC')
+            print "Tuning noiseWeight ((waveS4-waveS1)/bcMax/trapENFCal)"
+        if opt == "-bcTime":
+            parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)')
+            print "Tuning bcTime"
+        if opt == "-tailSlope":
+            parList.append('pol2')
+            parList.append('pol3')
+            print "Tuning tailSlope"
+        if opt == "-fitSlo":
+            parList.append('fitSlo')
+            print "Tuning fitSlo"
         if opt == "-Custom":
             customPar = str(argv[i+1])
             parList.append(customPar)
             print "Tuning custom cut parameter: ", customPar
         if opt == "-s":
-            dsNum, subNum = int(argv[i+1]), int(argv[i+2])
+            dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
 
     # Load calibration files
-    if dsNum == -1 or subNum == -1:
-        print "DS or subDS not set properly, exiting"
+    if dsNum == -1 or subNum == -1 or modNum == -1:
+        print "DS, subDS, or module number not set properly, exiting"
         return
     else:
-        #FIXME -- Add correct calibration list getter here
-        calList = GetCalList()
-        for i in calList: calTree.Add(i)
+        calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum)
+        for i in calList: calTree.Add("%s/cal-lat/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
 
     # Tune cuts
     tunedPars = {}
@@ -69,7 +84,7 @@ def TuneCut(dsNum, subNum, cal, chList, parName, fastMode):
         e1dCut = 5.
         d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (e1dCut,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
-        nPass = skimTree.Draw("trapECalC:%s"%(parName), d1Cut, "goff")
+        nPass = skimTree.Draw("trapENFCalC:%s"%(parName), d1Cut, "goff")
         nEnergy = skimTree.GetV1()
         nCut = skimTree.GetV2()
         nCutList = list(float(newOE[n]) for n in xrange(nPass))
