@@ -29,6 +29,7 @@ def main(argv):
     calTree = ROOT.TChain("skimTree")
     customPar = ""
     calList, parList, chList = [], [], []
+    fastMode = False
 
     if len(argv) == 0:
         return
