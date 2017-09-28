@@ -12,7 +12,7 @@ v1: 07 Aug 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
-import sys, time, ROOT
+import sys, time, ROOT, glob
 from ROOT import gROOT, gStyle, gPad
 from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine, TGraph
 import numpy as np
