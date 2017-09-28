@@ -25,7 +25,7 @@ def main(argv):
     print "LAT3 started:",time.strftime('%X %x %Z')
     startT = time.clock()
 
-    inDir, outDir = ".", "."
+    pathToInput, pathToOutput = ".", "."
     cInfo = CalInfo()
     dsNum, subNumm, modNum = -1, -1, -1
     calTree = ROOT.TChain("skimTree")
@@ -72,10 +72,10 @@ def main(argv):
         return
     else:
         calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum)
-        for i in calList: calTree.Add("%s/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
+        for i in calList: calTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
 
     # -- Load chains for this DS --
-    inPath = inDir + "/latSkimDS%d*.root" % dsNum
+    inPath = pathToInput + "/latSkimDS%d*.root" % dsNum
     fileList = glob.glob(inPath)
     cutFile = TFile(fileList[0])
     theCut = cutFile.Get("theCut").GetTitle()
