@@ -127,7 +127,7 @@ def main(argv):
     # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
     # theCut += " && Entry$ < 5000"
     # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    # theCut += " && trapENFCal < 6 && trapENFCal > 1"
+    # theCut += " && trapENFCalC < 6 && trapENFCalC > 1"
     # theCut += " && trapENFCal > 50 && avse < -1"
     # print "WARNING: Custom cut in use!"
     # ============================================================
@@ -332,19 +332,21 @@ def main(argv):
             wpCoeff = abs(wpCoeff)
 
             # wavelet parameters
-            waveS1[iH] = np.sum(wpCoeff[0:1,1:33])
-            waveS2[iH] = np.sum(wpCoeff[0:1,33:65])
-            waveS3[iH] = np.sum(wpCoeff[0:1,65:97])
-            waveS4[iH] = np.sum(wpCoeff[0:1,97:-1])
+            # First get length of wavelet on the time axis, the scale axis will always be the same due to the number of levels in the wavelet
+            wpLength = len(wpCoeff[1,:])
+            waveS1[iH] = np.sum(wpCoeff[0:1,1:wpLength/4+1])
+            waveS2[iH] = np.sum(wpCoeff[0:1,wpLength/4+1:wpLength/2+1])
+            waveS3[iH] = np.sum(wpCoeff[0:1,wpLength/2+1:3*wpLength/4+1])
+            waveS4[iH] = np.sum(wpCoeff[0:1,3*wpLength/4+1:-1])
             waveS5[iH] = np.sum(wpCoeff[2:-1,1:-1])
-            S6 = np.sum(wpCoeff[2:9,1:33])
-            S7 = np.sum(wpCoeff[2:9,33:65])
-            S8 = np.sum(wpCoeff[2:9,65:97])
-            S9 = np.sum(wpCoeff[2:9,97:-1])
-            S10 = np.sum(wpCoeff[9:,1:33])
-            S11 = np.sum(wpCoeff[9:,33:65])
-            S12 = np.sum(wpCoeff[9:,65:97])
-            S13 = np.sum(wpCoeff[9:,97:-1])
+            S6 = np.sum(wpCoeff[2:9,1:wpLength/4+1])
+            S7 = np.sum(wpCoeff[2:9,wpLength/4+1:wpLength/2+1])
+            S8 = np.sum(wpCoeff[2:9,wpLength/2+1:3*wpLength/4+1])
+            S9 = np.sum(wpCoeff[2:9,3*wpLength/4+1:-1])
+            S10 = np.sum(wpCoeff[9:,1:wpLength/4+1])
+            S11 = np.sum(wpCoeff[9:,wpLength/4+1:wpLength/2+1])
+            S12 = np.sum(wpCoeff[9:,wpLength/2+1:3*wpLength/4+1])
+            S13 = np.sum(wpCoeff[9:,3*wpLength/4+1:-1])
             sumList = [S6, S7, S8, S9, S10, S11, S12, S13]
             bcMax[iH] = np.max(sumList)
             bcMin[iH] = np.min(sumList)
