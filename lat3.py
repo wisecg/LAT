@@ -72,7 +72,13 @@ def main(argv):
         return
     else:
         calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum)
-        for i in calList: calTree.Add("%s/cal-lat/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
+        for i in calList: calTree.Add("%s/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
+
+    # -- Load chains for this DS --
+    inPath = inDir + "/latSkimDS%d*.root" % dsNum
+    fileList = glob.glob(inPath)
+    cutFile = TFile(fileList[0])
+    theCut = cutFile.Get("theCut").GetTitle()
 
     # -- Load channel list --
     chList = ds.GetGoodChanList(dsNum)
@@ -85,13 +91,13 @@ def main(argv):
     # Tune cuts
     tunedPars = {}
     for parName in parList:
-        print parName, TuneCut(dsNum, subNum, calTree, chList, parName, fastMode)
+        print parName, TuneCut(dsNum, subNum, calTree, chList, parName, theCut, fastMode)
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def TuneCut(dsNum, subNum, cal, chList, parName, fastMode):
+def TuneCut(dsNum, subNum, cal, chList, parName, theCut, fastMode):
     c = TCanvas("%s"%(parName),"%s"%(parName),1600,600)
     c.Divide(3,1,0.00001,0.00001)
     cutDict = {}
