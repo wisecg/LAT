@@ -106,9 +106,9 @@ def TuneCut(dsNum, subNum, cal, chList, parName, theCut, fastMode):
         e1dCut = 5.
         d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (e1dCut,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
-        nPass = skimTree.Draw("trapENFCalC:%s"%(parName), d1Cut, "goff")
-        nEnergy = skimTree.GetV1()
-        nCut = skimTree.GetV2()
+        nPass = cal.Draw("trapENFCalC:%s"%(parName), d1Cut, "goff")
+        nEnergy = cal.GetV1()
+        nCut = cal.GetV2()
         nCutList = list(float(newOE[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n] for n in xrange(nPass)))
         vb, vlo, vhi = 5000, np.amin(nCutList), np.amax(nCutList)
