@@ -15,6 +15,7 @@ v1: 07 Aug 2017
 import sys, time, ROOT
 import numpy as np
 from DataSetInfo import CalInfo
+import DataSetInfo as ds
 
 def main(argv):
 
@@ -27,7 +28,7 @@ def main(argv):
     dsNum, subNumm, modNum = -1, -1, -1
     calTree = ROOT.TChain("skimTree")
     customPar = ""
-    parList = []
+    calList, parList, chList = [], [], []
 
     if len(argv) == 0:
         return
@@ -36,6 +37,9 @@ def main(argv):
             # Add all parameters
             # parList.append()
             print "Tuning all cuts"
+        if opt == "-d":
+            pathToInput, pathToOutput = argv[i+1], argv[i+2]
+            print "Custom paths: Input %s,  Output %s" % (pathToInput,pathToOutput)
         if opt == "-bcMax":
             parList.append('bcMax')
             print "Tuning bcMax"
@@ -67,10 +71,18 @@ def main(argv):
         calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum)
         for i in calList: calTree.Add("%s/cal-lat/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
 
+    # -- Load channel list --
+    chList = ds.GetGoodChanList(dsNum)
+    if dsNum==5: # remove 692 and 1232
+        chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694, 1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+
+    print "Processing channels: ", chList
+    print "Processing runs: ", calList
+
     # Tune cuts
     tunedPars = {}
     for parName in parList:
-        tunedPars = TuneCut(dsNum, subNum, calTree, chList, parName, fastMode)
+        print parName, TuneCut(dsNum, subNum, calTree, chList, parName, fastMode)
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -79,6 +91,7 @@ def main(argv):
 def TuneCut(dsNum, subNum, cal, chList, parName, fastMode):
     c = TCanvas("%s"%(parName),"%s"%(parName),1600,600)
     c.Divide(3,1,0.00001,0.00001)
+    cutDict = {}
     for ch in chList:
         eb, elo, ehi = 10,0,30
         e1dCut = 5.
@@ -95,7 +108,8 @@ def TuneCut(dsNum, subNum, cal, chList, parName, fastMode):
         outPlot = "./plots/%s/%s_ds%d_ch%d.png" % (parName, parName, dsNum,ch)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
 
-        return list(cut01,cut05,cut90,cut95,cut99)
+        cutDict[ch] = list(cut01,cut05,cut90,cut95,cut99)
+    return cutDict
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
