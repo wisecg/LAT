@@ -18,6 +18,7 @@ from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine,
 import numpy as np
 from DataSetInfo import CalInfo
 import DataSetInfo as ds
+import waveLibs as wl
 
 def main(argv):
 
@@ -109,15 +110,15 @@ def TuneCut(dsNum, subNum, cal, chList, parName, theCut, fastMode):
         nPass = cal.Draw("trapENFCalC:%s"%(parName), d1Cut, "goff")
         nEnergy = cal.GetV1()
         nCut = cal.GetV2()
-        nCutList = list(float(newOE[n]) for n in xrange(nPass))
-        nEnergyList = list(float(nEnergy[n] for n in xrange(nPass)))
+        nCutList = list(float(nCut[n]) for n in xrange(nPass))
+        nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
         vb, vlo, vhi = 5000, np.amin(nCutList), np.amax(nCutList)
 
         d2Draw = "%s:trapENFCal>>b(%d,%d,%d,%d,%d,%d)"%(parName,eb,elo,ehi,vb,vlo,vhi)
-        outPlot = "./plots/%s/%s_ds%d_ch%d.png" % (parName, parName, dsNum,ch)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
+        outPlot = "./plots/%s/%s_ds%d_ch%d.pdf" % (parName, parName, dsNum,ch)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,parName,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
 
-        cutDict[ch] = list(cut01,cut05,cut90,cut95,cut99)
+        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode):
