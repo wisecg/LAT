@@ -13,6 +13,7 @@ v1: 07 Aug 2017
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
 import sys, time, ROOT, glob
+sys.argv += [ '-b' ] # force ROOT to be loaded in batch mode.
 from ROOT import gROOT, gStyle, gPad
 from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine, TGraph
 import numpy as np
@@ -31,43 +32,56 @@ def main(argv):
     dsNum, subNumm, modNum = -1, -1, -1
     calTree = ROOT.TChain("skimTree")
     customPar = ""
-    calList, parList, chList = [], [], []
-    fastMode = False
+    calList, parList, parNameList, chList = [], [], [], []
+    fTune, fFor, fUpd, fastMode = False, False, False, False
 
     if len(argv) == 0:
         return
     for i, opt in enumerate(argv):
         if opt == "-all":
-            # Add all parameters
-            # parList.append()
+            parList.append('bcMax'), parNameList.append('bcMax')
+            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC'), parNameList.append('noiseWeight')
+            parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
+            parList.append('pol2'), parNameList.append('tailSlope1')
+            parList.append('pol3'), parNameList.append('tailSlope2')
+            parList.append('fitSlo'), parNameList.append('fitSlo')
             print "Tuning all cuts"
         if opt == "-d":
             pathToInput, pathToOutput = argv[i+1], argv[i+2]
             print "Custom paths: Input %s,  Output %s" % (pathToInput,pathToOutput)
         if opt == "-bcMax":
-            parList.append('bcMax')
+            parList.append('bcMax'), parNameList.append('bcMax')
             print "Tuning bcMax"
         if opt == "-noiseWeight":
-            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC')
-            print "Tuning noiseWeight ((waveS4-waveS1)/bcMax/trapENFCal)"
+            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC'), parNameList.append('noiseWeight')
+            print "Tuning noiseWeight ((waveS4-waveS1)/bcMax/trapENFCalC)"
         if opt == "-bcTime":
-            parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)')
+            parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
             print "Tuning bcTime"
         if opt == "-tailSlope":
-            parList.append('pol2')
-            parList.append('pol3')
+            parList.append('pol2'), parNameList.append('tailSlope1')
+            parList.append('pol3'), parNameList.append('tailSlope2')
             print "Tuning tailSlope"
         if opt == "-fitSlo":
-            parList.append('fitSlo')
+            parList.append('fitSlo'), parNameList.append('fitSlo')
             print "Tuning fitSlo"
         if opt == "-Custom":
             customPar = str(argv[i+1])
-            parList.append(customPar)
+            parList.append(customPar), parNameList.append('customPar')
             print "Tuning custom cut parameter: ", customPar
         if opt == "-s":
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
+        if opt == "-force":
+            fFor = True
+            print "Force DB update mode."
+        if opt == "-tune":
+            fTune = True
+            print "Cut tune mode."
+        if opt == "-upd":
+            fUpd = True
+            print "File update mode."
 
-    # Load calibration files
+    # -- Load calibration files --
     if dsNum == -1 or subNum == -1 or modNum == -1:
         print "DS, subDS, or module number not set properly, exiting"
         return
@@ -89,34 +103,39 @@ def main(argv):
     print "Processing channels: ", chList
     print "Processing runs: ", calList
 
-    # Tune cuts
+    # -- Tune cuts --
     tunedPars = {}
-    for parName in parList:
-        print parName, TuneCut(dsNum, subNum, calTree, chList, parName, theCut, fastMode)
+    for par, parName in zip(parList, parNameList):
+        cutDict = TuneCut(dsNum, subNum, calTree, chList, par, parName, theCut, fastMode)
+        key = "%s_ds%d_idx%d"%(parName,dsNum,subNum)
+        print key, cutDict
+        if fTune:
+            wl.setDBCalRecord({"key":key,"vals":cutDict})
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def TuneCut(dsNum, subNum, cal, chList, parName, theCut, fastMode):
+def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
     c = TCanvas("%s"%(parName),"%s"%(parName),1600,600)
     c.Divide(3,1,0.00001,0.00001)
     cutDict = {}
     for ch in chList:
+        cutDict[ch] = [-999., -999., -999., -999., -999.]
         eb, elo, ehi = 10,0,30
         e1dCut = 5.
         d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (e1dCut,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
-        nPass = cal.Draw("trapENFCalC:%s"%(parName), d1Cut, "goff")
+        nPass = cal.Draw("trapENFCalC:%s"%(par), d1Cut, "goff")
         nEnergy = cal.GetV1()
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
         vb, vlo, vhi = 5000, np.amin(nCutList), np.amax(nCutList)
 
-        d2Draw = "%s:trapENFCal>>b(%d,%d,%d,%d,%d,%d)"%(parName,eb,elo,ehi,vb,vlo,vhi)
-        outPlot = "./plots/%s/%s_ds%d_ch%d.pdf" % (parName, parName, dsNum,ch)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,parName,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
+        d2Draw = "%s:trapENFCal>>b(%d,%d,%d,%d,%d,%d)"%(par,eb,elo,ehi,vb,vlo,vhi)
+        outPlot = "./plots/tuneCuts/%s_ds%d_ch%d.pdf" % (parName,dsNum,ch)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
 
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
