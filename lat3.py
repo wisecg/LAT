@@ -153,13 +153,14 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
-        vb, vlo, vhi, vmed = 100000, np.amin(nCutList), np.amax(nCutList), np.median(nCutList)
+        vb, v5, v95 = 100000, np.percentile(nCutList, 5), np.percentile(nCutList,95)
+        vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMode)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
 
-def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMode):
+def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
 
     # Calculate cut vals (assumes plot range is correct)
@@ -181,6 +182,8 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMod
     c.cd(2)
     gPad.SetLogy(0)
     h1.GetXaxis().SetRangeUser(cut01-abs(0.25*cut01), cut99 + abs(0.25*cut99) )
+    h1.SetTitle("")
+    h1.GetXaxis().SetTitle(var)
     h1.Draw("hist")
 
     c.cd(1)
@@ -200,8 +203,11 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMod
     x_h1, y_h1 = wl.npTH1D(h1)
     int_h1 = wl.integFunc(y_h1)
     g2 = TGraph(len(x_h1), x_h1, int_h1)
-    g2.Draw("ACP")
     g2.GetXaxis().SetRangeUser(cut01-abs(0.3*cut01), cut99 + abs(0.3*cut99) )
+    g2.SetTitle("")
+    g2.GetXaxis().SetTitle(var)
+    g2.GetYaxis().SetTitle("Percentile")
+    g2.Draw("ACP")
     l1.DrawLine(cut99, 0, cut99, 1)
     l2.DrawLine(cut95, 0, cut95, 1)
     l1.DrawLine(cut01, 0, cut01, 1)
