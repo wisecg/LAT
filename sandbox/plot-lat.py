@@ -1,5 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys
 sys.argv += [ '-b' ]  # force ROOT to be loaded in batch mode
 import ROOT

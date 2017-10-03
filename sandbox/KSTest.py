@@ -1,4 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 import sys, time, os, ROOT
 import numpy as np
 from scipy.stats import ks_2samp

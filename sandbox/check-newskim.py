@@ -1,5 +1,4 @@
-#!/usr/local/bin/python
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 import ROOT
 from ROOT import TFile,TChain,TCanvas,TH1D,TH2D,TH3D,TLegend,TEntryList,gDirectory,TNamed,TObject,gROOT,gStyle
 

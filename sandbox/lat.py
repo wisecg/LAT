@@ -1,5 +1,4 @@
-#!/usr/local/bin/python
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 """
 ============== LAT.py: (L)ANL (A)nalysis (T)oolkit ==============
 

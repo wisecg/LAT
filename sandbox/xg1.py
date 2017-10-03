@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, pywt, imp, time
 import matplotlib.pyplot as plt
 import numpy as np

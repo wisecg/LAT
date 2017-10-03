@@ -1,4 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 from ROOT import TFile, TTree
 import os.path, imp
 dsi = imp.load_source('DataSetInfo', '../DataSetInfo.py')

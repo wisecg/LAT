@@ -1,5 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
+#!/usr/bin/env python
 """
 ========================= job-panda.py ========================
 A cute and adorable way to do various low-energy processing tasks.

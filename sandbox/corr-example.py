@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 from scipy import signal
 import matplotlib.pyplot as plt
 import numpy as np

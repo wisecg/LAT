@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, random
 from ROOT import TFile,gDirectory
 import matplotlib.pyplot as plt
