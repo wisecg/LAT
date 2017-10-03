@@ -28,9 +28,9 @@ def main(argv):
     print "LAT3 started:",time.strftime('%X %x %Z')
     startT = time.clock()
 
-    pathToInput, pathToOutput = ".", "."
     cInfo = CalInfo()
-    dsNum, subNumm, modNum = -1, -1, -1
+    pathToInput = "."
+    dsNum, subNumm, modNum, chNum = -1, -1, -1, -1
     calTree = ROOT.TChain("skimTree")
     customPar = ""
     calList, parList, parNameList, chList = [], [], [], []
@@ -39,18 +39,16 @@ def main(argv):
     if len(argv) == 0:
         return
     for i, opt in enumerate(argv):
+        # -- Cut tuning options --
         if opt == "-all":
             parList.append('bcMax'), parNameList.append('bcMax')
             parList.append('(waveS4-waveS1)/bcMax/trapENFCalC'), parNameList.append('noiseWeight')
             parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
-            parList.append('pol2'), parNameList.append('tailSlope1')
-            parList.append('pol3'), parNameList.append('tailSlope2')
+            parList.append('pol2'), parNameList.append('pol2')
+            parList.append('pol3'), parNameList.append('pol3')
             parList.append('fitSlo'), parNameList.append('fitSlo')
             parList.append('riseNoise'), parNameList.append('riseNoise')
             print "Tuning all cuts"
-        if opt == "-d":
-            pathToInput, pathToOutput = argv[i+1], argv[i+2]
-            print "Custom paths: Input %s,  Output %s" % (pathToInput,pathToOutput)
         if opt == "-bcMax":
             parList.append('bcMax'), parNameList.append('bcMax')
             print "Tuning bcMax"
@@ -61,8 +59,8 @@ def main(argv):
             parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
             print "Tuning bcTime"
         if opt == "-tailSlope":
-            parList.append('pol2'), parNameList.append('tailSlope1')
-            parList.append('pol3'), parNameList.append('tailSlope2')
+            parList.append('pol2'), parNameList.append('pol2')
+            parList.append('pol3'), parNameList.append('pol3')
             print "Tuning tailSlope"
         if opt == "-fitSlo":
             parList.append('fitSlo'), parNameList.append('fitSlo')
@@ -74,8 +72,16 @@ def main(argv):
             customPar = str(argv[i+1])
             parList.append(customPar), parNameList.append('customPar')
             print "Tuning custom cut parameter: ", customPar
+        # -- Input/output options --
         if opt == "-s":
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
+        if opt == "-d":
+            pathToInput = argv[i+1]
+            print "Custom paths: Input %s" % (pathToInput)
+        if opt == "-ch":
+            chNum = int(argv[i+1])
+            print "Tuning specific channel %d" % (chNum)
+        # -- Database options --
         if opt == "-force":
             fFor = True
             print "Force DB update mode."
@@ -101,9 +107,12 @@ def main(argv):
     theCut = cutFile.Get("theCut").GetTitle()
 
     # -- Load channel list --
-    chList = ds.GetGoodChanList(dsNum)
-    if dsNum==5: # remove 692 and 1232
-        chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694, 1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+    if chNum == -1:
+        chList = ds.GetGoodChanList(dsNum)
+        if dsNum==5: # remove 692 and 1232
+            chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694, 1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+    else:
+        chList = [chNum]
 
     print "Processing channels: ", chList
     print "Processing runs: ", calList
@@ -127,7 +136,7 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
     cutDict = {}
     for ch in chList:
         cutDict[ch] = [0,0,0,0,0]
-        eb, elo, ehi = 30,0,30
+        eb, elo, ehi = 40,0,40
         e1dCut = 5.
         d1Cut = theCut + " && trapENFCalC > %d && trapENFCalC < %d && channel==%d" % (e1dCut,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
@@ -136,8 +145,8 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
-        vb, vlo, vhi = 5000, np.amin(nCutList), np.amax(nCutList)
-        outPlot = "./plots/tuneCuts/%s_ds%d_ch%d.png" % (parName,dsNum,ch)
+        vb, vlo, vhi = 100000, np.amin(nCutList), np.amax(nCutList)
+        outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
@@ -154,7 +163,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     try:
         cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
     except:
-        print "Error: Failed", d2Cut
+        print "Error: Failed", var, "using cut", d2Cut
         return 0,0,0,0,0
     if fastMode:
         return cut99,cut95,cut01,cut05,cut90
