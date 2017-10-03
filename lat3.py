@@ -2,13 +2,20 @@
 """
 ===================== LAT3.py =====================
 
-PLACEHOLDER CODE.  THIS SHOULD BE A LAT SKIMMER,
-WHICH READS DATASETINFO.PY AND PRODUCES CHANNEL-SPECIFIC
-FILES WITH RUN CUTS APPLIED.
 
-or should this be where "tuneCuts" is done?
+Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
 
-v1: 07 Aug 2017
+Usage Examples:
+    All cuts:
+        ./lat3.py -s DS subDS Module -all -d /path/to/calib/files
+    Specific cut and/or channel:
+        ./lat3.py -s DS subDS Module -ch channel -bcMax -d /path/to/calib/files
+    Custom cut:
+        ./lat3.py -s DS subDS Module -Custom "bcMax/bcMin" -d /path/to/calib/files
+    Database
+
+
+v1: 03 Oct 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
@@ -20,7 +27,6 @@ import numpy as np
 from DataSetInfo import CalInfo
 import DataSetInfo as ds
 import waveLibs as wl
-from decimal import Decimal
 
 def main(argv):
 
@@ -75,6 +81,7 @@ def main(argv):
         # -- Input/output options --
         if opt == "-s":
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
+            print "Processing DS-%d subDS-%d Module-%d"%(dsNum, subNum, modNum)
         if opt == "-d":
             pathToInput = argv[i+1]
             print "Custom paths: Input %s" % (pathToInput)
@@ -82,6 +89,7 @@ def main(argv):
             chNum = int(argv[i+1])
             print "Tuning specific channel %d" % (chNum)
         # -- Database options --
+        #TODO -- Flesh out cut database options
         if opt == "-force":
             fFor = True
             print "Force DB update mode."
@@ -145,19 +153,20 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
-        vb, vlo, vhi = 100000, np.amin(nCutList), np.amax(nCutList)
+        vb, vlo, vhi, vmed = 100000, np.amin(nCutList), np.amax(nCutList), np.median(nCutList)
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
 
-def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
+def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,vmed,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
 
     # Calculate cut vals (assumes plot range is correct)
     h1 = wl.H1D(cal,vb,vlo,vhi,var,d1Cut)
     h1Sum = h1.Integral()
     if h1Sum == 0:
+        print "Error: Failed", var, "histogram sum is 0, cannot normalize"
         return 0,0,0,0,0
     h1.Scale(1/h1Sum)
     try:
