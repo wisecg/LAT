@@ -1,4 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 import sys, time, os, pywt
 from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject, MGTWaveform
 import numpy as np

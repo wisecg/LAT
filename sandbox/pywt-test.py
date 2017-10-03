@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, time, os
 from ROOT import TChain,TFile,TTree,TEntryList,gDirectory,gROOT,std,TNamed,TObject
 import numpy as np

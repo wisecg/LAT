@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, time, imp, pywt
 import numpy as np
 import scipy.special as sp

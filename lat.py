@@ -1,7 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
-#!/bin/bash
-""":" `which python` "$0" "$@"; exit 1 ":""" # dammit, this works on PDSF but not my laptop
+#!/usr/bin/env python
 """
 ============== lat.py: (L)ANL (A)nalysis (T)oolkit ==============
 

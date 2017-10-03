@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import numpy as np
 import matplotlib.text as text
 import matplotlib.pyplot as plt

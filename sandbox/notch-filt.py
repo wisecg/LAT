@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, imp
 import numpy as np
 import scipy.signal as sig

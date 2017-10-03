@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed
 
 def main():

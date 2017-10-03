@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, time, pymc, pywt
 import numpy as np
 from scipy import interpolate

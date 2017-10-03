@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, pywt, imp
 from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform
 import ROOT

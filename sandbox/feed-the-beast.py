@@ -1,5 +1,4 @@
-#!/usr/local/bin/python
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 """ feed-the-beast.py
     Low energy data cleaning plot factory.
     C. Wiseman, 3/25/17

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, pywt, random
 import numpy as np
 import tinydb as db

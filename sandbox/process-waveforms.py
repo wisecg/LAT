@@ -1,5 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
+#!/usr/bin/env python
 """ process-waveforms.py
     Takes an MJD skim file (augmented with an MGTWaveform branch)
     and calculates wavelet parameters for events passing cuts.
