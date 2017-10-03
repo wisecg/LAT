@@ -20,6 +20,7 @@ import numpy as np
 from DataSetInfo import CalInfo
 import DataSetInfo as ds
 import waveLibs as wl
+from decimal import Decimal
 
 def main(argv):
 
@@ -45,6 +46,7 @@ def main(argv):
             parList.append('pol2'), parNameList.append('tailSlope1')
             parList.append('pol3'), parNameList.append('tailSlope2')
             parList.append('fitSlo'), parNameList.append('fitSlo')
+            parList.append('riseNoise'), parNameList.append('riseNoise')
             print "Tuning all cuts"
         if opt == "-d":
             pathToInput, pathToOutput = argv[i+1], argv[i+2]
@@ -65,6 +67,9 @@ def main(argv):
         if opt == "-fitSlo":
             parList.append('fitSlo'), parNameList.append('fitSlo')
             print "Tuning fitSlo"
+        if opt == "-riseNoise":
+            parList.append('riseNoise'), parNameList.append('riseNoise')
+            print "Tuning riseNoise"
         if opt == "-Custom":
             customPar = str(argv[i+1])
             parList.append(customPar), parNameList.append('customPar')
@@ -121,10 +126,11 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
     c.Divide(3,1,0.00001,0.00001)
     cutDict = {}
     for ch in chList:
-        cutDict[ch] = [-999., -999., -999., -999., -999.]
-        eb, elo, ehi = 10,0,30
+        # if ch != 640: continue
+        cutDict[ch] = [0,0,0,0,0]
+        eb, elo, ehi = 30,0,30
         e1dCut = 5.
-        d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (e1dCut,ehi,ch)
+        d1Cut = theCut + " && trapENFCalC > %d && trapENFCalC < %d && channel==%d" % (e1dCut,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
         nPass = cal.Draw("trapENFCalC:%s"%(par), d1Cut, "goff")
         nEnergy = cal.GetV1()
@@ -132,8 +138,12 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
         vb, vlo, vhi = 5000, np.amin(nCutList), np.amax(nCutList)
-
-        d2Draw = "%s:trapENFCal>>b(%d,%d,%d,%d,%d,%d)"%(par,eb,elo,ehi,vb,vlo,vhi)
+        print "lo", vlo, "high", vhi
+        d2Draw = ""
+        if par == "pol2" or par == "pol3":
+            d2Draw = "%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(par,eb,elo,ehi,vb,Decimal(vlo),Decimal(vhi))
+        else: d2Draw = "%s:trapENFCalC>>b(%d,%d,%d,%d,%.3f,%.3f)"%(par,eb,elo,ehi,vb,vlo,vhi)
+        print d2Draw
         outPlot = "./plots/tuneCuts/%s_ds%d_ch%d.pdf" % (parName,dsNum,ch)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastMode)
 
@@ -149,13 +159,18 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Draw,d2Cut,d1Cut,outPlot,fastM
     if h1Sum == 0:
         return 0,0,0,0,0
     h1.Scale(1/h1Sum)
-    cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
+    try:
+        cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
+    except:
+        print "Error: Failed", d2Cut
+        return 0,0,0,0,0
     if fastMode:
         return cut99,cut95,cut01,cut05,cut90
 
     # Generate the plot for inspection.
     c.cd(2)
     gPad.SetLogy(0)
+    h1.GetXaxis().SetRangeUser(cut01,cut99)
     h1.Draw("hist")
 
     c.cd(1)
