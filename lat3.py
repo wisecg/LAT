@@ -154,6 +154,15 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
+
+        # Error and warning messages
+        if len(nCutList) == 0 or len(nEnergyList) == 0:
+            print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0]"%(ch)
+            cutDict[ch] = [0,0,0,0,0]
+            continue
+        if len(nCutList) <= 1000 or len(nEnergyList) <= 1000:
+            print "Warning: Channel %d has less than 1000 entries, cut values may not be accurate"%(ch)
+
         vb, v5, v95 = 100000, np.percentile(nCutList, 5), np.percentile(nCutList,95)
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
@@ -168,13 +177,13 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     h1 = wl.H1D(cal,vb,vlo,vhi,var,d1Cut)
     h1Sum = h1.Integral()
     if h1Sum == 0:
-        print "Error: Failed", var, "histogram sum is 0, cannot normalize"
+        print "Error: Failed %s, histogram sum is 0 so cannot normalize, setting to [0,0,0,0,0]"%(var)
         return 0,0,0,0,0
     h1.Scale(1/h1Sum)
     try:
         cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
     except:
-        print "Error: Failed", var, "using cut", d1Cut
+        print "Error: Failed %s using cut %s, setting to [0,0,0,0,0]"%(var,d1Cut)
         return 0,0,0,0,0
     if fastMode:
         return cut99,cut95,cut01,cut05,cut90
