@@ -105,7 +105,8 @@ def main(argv):
         print "DS, subDS, or module number not set properly, exiting"
         return
     else:
-        calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum)
+        # Limit to 10 calibration runs because that's all Clint processed!
+        calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum, runLimit=10)
         for i in calList: calTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
 
     # -- Load chains for this DS --
@@ -173,7 +174,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     try:
         cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
     except:
-        print "Error: Failed", var, "using cut", d2Cut
+        print "Error: Failed", var, "using cut", d1Cut
         return 0,0,0,0,0
     if fastMode:
         return cut99,cut95,cut01,cut05,cut90
@@ -181,16 +182,14 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     # Generate the plot for inspection.
     c.cd(2)
     gPad.SetLogy(0)
-    # h1.GetXaxis().SetRangeUser(cut01-abs(0.25*cut01), cut99 + abs(0.25*cut99) )
-    h1.GetXaxis().SetRangeUser(vlo, vhi)
+    h1.GetXaxis().SetRangeUser(cut01-abs(0.25*cut01), cut99 + abs(0.25*cut99) )
     h1.SetTitle("")
     h1.GetXaxis().SetTitle(var)
     h1.Draw("hist")
 
     c.cd(1)
     gPad.SetLogy(0)
-    # cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb,elo,ehi,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
-    cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb,elo,ehi,vb,vlo,vhi) ,d2Cut)
+    cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb,elo,ehi,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
 
     l1, l2 = TLine(), TLine()
     l1.SetLineColor(ROOT.kGreen)
@@ -205,8 +204,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     x_h1, y_h1 = wl.npTH1D(h1)
     int_h1 = wl.integFunc(y_h1)
     g2 = TGraph(len(x_h1), x_h1, int_h1)
-    # g2.GetXaxis().SetRangeUser(cut01-abs(0.3*cut01), cut99 + abs(0.3*cut99) )
-    g2.GetXaxis().SetRangeUser(vlo, vhi)
+    g2.GetXaxis().SetRangeUser(cut01-abs(0.3*cut01), cut99 + abs(0.3*cut99) )
     g2.SetTitle("")
     g2.GetXaxis().SetTitle(var)
     g2.GetYaxis().SetTitle("Percentile")
