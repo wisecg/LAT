@@ -206,7 +206,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     int_h1 = wl.integFunc(y_h1)
     g2 = TGraph(len(x_h1), x_h1, int_h1)
     # g2.GetXaxis().SetRangeUser(cut01-abs(0.3*cut01), cut99 + abs(0.3*cut99) )
-    h2.GetXaxis().SetRangeUser(vlo, vhi)
+    g2.GetXaxis().SetRangeUser(vlo, vhi)
     g2.SetTitle("")
     g2.GetXaxis().SetTitle(var)
     g2.GetYaxis().SetTitle("Percentile")
