@@ -40,7 +40,7 @@ def main(argv):
     calTree = ROOT.TChain("skimTree")
     customPar = ""
     calList, parList, parNameList, chList = [], [], [], []
-    fTune, fFor, fUpd, fastMode = False, False, False, False
+    fTune, fFor, fUpd, fastMode, fCSV = False, False, False, False, False
 
     if len(argv) == 0:
         return
@@ -88,6 +88,14 @@ def main(argv):
         if opt == "-ch":
             chNum = int(argv[i+1])
             print "Tuning specific channel %d" % (chNum)
+        if opt == "-fast":
+            fastMode == True
+            print "Tuning cuts with fastMode ON, diagnostic plots will not be generated!"
+        if opt == "-pd":
+            import pandas as pd
+            dfList, fCSV = [], True
+            print "Saving CSV file in ./output"
+
         # -- Database options --
         #TODO -- Flesh out cut database options
         if opt == "-force":
@@ -133,9 +141,17 @@ def main(argv):
     for par, parName in zip(parList, parNameList):
         cutDict = TuneCut(dsNum, subNum, calTree, chList, par, parName, theCut, fastMode)
         key = "%s_ds%d_idx%d"%(parName,dsNum,subNum)
-        print key, cutDict
+        # print key, cutDict
         if fTune:
             wl.setDBCalRecord({"key":key,"vals":cutDict})
+
+        if fCSV:
+            dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Cut Percentage":[1, 5, 90, 95, 99]}
+            dummyDict2 = dict(dummyDict.items() + cutDict.items())
+            dfList.append(pd.DataFrame(dummyDict2))
+    if fCSV:
+        dfTot = pd.concat(dfList)
+        dfTot.to_csv("./output/Cuts_ds%d_idx%d.csv"%(dsNum,subNum))
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
