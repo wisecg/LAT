@@ -4,6 +4,7 @@
 Draws trend of cuts from saved CSV files
 
 Will/should add a DB mode to extract cut values directly from the database
+
 """
 import sys, os, glob
 import pandas as pd
@@ -91,15 +92,15 @@ def main(argv):
 
     fig = plt.figure(figsize=(12,7))
     ax = fig.add_subplot(111)
+    ch_idx = np.linspace(0, 1, len(chList))
     for par in parList:
         ax.cla()
-        for ch in chList:
+        for idx,ch in zip(ch_idx, chList):
             # Grab the array for the channel + cut combo
             parVals0 = dfCut.loc[par, str(ch)].values
             # Fill any potential zeros
             parVals = FillZeros(parVals0)
-            ax.plot(np.linspace(0, len(parVals), len(parVals)), parVals, marker='o', label='Ch %s'%(ch), alpha=0.75)
-
+            ax.plot(np.linspace(0, len(parVals), len(parVals)), parVals, marker='o', label='Ch %s'%(ch), color = plt.cm.tab20c(idx))
         # Make stuff pretty
         ax.set_title('DS%d %s Trend (%d%%)'%(dsNum, par, perc))
         ax.set_xlabel('SubDS')
