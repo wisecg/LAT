@@ -81,7 +81,7 @@ def main(argv):
     cutFiles = glob.glob('%s/Cuts_ds%d_*.csv'%(inDir, dsNum))
     for f in cutFiles:
         try:
-            dfList.append(pd.read_csv(f)
+            dfList.append(pd.read_csv(f))
         except:
             print (f, "is broken, SAD")
 
