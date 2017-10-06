@@ -33,40 +33,40 @@ def main(argv):
             parList.append('pol3')
             parList.append('fitSlo')
             parList.append('riseNoise')
-            print "Drawing all cuts"
+            print ("Drawing all cuts")
         if opt == "-bcMax":
             parList.append('bcMax')
-            print "Drawing bcMax"
+            print ("Drawing bcMax")
         if opt == "-noiseWeight":
             parList.append('noiseWeight')
-            print "Drawing noiseWeight"
+            print ("Drawing noiseWeight")
         if opt == "-bcTime":
             parList.append('bcTime')
-            print "Drawing bcTime"
+            print ("Drawing bcTime")
         if opt == "-tailSlope":
             parList.append('pol2')
             parList.append('pol3')
-            print "Drawing tailSlope"
+            print ("Drawing tailSlope")
         if opt == "-fitSlo":
             parList.append('fitSlo')
-            print "Drawing fitSlo"
+            print ("Drawing fitSlo")
         if opt == "-riseNoise":
             parList.append('riseNoise')
-            print "Drawing riseNoise"
+            print ("Drawing riseNoise")
 
         # -- Input/output options --
         if opt == "-s":
             dsNum, modNum = int(argv[i+1]), int(argv[i+2])
-            print "Drawing DS-%d Module-%d"%(dsNum, modNum)
+            print ("Drawing DS-%d Module-%d"%(dsNum, modNum))
         if opt == "-d":
             inDir = argv[i+1]
-            print "Custom paths: Input %s" % (inDir)
+            print ("Custom paths: Input %s" % (inDir))
         if opt == "-ch":
             chNum = int(argv[i+1])
-            print "Drawing specific channel %d" % (chNum)
+            print ("Drawing specific channel %d" % (chNum))
         if opt == "-p":
             perc = int(argv[i+1])
-            print "Drawing for percentage %d" % (perc)
+            print ("Drawing for percentage %d" % (perc))
 
     # -- Load channel list --
     if chNum == -1:
@@ -81,14 +81,14 @@ def main(argv):
     cutFiles = glob.glob('%s/Cuts_ds%d_*.csv'%(inDir, dsNum))
     for f in cutFiles:
         try:
-            # Use column 17 so that "Cut" is the index
-            dfList.append(pd.read_csv(f, index_col=17))
+            dfList.append(pd.read_csv(f)
         except:
-            print f, "is broken, SAD"
+            print (f, "is broken, SAD")
 
     dfTot = pd.concat(dfList)
     # Cut by a certain percentage and sort w.r.t SubDS number
     dfCut = dfTot.query('Percentage==%d'%(perc)).sort_values('SubDS')
+    dfCut.set_index('Cut', inplace=True)
 
     fig = plt.figure(figsize=(12,7))
     ax = fig.add_subplot(111)
