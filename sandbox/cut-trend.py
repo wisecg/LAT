@@ -88,7 +88,7 @@ def main(argv):
     dfTot = pd.concat(dfList)
     # Cut by a certain percentage and sort w.r.t SubDS number
     # dfCut = dfTot.query('Percentage==%d'%(perc)).sort_values('SubDS')
-    dfCut = dfTot[df.Percentage == perc].sort_values('SubDS')
+    dfCut = dfTot[dfTot.Percentage == perc].sort_values('SubDS')
     dfCut.set_index('Cut', inplace=True)
 
     fig = plt.figure(figsize=(12,7))
