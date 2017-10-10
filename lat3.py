@@ -147,7 +147,7 @@ def main(argv):
             wl.setDBCalRecord({"key":key,"vals":cutDict})
 
         if fCSV:
-            dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Percentage":[1, 5, 90, 95, 99, 'Mode', 'Median']}
+            dummyDict = {"DS":[dsNum]*7, "SubDS":[subNum]*7, "Module":[modNum]*7, "Cut":[parName]*7, "Percentage":[1, 5, 90, 95, 99, 'Mode', 'Median']}
             dummyDict2 = dict(dummyDict.items() + cutDict.items())
             dfList.append(pd.DataFrame(dummyDict2))
     if fCSV:
