@@ -111,7 +111,7 @@ def main(argv):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width*0.88, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1)
-        fig.savefig('%s/%s_ds%d_p%d.png'%(outDir, par, dsNum, perc))
+        fig.savefig('%s/%s_ds%d_m%d_p%d.png'%(outDir, par, dsNum, modNum, perc))
 
 def FillZeros(parVals):
     for idx,val in enumerate(parVals):
