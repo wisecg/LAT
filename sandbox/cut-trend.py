@@ -65,8 +65,8 @@ def main(argv):
             chNum = int(argv[i+1])
             print ("Drawing specific channel %d" % (chNum))
         if opt == "-p":
-            perc = int(argv[i+1])
-            print ("Drawing for percentage %d" % (perc))
+            perc = str(argv[i+1])
+            print ("Drawing for percentage %s" % (perc))
 
     # -- Load channel list --
     if chNum == -1:
@@ -87,7 +87,8 @@ def main(argv):
 
     dfTot = pd.concat(dfList)
     # Cut by a certain percentage and sort w.r.t SubDS number
-    dfCut = dfTot.query('Percentage==%d'%(perc)).sort_values('SubDS')
+    # dfCut = dfTot.query('Percentage==%d'%(perc)).sort_values('SubDS')
+    dfCut = dfTot[df.Percentage == perc].sort_values('SubDS')
     dfCut.set_index('Cut', inplace=True)
 
     fig = plt.figure(figsize=(12,7))
