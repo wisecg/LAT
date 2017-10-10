@@ -17,7 +17,7 @@ def main(argv):
 
     inDir, outDir = ".", "./plots"
     specMode = False
-    dsNum = 1
+    dsNum, modNum = 1, 1
     dType = "Nat"
     bins,lower,upper = 250,0,50
 
@@ -25,24 +25,32 @@ def main(argv):
 		if opt == "-s":
 			specMode = True
 			print "Spectrum Mode"
-		if opt == "-p":
+		if opt == "-d":
 			inDir, outDir = argv[i+1], argv[i+2]
-			print "Custom paths: Input %s,  Output %s" % (inDir,outDir)
-		if opt == "-ds":
-			dsNum, dType = int(argv[i+1]), argv[i+2]
-			print "Using Dataset: %d -- %s" % (dsNum,dType)
+        if opt == "-ch":
+            chNum = int(argv[i+1])
+            print ("Drawing specific channel %d" % (chNum))
+        if opt == "-s":
+            dsNum, modNum = int(argv[i+1]), int(argv[i+2])
+            print ("Drawing DS-%d Module-%d"%(dsNum, modNum))
+
+        if opt == "-db":
+            print "Loading CSV"
+        if opt == "-csv":
+            print "Loading CSV"
 
 
     EnergyList = [[1.,5.], [2., 4.], [4., 9.], [9., 12.], [12., 40.], [40., 50.], [50., 100.]]
 
-    # Channel list
-    # NatList0 = [646,664,608,598,600,594,592]
-    chList = [600,692] # DS1
-    # NatList3 = [600,692,624,694,614] #692 is bad
-    # NatList4 = [1106,1144,1170,1174,1136,1232,1330]
-    # NatList4 = [1144]
-    # NatList5 = [614, 626, 628, 680, 688, 694, 1104, 1120, 1124, 1128, 1170, 1174, 1208, 1330]
-    # NatList5 = [680]
+    # -- Load channel list --
+    if chNum == -1:
+        chList = ds.GetGoodChanList(dsNum)
+        if dsNum==5 and modNum == 1: # remove 692 and 1232
+            chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
+        if dsNum==5 and modNum == 2:
+            chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+    else:
+        chList = [chNum]
 
     latPath = "/projecta/projectdirs/majorana/users/bxyzhu"
     inPath = latPath + "/lat/latSkimDS%d_*.root" % dsNum

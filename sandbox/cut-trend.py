@@ -17,7 +17,7 @@ sns.set_context('talk')
 
 def main(argv):
     dsNum, modNum = 1, 1
-    inDir = '.'
+    inDir, outDir = '.', '.'
     chNum, dfList = -1, []
     parList, chList = [], []
     perc = 99
@@ -59,7 +59,7 @@ def main(argv):
             dsNum, modNum = int(argv[i+1]), int(argv[i+2])
             print ("Drawing DS-%d Module-%d"%(dsNum, modNum))
         if opt == "-d":
-            inDir = argv[i+1]
+            inDir, outDir = argv[i+1], argv[i+2]
             print ("Custom paths: Input %s" % (inDir))
         if opt == "-ch":
             chNum = int(argv[i+1])
@@ -111,7 +111,7 @@ def main(argv):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width*0.88, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1)
-        fig.savefig('/Users/brianzhu/macros/code/LAT/plots/cutTrend/%s_ds%d_p%d.png'%(par,dsNum,perc))
+        fig.savefig('%s/%s_ds%d_p%d.png'%(outDir, par, dsNum, perc))
 
 def FillZeros(parVals):
     for idx,val in enumerate(parVals):
