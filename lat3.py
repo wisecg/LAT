@@ -184,7 +184,7 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
-        cutMode, cutMedian = int(round(nCutListReduced)), np.median(nCutListReduced)
+        cutMode, cutMedian = round(nCutListReduced), np.median(nCutListReduced)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,cutMode, d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99,cutMode,cutMedian]
     return cutDict
