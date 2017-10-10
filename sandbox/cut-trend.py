@@ -103,7 +103,7 @@ def main(argv):
             parVals = FillZeros(parVals0)
             ax.plot(np.linspace(0, len(parVals), len(parVals)), parVals, marker='o', label='Ch %s'%(ch), color = plt.cm.tab20c(idx))
         # Make stuff pretty
-        ax.set_title('DS%d %s Trend (%d%%)'%(dsNum, par, perc))
+        ax.set_title('DS%d %s Trend (%s)'%(dsNum, par, perc))
         ax.set_xlabel('SubDS')
         ax.set_ylabel(par)
         ax.xaxis.set_ticks(np.arange(0, len(parVals)+1, 2) )
@@ -112,7 +112,7 @@ def main(argv):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width*0.88, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=1)
-        fig.savefig('%s/%s_ds%d_m%d_p%d.png'%(outDir, par, dsNum, modNum, perc))
+        fig.savefig('%s/%s_ds%d_m%d_p%s.png'%(outDir, par, dsNum, modNum, perc))
 
 def FillZeros(parVals):
     for idx,val in enumerate(parVals):
