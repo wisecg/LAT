@@ -172,7 +172,6 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
-
         # Error and warning messages
         if len(nCutList) == 0 or len(nEnergyList) == 0:
             print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0]"%(ch)
@@ -183,12 +182,14 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
 
         vb, v5, v95 = 100000, np.percentile(nCutList, 5), np.percentile(nCutList,95)
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
+        nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
-        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
+        cutMode, cutMedian = int(round(nCutListReduced)), np.median(nCutListReduced)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,cutMode, d2Cut,d1Cut,outPlot,fastMode)
+        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99,cutMode,cutMedian]
     return cutDict
 
-def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
+def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
 
     # Calculate cut vals (assumes plot range is correct)
@@ -218,13 +219,15 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     gPad.SetLogy(0)
     cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb,elo,ehi,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
 
-    l1, l2 = TLine(), TLine()
+    l1, l2, l3 = TLine(), TLine(), TLine()
     l1.SetLineColor(ROOT.kGreen)
     l2.SetLineColor(ROOT.kRed)
+    l3.SetLineColor(ROOT.kMagenta)
 
     l1.DrawLine(elo, cut99, ehi, cut99)
     l2.DrawLine(elo, cut95, ehi, cut95)
     l2.DrawLine(elo, cut05, ehi, cut05)
+    l3.DrawLine(elo, cutMode, ehi, cutMode)
     l1.DrawLine(elo, cut01, ehi, cut01)
 
     c.cd(3)
@@ -240,6 +243,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     l2.DrawLine(cut95, 0, cut95, 1)
     l1.DrawLine(cut01, 0, cut01, 1)
     l2.DrawLine(cut05, 0, cut05, 1)
+    l3.DrawLine(cutMode, 0, cutMode, 1)
 
     c.Print(outPlot)
     return cut99,cut95,cut01,cut05,cut90
