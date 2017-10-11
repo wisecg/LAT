@@ -162,8 +162,8 @@ def main(argv):
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
         leg1.Draw()
-        c1.SaveAs("%s/SpecTest.pdf"%(outDir))
-        c1.SaveAs("%s/SpecTest.C"%(outDir))
+        c1.SaveAs("%s/Spec_ds%d_m%d.pdf"%(outDir,dsNum,modNum))
+        c1.SaveAs("%s/Spec_ds%d_m%d.C"%(outDir,dsNum,modNum))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
