@@ -152,7 +152,7 @@ def main(argv):
             dfList.append(pd.DataFrame(dummyDict2))
     if fCSV:
         dfTot = pd.concat(dfList)
-        dfTot.to_csv("./output/Cuts_ds%d_idx%d.csv"%(dsNum,subNum))
+        dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
