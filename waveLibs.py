@@ -18,17 +18,20 @@ C. Wiseman, B. Zhu
 v1. 20 March 2017
 """
 
-def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle=""):
-    nameStr = str(random.uniform(1.,2.))
+def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None):
+    nameStr = ""
+    if Title == None: nameStr = str(random.uniform(1.,2.))
+    else: nameStr = str(Title)
     h1 = TH1D(nameStr,nameStr,bins,xlo,xhi)
     tree.Project(nameStr,drawStr,cutStr)
     if xTitle!="": h1.GetXaxis().SetTitle(xTitle)
     if yTitle!="": h1.GetYaxis().SetTitle(yTitle)
     return h1
 
-
-def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle=""):
-    nameStr = str(random.uniform(1.,2.))
+def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Title=None):
+    nameStr = ""
+    if Title == None: nameStr = str(random.uniform(1.,2.))
+    else: nameStr = str(Title)
     h2 = TH2D(nameStr,nameStr,xbins,xlo,xhi,ybins,ylo,yhi)
     tree.Project(nameStr,drawStr,cutStr)
     if xTitle!="": h2.GetXaxis().SetTitle(xTitle)
