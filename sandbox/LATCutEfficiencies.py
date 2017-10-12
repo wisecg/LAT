@@ -112,7 +112,7 @@ def main(argv):
             runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
             pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub.loc['pol2','%d'%(ch)][1], dfSub.loc['pol2','%d'%(ch)][2])
             pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub.loc['pol3','%d'%(ch)][1], dfSub.loc['pol3','%d'%(ch)][2])
-            fitSloCut = "&&fitSlo<%.2f" % (dfSub.loc['pol2','%d'%(ch)][2])
+            fitSloCut = "&&fitSlo<%.2f" % (dfSub.loc['fitSlo','%d'%(ch)][2])
             riseNoiseCut = "&&riseNoise<%.2f" % (dfSub.loc['riseNoise','%d'%(ch)][2])
 
             PSA1 = channelCut + runCut + pol2Cut + pol3Cut
@@ -145,7 +145,7 @@ def main(argv):
         ROOT.gStyle.SetOptStat(0)
         c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
         c1.SetLogy()
-        leg1 = ROOT.TLegend(0.6, 0.6, 0.89, 0.89)
+        leg1 = ROOT.TLegend(0.6, 0.7, 0.89, 0.89)
         leg1.SetBorderSize(0)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
@@ -156,8 +156,9 @@ def main(argv):
 
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
-            hList[idx2].GetYaxis().SetTitle("Counts/ %.1f keV"%((upper-lower)/bins))
-            hList[idx2].SetLineColorAlpha(idx2+1, 0.5)
+            hList[idx2].GetYaxis().SetTitle("Counts/ %.1f keV"%(float((upper-lower)/bins)))
+            hList[idx2].SetMinimum(0.1) # Arbitrary unit right now...
+            hList[idx2].SetLineColorAlpha(idx2+1, 0.75)
             hList[idx2].Draw("SAME")
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
