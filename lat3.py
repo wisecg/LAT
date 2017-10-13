@@ -139,17 +139,20 @@ def main(argv):
 
     # -- Tune cuts --
     tunedPars = {}
+    tuneRange = [[236, 240], [5, 45]]
+    tuneNames = ["Peak", "Continuum"]
     for par, parName in zip(parList, parNameList):
-        cutDict = TuneCut(dsNum, subNum, calTree, chList, par, parName, theCut, fastMode)
-        key = "%s_ds%d_idx%d"%(parName,dsNum,subNum)
-        # print key, cutDict
-        if fTune:
-            wl.setDBCalRecord({"key":key,"vals":cutDict})
+        for tRange, tName in zip(tuneRange, tuneNames):
+            cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, calTree, chList, par, parName, theCut, fastMode)
+            key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
+            # print key, cutDict
+            if fTune:
+                wl.setDBCalRecord({"key":key,"vals":cutDict})
 
-        if fCSV:
-            dummyDict = {"DS":[dsNum]*7, "SubDS":[subNum]*7, "Module":[modNum]*7, "Cut":[parName]*7, "Percentage":[1, 5, 90, 95, 99, 'Mode', 'Median']}
-            dummyDict2 = dict(dummyDict.items() + cutDict.items())
-            dfList.append(pd.DataFrame(dummyDict2))
+            if fCSV:
+                dummyDict = {"DS":[dsNum]*7, "SubDS":[subNum]*7, "Module":[modNum]*7, "Cut":[parName]*7, "Range":[tName]*7, "Percentage":[1, 5, 90, 95, 99, 'Mode', 'Median']}
+                dummyDict2 = dict(dummyDict.items() + cutDict.items())
+                dfList.append(pd.DataFrame(dummyDict2))
     if fCSV:
         dfTot = pd.concat(dfList)
         dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
@@ -158,15 +161,14 @@ def main(argv):
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
 
-def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
+def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut, fastMode):
     c = TCanvas("%s"%(parName),"%s"%(parName),1600,600)
     c.Divide(3,1,0.00001,0.00001)
     cutDict = {}
     for ch in chList:
         cutDict[ch] = [0,0,0,0,0]
-        eb, elo, ehi = 40,0,40
-        e1dCut = 5.
-        d1Cut = theCut + " && trapENFCalC > %d && trapENFCalC < %d && channel==%d" % (e1dCut,ehi,ch)
+        eb, elo, ehi = (tMax-tMin),tMin,tMax
+        d1Cut = theCut + " && trapENFCalC > %d && trapENFCalC < %d && channel==%d" % (elo,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
         nPass = cal.Draw("trapENFCalC:%s"%(par), d1Cut, "goff")
         nEnergy = cal.GetV1()
@@ -175,7 +177,7 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
         # Error and warning messages
         if len(nCutList) == 0 or len(nEnergyList) == 0:
-            print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0]"%(ch)
+            print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0,0,0]"%(ch)
             cutDict[ch] = [0,0,0,0,0,0,0]
             continue
         if len(nCutList) <= 1000 or len(nEnergyList) <= 1000:
@@ -184,7 +186,7 @@ def TuneCut(dsNum, subNum, cal, chList, par, parName, theCut, fastMode):
         vb, v5, v95 = 100000, np.percentile(nCutList, 5), np.percentile(nCutList,95)
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
-        outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_ch%d.png" % (parName,dsNum,subNum,ch)
+        outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch)
         cutMode, cutMedian = mode(np.round(nCutListReduced))[0][0], np.median(nCutListReduced)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,cutMode, d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99,cutMode,cutMedian]
@@ -218,18 +220,18 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fast
 
     c.cd(1)
     gPad.SetLogy(0)
-    cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb,elo,ehi,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
+    cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb+10,elo-5,ehi+5,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
 
     l1, l2, l3 = TLine(), TLine(), TLine()
     l1.SetLineColor(ROOT.kGreen)
     l2.SetLineColor(ROOT.kRed)
     l3.SetLineColor(ROOT.kMagenta)
 
-    l1.DrawLine(elo, cut99, ehi, cut99)
-    l2.DrawLine(elo, cut95, ehi, cut95)
-    l2.DrawLine(elo, cut05, ehi, cut05)
-    l3.DrawLine(elo, cutMode, ehi, cutMode)
-    l1.DrawLine(elo, cut01, ehi, cut01)
+    l1.DrawLine(elo-5, cut99, ehi+5, cut99)
+    l2.DrawLine(elo-5, cut95, ehi+5, cut95)
+    l2.DrawLine(elo-5, cut05, ehi+5, cut05)
+    l3.DrawLine(elo-5, cutMode, ehi+5, cutMode)
+    l1.DrawLine(elo-5, cut01, ehi+5, cut01)
 
     c.cd(3)
     x_h1, y_h1 = wl.npTH1D(h1)
