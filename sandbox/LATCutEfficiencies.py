@@ -80,8 +80,8 @@ def main(argv):
     hList, hDict = [], {}
 
     # Create a list of DataFrames for each channel to concatenate at the end
-    # cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
-    cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
+    cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
+    # cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
     dfList = []
 
     for idx,ch in enumerate(chList):
@@ -111,10 +111,10 @@ def main(argv):
 
             # Set cuts here
             runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
-            pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub.loc['pol2','%d'%(ch)][0], dfSub.loc['pol2','%d'%(ch)][4])
-            pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub.loc['pol3','%d'%(ch)][0], dfSub.loc['pol3','%d'%(ch)][4])
-            fitSloCut = "&&fitSlo<%.2f" % (dfSub.loc['fitSlo','%d'%(ch)][2])
-            riseNoiseCut = "&&bcMax<%.2f" % (dfSub.loc['bcMax','%d'%(ch)][4])
+            pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
+            pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
+            fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
+            riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
 
             PSA1 = channelCut + runCut + pol2Cut + pol3Cut
             PSA2 = channelCut + runCut + pol2Cut + pol3Cut + riseNoiseCut
