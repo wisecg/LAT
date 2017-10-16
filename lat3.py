@@ -200,13 +200,13 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fast
     h1Sum = h1.Integral()
     if h1Sum == 0:
         print "Error: Failed %s, histogram sum is 0 so cannot normalize, setting to [0,0,0,0,0]"%(var)
-        return 0,0,0,0,0,0,0
+        return 0,0,0,0,0
     h1.Scale(1/h1Sum)
     try:
         cut99,cut95,cut01,cut05,cut90 = wl.GetIntegralPoints(h1)
     except:
         print "Error: Failed %s using cut %s, setting to [0,0,0,0,0]"%(var,d1Cut)
-        return 0,0,0,0,0,0,0
+        return 0,0,0,0,0
     if fastMode:
         return cut99,cut95,cut01,cut05,cut90
 
