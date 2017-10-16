@@ -67,7 +67,7 @@ def main(argv):
             for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
 
     # -- Load cut files --
-    cutFiles = glob.glob('%s/Cuts_ds%d_*.csv'%(cutDir, dsNum))
+    cutFiles = glob.glob('%s/Cuts_ds%d_m%d.csv'%(cutDir, dsNum, modNum))
     cutdfList = []
     for f in cutFiles:
         try:
