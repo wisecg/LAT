@@ -80,7 +80,8 @@ def main(argv):
     hList, hDict = [], {}
 
     # Create a list of DataFrames for each channel to concatenate at the end
-    cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
+    # cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
+    cutNames = ["BasicCut", "+riseNoise", "+fitSlo"]
     # cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
     dfList = []
 
@@ -111,17 +112,16 @@ def main(argv):
 
             # Set cuts here
             runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
-            pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
-            pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
+            # pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
+            # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
             fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
             riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
 
-            PSA1 = channelCut + runCut + pol2Cut + pol3Cut
-            PSA2 = channelCut + runCut + pol2Cut + pol3Cut + riseNoiseCut
-            PSA3 = channelCut + runCut + pol2Cut + pol3Cut + riseNoiseCut + fitSloCut
+            PSA1 = channelCut + runCut + riseNoiseCut
+            PSA2 = channelCut + runCut + riseNoiseCut + fitSloCut
 
             # Save all cuts into a list to iterate through
-            cutList = [channelCut+runCut, PSA1, PSA2, PSA3]
+            cutList = [channelCut+runCut, PSA1, PSA2]
 
             for idx2,cuts in enumerate(cutList):
                 if specMode:
@@ -148,7 +148,6 @@ def main(argv):
         c1.SetLogy()
         leg1 = ROOT.TLegend(0.35, 0.8, 0.65, 0.89)
         leg1.SetBorderSize(0)
-        leg1.SetNColumns(2)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
             hList[idx2] = hDict[chList[0]][0][idx2]
