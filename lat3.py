@@ -49,8 +49,6 @@ def main(argv):
         # -- Cut tuning options --
         if opt == "-all":
             parList.append('bcMax'), parNameList.append('bcMax')
-            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC'), parNameList.append('noiseWeight')
-            parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
             parList.append('pol2'), parNameList.append('pol2')
             parList.append('pol3'), parNameList.append('pol3')
             parList.append('fitSlo'), parNameList.append('fitSlo')
