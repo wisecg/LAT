@@ -48,7 +48,6 @@ def main(argv):
     for i, opt in enumerate(argv):
         # -- Cut tuning options --
         if opt == "-all":
-            parList.append('bcMax'), parNameList.append('bcMax')
             parList.append('pol2'), parNameList.append('pol2')
             parList.append('pol3'), parNameList.append('pol3')
             parList.append('fitSlo'), parNameList.append('fitSlo')
@@ -137,7 +136,7 @@ def main(argv):
 
     # -- Tune cuts --
     tunedPars = {}
-    tuneRange = [[236, 240], [5, 45]]
+    tuneRange = [[236, 240], [5, 50]]
     tuneNames = ["Peak", "Continuum"]
     for par, parName in zip(parList, parNameList):
         for tRange, tName in zip(tuneRange, tuneNames):
@@ -148,7 +147,7 @@ def main(argv):
                 wl.setDBCalRecord({"key":key,"vals":cutDict})
 
             if fCSV:
-                dummyDict = {"DS":[dsNum]*7, "SubDS":[subNum]*7, "Module":[modNum]*7, "Cut":[parName]*7, "Range":[tName]*7, "Percentage":[1, 5, 90, 95, 99, 'Mode', 'Median']}
+                dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                 dummyDict2 = dict(dummyDict.items() + cutDict.items())
                 dfList.append(pd.DataFrame(dummyDict2))
     if fCSV:
@@ -176,7 +175,7 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         # Error and warning messages
         if len(nCutList) == 0 or len(nEnergyList) == 0:
             print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0,0,0]"%(ch)
-            cutDict[ch] = [0,0,0,0,0,0,0]
+            cutDict[ch] = [0,0,0,0,0]
             continue
         if len(nCutList) <= 1000 or len(nEnergyList) <= 1000:
             print "Warning: Channel %d has less than 1000 entries, cut values may not be accurate"%(ch)
@@ -185,12 +184,12 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch)
-        cutMode, cutMedian = mode(np.round(nCutListReduced))[0][0], np.median(nCutListReduced)
-        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,cutMode, d2Cut,d1Cut,outPlot,fastMode)
-        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99,cutMode,cutMedian]
+        # cutMode, cutMedian = mode(np.round(nCutListReduced))[0][0], np.median(nCutListReduced)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
+        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
 
-def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fastMode):
+def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
 
     # Calculate cut vals (assumes plot range is correct)
@@ -228,7 +227,6 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fast
     l1.DrawLine(elo-5, cut99, ehi+5, cut99)
     l2.DrawLine(elo-5, cut95, ehi+5, cut95)
     l2.DrawLine(elo-5, cut05, ehi+5, cut05)
-    l3.DrawLine(elo-5, cutMode, ehi+5, cutMode)
     l1.DrawLine(elo-5, cut01, ehi+5, cut01)
 
     c.cd(3)
@@ -244,7 +242,6 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,cutMode,d2Cut,d1Cut,outPlot,fast
     l2.DrawLine(cut95, 0, cut95, 1)
     l1.DrawLine(cut01, 0, cut01, 1)
     l2.DrawLine(cut05, 0, cut05, 1)
-    l3.DrawLine(cutMode, 0, cutMode, 1)
 
     c.Print(outPlot)
     return cut99,cut95,cut01,cut05,cut90
