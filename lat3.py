@@ -246,6 +246,12 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     c.Print(outPlot)
     return cut99,cut95,cut01,cut05,cut90
 
+def MakeCut(bgTree, basicCut, dsNum, subNum, modNum, cutList=[], mode='db'):
+    nPass = bgTree.Draw("trapENFCalC:%s"%(par), basicCut, "goff")
+    if mode == 'db':
+        for cut in cutList:
+            key = "%s_ds%d_idx%d_m%d_Peak"%(cut,dsNum,subNum,modNum)
+            cutVal = wl.getDBCalRecord(key)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
