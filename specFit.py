@@ -239,11 +239,9 @@ def getSpecPDFs():
     xint = hAxionConv.Integral(xax.FindBin(eLo), xax.FindBin(eHi))
     malbekExposure = 89.5 # kg-d
     N_expected = malbekExposure * 86400 * xint
-    print "N_expected:",N_expected # gives 1.15622944758e+46
+    print "N_expected:",N_expected
 
-    # close file.
     f4.Close()
-
     return N_expected
 
 
