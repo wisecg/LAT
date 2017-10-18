@@ -88,7 +88,7 @@ def main(argv):
 
     # -- calibration stuff --
     calList = []
-    if f['c']: calList = getCalRunList(dsNum,subNum)
+    if f['c']: calList = getCalRunList(dsNum,subNum,runNum)
     if f['n']: runLAT2Cal(dsNum, subNum, f['q'])
 
     # -- go running --
@@ -201,8 +201,8 @@ def purgeLogs():
     for fl in glob.glob("./logs/*"): os.remove(fl)
 
 
-def getCalRunList(dsNum=None,subNum=None):
-    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx])
+def getCalRunList(dsNum=None,subNum=None,runNum=None):
+    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx] -run [runNum])
         Create a calibration run list, using the CalInfo object in DataSetInfo.py .
         Note that the -sub option is re-defined here to mean a calibration range idx.
         Note that running with -cal alone will create a list for all datasets (mega mode).
@@ -212,6 +212,13 @@ def getCalRunList(dsNum=None,subNum=None):
     calInfo = ds.CalInfo()
     calKeys = calInfo.GetKeys(dsNum)
 
+    # single-run mode
+    if runNum!=None:
+        calList.append(runNum)
+        print calList
+        return calList
+
+    # multi-run mode:
     for key in calKeys:
         print "key:",key
 

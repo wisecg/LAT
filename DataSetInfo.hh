@@ -8,6 +8,12 @@
 using namespace std;
 
 // ======================================================================
+// NOTE: There is only one difference between this file and the 0nbb version:
+//       Runs 19832 and 19833 were removed, since their built data
+//       didn't match their gatified data as of 2 Oct. 2017.
+// ======================================================================
+
+// ======================================================================
 // Contents:
 //
 // FindDataSet - Returns the DS number of a given run.
@@ -332,7 +338,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
     {15, {19677,19677, 19696,19697, 19707,19722}},
     {16, {19733,19747, 19771,19773}},
     {17, {19775,19801, 19806,19806}},
-    {18, {19832,19860}},
+    {18, {19834,19860}},
     {19, {19862,19893}},
     {20, {19894,19899, 19901,19907}},
     {21, {19968,19998}},

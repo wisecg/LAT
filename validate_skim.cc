@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   else strpos++;
   // sscanf(skimname.c_str()+strpos, "skimDS%d%[_ a-z A-Z]%d%[_ a-z A-Z].root", &dsnum, isrun, &subdsnum, issmall); // original
   sscanf(skimname.c_str()+strpos, "skimDS%d%[_ a-z A-Z]%d%[_ a-z A-Z]_low.root", &dsnum, isrun, &subdsnum, issmall); // low-e skim
-  // sscanf(skimname.c_str()+strpos, "skimDS%d%[_ a-z A-Z]%d%[_ a-z A-Z]_low.root", &dsnum, isrun, &subdsnum, issmall); // waveSkim 
+  // sscanf(skimname.c_str()+strpos, "skimDS%d%[_ a-z A-Z]%d%[_ a-z A-Z]_low.root", &dsnum, isrun, &subdsnum, issmall); // waveSkim
 
   GATDataSet ds;
   if(strcmp(isrun, "_run")==0) ds.AddRunNumber(subdsnum);
@@ -122,13 +122,13 @@ int main(int argc, char** argv) {
         }
         else {
           if(UInt_t(niterskim) != ihit.GetSize()) {
-            cout << "Warning: skim leaf " << formlist.first->GetLeaf(0)->GetName() << " does not have one entry for each hit!" << endl;
+            cout << "Warning: Run " << *runskim <<  " skim leaf " << formlist.first->GetLeaf(0)->GetName() << " does not have one entry for each hit!" << endl;
             return 0;
           }
           else {
             for(size_t i=0; i<ihit.GetSize(); i++) {
               if(formlist.first->EvalInstance(i) != form->EvalInstance(ihit[i])) {
-                cout << "Warning: skim leaf " << formlist.first->GetTitle()
+                cout << "Warning: Run " << *runskim << " skim leaf " << formlist.first->GetTitle()
                 << " in entry " << entry << " = "
                 << formlist.first->EvalInstance(i) << " does not equal gat leaf "
                 << form->GetTitle() << " in entry " << *ievskim
