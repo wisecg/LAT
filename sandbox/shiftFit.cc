@@ -1,4 +1,4 @@
-// specFit: unbinned likelihood fitter.
+// shiftFit: unbinned likelihood fitter.
 // A weak-sauce version of GPXFitter by Brian.
 //
 // C. Wiseman, USC
