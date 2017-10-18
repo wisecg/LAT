@@ -38,10 +38,10 @@ def main(argv):
     cInfo = CalInfo()
     pathToInput = "."
     dsNum, subNumm, modNum, chNum = -1, -1, -1, -1
-    calTree = ROOT.TChain("skimTree")
+    skimTree = ROOT.TChain("skimTree")
     customPar = ""
     calList, parList, parNameList, chList = [], [], [], []
-    fTune, fFor, fUpd, fastMode, fCSV = False, False, False, False, False
+    fTune, fCut, fFor, fUpd, fastMode, fDB, fCSV = False, False, False, False, False, False, False
 
     if len(argv) == 0:
         return
@@ -93,7 +93,9 @@ def main(argv):
             import pandas as pd
             dfList, fCSV = [], True
             print "Saving CSV file in ./output"
-
+        if opt == "-db":
+            fDB = True
+            print "DB mode"
         # -- Database options --
         #TODO -- Flesh out cut database options
         if opt == "-force":
@@ -102,6 +104,9 @@ def main(argv):
         if opt == "-tune":
             fTune = True
             print "Cut tune mode."
+        if opt == "-cut":
+            fCut = True
+            print "Cut application mode."
         if opt == "-upd":
             fUpd = True
             print "File update mode."
@@ -110,10 +115,16 @@ def main(argv):
     if dsNum == -1 or subNum == -1 or modNum == -1:
         print "DS, subDS, or module number not set properly, exiting"
         return
-    else:
+    elif fTune:
         # Limit to 10 calibration runs because that's all Clint processed!
         calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum, runLimit=10)
-        for i in calList: calTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
+        for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
+    elif fCut:
+        # Add Background Data
+        skimTree.Add("%s/latSkimDS%d_%d_*"%(pathToInput, dsNum, subNum))
+    else:
+        print "Tune or Cut option not set"
+        return
 
     # -- Load chains for this DS --
     inPath = pathToInput + "/latSkimDS%d*.root" % dsNum
@@ -135,24 +146,29 @@ def main(argv):
     print "Processing runs: ", calList
 
     # -- Tune cuts --
-    tunedPars = {}
-    tuneRange = [[236, 240], [5, 50]]
-    tuneNames = ["Peak", "Continuum"]
-    for par, parName in zip(parList, parNameList):
-        for tRange, tName in zip(tuneRange, tuneNames):
-            cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, calTree, chList, par, parName, theCut, fastMode)
-            key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
-            # print key, cutDict
-            if fTune:
-                wl.setDBCalRecord({"key":key,"vals":cutDict})
+    if fTune:
+        tunedPars = {}
+        tuneRange = [[236, 240], [5, 50]]
+        tuneNames = ["Peak", "Continuum"]
+        for par, parName in zip(parList, parNameList):
+            for tRange, tName in zip(tuneRange, tuneNames):
+                cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
+                key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
+                # print key, cutDict
+                if fDB:
+                    wl.setDBCalRecord({"key":key,"vals":cutDict})
 
-            if fCSV:
-                dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
-                dummyDict2 = dict(dummyDict.items() + cutDict.items())
+                if fCSV:
+                    dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
+                    dummyDict2 = dict(dummyDict.items() + cutDict.items())
                 dfList.append(pd.DataFrame(dummyDict2))
-    if fCSV:
-        dfTot = pd.concat(dfList)
-        dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
+        if fCSV:
+            dfTot = pd.concat(dfList)
+            dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
+
+    if fCut:
+        megaCut = MakeCutList(cInfo, skimTree, theCut, dsNum, modNum, chList)
+        print megaCut
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -246,12 +262,29 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     c.Print(outPlot)
     return cut99,cut95,cut01,cut05,cut90
 
-def MakeCut(bgTree, basicCut, dsNum, subNum, modNum, cutList=[], mode='db'):
-    nPass = bgTree.Draw("trapENFCalC:%s"%(par), basicCut, "goff")
+def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
+    """ Pass in background run and it generates a dictionary of cuts for all good channels"""
+    nPass = skimTree.Draw("run", basicCut, "goff")
+    nRun = skimTree.GetV1()
+    runList = list(set(int(nRun[n]) for n in xrange(nPass)))
+    print "Processing Runs", runList
+    idxMin = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runList[0])
+    idxMax = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runList[-1])
+    megaCut = {}
     if mode == 'db':
-        for cut in cutList:
-            key = "%s_ds%d_idx%d_m%d_Peak"%(cut,dsNum,subNum,modNum)
-            cutVal = wl.getDBCalRecord(key)
+        for subNum in range(idxMin,idxMax+1):
+            fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+            rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+            runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
+            for idx, ch in enumerate(chList):
+                if ch in megaCut.keys():
+                    megaCut[ch] += '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][4])
+                else:
+                    megaCut[ch] = '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][4])
+    elif mode == 'csv':
+        print('Not implemented!')
+
+    return megaCut
 
 if __name__ == "__main__":
     main(sys.argv[1:])
