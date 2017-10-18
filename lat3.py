@@ -7,15 +7,15 @@ Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
 
 Usage Examples:
     Tuning all cuts:
-        ./lat3.py -tune -db -s DS subDS Module -all -d /path/to/calib/files
+        ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -all
     Specific cut and/or channel:
-        ./lat3.py -tune -db -s DS subDS Module -ch channel -bcMax -d /path/to/calib/files
+        ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -ch channel -bcMax
     Custom cut:
-        ./lat3.py -tune -db -s DS subDS Module -Custom "bcMax/bcMin" -d /path/to/calib/files
+        ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -Custom "bcMax/bcMin"
 
 
     Applying cuts:
-        ./lat3.py -cut -db -s DS subDS Module -d /path/to/bkg/files
+        ./lat3.py -cut /path/to/bkg/files /path/to/output/files -db -s DS subDS Module
 
 
 v1: 03 Oct 2017
@@ -39,7 +39,7 @@ def main(argv):
     startT = time.clock()
 
     cInfo = CalInfo()
-    pathToInput = "."
+    pathToInput, pathToOutput = ".", "."
     dsNum, subNumm, modNum, chNum = -1, -1, -1, -1
     skimTree = ROOT.TChain("skimTree")
     customPar = ""
@@ -84,7 +84,7 @@ def main(argv):
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
             print "Processing DS-%d subDS-%d Module-%d"%(dsNum, subNum, modNum)
         if opt == "-d":
-            pathToInput = argv[i+1]
+            pathToInput, pathToOutput = argv[i+1], argv[i+2]
             print "Custom paths: Input %s" % (pathToInput)
         if opt == "-ch":
             chNum = int(argv[i+1])
@@ -106,8 +106,10 @@ def main(argv):
             print "Force DB update mode."
         if opt == "-tune":
             fTune = True
+            pathToInput = argv[i+1]
             print "Cut tune mode."
         if opt == "-cut":
+            pathToInput, pathToOutput = argv[i+1], argv[i+2]
             fCut = True
             print "Cut application mode."
         if opt == "-upd":
@@ -169,9 +171,18 @@ def main(argv):
             dfTot = pd.concat(dfList)
             dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
 
+    # -- Apply cuts --
     if fCut:
         megaCut = MakeCutList(cInfo, skimTree, theCut, dsNum, modNum, chList)
         print megaCut
+        # outFile = TFile(pathToOutput+"latCutSkimDS%d_%d.root"%(dsNum,subNum),"RECREATE")
+        # outTreeList = []
+        # for idx, ch in enumerate(chList):
+            # outTreeList.append(TTree())
+            # outTreeList[idx] = skimTree.CopyTree(theCut+megaCut[ch])
+            # outTreeList[idx] = skimTree.CopyTree(theCut)
+            # outTreeList[idx].Write()
+        # outFile.Close()
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -279,7 +290,7 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
             fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
             rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
             runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
-            for idx, ch in enumerate(chList):
+            for ch in chList:
                 if ch in megaCut.keys():
                     megaCut[ch] += '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][4])
                 else:
