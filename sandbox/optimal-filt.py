@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import numpy as np
 from scipy import fft, ifft
 import matplotlib.pyplot as plt

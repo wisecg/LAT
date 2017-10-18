@@ -1,4 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
+#!/usr/bin/env python
 import sys, time, os, glob
 import ROOT
 import numpy as np
@@ -15,122 +15,157 @@ import waveLibs as wl
 
 def main(argv):
 
-    inDir, outDir = ".", "./plots"
+    inDir, cutDir, outDir = ".", ".", "./plots"
     specMode = False
-    dsNum = 1
-    dType = "Nat"
-    bins,lower,upper = 250,0,50
+    dsNum, modNum, chNum = -1, -1, -1
+    skimTree = ROOT.TChain("skimTree")
+    bins,lower,upper = 1250,0,250
 
     for i,opt in enumerate(argv):
-		if opt == "-s":
-			specMode = True
-			print "Spectrum Mode"
-		if opt == "-p":
-			inDir, outDir = argv[i+1], argv[i+2]
-			print "Custom paths: Input %s,  Output %s" % (inDir,outDir)
-		if opt == "-ds":
-			dsNum, dType = int(argv[i+1]), argv[i+2]
-			print "Using Dataset: %d -- %s" % (dsNum,dType)
+        if opt == "-spec":
+            specMode = True
+            print "Spectrum Mode"
+        if opt == "-d":
+            inDir, outDir = argv[i+1], argv[i+2]
+        if opt == "-ch":
+            chNum = int(argv[i+1])
+            print ("Drawing specific channel %d" % (chNum))
+        if opt == "-s":
+            dsNum, modNum = int(argv[i+1]), int(argv[i+2])
+            print ("Drawing DS-%d Module-%d"%(dsNum, modNum))
+        if opt == "-cal":
+            calMode = True
+            print ("Drawing Calibration runs")
 
+        if opt == "-db":
+            print "Loading from DB"
+        if opt == "-csv":
+            cutDir = argv[i+1]
+            print "Loading CSV"
 
+    cInfo = ds.CalInfo()
     EnergyList = [[1.,5.], [2., 4.], [4., 9.], [9., 12.], [12., 40.], [40., 50.], [50., 100.]]
 
-    # Channel list
-    # NatList0 = [646,664,608,598,600,594,592]
-    chList = [600,692] # DS1
-    # NatList3 = [600,692,624,694,614] #692 is bad
-    # NatList4 = [1106,1144,1170,1174,1136,1232,1330]
-    # NatList4 = [1144]
-    # NatList5 = [614, 626, 628, 680, 688, 694, 1104, 1120, 1124, 1128, 1170, 1174, 1208, 1330]
-    # NatList5 = [680]
+    # -- Load channel list --
+    if chNum == -1:
+        chList = ds.GetGoodChanList(dsNum)
+        if dsNum==5 and modNum == 1: # remove 692 and 1232
+            chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
+        if dsNum==5 and modNum == 2:
+            chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+    else:
+        chList = [chNum]
 
-    latPath = "/projecta/projectdirs/majorana/users/bxyzhu"
-    inPath = latPath + "/lat/latSkimDS%d_*.root" % dsNum
+    # -- Load calibration files --
+    if dsNum == -1 or modNum == -1:
+        print "DS, subDS, or module number not set properly, exiting"
+        return
+    else:
+        # Limit to 10 calibration runs because that's all Clint processed!
+        for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
+            calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum, runLimit=10)
+            for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
 
-    bkgTree = ROOT.TChain("skimTree")
-    bkgTree.Add(inPath)
+    # -- Load cut files --
+    cutFiles = glob.glob('%s/Cuts_ds%d_*_m%d.csv'%(cutDir, dsNum, modNum))
+    cutdfList = []
+    for f in cutFiles:
+        try:
+            cutdfList.append(pd.read_csv(f))
+        except:
+            print (f, "is broken, SAD")
+    dfTot = pd.concat(cutdfList)
 
     # List of histograms (for summing together) and Dictionary of histograms (for different cuts)
     hList, hDict = [], {}
 
-    cutNames = ["BasicCut", "+tailSlope", "+bandTime", "+bcTime", "+bcMax", "+noiseWeight", "+fitSlo", "+threshold"]
     # Create a list of DataFrames for each channel to concatenate at the end
+    # cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
+    cutNames = ["BasicCut", "+riseNoise", "+fitSlo"]
+    # cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
     dfList = []
 
     for idx,ch in enumerate(chList):
         # Create new key for dictionaries according to channel
         hDict[ch] = []
-        # Get threshold info
-        goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)
-
-        # Set cuts here
-        channelCut = "channel==%d" % ch
-        bandTimeCut = "&&bandTime-tOffset-1100<11000"
-        bcMaxCut = "&&bcMax<%.2e" % ds.bcMax[dsNum][ch][0] # 99% value
-        noiseWt = "(waveS4-waveS1)/bcMax/trapENFCal"
-        noiseWtCut = " && %s < %.2e && %s > %.2e" % (noiseWt,ds.noiseWt[dsNum][ch][0],noiseWt,ds.noiseWt[dsNum][ch][1])
-        tailSlopeCut = "&&pol2>%.2e&&pol2<%.2e&&pol3>%.2e&&pol3<%.2e" % (ds.pol2[dsNum][ch][1],ds.pol2[dsNum][ch][0],ds.pol3[dsNum][ch][1],ds.pol3[dsNum][ch][0])
-        bcTimeCut = "&&(bandTime-tOffset-1100)/(matchTime-tOffset)>%.2e" % ds.bcTime[dsNum][ch]
-        fitSloCut = "&&fitSlo<=(%.2f)" % (ds.fitSloCont[dsNum][ch][0])
-
-        PSA1 = channelCut + tailSlopeCut
-        PSA2 = channelCut + tailSlopeCut + bandTimeCut
-        PSA3 = channelCut + tailSlopeCut + bandTimeCut + bcTimeCut
-        PSA4 = channelCut + tailSlopeCut + bandTimeCut + bcTimeCut + bcMaxCut
-        PSA5 = channelCut + tailSlopeCut + bandTimeCut + bcTimeCut + bcMaxCut + noiseWtCut
-        megaCut = channelCut + bandTimeCut + noiseWtCut + tailSlopeCut + bcTimeCut + fitSloCut
-
-        runCut = "&&("
-        for idx2,runRange in enumerate(goodRuns[ch]):
-            runCut += "(run>=%d&&run<=%d)||" % (runRange[0],runRange[1])
-            # Strip all spaces to save space
-            totalCut = megaCut.replace(" ", "") + runCut[:-2] + ")"
-
-        # Save all cuts into a list to iterate through
-        cutList = [channelCut, PSA1, PSA2, PSA3, PSA4, PSA5, megaCut, totalCut]
         # Create dummy list and series to store into DataFrame later
-        cutMatrix= []
-        for idx2,cuts in enumerate(cutList):
-            cutMatrix.append([])
-            if specMode:
-                hDict[ch].append(ROOT.TH1D())
-                hDict[ch][idx2] = wl.H1D(bkgTree,"h0-Ch%d-%d"%(ch,idx2),bins,lower,upper,"trapENFCal",cuts)
+        cutMatrix = {}
 
-            # For each energy range and each cut, get number of events and fill to list
-            for idx3, eRange in enumerate(EnergyList):
-                cutMatrix[idx2].append( float(bkgTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
+        channelCut = "channel==%d" % (ch)
+
+        # Get threshold info
+        # goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)
+        # threshrunCut = "&&("
+        # for idx2,runRange in enumerate(goodRuns[ch]):
+        #     threshrunCut += "(run>=%d&&run<=%d)||" % (runRange[0],runRange[1])
+        #     # Strip all spaces to save space
+        #     totalCut = megaCut.replace(" ", "") + threshrunCut[:-2] + ")"
+
+        for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
+            # Create new array for each subDS
+            hDict[ch].append([])
+
+            # Create separate dataframe for each subNum -- excess?
+            dfSub = dfTot[dfTot.SubDS == subNum]
+            # dfSub = dfTot.query("SubDS == %d")
+            dfSub.set_index('Cut', inplace=True)
+
+            # Set cuts here
+            runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
+            # pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
+            # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
+            fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
+            riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
+
+            PSA1 = channelCut + runCut + riseNoiseCut
+            PSA2 = channelCut + runCut + riseNoiseCut + fitSloCut
+
+            # Save all cuts into a list to iterate through
+            cutList = [channelCut+runCut, PSA1, PSA2]
+
+            for idx2,cuts in enumerate(cutList):
+                if specMode:
+                    hDict[ch][subNum].append(ROOT.TH1D())
+                    hDict[ch][subNum][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0-Ch%d-%d-%d"%(ch,subNum,idx2))
+                    print ("Drawn: h0-Ch%d-%d-%d"%(ch,subNum,idx2))
+                # For each energy range and each cut, get number of events and fill to list
+                # for idx3, eRange in enumerate(EnergyList):
+                # cutMatrix.append([])
+                #     cutMatrix[idx2].append( float(skimTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
 
         # Create dataframe, add two additional columns with channel # and cut range
-        dfList.append( pd.DataFrame(np.transpose(np.array(cutMatrix)), columns = cutNames) )
-        dfList[idx].loc[:,'Channel'] = ch
-        dfList[idx].loc[:, 'Energy Range'] = pd.Series(EnergyList, index=dfList[idx].index)
+        # dfList.append( pd.DataFrame(np.transpose(np.array(cutMatrix)), columns = cutNames) )
+        # dfList[idx].loc[:,'Channel'] = ch
+        # dfList[idx].loc[:, 'Energy Range'] = pd.Series(EnergyList, index=dfList[idx].index)
 
-    dfTot = pd.concat(dfList)
-    dfTot.to_csv("%s/SpecList.csv"%(outDir), sep='\t')
+    # dfTot = pd.concat(dfList)
+    # dfTot.to_csv("%s/SpecList.csv"%(outDir), sep='\t')
 
     # Merge histograms into a list of histograms per cut
     if specMode:
         ROOT.gStyle.SetOptStat(0)
         c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
         c1.SetLogy()
-        leg1 = ROOT.TLegend(0.6, 0.6, 0.89, 0.89)
+        leg1 = ROOT.TLegend(0.35, 0.8, 0.65, 0.89)
         leg1.SetBorderSize(0)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
-            hList[idx2] = hDict[chList[0]][idx2]
-            for idx, ch in enumerate(chList[1:]):
-                hList[idx2].Add(hDict[ch][idx2])
+            hList[idx2] = hDict[chList[0]][0][idx2]
+            for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
+                for idx, ch in enumerate(chList[1:]):
+                    hList[idx2].Add(hDict[ch][subNum][idx2])
 
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
-            hList[idx2].GetYaxis().SetTitle("Counts/ %d keV"%((upper-lower)/bins))
-            hList[idx2].SetLineColorAlpha(idx2+1, 0.5)
+            hList[idx2].GetYaxis().SetTitle("Counts/ %.1f keV"%(float((upper-lower)/bins)))
+            hList[idx2].SetMinimum(0.1) # Arbitrary unit right now...
+            hList[idx2].SetLineColorAlpha(idx2+1, 0.75)
             hList[idx2].Draw("SAME")
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 
         leg1.Draw()
-        c1.SaveAs("%s/SpecTest.pdf"%(outDir))
-
+        c1.SaveAs("%s/Spec_ds%d_m%d.pdf"%(outDir,dsNum,modNum))
+        c1.SaveAs("%s/Spec_ds%d_m%d.C"%(outDir,dsNum,modNum))
 
 if __name__ == "__main__":
     main(sys.argv[1:])

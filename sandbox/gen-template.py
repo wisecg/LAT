@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 from pysiggen import Detector
 import numpy as np
 import matplotlib.pyplot as plt

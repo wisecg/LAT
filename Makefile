@@ -1,7 +1,7 @@
 include $(MGDODIR)/buildTools/config.mk
 
 # Give the list of applications, which must be the stems of cc files with 'main'.
-APPS = skim_mjd_data wave-skim ds_livetime auto-thresh specFit validate_skim
+APPS = skim_mjd_data wave-skim ds_livetime auto-thresh validate_skim
 
 # Stuff needed by BasicMakefile
 SHLIB =
@@ -10,7 +10,7 @@ TAMDIR ?= $(ROOTSYS)
 SOURCESSCRATCH = $(wildcard *.cc)
 
 # Add RooFit stuff
-INCLUDEFLAGS = $(shell root-config --libs) -lRooFit -lRooFitCore -lMinuit
+# INCLUDEFLAGS = $(shell root-config --libs) -lRooFit -lRooFitCore -lMinuit
 
 # Add MJSW stuff
 

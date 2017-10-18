@@ -1,5 +1,4 @@
-#!/usr/common/usg/software/python/2.7.9/bin/python
-#!/usr/local/bin/python
+#!/usr/bin/env python
 """
 ========================= job-panda.py ========================
 A cute and adorable way to do various low-energy processing tasks.
@@ -732,21 +731,37 @@ def pushOneRun():
     #     sh(""" qsub -l h_vmem=2G qsub-job.sh '%s'""" % (jobStr))
 
 
-def tuneCuts(argString,dsNum=None):
+def tuneCuts(argString, dsNum=None):
     """ ./job-panda.py -tuneCuts '[argString]' -- run over all ds's
         ./job-panda.py -ds [dsNum] -tuneCuts '[argString]' -- just one DS
 
-    Submit a bunch of tuneCuts.py jobs to the queues.
-    Make sure to put argString in quotes.
-    Options for argString:
-        -f (fastMode), -bcMax, -noiseWeight, -bcTime, -tailSlope, -fitSlo
-    """
-    if dsNum == None:
-        for i in range(6):
-            sh("""qsub -l h_vmem=2G qsub-job.sh './tuneCuts.py %d %s'""" % (i, argString))
-    else:
-        sh("""qsub -l h_vmem=2G qsub-job.sh './tuneCuts.py %d %s'""" %(dsNum,argString))
+    Submit a bunch of lat3.py jobs to the queues.
+    NOTE:
+        1) If processing individual dataset, the -ds option MUST come before -tuneCuts.
+        2) Make sure to put argString in quotes.
+        3) argString may be multiple options separated by spaces
 
+    Options for argString:
+        -all, -bcMax, -noiseWeight, -bcTime, -tailSlope, -fitSlo, -riseNoise
+    """
+    calInfo = ds.CalInfo()
+    if dsNum==None:
+        for i in ds.dsMap.keys():
+            if i == 6: continue
+            for mod in [1,2]:
+                try:
+                    for j in range(calInfo.GetIdxs("ds%d_m%d"%(i, mod))):
+                        print "%s './lat3.py -d %s -s %d %d %d %s -pd" % (qsubStr, calLatDir, i, j, mod, argString)
+                        sh("""%s './lat3.py -d %s -s %d %d %d %s -pd '""" % (qsubStr, calLatDir, i, j, mod, argString))
+                except: continue
+    # -ds
+    else:
+        for mod in [1,2]:
+            try:
+                for j in range(calInfo.GetIdxs("ds%d_m%d"%(dsNum, mod))):
+                    print "%s './lat3.py -d %s -s %d %d %d %s -pd" % (qsubStr, calLatDir, dsNum, j, mod, argString)
+                    sh("""%s './lat3.py -d %s -s %d %d %d %s -pd '""" % (qsubStr, calLatDir, dsNum, j, mod, argString))
+            except: continue
 
 def applyChannelCut(dsNum,ch):
     """ ./job-panda.py -applyChannelCut [dsNum] [ch]
