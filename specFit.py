@@ -552,8 +552,6 @@ def calculate_g_ae():
     # print "Axion events:",axPDF.expectedEvents(ROOT.RooArgSet(axPDF))
 
 
-
-
 def plotContours():
 
     par1, par2 = "amp-41Ca", "amp-36Cl"
