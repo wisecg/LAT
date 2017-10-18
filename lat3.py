@@ -6,13 +6,16 @@
 Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
 
 Usage Examples:
-    All cuts:
-        ./lat3.py -s DS subDS Module -all -d /path/to/calib/files
+    Tuning all cuts:
+        ./lat3.py -tune -db -s DS subDS Module -all -d /path/to/calib/files
     Specific cut and/or channel:
-        ./lat3.py -s DS subDS Module -ch channel -bcMax -d /path/to/calib/files
+        ./lat3.py -tune -db -s DS subDS Module -ch channel -bcMax -d /path/to/calib/files
     Custom cut:
-        ./lat3.py -s DS subDS Module -Custom "bcMax/bcMin" -d /path/to/calib/files
-    Database
+        ./lat3.py -tune -db -s DS subDS Module -Custom "bcMax/bcMin" -d /path/to/calib/files
+
+
+    Applying cuts:
+        ./lat3.py -cut -db -s DS subDS Module -d /path/to/bkg/files
 
 
 v1: 03 Oct 2017
