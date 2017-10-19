@@ -20,7 +20,7 @@ def main(argv):
     dsNum, modNum, chNum = -1, -1, -1
     skimTree = ROOT.TChain("skimTree")
     bins,lower,upper = 1250,0,250
-
+    outFile = ROOT.TFile()
     for i,opt in enumerate(argv):
         if opt == "-spec":
             specMode = True
@@ -85,6 +85,9 @@ def main(argv):
     # cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
     dfList = []
 
+    if specMode:
+        outFile = ROOT.TFile("%s/CalibHistograms_DS%d.root"%(outDir, dsNum), "RECREATE")
+
     for idx,ch in enumerate(chList):
         # Create new key for dictionaries according to channel
         hDict[ch] = []
@@ -143,6 +146,7 @@ def main(argv):
 
     # Merge histograms into a list of histograms per cut
     if specMode:
+        outFile.cd()
         ROOT.gStyle.SetOptStat(0)
         c1 = ROOT.TCanvas("c1", "c1", 1100, 800)
         c1.SetLogy()
@@ -153,6 +157,7 @@ def main(argv):
             hList[idx2] = hDict[chList[0]][0][idx2]
             for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
                 for idx, ch in enumerate(chList[1:]):
+                    hDict[ch][subNum][idx2].Write()
                     hList[idx2].Add(hDict[ch][subNum][idx2])
 
             hList[idx2].SetTitle("")
@@ -166,6 +171,8 @@ def main(argv):
         leg1.Draw()
         c1.SaveAs("%s/Spec_ds%d_m%d.pdf"%(outDir,dsNum,modNum))
         c1.SaveAs("%s/Spec_ds%d_m%d.C"%(outDir,dsNum,modNum))
+
+        outFile.Close()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
