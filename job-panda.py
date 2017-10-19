@@ -751,16 +751,16 @@ def tuneCuts(argString, dsNum=None):
             for mod in [1,2]:
                 try:
                     for j in range(calInfo.GetIdxs("ds%d_m%d"%(i, mod))):
-                        print "%s './lat3.py -d %s -s %d %d %d %s -pd" % (qsubStr, calLatDir, i, j, mod, argString)
-                        sh("""%s './lat3.py -d %s -s %d %d %d %s -pd '""" % (qsubStr, calLatDir, i, j, mod, argString))
+                        print "%s './lat3.py -db -tune %s -s %d %d %d %s" % (qsubStr, calLatDir, i, j, mod, argString)
+                        sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (qsubStr, calLatDir, i, j, mod, argString))
                 except: continue
     # -ds
     else:
         for mod in [1,2]:
             try:
                 for j in range(calInfo.GetIdxs("ds%d_m%d"%(dsNum, mod))):
-                    print "%s './lat3.py -d %s -s %d %d %d %s -pd" % (qsubStr, calLatDir, dsNum, j, mod, argString)
-                    sh("""%s './lat3.py -d %s -s %d %d %d %s -pd '""" % (qsubStr, calLatDir, dsNum, j, mod, argString))
+                    print "%s './lat3.py -db -tune %s -s %d %d %d %s" % (qsubStr, calLatDir, dsNum, j, mod, argString)
+                    sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (qsubStr, calLatDir, dsNum, j, mod, argString))
             except: continue
 
 def applyChannelCut(dsNum,ch):

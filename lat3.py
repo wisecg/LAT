@@ -126,7 +126,7 @@ def main(argv):
         for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
     elif fCut:
         # Add Background Data
-        skimTree.Add("%s/latSkimDS%d_%d_*"%(pathToInput, dsNum, subNum))
+        skimTree.Add("%s/latSkimDS%d_%d_0.root"%(pathToInput, dsNum, subNum))
     else:
         print "Tune or Cut option not set"
         return
@@ -175,14 +175,16 @@ def main(argv):
     if fCut:
         megaCut = MakeCutList(cInfo, skimTree, theCut, dsNum, modNum, chList)
         print megaCut
-        # outFile = TFile(pathToOutput+"latCutSkimDS%d_%d.root"%(dsNum,subNum),"RECREATE")
-        # outTreeList = []
-        # for idx, ch in enumerate(chList):
-            # outTreeList.append(TTree())
-            # outTreeList[idx] = skimTree.CopyTree(theCut+megaCut[ch])
-            # outTreeList[idx] = skimTree.CopyTree(theCut)
-            # outTreeList[idx].Write()
-        # outFile.Close()
+        for idx, ch in enumerate(chList):
+            print theCut+'&&'+megaCut[ch][2:]
+            outFile = TFile(pathToOutput+"latCutSkimDS%d_%d_ch%d.root"%(dsNum,subNum,ch),"RECREATE")
+            outTree = TTree()
+            outTree = skimTree.CopyTree(theCut+'&&'+megaCut[ch][2:])
+            outTree.Write()
+            # cutUsed = ROOT.TNamed("theCut_ch%d_idx%d"%(ch,subNum),theCut+'&&'+megaCut[ch][2:])
+            cutUsed = ROOT.TNamed("theCut",theCut+'&&'+megaCut[ch][2:])
+            cutUsed.Write()
+            outFile.Close()
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -289,14 +291,16 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
         for subNum in range(idxMin,idxMax+1):
             fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
             rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+            bcD = wl.getDBCalRecord("bcMax_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
             runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
             for ch in chList:
                 if ch in megaCut.keys():
-                    megaCut[ch] += '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][4])
+                    megaCut[ch] += '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][2])
                 else:
-                    megaCut[ch] = '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][4])
+                    megaCut[ch] = '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][2])
     elif mode == 'csv':
         print('Not implemented!')
+        return 0
 
     return megaCut
 
