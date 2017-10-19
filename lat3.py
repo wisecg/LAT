@@ -51,6 +51,7 @@ def main(argv):
     for i, opt in enumerate(argv):
         # -- Cut tuning options --
         if opt == "-all":
+            parList.append('bcMax'), parNameList.append('bcMax')
             parList.append('pol2'), parNameList.append('pol2')
             parList.append('pol3'), parNameList.append('pol3')
             parList.append('fitSlo'), parNameList.append('fitSlo')
@@ -153,8 +154,10 @@ def main(argv):
     # -- Tune cuts --
     if fTune:
         tunedPars = {}
-        tuneRange = [[236, 240], [5, 50]]
-        tuneNames = ["Peak", "Continuum"]
+        # tuneRange = [[236, 240], [5, 50], [50, 100], [100, 150], [150, 200]]
+        # tuneNames = ["Peak", "Continuum", "Continuum2", "Continuum3", "Continuum4"]
+        tuneRange = [[50, 100], [100, 150], [150, 200]]
+        tuneNames = ["Continuum2", "Continuum3", "Continuum4"]
         for par, parName in zip(parList, parNameList):
             for tRange, tName in zip(tuneRange, tuneNames):
                 cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
