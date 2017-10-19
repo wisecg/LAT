@@ -114,7 +114,7 @@ def main(argv):
             runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
             # pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
             # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
-            fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
+            fitSloCut = "&&fitSlo<%.2f" % (0.8*dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
             riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
 
             PSA1 = channelCut + runCut + riseNoiseCut
