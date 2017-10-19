@@ -166,7 +166,7 @@ def main(argv):
                 if fCSV:
                     dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                     dummyDict2 = dict(dummyDict.items() + cutDict.items())
-                dfList.append(pd.DataFrame(dummyDict2))
+                    dfList.append(pd.DataFrame(dummyDict2))
         if fCSV:
             dfTot = pd.concat(dfList)
             dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
