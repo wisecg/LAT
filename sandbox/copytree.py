@@ -3,6 +3,25 @@ from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed
 
 def main():
 
+    simpleCopy()
+    # complicatedCopy()
+
+
+def simpleCopy():
+
+    inFile = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS1_0_0.root")
+    skimTree = inFile.Get("skimTree")
+
+    outFile = TFile("test.root", "RECREATE")
+    outTree = TTree()
+    outTree = skimTree.CopyTree("")
+
+    outTree.Write()
+    outFile.Close()
+
+
+def complicatedCopy():
+
     gFile = TFile("~/project/mjddatadir/gatified/mjd_run13071.root")
     bFile = TFile("~/project/mjddatadir/built/OR_run13071.root")
     gatTree = gFile.Get("mjdTree")
