@@ -129,8 +129,8 @@ def main(argv):
             for idx2,cuts in enumerate(cutList):
                 if specMode:
                     hDict[ch][subNum].append(ROOT.TH1D())
-                    hDict[ch][subNum][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0-Ch%d-%d-%d"%(ch,subNum,idx2))
-                    print ("Drawn: h0-Ch%d-%d-%d"%(ch,subNum,idx2))
+                    hDict[ch][subNum][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0_Ch%d_%d_%d"%(ch,subNum,idx2))
+                    print ("Drawn: h0_Ch%d_%d_%d"%(ch,subNum,idx2))
                 # For each energy range and each cut, get number of events and fill to list
                 # for idx3, eRange in enumerate(EnergyList):
                 # cutMatrix.append([])
