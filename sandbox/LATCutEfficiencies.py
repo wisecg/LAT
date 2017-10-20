@@ -93,8 +93,8 @@ def main(argv):
         hDict[ch] = []
         # Create dummy list and series to store into DataFrame later
         cutMatrix = {}
-
-        channelCut = "channel==%d" % (ch)
+        # Set high gain only!
+        channelCut = "channel==%d && gain==0" % (ch)
 
         # Get threshold info
         # goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)
