@@ -117,7 +117,7 @@ def main(argv):
             runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
             # pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
             # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
-            fitSloCut = "&&fitSlo<%.2f" % (0.8*dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
+            fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
             riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
 
             PSA1 = channelCut + runCut + riseNoiseCut
@@ -162,9 +162,9 @@ def main(argv):
 
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
-            hList[idx2].GetYaxis().SetTitle("Counts/ %.1f keV"%(float((upper-lower)/bins)))
-            hList[idx2].SetMinimum(0.1) # Arbitrary unit right now...
-            hList[idx2].SetLineColorAlpha(idx2+1, 0.75)
+            hList[idx2].GetYaxis().SetTitle("Counts/ %.1f keV"%(float((upper-lower)/bins)) )
+            # hList[idx2].SetMinimum(0.1) # Arbitrary unit right now...
+            hList[idx2].SetLineColorAlpha(idx2+1)
             hList[idx2].Draw("SAME")
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
 

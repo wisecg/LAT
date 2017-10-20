@@ -182,10 +182,10 @@ def main(argv):
             print theCut+'&&'+megaCut[ch][2:]
             outFile = TFile(pathToOutput+"latCutSkimDS%d_%d_ch%d.root"%(dsNum,subNum,ch),"RECREATE")
             outTree = TTree()
-            outTree = skimTree.CopyTree(theCut+'&&'+megaCut[ch][2:])
+            outTree = skimTree.CopyTree(theCut+'&&gain==0&&'+megaCut[ch][2:])
             outTree.Write()
             # cutUsed = ROOT.TNamed("theCut_ch%d_idx%d"%(ch,subNum),theCut+'&&'+megaCut[ch][2:])
-            cutUsed = ROOT.TNamed("theCut",theCut+'&&'+megaCut[ch][2:])
+            cutUsed = ROOT.TNamed("theCut",theCut+'&&gain==0&&'+megaCut[ch][2:])
             cutUsed.Write()
             outFile.Close()
 
