@@ -9,7 +9,8 @@ def main():
 
 def simpleCopy():
 
-    inFile = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS1_0_0.root")
+    # inFile = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS1_0_0.root")
+    inFile = TFile("/Users/wisecg/project/bg-lat/latSkimDS1_0_0.root")
     skimTree = inFile.Get("skimTree")
 
     outFile = TFile("test.root", "RECREATE")

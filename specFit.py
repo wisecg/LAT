@@ -60,11 +60,11 @@ def main(argv):
         # "ax_S_Kb1":2.464
         }
 
-    # getSpecPDFs()
+    getSpecPDFs()
     # runFit()
     # plotSpectrum()
-    calculate_g_ae()
     # plotProfiles()
+    # calculate_g_ae()
     # plotContours()
     # plotMCSpectrum()
     # runMCStudy()
@@ -98,11 +98,13 @@ def getSpecPDFs():
         for line in lines:
             data = line.split()
             axData.append([float(data[0]),float(data[1])])
+
     with open("./data/ge76peXS.txt") as f2: # 2499 entries, 0.01 kev intervals
         lines = f2.readlines()
         for line in lines:
             data = line.split()
             phoData.append([float(data[0]),float(data[1])])
+
     with open("./data/TritiumSpectrum.txt") as f3: # 20000 entries
         lines = f3.readlines()[1:]
         for line in lines:
@@ -110,6 +112,7 @@ def getSpecPDFs():
             conv = float(data[2]) # raw spectrum convolved w/ ge cross section
             if conv < 0: conv = 0.
             tritData.append([float(data[1]),conv])
+
     axData, phoData, tritData = np.array(axData), np.array(phoData), np.array(tritData)
 
     # -- open an output file --
@@ -151,13 +154,12 @@ def getSpecPDFs():
         idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
         axFlux = np.mean(axData[idx][:,1])
         if np.isnan(axFlux): axFlux = 0.
-        axFlux = axFlux * (1e19 / np.power(0.511e-10, 2.) / 86400)
         hAxionFlux.SetBinContent(i, axFlux)
 
         axo = pho * np.power(ene,2.) * 2.088e-5
         hAxio.SetBinContent(i, axo)
 
-        axConv = axFlux * axo
+        axConv = axFlux * axo # scaling happens later
         hAxionConv.SetBinContent(i, axConv)
 
         # make brems curve: x^0.89 Exp[-0.7 x - 1.26 Sqrt[x]]
@@ -168,18 +170,6 @@ def getSpecPDFs():
 
         # print ene, pho, trit, axFlux, axConv, bremFlux, bremConv
 
-    # are any bins zero?  idk if that would mess up a RooDataHist
-    # for i in range(hPhoto.GetNbinsX()):
-    #     print hPhoto.GetBinContent(i)
-
-    # write to file.
-    hPhoto.Write()
-    hTritium.Write()
-    hAxionFlux.Write()
-    hAxionConv.Write()
-    # hBremFlux.Write()
-    # hBremConv.Write()
-
 
     # -- diagnostic plots --
 
@@ -188,21 +178,24 @@ def getSpecPDFs():
     c.SetLogy()
     c.SetGrid()
     hAxionFlux.SetTitle(" ")
-    hAxionFlux.SetMinimum(2e32)
-    hAxionFlux.SetMaximum(1.2e35)
+
+    hAxionFlux.Scale(1e19/(np.power(0.511e-10,2.) * 86400)) # to match graham's thesis plot
+    # hAxionFlux.SetMinimum(2e32)
+    # hAxionFlux.SetMaximum(1.2e35)
     hAxionFlux.GetXaxis().SetRangeUser(0.1,13.)
     hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
     hAxionFlux.GetYaxis().SetTitle("Flux (cts / (cm^{2} s^{1} keV) )")
     hAxionFlux.SetLineColor(ROOT.kBlue)
     hAxionFlux.Draw("hist")
     c.Print("./plots/axionFlux.pdf")
+    c.Clear()
 
     # check the units of the photoelectric cross section are in cm^2/g
     hPhoto.SetTitle(" ")
     hPhoto.GetXaxis().SetTitle("Energy (keV)")
     hPhoto.GetYaxis().SetTitle("#sigma_{pe} (cm^{2}/g)")
-    # hPhoto.Scale(1./1000.) # undo the /kg conversion
-    # print hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(1.74)) # should be about 4412 and is
+    hPhoto.Scale(1/1000.) # undo the conversion to kg
+    # phoTest = hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(1.74)) # should be about 4412
     hPhoto.Draw("hist")
     c.Print("./plots/photoElectric.pdf")
 
@@ -217,31 +210,51 @@ def getSpecPDFs():
 
     # final axion spectrum, with integral for expected counts
     hAxionConv.GetXaxis().SetRangeUser(0.5, 12.)
+    hAxionConv.Scale((89.5 * 1e19 * 1000) / (np.power(0.511e-10, 2.)))
+
     hAxionConv.SetTitle(" ")
     hAxionConv.GetXaxis().SetTitle("Energy (keV)")
-    hAxionConv.GetYaxis().SetTitle("Counts / keV / s / kg")
+    hAxionConv.GetYaxis().SetTitle("Counts / keV")
     hAxionConv.Draw("hist")
 
-    eLoLine = TLine(eLo,0.,eLo,5e37)
-    eLoLine.SetLineColor(ROOT.kRed)
-    eLoLine.SetLineWidth(2)
-    eLoLine.Draw("same")
-    eHiLine = TLine(eHi,0.,eHi,5e37)
-    eHiLine.SetLineColor(ROOT.kRed)
-    eHiLine.SetLineWidth(2)
-    eHiLine.Draw("same")
+    # ymin, ymax = 2e44, 5e47
+    # hAxionConv.SetMinimum(ymin)
+    # hAxionConv.SetMaximum(ymax)
+    # eLoLine = TLine(eLo, ymin, eLo, ymax)
+    # eLoLine.SetLineColor(ROOT.kRed)
+    # eLoLine.SetLineWidth(2)
+    # eLoLine.Draw("same")
+    # eHiLine = TLine(eHi, ymin, eHi, ymax)
+    # eHiLine.SetLineColor(ROOT.kRed)
+    # eHiLine.SetLineWidth(2)
+    # eHiLine.Draw("same")
 
-    hAxionConv.SetMinimum(3e34)
-    hAxionConv.SetMaximum(5e37)
     c.Print("./plots/axionConv.pdf")
 
     xax = hAxionConv.GetXaxis()
-    xint = hAxionConv.Integral(xax.FindBin(eLo), xax.FindBin(eHi))
-    malbekExposure = 89.5 # kg-d
-    N_expected = malbekExposure * 86400 * xint
-    print "N_expected:",N_expected
+    N_expected = hAxionConv.Integral(xax.FindBin(eLo), xax.FindBin(eHi))
+    # print "N_expected:",N_expected
 
+    # reproduce the numbers in frank's tables
+    eTest = 1.74
+    phoTest = hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(eTest)) # should be about 4412 YES
+    phoConv = phoTest * 72.64 / 6.022e23 # should be about 5.3e-19 YES
+    axoTest = hAxio.GetBinContent(hAxio.GetXaxis().FindBin(eTest))
+    axoTest = axoTest * (1000/120.5)
+
+    (1000/120.5) / (6.022e23 * 1000)
+    print axoTest
+
+
+    # write to file.
+    hPhoto.Write()
+    hTritium.Write()
+    hAxionFlux.Write()
+    hAxionConv.Write()
+    # hBremFlux.Write()
+    # hBremConv.Write()
     f4.Close()
+
     return N_expected
 
 
@@ -301,8 +314,8 @@ def runFit():
             pdfList.add(thisPk.GetPkExt())
 
     # axion continuum
-    # axNum = ROOT.RooRealVar("amp-axion","amp-axion",100., 0., 10000.)
-    axNum = ROOT.RooRealVar("amp-axion","amp-axion",10.686)
+    axNum = ROOT.RooRealVar("amp-axion","amp-axion",100., 0., 10000.)
+    # axNum = ROOT.RooRealVar("amp-axion","amp-axion",16.904) # hardcode the profile upper limit
     f2 = TFile("./data/inputHists.root")
     axTH1D = f2.Get("hAxionConv")
     axDataHist = ROOT.RooDataHist("ax", "ax", ROOT.RooArgList(fEnergy), RF.Import(axTH1D))
@@ -486,7 +499,7 @@ def plotProfiles():
 
         # Brian & Clint method
         plc = RS.ProfileLikelihoodCalculator(fData, model, ROOT.RooArgSet(thisVar))
-        plc.SetConfidenceLevel(0.683)
+        plc.SetConfidenceLevel(0.90)
         interval = plc.GetInterval()
         lower = interval.LowerLimit(thisVar)
         upper = interval.UpperLimit(thisVar)
@@ -534,20 +547,9 @@ def plotProfiles():
 def calculate_g_ae():
 
     N_expected = getSpecPDFs()
-
-    # # load workspace
-    # f = TFile("./data/fitWorkspace.root")
-    # fitWorkspace = f.Get("fitWorkspace")
-    # fData = fitWorkspace.allData().front()
-    # fitResult = fitWorkspace.allGenericObjects().front()
-    # nPars = fitResult.floatParsFinal().getSize()
-    # fEnergy = fitWorkspace.var("energy_keV")
-    # modelPDF = fitWorkspace.pdf("model")
-    # # fitWorkspace.Print()
-    #
-    # axPDF = fitWorkspace.pdf("ext-axion")
-    # print "Total expected events:",modelPDF.expectedEvents(ROOT.RooArgSet(modelPDF))
-    # print "Axion events:",axPDF.expectedEvents(ROOT.RooArgSet(axPDF))
+    N_observed = 16.904 # profile U.L.
+    # N_observed = 40.8
+    print "g_ae U.L.:", np.power(N_observed/N_expected, 1./4.)
 
 
 def plotContours():
