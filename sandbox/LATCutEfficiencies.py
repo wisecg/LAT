@@ -85,7 +85,6 @@ def main(argv):
     # cutNames = ["BasicCut", "+tailSlope", "+riseNoise", "+fitSlo"]
     cutNames = ["BasicCut", "+riseNoise", "+fitSlo"]
     # cutNames = ["BasicCut", "+tailSlope", "+bcMax", "+fitSlo"]
-    dfList = []
 
     if specMode:
         outFile = ROOT.TFile("%s/CalibHistograms_DS%d.root"%(outDir, dsNum), "RECREATE")
@@ -98,16 +97,6 @@ def main(argv):
         rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
         bcD = wl.getDBCalRecord("bcMax_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
 
-        for idx,ch in enumerate(chList):
-            # Create new key for dictionaries according to channel
-            hDict[ch] = []
-            # Create dummy list and series to store into DataFrame later
-            cutMatrix = {}
-            # Set high gain only!
-            channelCut = "channel==%d&&gain==0" % (ch)
-            # Create new array for each subDS
-            hDict[ch].append([])
-
         # Get threshold info
         # goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)
         # threshrunCut = "&&("
@@ -116,16 +105,16 @@ def main(argv):
         #     # Strip all spaces to save space
         #     totalCut = megaCut.replace(" ", "") + threshrunCut[:-2] + ")"
 
-            # CSV style
-            # Create separate dataframe for each subNum -- excess?
-            # dfSub = dfTot[dfTot.SubDS == subNum]
-            # dfSub = dfTot.query("SubDS == %d")
-            # dfSub.set_index('Cut', inplace=True)
+        # Create new key for dictionaries according to subNum
+        hDict[subNum] = []
 
-            # pol2Cut = "&&pol2>%.2e&&pol2<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol2','%d'%(ch)][4])
-            # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
-            # fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
-            # riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
+        for idx,ch in enumerate(chList):
+            # Append empty list for every subNum to store channel-based
+            hDict[subNum].append([])
+
+            # Set high gain only!
+            channelCut = "channel==%d&&gain==0" % (ch)
+            # Create new array for each subDS
             riseNoiseCut, fitSloCut = "", ""
             if rnD[ch][2] == 0 or fsD[ch][2] == 0:
                 continue
@@ -142,21 +131,9 @@ def main(argv):
 
             for idx2,cuts in enumerate(cutList):
                 if specMode:
-                    hDict[ch][subNum].append(ROOT.TH1D())
-                    hDict[ch][subNum][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0_Ch%d_%d_%d"%(ch,subNum,idx2))
-                    print ("Drawn: h0_Ch%d_%d_%d"%(ch,subNum,idx2))
-                # For each energy range and each cut, get number of events and fill to list
-                # for idx3, eRange in enumerate(EnergyList):
-                # cutMatrix.append([])
-                #     cutMatrix[idx2].append( float(skimTree.GetEntries(cuts+"&&trapENFCal>%.1f&&trapENFCal<%.1f"%(eRange[0], eRange[1])) ) )
-
-        # Create dataframe, add two additional columns with channel # and cut range
-        # dfList.append( pd.DataFrame(np.transpose(np.array(cutMatrix)), columns = cutNames) )
-        # dfList[idx].loc[:,'Channel'] = ch
-        # dfList[idx].loc[:, 'Energy Range'] = pd.Series(EnergyList, index=dfList[idx].index)
-
-    # dfTot = pd.concat(dfList)
-    # dfTot.to_csv("%s/SpecList.csv"%(outDir), sep='\t')
+                    hDict[subNum][ch].append(ROOT.TH1D())
+                    hDict[subNum][ch][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0_%d_Ch%d_%d"%(subNum,ch,idx2))
+                    print ("Drawn: h0_%d_Ch%d_%d"%(subNum,ch,idx2))
 
     # Merge histograms into a list of histograms per cut
     if specMode:
@@ -168,11 +145,11 @@ def main(argv):
         leg1.SetBorderSize(0)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
-            hList[idx2] = hDict[chList[0]][0][idx2]
+            hList[idx2] = hDict[0][chList[0]][idx2]
             for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
                 for idx, ch in enumerate(chList[1:]):
-                    hDict[ch][subNum][idx2].Write()
-                    hList[idx2].Add(hDict[ch][subNum][idx2])
+                    hDict[subNum][ch][idx2].Write()
+                    hList[idx2].Add(hDict[subNum][ch][idx2])
 
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
@@ -181,7 +158,6 @@ def main(argv):
             hList[idx2].SetLineColor(idx2+1)
             hList[idx2].Draw("SAME")
             leg1.AddEntry(hList[idx2], "%s"%cutNames[idx2] , "l")
-
         leg1.Draw()
         c1.SaveAs("%s/Spec_ds%d_m%d.pdf"%(outDir,dsNum,modNum))
         c1.SaveAs("%s/Spec_ds%d_m%d.C"%(outDir,dsNum,modNum))
