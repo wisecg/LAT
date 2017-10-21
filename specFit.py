@@ -60,7 +60,8 @@ def main(argv):
         # "ax_S_Kb1":2.464
         }
 
-    getSpecPDFs()
+    checkRedondo()
+    # getSpecPDFs()
     # runFit()
     # plotSpectrum()
     # plotProfiles()
@@ -87,9 +88,59 @@ def getRooArgDict(arglist):
     return pkVals
 
 
+def checkRedondo():
+
+    # reproduce figure 2 in : https://arxiv.org/pdf/1310.0823v1.pdf
+
+    axData = []
+    with open("./data/redondoFlux.txt") as f1: # 23577 entries
+        lines = f1.readlines()[11:]
+        for line in lines:
+            data = line.split()
+            axData.append([float(data[0]),float(data[1])])
+    axData = np.array(axData)
+    kevPerBin = 0.02
+    nBins = int(10./kevPerBin)
+    h1 = TH1D("h1","h1",nBins, 0., 10.)
+    for i in range(nBins):
+        # make this energy the midpoint of the bin
+        ene = i * kevPerBin
+        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
+        idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
+        axFlux = np.mean(axData[idx][:,1])
+        if np.isnan(axFlux): axFlux = 0.
+        h1.SetBinContent(i, axFlux)
+
+    c = TCanvas("c","Bob Ross' Canvas",800,800)
+    c.SetLogy(0)
+    c.SetGrid(1,1)
+
+    # redondoScale = 365 * (1./0.511**2.) * (1e-3) # YES, but arbitrary
+
+    redondoScale = 1e19 * 0.511e-10**-2 * 365 * 1e4 # all required factors
+    redondoScale *= 1e-46                           # magic scale parameter
+    h1.Scale(redondoScale)
+
+    # h1.GetYaxis().SetTitle("flux (10^{-46} keV^{-1} year^{-1} m^{-2}) ")
+    h1.GetXaxis().SetRangeUser(0.,10.)
+    h1.SetLineColor(ROOT.kBlue)
+    h1.SetLineWidth(2)
+    h1.GetXaxis().SetTitle("Energy (keV)")
+    h1.SetTitle(" ")
+    h1.Draw("hist")
+    c.Print("./plots/jcap2AxionFlux.pdf")
+
+    return
+
+
+
+
+
+
 def getSpecPDFs():
     """ Return a set of TH1D's to be turned into RooDataHist objects.
         Make the binning 0.01 keV intervals - hopefully that's fine enough.
+        TODO: BDM/ALP pdf Get from Kris's analysis in GAT
         TODO: WIMP pdf?  Get PyWIMP from Graham
     """
     axData, phoData, tritData = [], [], []
@@ -118,21 +169,19 @@ def getSpecPDFs():
     # -- open an output file --
     f4 = TFile("./data/inputHists.root","RECREATE")
 
-    # set the energy range from 0 to 50 (hardcoded)
+    # set the energy range from 0 to 50
     kevPerBin = 0.02
-    nBins = int((50.)/kevPerBin + 0.5)
+    nBins = int(50./kevPerBin)
     hPhoto = TH1D("hPhoto","hPhoto",nBins, 0., 50.)
     hAxio = TH1D("hAxio","hAxio",nBins, 0., 50.)
     hTritium = TH1D("hTritium","hTritium",nBins, 0., 50.)
     hAxionFlux = TH1D("hAxionFlux","hAxionFlux",nBins, 0., 50.)
     hAxionConv = TH1D("hAxionConv","hAxionConv",nBins, 0., 50.)
-    # hBremFlux = TH1D("hBremFlux","hBremFlux",nBins, 0., 50.)
-    # hBremConv = TH1D("hBremConv","hBremConv",nBins ,0., 50.)
 
     for i in range(nBins):
 
         # make this energy the midpoint of the bin
-        ene = float(i)/nBins/kevPerBin
+        ene = i * kevPerBin
         eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
 
         # get the average value of column 1 for a range of energies (column 0)
@@ -162,35 +211,59 @@ def getSpecPDFs():
         axConv = axFlux * axo # scaling happens later
         hAxionConv.SetBinContent(i, axConv)
 
-        # make brems curve: x^0.89 Exp[-0.7 x - 1.26 Sqrt[x]]
-        # bremFlux = np.power(ene,0.89) * np.exp(-0.8 * ene - 1.26 * np.sqrt(ene))
-        # bremConv = bremFlux * pho
-        # hBremFlux.SetBinContent(i, bremFlux)
-        # hBremConv.SetBinContent(i, bremConv)
-
         # print ene, pho, trit, axFlux, axConv, bremFlux, bremConv
+
+    # are any bins zero?  check.
+    # for i in range(nBins):
+        # print hAxio.GetBinContent(i)
 
 
     # -- diagnostic plots --
 
-    # reproduce graham's thesis plot, pg. 105
-    c = TCanvas("c","Bob Ross' Canvas",800,600)
-    c.SetLogy()
-    c.SetGrid()
-    hAxionFlux.SetTitle(" ")
+    c = TCanvas("c","Bob Ross' Canvas",800,800)
+    c.SetLogy(0)
+    c.SetGrid(1,1)
 
-    hAxionFlux.Scale(1e19/(np.power(0.511e-10,2.) * 86400)) # to match graham's thesis plot
-    # hAxionFlux.SetMinimum(2e32)
-    # hAxionFlux.SetMaximum(1.2e35)
-    hAxionFlux.GetXaxis().SetRangeUser(0.1,13.)
-    hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
-    hAxionFlux.GetYaxis().SetTitle("Flux (cts / (cm^{2} s^{1} keV) )")
+    # redondoScale = 365 * (1./0.511**2.) * (1e-3) # YES, but arbitrary
+
+    redondoScale = 1e19 * 0.511e-10**-2 * 365 * 1e4 # all required factors
+    redondoScale *= 1e-46                           # magic scale parameter
+    hAxionFlux.Scale(redondoScale)
+
+    # hAxionFlux.GetYaxis().SetTitle("flux (10^{-46} keV^{-1} year^{-1} m^{-2}) ")
+    hAxionFlux.GetXaxis().SetRangeUser(0.,10.)
     hAxionFlux.SetLineColor(ROOT.kBlue)
+    hAxionFlux.SetLineWidth(2)
+    hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
+    hAxionFlux.SetTitle(" ")
     hAxionFlux.Draw("hist")
-    c.Print("./plots/axionFlux.pdf")
-    c.Clear()
+    c.Print("./plots/jcapAxionFlux.pdf")
+
+    return
+
+    # reproduce graham's thesis plot, pg. 105
+    # scaling is correct? YES.  (you have to bin it super finely to see the peak that goes over 1e35, but it's there.)
+    c.SetCanvasSize(800,600)
+    c.SetLogy(1)
+    hAxionFlux.Scale(1 / redondoScale) # undo the last plot
+
+    webScale = (1e19 / np.power(0.511e-10,2.)) * (1./86400.)
+
+    hAxionFlux.Scale(webScale)
+    hAxionFlux.SetMinimum(2.5e32)
+    hAxionFlux.SetMaximum(1.2e35)
+    hAxionFlux.GetYaxis().SetTitle("flux (cm^{-2} s^{-1} keV^{-1}) ")
+    hAxionFlux.GetXaxis().SetRangeUser(0.1,12.5)
+    hAxionFlux.SetLineColor(ROOT.kBlue)
+    hAxionFlux.SetLineWidth(2)
+    hAxionFlux.GetYaxis().SetNdivisions(112)
+    hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
+    hAxionFlux.SetTitle(" ")
+    hAxionFlux.Draw("hist")
+    c.Print("./plots/webAxionFlux.pdf")
 
     # check the units of the photoelectric cross section are in cm^2/g
+    c.SetLogy()
     hPhoto.SetTitle(" ")
     hPhoto.GetXaxis().SetTitle("Energy (keV)")
     hPhoto.GetYaxis().SetTitle("#sigma_{pe} (cm^{2}/g)")
@@ -200,9 +273,11 @@ def getSpecPDFs():
     c.Print("./plots/photoElectric.pdf")
 
     # axioelectric cross section
-    hAxio.GetXaxis().SetRangeUser(0.5, 12.)
+    hAxio.GetXaxis().SetRangeUser(0., 12.)
     hAxio.SetTitle(" ")
     hAxio.Scale(120.5 / 1000.) # convert to barns/atom (mucal)
+    hAxio.SetMinimum(1)
+    hAxio.SetMaximum(6e2)
     hAxio.GetXaxis().SetTitle("Energy (keV)")
     hAxio.GetYaxis().SetTitle("#sigma_{ae} (barns/atom)")
     hAxio.Draw("hist")
@@ -236,15 +311,17 @@ def getSpecPDFs():
     # print "N_expected:",N_expected
 
     # reproduce the numbers in frank's tables
-    eTest = 1.74
+    eTest = 6.4
     phoTest = hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(eTest)) # should be about 4412 YES
     phoConv = phoTest * 72.64 / 6.022e23 # should be about 5.3e-19 YES
     axoTest = hAxio.GetBinContent(hAxio.GetXaxis().FindBin(eTest))
-    axoTest = axoTest * (1000/120.5)
 
-    (1000/120.5) / (6.022e23 * 1000)
-    print axoTest
+    # (undo barns/atom) (convert to cm^2/atom) (undo kg conversion for pho)
+    axoTest *= (1000/120.5) * (72.64 / 6.022e23) * (1./1000.) # should be 3.36e-23 YES
 
+    axoFlux = hAxionFlux.GetBinContent(hAxionFlux.GetXaxis().FindBin(eTest))
+    axoFlux *= 86400. # (undo the /s conversion)
+    print axoFlux
 
     # write to file.
     hPhoto.Write()
