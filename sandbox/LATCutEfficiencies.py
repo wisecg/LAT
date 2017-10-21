@@ -129,7 +129,7 @@ def main(argv):
         leg1.SetBorderSize(0)
         for idx2,cuts in enumerate(cutList):
             hList.append(ROOT.TH1D())
-            hList[idx2] = hDict[0][chList[0]][idx2]
+            hList[idx2] = hDict[0][0][idx2]
             for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
                 for idx, ch in enumerate(chList[1:]):
                     hDict[subNum][idx][idx2].Write()
