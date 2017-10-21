@@ -37,12 +37,6 @@ def main(argv):
             calMode = True
             print ("Drawing Calibration runs")
 
-        if opt == "-db":
-            print "Loading from DB"
-        if opt == "-csv":
-            cutDir = argv[i+1]
-            print "Loading CSV"
-
     cInfo = ds.CalInfo()
     EnergyList = [[1.,5.], [2., 4.], [4., 9.], [9., 12.], [12., 40.], [40., 50.], [50., 100.]]
 
@@ -67,16 +61,6 @@ def main(argv):
         for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
             calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum, runLimit=10)
             for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(inDir, dsNum, i))
-
-    # -- Load cut files --
-    cutFiles = glob.glob('%s/Cuts_ds%d_*_m%d.csv'%(cutDir, dsNum, modNum))
-    cutdfList = []
-    for f in cutFiles:
-        try:
-            cutdfList.append(pd.read_csv(f))
-        except:
-            print (f, "is broken, SAD")
-    dfTot = pd.concat(cutdfList)
 
     # List of histograms (for summing together) and Dictionary of histograms (for different cuts)
     hList, hDict = [], {}
@@ -131,8 +115,8 @@ def main(argv):
 
             for idx2,cuts in enumerate(cutList):
                 if specMode:
-                    hDict[subNum][ch].append(ROOT.TH1D())
-                    hDict[subNum][ch][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0_%d_Ch%d_%d"%(subNum,ch,idx2))
+                    hDict[subNum][idx].append(ROOT.TH1D())
+                    hDict[subNum][idx][idx2] = wl.H1D(skimTree,bins, lower, upper, "trapENFCal", cuts, Title="h0_%d_Ch%d_%d"%(subNum,ch,idx2))
                     print ("Drawn: h0_%d_Ch%d_%d"%(subNum,ch,idx2))
 
     # Merge histograms into a list of histograms per cut
@@ -148,8 +132,8 @@ def main(argv):
             hList[idx2] = hDict[0][chList[0]][idx2]
             for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
                 for idx, ch in enumerate(chList[1:]):
-                    hDict[subNum][ch][idx2].Write()
-                    hList[idx2].Add(hDict[subNum][ch][idx2])
+                    hDict[subNum][idx][idx2].Write()
+                    hList[idx2].Add(hDict[subNum][idx][idx2])
 
             hList[idx2].SetTitle("")
             hList[idx2].GetXaxis().SetTitle("Energy (keV)")
