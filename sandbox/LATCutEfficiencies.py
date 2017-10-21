@@ -52,7 +52,9 @@ def main(argv):
         if dsNum==5 and modNum == 1: # remove 692 and 1232
             chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
         if dsNum==5 and modNum == 2:
-            chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+            # chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+            # Removed ch 1110, 1208, and 1332
+            chList = [1106, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1298, 1302, 1330]
     else:
         chList = [chNum]
 
@@ -124,9 +126,13 @@ def main(argv):
             # pol3Cut = "&&pol3>%.2e&&pol3<%.2e" % (dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][0], dfSub[dfSub.Range=='Peak'].loc['pol3','%d'%(ch)][4])
             # fitSloCut = "&&fitSlo<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['fitSlo','%d'%(ch)][2])
             # riseNoiseCut = "&&riseNoise<%.2f" % (dfSub[dfSub.Range=='Peak'].loc['riseNoise','%d'%(ch)][4])
+            riseNoiseCut, fitSloCut = "", ""
+            if rnD[ch][2] == 0 or fsD[ch][2] == 0:
+                continue
+            else:
+                riseNoiseCut = '&&riseNoise<%.2f'%(rnD[ch][2])
+                fitSloCut = '&&fitSlo<%.2f'%(fsD[ch][2])
 
-            riseNoiseCut = '&&riseNoise<%.2f'%(rnD[ch][2])
-            fitSloCut = '&&fitSlo<%.2f'%(fsD[ch][2])
             # Set cuts here
             PSA1 = channelCut + runCut + riseNoiseCut
             PSA2 = channelCut + runCut + riseNoiseCut + fitSloCut
