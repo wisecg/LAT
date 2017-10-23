@@ -154,10 +154,12 @@ def main(argv):
     # -- Tune cuts --
     if fTune:
         tunedPars = {}
-        # tuneRange = [[236, 240], [5, 50], [50, 100], [100, 150], [150, 200]]
-        # tuneNames = ["Peak", "Continuum", "Continuum2", "Continuum3", "Continuum4"]
-        tuneRange = [[50, 90], [90, 130], [130, 170], [170, 210]]
-        tuneNames = ["50_90", "90_130", "130_170", "170_210"]
+	tuneRange = [[236, 240]]
+	tuneNames = ["Peak"]
+        #tuneRange = [[236, 240], [5, 50], [50, 100], [100, 150], [150, 200]]
+        #tuneNames = ["Peak", "Continuum", "Continuum2", "Continuum3", "Continuum4"]
+        #tuneRange = [[50, 90], [90, 130], [130, 170], [170, 210]]
+        #tuneNames = ["50_90", "90_130", "130_170", "170_210"]
         for par, parName in zip(parList, parNameList):
             for tRange, tName in zip(tuneRange, tuneNames):
                 cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
