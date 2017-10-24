@@ -42,7 +42,7 @@ def main(argv):
 
     # get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
-    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q'),False) # make a bunch of bools
+    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q r s'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
 
         if opt == "-ds": dsNum = int(argv[i+1])
@@ -67,6 +67,8 @@ def main(argv):
         if opt == "-cal":       f['c'] = True
         if opt == "-lat2":      f['n'] = True
         if opt == "-force":     f['q'] = True
+        if opt == "-up2":       f['r'] = True
+        if opt == "-c":         f['s'] = True
 
         # one-offs
         if opt == "-purge": purgeLogs()
@@ -89,6 +91,7 @@ def main(argv):
     calList = []
     if f['c']: calList = getCalRunList(dsNum,subNum,runNum)
     if f['n']: runLAT2Cal(dsNum, subNum, f['q'])
+    if f['r']: updateLAT2(dsNum, f['s'])
 
     # -- go running --
     if f['a']: runSkimmer(dsNum, subNum, runNum, calList=calList)
@@ -640,6 +643,17 @@ def checkFiles():
             continue
 
 
+def updateLAT2(dsNum, cal=False):
+    """ ./job-panda.py -up2 -ds [dsNum] (-c) """
+
+    if not cal:
+        print "Submitting DS%d BKG" % (dsNum)
+        sh("""%s './lat2.py -upd -d %d' """ % (qsubStr,dsNum))
+    else:
+        print "Submitting DS%d CAL" % (dsNum)
+        sh("""%s './lat2.py -upd -d %d -c' """ % (qsubStr,dsNum))
+
+
 def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
     """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx])  -force (optional)
         Run LAT2 in cal mode.
@@ -762,6 +776,7 @@ def tuneCuts(argString, dsNum=None):
                     print "%s './lat3.py -db -tune %s -s %d %d %d %s" % (qsubStr, calLatDir, dsNum, j, mod, argString)
                     sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (qsubStr, calLatDir, dsNum, j, mod, argString))
             except: continue
+
 
 def applyChannelCut(dsNum,ch):
     """ ./job-panda.py -applyChannelCut [dsNum] [ch]

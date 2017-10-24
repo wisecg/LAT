@@ -22,7 +22,7 @@ from ROOT import gROOT, TFile, TChain
 from scipy.optimize import curve_fit
 
 homePath = os.path.expanduser('~')
-bgDir = homePath + "/project/lat"
+bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 def main(argv):
@@ -33,7 +33,7 @@ def main(argv):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     dsNum, subNum, runNum = None,None,None
-    fCal, fUpd, fBat, fFor, fPlt, fRaw = 0,0,0,0,0,0
+    fCal, fUpd, fBat, fFor, fPlt, fRaw, fCalPath = 0,0,0,0,0,0,0
     fPaths = [".","."]
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -55,6 +55,9 @@ def main(argv):
         if opt == "-d":
             dsNum = int(argv[i+1])
             print "Scanning DS-%d" % (dsNum)
+        if opt == "-c":
+            fCalPath = True
+            print "pointing to cal path"
         if opt == "-f":
             print "Scanning DS-%d, run %d" % (dsNum, runNum)
         if opt == "-s":
@@ -80,7 +83,7 @@ def main(argv):
         wl.setDBCalRecord(rec,fFor)
 
     if fUpd:
-        updateFile(dsNum,subNum, runNum,fPaths)
+        updateFile(dsNum, fCalPath)
 
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
@@ -365,9 +368,74 @@ def testDB():
             # print cal.GetCalList(key,idx,runLimit=10)
 
 
-def updateFile(dsNum,subNum,runNum,fPaths):
-    """ ./lat2.py -upd [options] """
-    print "hi"
+def updateFile(dsNum, cal):
+    """ ./lat2.py -upd [options]
+
+    Cruel twist of fate: Not gonna use the calibration stuff above rn.
+    Am gonna use this to update each dataset's LAT files with Ralph's
+    sigma parameter.
+    """
+    import ROOT
+    from ROOT import std
+
+    filePath = bgDir + "/latSkimDS%d*.root" % dsNum
+    if cal==True:
+        filePath = calDir + "/latSkimDS%d*.root" % dsNum
+
+    files = glob.glob(filePath)
+    for fileName in files:
+
+        start = time.clock()
+        print "Now scanning",fileName
+        exit()
+
+        f = TFile(fileName,"UPDATE")
+        tree = f.Get("skimTree")
+        nEnt = tree.GetEntries()
+
+        # wipe the wfstd branch if it already exists before creating a new one
+        b0 = tree.GetListOfBranches().FindObject("wfstd")
+        if isinstance(b0, ROOT.TBranchElement): tree.GetListOfBranches().Remove(b0)
+
+        wfstd = std.vector("double")()
+        b1 = tree.Branch("wfstd",wfstd)
+
+        # loop over events
+        for iList in range(nEnt):
+            tree.GetEntry(iList)
+            nChans = tree.channel.size()
+            nWFs = tree.MGTWaveforms.size()
+            if (nChans != nWFs):
+                print "Wrong num entries.  Bailing!"
+                exit(1)
+            wfstd.assign(nChans,-88888)
+
+            # loop over hits
+            for iH in range(nWFs):
+                run = tree.run
+                chan = tree.channel.at(iH)
+                energy = tree.trapENFCal.at(iH)
+                wf = tree.MGTWaveforms.at(iH)
+                signal = wl.processWaveform(wf,0,0)
+                waveRaw = signal.GetWaveRaw()
+                waveTS = signal.GetTS()
+                # print "%d / %d  Run %d  nCh %d  chan %d  trapENF %.1f" % (iList,nList,run,nChans,chan,energy)
+
+                wfstd[iH] = np.std(waveRaw[5:-5])
+                maxAdc = max(waveRaw[5:-5])
+                minAdc = min(waveRaw[5:-5])
+                nBins = int(maxAdc-minAdc)
+
+            # End loop over hits, fill branches
+            b1.Fill()
+
+        # End loop over events
+        tree.Write("",ROOT.TObject.kOverwrite)
+        print " - Tree entries: %d  Branch entries: %d  Time (min): %.2f" % (tree.GetEntries(),b1.GetEntries(),(time.clock()-start)/60.)
+
+        f.Close()
+        exit()
+
 
 
 if __name__ == "__main__":
