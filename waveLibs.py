@@ -752,7 +752,7 @@ def getDBCalRecord(key):
     nRec = len(recList)
     if nRec == 0:
         print "Record %s doesn't exist" % key
-        return
+        return 0
     elif nRec == 1:
         print "Found record:\n%s" % key
         rec = recList[0]['vals']  # whole record

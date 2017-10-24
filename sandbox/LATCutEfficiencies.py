@@ -19,7 +19,7 @@ def main(argv):
     specMode = False
     dsNum, modNum, chNum = -1, -1, -1
     skimTree = ROOT.TChain("skimTree")
-    bins,lower,upper = 1250,0,250
+    bins,lower,upper = {1250},0,250
     outFile = ROOT.TFile()
     for i,opt in enumerate(argv):
         if opt == "-spec":
