@@ -28,11 +28,12 @@ Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
 import sys, time, warnings
 sys.argv.append("-b") # kill all interactive crap
 import ROOT
-from ROOT import TFile, TTree, TCanvas, TH1D, TLegend, TPad, TLine
+from ROOT import TFile, TTree, TCanvas, TH1D, TLegend, TPad, TLine, TGraph
 from ROOT import gStyle, gPad, gROOT, std
 from ROOT import RooFit as RF
 from ROOT import RooStats as RS
 import numpy as np
+from array import array
 
 gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
@@ -60,8 +61,7 @@ def main(argv):
         # "ax_S_Kb1":2.464
         }
 
-    checkRedondo()
-    # getSpecPDFs()
+    getSpecPDFs()
     # runFit()
     # plotSpectrum()
     # plotProfiles()
@@ -71,75 +71,12 @@ def main(argv):
     # runMCStudy()
 
 # ===================================================================================================
-def getSigma(E):
-    # pg. 92 of graham's thesis (he ended up letting sigma float)
-    sig_e, F, expval = 0.0698, 0.21, 0.00296
-    return np.sqrt(sig_e * sig_e + expval * F * E)
-
-
-def getRooArgDict(arglist):
-    """ Convert a RooArgList into a python dict.
-    NOTE: I'm doing it this way because this method doesn't work:
-    pkValF = fitResult.floatParsFinal().find("pk_gaus") # can't cast to RooRealVar
-    """
-    pkVals = {}
-    for i in range(arglist.getSize()):
-        pkVals[ arglist.at(i).GetName() ] = arglist.at(i).getValV()
-    return pkVals
-
-
-def checkRedondo():
-
-    # reproduce figure 2 in : https://arxiv.org/pdf/1310.0823v1.pdf
-
-    axData = []
-    with open("./data/redondoFlux.txt") as f1: # 23577 entries
-        lines = f1.readlines()[11:]
-        for line in lines:
-            data = line.split()
-            axData.append([float(data[0]),float(data[1])])
-    axData = np.array(axData)
-    kevPerBin = 0.02
-    nBins = int(10./kevPerBin)
-    h1 = TH1D("h1","h1",nBins, 0., 10.)
-    for i in range(nBins):
-        # make this energy the midpoint of the bin
-        ene = i * kevPerBin
-        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
-        idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
-        axFlux = np.mean(axData[idx][:,1])
-        if np.isnan(axFlux): axFlux = 0.
-        h1.SetBinContent(i, axFlux)
-
-    c = TCanvas("c","Bob Ross' Canvas",800,800)
-    c.SetLogy(0)
-    c.SetGrid(1,1)
-
-    # redondoScale = 365 * (1./0.511**2.) * (1e-3) # YES, but arbitrary
-
-    redondoScale = 1e19 * 0.511e-10**-2 * 365 * 1e4 # all required factors
-    redondoScale *= 1e-46                           # magic scale parameter
-    h1.Scale(redondoScale)
-
-    # h1.GetYaxis().SetTitle("flux (10^{-46} keV^{-1} year^{-1} m^{-2}) ")
-    h1.GetXaxis().SetRangeUser(0.,10.)
-    h1.SetLineColor(ROOT.kBlue)
-    h1.SetLineWidth(2)
-    h1.GetXaxis().SetTitle("Energy (keV)")
-    h1.SetTitle(" ")
-    h1.Draw("hist")
-    c.Print("./plots/jcap2AxionFlux.pdf")
-
-    return
-
-
-
-
 
 
 def getSpecPDFs():
     """ Return a set of TH1D's to be turned into RooDataHist objects.
         Make the binning 0.01 keV intervals - hopefully that's fine enough.
+        NOT including diagnostic plots: see ./sandbox/redondo.py for that.
         TODO: BDM/ALP pdf Get from Kris's analysis in GAT
         TODO: WIMP pdf?  Get PyWIMP from Graham
     """
@@ -180,159 +117,49 @@ def getSpecPDFs():
 
     for i in range(nBins):
 
-        # make this energy the midpoint of the bin
         ene = i * kevPerBin
         eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
 
-        # get the average value of column 1 for a range of energies (column 0)
-        idx = np.where((tritData[:,0] >= eneLo) & (tritData[:,0] <= eneHi))
-        trit = np.mean(tritData[idx][:,1])
-        if np.isnan(trit): trit = 0.
-        hTritium.SetBinContent(i, trit)
-
-        # this gives a "mean of empty slice" for the first entry, just suppress it
-        idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
-        pho = 0.
+        # ignore "mean of empty slice" errors (they're harmless)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category=RuntimeWarning)
+
+            # get the average value of column 1 for a range of energies (column 0)
+            idx = np.where((tritData[:,0] >= eneLo) & (tritData[:,0] <= eneHi))
+            trit = np.mean(tritData[idx][:,1])
+            if np.isnan(trit): trit = 0.
+            hTritium.SetBinContent(i, trit)
+            if trit==0.: print "Trit bin %d is zero" % i
+
+            idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
             pho = np.mean(phoData[idx][:,1])
-        if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
-        pho = pho * 1000. # kg
-        hPhoto.SetBinContent(i, pho)
+            if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
+            hPhoto.SetBinContent(i, pho)
+            if pho==0.: print "Pho bin %d is zero" % i
 
-        idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
-        axFlux = np.mean(axData[idx][:,1])
-        if np.isnan(axFlux): axFlux = 0.
-        hAxionFlux.SetBinContent(i, axFlux)
+            idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
+            axFlux = np.mean(axData[idx][:,1])
+            if np.isnan(axFlux): axFlux = 0.
+            hAxionFlux.SetBinContent(i, axFlux)
+            if axFlux==0.: print "axFlux bin %d is zero" % i
 
-        axo = pho * np.power(ene,2.) * 2.088e-5
-        hAxio.SetBinContent(i, axo)
+            axo = pho * np.power(ene,2.)
+            hAxio.SetBinContent(i, axo)
 
-        axConv = axFlux * axo # scaling happens later
-        hAxionConv.SetBinContent(i, axConv)
+            axConv = axFlux * axo
+            hAxionConv.SetBinContent(i, axConv)
 
         # print ene, pho, trit, axFlux, axConv, bremFlux, bremConv
 
-    # are any bins zero?  check.
-    # for i in range(nBins):
-        # print hAxio.GetBinContent(i)
-
-
-    # -- diagnostic plots --
-
-    c = TCanvas("c","Bob Ross' Canvas",800,800)
-    c.SetLogy(0)
-    c.SetGrid(1,1)
-
-    # redondoScale = 365 * (1./0.511**2.) * (1e-3) # YES, but arbitrary
-
-    redondoScale = 1e19 * 0.511e-10**-2 * 365 * 1e4 # all required factors
-    redondoScale *= 1e-46                           # magic scale parameter
-    hAxionFlux.Scale(redondoScale)
-
-    # hAxionFlux.GetYaxis().SetTitle("flux (10^{-46} keV^{-1} year^{-1} m^{-2}) ")
-    hAxionFlux.GetXaxis().SetRangeUser(0.,10.)
-    hAxionFlux.SetLineColor(ROOT.kBlue)
-    hAxionFlux.SetLineWidth(2)
-    hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
-    hAxionFlux.SetTitle(" ")
-    hAxionFlux.Draw("hist")
-    c.Print("./plots/jcapAxionFlux.pdf")
-
-    return
-
-    # reproduce graham's thesis plot, pg. 105
-    # scaling is correct? YES.  (you have to bin it super finely to see the peak that goes over 1e35, but it's there.)
-    c.SetCanvasSize(800,600)
-    c.SetLogy(1)
-    hAxionFlux.Scale(1 / redondoScale) # undo the last plot
-
-    webScale = (1e19 / np.power(0.511e-10,2.)) * (1./86400.)
-
-    hAxionFlux.Scale(webScale)
-    hAxionFlux.SetMinimum(2.5e32)
-    hAxionFlux.SetMaximum(1.2e35)
-    hAxionFlux.GetYaxis().SetTitle("flux (cm^{-2} s^{-1} keV^{-1}) ")
-    hAxionFlux.GetXaxis().SetRangeUser(0.1,12.5)
-    hAxionFlux.SetLineColor(ROOT.kBlue)
-    hAxionFlux.SetLineWidth(2)
-    hAxionFlux.GetYaxis().SetNdivisions(112)
-    hAxionFlux.GetXaxis().SetTitle("Energy (keV)")
-    hAxionFlux.SetTitle(" ")
-    hAxionFlux.Draw("hist")
-    c.Print("./plots/webAxionFlux.pdf")
-
-    # check the units of the photoelectric cross section are in cm^2/g
-    c.SetLogy()
-    hPhoto.SetTitle(" ")
-    hPhoto.GetXaxis().SetTitle("Energy (keV)")
-    hPhoto.GetYaxis().SetTitle("#sigma_{pe} (cm^{2}/g)")
-    hPhoto.Scale(1/1000.) # undo the conversion to kg
-    # phoTest = hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(1.74)) # should be about 4412
-    hPhoto.Draw("hist")
-    c.Print("./plots/photoElectric.pdf")
-
-    # axioelectric cross section
-    hAxio.GetXaxis().SetRangeUser(0., 12.)
-    hAxio.SetTitle(" ")
-    hAxio.Scale(120.5 / 1000.) # convert to barns/atom (mucal)
-    hAxio.SetMinimum(1)
-    hAxio.SetMaximum(6e2)
-    hAxio.GetXaxis().SetTitle("Energy (keV)")
-    hAxio.GetYaxis().SetTitle("#sigma_{ae} (barns/atom)")
-    hAxio.Draw("hist")
-    c.Print("./plots/axioElectric.pdf")
-
-    # final axion spectrum, with integral for expected counts
-    hAxionConv.GetXaxis().SetRangeUser(0.5, 12.)
-    hAxionConv.Scale((89.5 * 1e19 * 1000) / (np.power(0.511e-10, 2.)))
-
-    hAxionConv.SetTitle(" ")
-    hAxionConv.GetXaxis().SetTitle("Energy (keV)")
-    hAxionConv.GetYaxis().SetTitle("Counts / keV")
-    hAxionConv.Draw("hist")
-
-    # ymin, ymax = 2e44, 5e47
-    # hAxionConv.SetMinimum(ymin)
-    # hAxionConv.SetMaximum(ymax)
-    # eLoLine = TLine(eLo, ymin, eLo, ymax)
-    # eLoLine.SetLineColor(ROOT.kRed)
-    # eLoLine.SetLineWidth(2)
-    # eLoLine.Draw("same")
-    # eHiLine = TLine(eHi, ymin, eHi, ymax)
-    # eHiLine.SetLineColor(ROOT.kRed)
-    # eHiLine.SetLineWidth(2)
-    # eHiLine.Draw("same")
-
-    c.Print("./plots/axionConv.pdf")
-
-    xax = hAxionConv.GetXaxis()
-    N_expected = hAxionConv.Integral(xax.FindBin(eLo), xax.FindBin(eHi))
-    # print "N_expected:",N_expected
-
-    # reproduce the numbers in frank's tables
-    eTest = 6.4
-    phoTest = hPhoto.GetBinContent(hPhoto.GetXaxis().FindBin(eTest)) # should be about 4412 YES
-    phoConv = phoTest * 72.64 / 6.022e23 # should be about 5.3e-19 YES
-    axoTest = hAxio.GetBinContent(hAxio.GetXaxis().FindBin(eTest))
-
-    # (undo barns/atom) (convert to cm^2/atom) (undo kg conversion for pho)
-    axoTest *= (1000/120.5) * (72.64 / 6.022e23) * (1./1000.) # should be 3.36e-23 YES
-
-    axoFlux = hAxionFlux.GetBinContent(hAxionFlux.GetXaxis().FindBin(eTest))
-    axoFlux *= 86400. # (undo the /s conversion)
-    print axoFlux
+    # TODO: SCALE FACTORS
+    hPhoto.Scale(1./0.)
 
     # write to file.
     hPhoto.Write()
     hTritium.Write()
     hAxionFlux.Write()
     hAxionConv.Write()
-    # hBremFlux.Write()
-    # hBremConv.Write()
     f4.Close()
-
-    return N_expected
 
 
 class pkModel:
@@ -621,14 +448,6 @@ def plotProfiles():
         c.Print("./plots/profile_%s.pdf" % name)
 
 
-def calculate_g_ae():
-
-    N_expected = getSpecPDFs()
-    N_observed = 16.904 # profile U.L.
-    # N_observed = 40.8
-    print "g_ae U.L.:", np.power(N_observed/N_expected, 1./4.)
-
-
 def plotContours():
 
     par1, par2 = "amp-41Ca", "amp-36Cl"
@@ -821,6 +640,31 @@ def runMCStudy():
     */
     }
     """
+
+
+def getSigma(E):
+    # pg. 92 of graham's thesis (he ended up letting sigma float)
+    sig_e, F, expval = 0.0698, 0.21, 0.00296
+    return np.sqrt(sig_e * sig_e + expval * F * E)
+
+
+def getRooArgDict(arglist):
+    """ Convert a RooArgList into a python dict.
+    NOTE: I'm doing it this way because this method doesn't work:
+    pkValF = fitResult.floatParsFinal().find("pk_gaus") # can't cast to RooRealVar
+    """
+    pkVals = {}
+    for i in range(arglist.getSize()):
+        pkVals[ arglist.at(i).GetName() ] = arglist.at(i).getValV()
+    return pkVals
+
+
+def calculate_g_ae():
+
+    N_expected = getSpecPDFs()
+    N_observed = 16.904 # profile U.L.
+    # N_observed = 40.8
+    print "g_ae U.L.:", np.power(N_observed/N_expected, 1./4.)
 
 
 if __name__=="__main__":
