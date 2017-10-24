@@ -1,5 +1,9 @@
 // NOTE: Clint, you run this with:
+<<<<<<< HEAD
 // gcc -o mucal mucal.c && ./mucal
+=======
+// gcc -o mucal mucal.c -lm && ./mucal
+>>>>>>> edd275c5eb55331dbf030c50f5b4a4f426feae7d
 // and edit it with the int main() function below.
 // Since it's a C program, it was hard to put it directly
 // into a C++ framework.
@@ -1718,12 +1722,21 @@ int main()
   // return 0;
 
   FILE * fp;
+<<<<<<< HEAD
   fp = fopen ("./data/ge76peXS.txt", "w+");
+=======
+  fp = fopen ("ge76peXS.txt", "w+");
+>>>>>>> edd275c5eb55331dbf030c50f5b4a4f426feae7d
 
   double step = 0.02; // be careful, this thing segfaults on some binning settings
 
   int ene_hi = 50;
+<<<<<<< HEAD
   for (int i = 1; i<(int)(ene_hi/(double)step); i++){
+=======
+  int i = 1;
+  for (i = 1; i<(int)(ene_hi/(double)step); i++){
+>>>>>>> edd275c5eb55331dbf030c50f5b4a4f426feae7d
     double e_phot = (double)i*step;
     mucal(element, Z, e_phot, unit, print_flag, energy, xsec, fl_yield, err_msg);
     printf("%i  %.3f  %.10e\n",i, e_phot, xsec[0]);

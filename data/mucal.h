@@ -24,4 +24,8 @@ int name_z(char *name);
 int mucal(char *name, int ZZ, double ephot, char unit, int pflag,
 	  double *energy, double *xsec, double *fluo, char *errmsg);
 
+<<<<<<< HEAD
 #endif /* MUCAL_H */
+=======
+#endif /* MUCAL_H */
+>>>>>>> edd275c5eb55331dbf030c50f5b4a4f426feae7d

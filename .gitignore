@@ -13,3 +13,4 @@ logs/*
 plots/*
 qsub-job.sh
 slurm-job.sh
+data/mucal
