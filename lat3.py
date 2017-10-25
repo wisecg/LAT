@@ -43,7 +43,7 @@ def main(argv):
     dsNum, subNumm, modNum, chNum = -1, -1, -1, -1
     skimTree = ROOT.TChain("skimTree")
     customPar = ""
-    calList, parList, parNameList, chList = [], [], [], []
+    tuneNames, calList, parList, parNameList, chList = [], [], [], [], []
     fTune, fCut, fFor, fUpd, fastMode, fDB, fCSV = False, False, False, False, False, False, False
 
     if len(argv) == 0:
@@ -52,11 +52,9 @@ def main(argv):
         # -- Cut tuning options --
         if opt == "-all":
             parList.append('bcMax'), parNameList.append('bcMax')
-            parList.append('pol2'), parNameList.append('pol2')
-            parList.append('pol3'), parNameList.append('pol3')
             parList.append('fitSlo'), parNameList.append('fitSlo')
             parList.append('riseNoise'), parNameList.append('riseNoise')
-            print "Tuning all cuts"
+            print ("Tuning all cuts")
         if opt == "-bcMax":
             parList.append('bcMax'), parNameList.append('bcMax')
             print "Tuning bcMax"
@@ -80,6 +78,12 @@ def main(argv):
             customPar = str(argv[i+1])
             parList.append(customPar), parNameList.append('customPar')
             print "Tuning custom cut parameter: ", customPar
+        # Tune specific range -- input as string with comma separation:
+        if opt == "-Range":
+            rangeName = str(argv[i+1])
+            tuneNames = rangeName.split(',')
+            print ("Tuning ranges: ", tuneNames)
+            # Standard Ranges: tuneNames = ["50_90", "90_130", "130_170", "170_210"]
         # -- Input/output options --
         if opt == "-s":
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
@@ -108,14 +112,14 @@ def main(argv):
         if opt == "-tune":
             fTune = True
             pathToInput = argv[i+1]
-            print "Cut tune mode."
+            print ("Cut tune mode. Input path for cal files: ", pathToInput)
         if opt == "-cut":
             pathToInput, pathToOutput = argv[i+1], argv[i+2]
             fCut = True
-            print "Cut application mode."
+            print ("Cut application mode.")
         if opt == "-upd":
             fUpd = True
-            print "File update mode."
+            print ("File update mode.")
 
     # -- Load calibration files --
     if dsNum == -1 or subNum == -1 or modNum == -1:
@@ -154,20 +158,23 @@ def main(argv):
     # -- Tune cuts --
     if fTune:
         tunedPars = {}
-	tuneRange = [[236, 240]]
-	tuneNames = ["Peak"]
-        #tuneRange = [[236, 240], [5, 50], [50, 100], [100, 150], [150, 200]]
-        #tuneNames = ["Peak", "Continuum", "Continuum2", "Continuum3", "Continuum4"]
-        #tuneRange = [[50, 90], [90, 130], [130, 170], [170, 210]]
-        #tuneNames = ["50_90", "90_130", "130_170", "170_210"]
+        # Default is peak only
+        if not tuneNames: tuneNames.append("Peak")
+
         for par, parName in zip(parList, parNameList):
-            for tRange, tName in zip(tuneRange, tuneNames):
-                cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
+            for idx, tName in enumerate(tuneNames):
+                tRange = []
+                if tName == "Continuum":
+                    tRange = [5, 50]
+                elif tName == "Peak":
+                    tRange = [236, 240]
+                else:
+                    tRange = [int(tName.split("_")[0]), int(tName.split("_")[1])]
                 key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
-                # print key, cutDict
+                cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
                 if fDB:
                     wl.setDBCalRecord({"key":key,"vals":cutDict})
-
+                #
                 if fCSV:
                     dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                     dummyDict2 = dict(dummyDict.items() + cutDict.items())
@@ -221,7 +228,6 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
         nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
         outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch)
-        # cutMode, cutMedian = mode(np.round(nCutListReduced))[0][0], np.median(nCutListReduced)
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
