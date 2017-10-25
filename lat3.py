@@ -95,7 +95,7 @@ def main(argv):
             chNum = int(argv[i+1])
             print "Tuning specific channel %d" % (chNum)
         if opt == "-fast":
-            fastMode == True
+            fastMode = True
             print "Tuning cuts with fastMode ON, diagnostic plots will not be generated!"
         if opt == "-pd":
             import pandas as pd
@@ -234,7 +234,6 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
-
     # Calculate cut vals (assumes plot range is correct)
     h1 = wl.H1D(cal,vb,vlo,vhi,var,d1Cut)
     h1Sum = h1.Integral()
@@ -248,6 +247,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
         print "Error: Failed %s using cut %s, setting to [0,0,0,0,0]"%(var,d1Cut)
         return 0,0,0,0,0
     if fastMode:
+        print "Returning fastMode output: ", cut99,cut95,cut01,cut05,cut90
         return cut99,cut95,cut01,cut05,cut90
 
     # Generate the plot for inspection.
