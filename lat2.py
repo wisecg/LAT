@@ -387,7 +387,6 @@ def updateFile(dsNum, cal):
 
         start = time.clock()
         print "Now scanning",fileName
-        exit()
 
         f = TFile(fileName,"UPDATE")
         tree = f.Get("skimTree")
@@ -434,7 +433,6 @@ def updateFile(dsNum, cal):
         print " - Tree entries: %d  Branch entries: %d  Time (min): %.2f" % (tree.GetEntries(),b1.GetEntries(),(time.clock()-start)/60.)
 
         f.Close()
-        exit()
 
 
 
