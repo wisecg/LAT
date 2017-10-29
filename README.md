@@ -22,18 +22,14 @@ LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, 
 
 ### LAT Database Notes
 
-The database `calDB.json` is a tinyDB whose items are nested dicts:
-
-    {"key":key, "vals":vals}
+The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key, "vals":vals}`
 
 Cal Tables (gives run coverages)
 
     key: ds[DS]_calIdx.
     vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
 
-- Print one with
-
-    wl.getDBCalTable(dsNum, verbose=True)
+- Print one with `waveLibs.getDBCalTable(dsNum, verbose=True)`
 
 Cal Records (calib consts for each channel in each calIdx)
 - Channel list comes from DataSetInfo.py
