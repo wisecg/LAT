@@ -22,27 +22,29 @@ LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, 
 
 ### LAT Database Notes
 
-tinyDB items are nested dicts: {"key":key, "vals":vals}
+tinyDB items are nested dicts:
+    {"key":key, "vals":vals}
 
-Cal Tables (gives run coverages):
+Cal Tables (gives run coverages)
     key: ds[DS]_calIdx.
     vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
-Print one with:
+
+- Print one with:
     wl.getDBCalTable(dsNum, verbose=True)
 
 Cal Records (calib consts for each channel in each calIdx)
 
     key: ds[DS]_idx[n]
     vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
-(channel list comes from DataSetInfo.py)
+- Channel list comes from DataSetInfo.py
 
 Cut records:
     key: [Name]_ds[i]_idx[j]_module[k]_[descriptor].
     vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
-Names are: "riseNoise", "fitSlo", "bcMax", "pol2", and "pol3"
-idx is the calIdx
-Descriptor is two numbers (energy range), "continuum", or "peak"
+- Names are: "riseNoise", "fitSlo", "bcMax", "pol2", and "pol3"
+- idx is the calIdx
+- Descriptor is two numbers (energy range), "continuum", or "peak"
+- descriptors: Peak, Continuum, 50_90, 90_130, 130_170, 170_210
 - Continuum range is 5-50 kev
 - Peak is 236-240
-descriptors: Peak, Continuum, 50_90, 90_130, 130_170, 170_210
 
