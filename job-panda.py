@@ -133,7 +133,7 @@ def makeSlurm():
     outFile = open('slurm-job.sh','w+')
     slurm_file_text = """
     #!/bin/bash -l
-    #SBATCH -t 8:00:00  --ntasks=1
+    #SBATCH -t 24:00:00  --ntasks=1
     #SBATCH --mem 3400
     #SBATCH --account=majorana
     #SBATCH --workdir=/global/homes/w/wisecg/lat

@@ -13,11 +13,12 @@ v1: 07 Aug 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
-import sys, time, os, glob
+import sys, time, os, glob, imp
 import numpy as np
 import tinydb as db
-import DataSetInfo as ds
-import waveLibs as wl
+sys.argv.append("-b") # kill all interactive crap
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
+wl = imp.load_source('waveLibs','../waveLibs.py')
 from ROOT import gROOT, TFile, TChain
 from scipy.optimize import curve_fit
 
@@ -383,27 +384,6 @@ def updateFile(dsNum, cal):
         filePath = calDir + "/latSkimDS%d*.root" % dsNum
 
     files = glob.glob(filePath)
-
-    # comment this block out for normal running
-    # skip ahead to where these jobs died last
-    # ds0 - latSkimDS0_17_22.root last BG to be completed
-    # ds5 - latSkimDS5_29_13.root last BG to be completed
-    smallList = []
-    foundLeftOff = False
-    for fileName in files:
-        if dsNum==0:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == bgDir + "/latSkimDS0_17_22.root":
-                foundLeftOff = True
-        elif dsNum==5:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == bgDir + "/latSkimDS5_29_13.root":
-                foundLeftOff = True
-    print len(files), len(smallList)
-    files = smallList
-
     for fileName in files:
 
         start = time.clock()
@@ -420,15 +400,22 @@ def updateFile(dsNum, cal):
         wfstd = std.vector("double")()
         b1 = tree.Branch("wfstd",wfstd)
 
+        print "entries:", nEnt
+
         # loop over events
         for iList in range(nEnt):
+            print 1
             tree.GetEntry(iList)
+            print 2
             nChans = tree.channel.size()
+            print 3
             nWFs = tree.MGTWaveforms.size()
             if (nChans != nWFs):
                 print "Wrong num entries.  Bailing!"
                 exit(1)
             wfstd.assign(nChans,-88888)
+
+            continue
 
             # loop over hits
             for iH in range(nWFs):
