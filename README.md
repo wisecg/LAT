@@ -24,29 +24,29 @@ LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, 
 
 The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key, "vals":vals}`
 
-### Cal Tables (gives run coverages)
+### Cal Tables
+Divides dataset into N indexes.
+These tables give the run coverage for every `calIdx`.
 
-    key: ds[DS]\_calIdx
+    key: ds[DS]_calIdx
     vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
+Print one with `waveLibs.getDBCalTable(dsNum, verbose=True)`
 
-- Print one with `waveLibs.getDBCalTable(dsNum, verbose=True)`
+### Cal Records
+Calibration constants for each channel in each calIdx.
+(Channel list comes from DataSetInfo.py.)
 
-### Cal Records (calib consts for each channel in each calIdx)
-
-- Channel list comes from DataSetInfo.py
-
-    key: ds[DS]\_idx[n]
+    key: ds[DS]_idx[n]
     vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
 
-### Cut records
+
+### Cut Records
 
     key: [Name]_ds[i]_idx[j]_module[k]_[descriptor].
     vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
 
 - Names are: "riseNoise", "fitSlo", "bcMax", "pol2", and "pol3"
 - idx is the calIdx
-- Descriptor is two numbers (energy range), "continuum", or "peak"
-- descriptors: Peak, Continuum, 50\_90, 90\_130, 130\_170, 170\_210
-- Continuum range is 5-50 kev
-- Peak is 236-240
-
+- Descriptors: `Peak, Continuum, 50_90, 90_130, 130_170, 170_210`
+- Continuum range is 5-50 keV
+- Peak range is 236-240 keV
