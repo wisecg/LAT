@@ -16,29 +16,29 @@ Some general properties of the data are contained in 'DataSetInfo.py', while man
 
 There are a lot of half-baked ideas, some useful, in the folder 'sandbox'.
 
-### Authors
+## Authors
 
 LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, with lots of input from the Majorana Collaboration.
 
-### LAT Database Notes
+## LAT Database Notes
 
 The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key, "vals":vals}`
 
-Cal Tables (gives run coverages)
+### Cal Tables (gives run coverages)
 
     key: ds[DS]_calIdx.
     vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
 
 - Print one with `waveLibs.getDBCalTable(dsNum, verbose=True)`
 
-Cal Records (calib consts for each channel in each calIdx)
+### Cal Records (calib consts for each channel in each calIdx)
+
 - Channel list comes from DataSetInfo.py
 
     key: ds[DS]_idx[n]
     vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
 
-
-Cut records
+### Cut records
 
     key: [Name]_ds[i]_idx[j]_module[k]_[descriptor].
     vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
