@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 """
 ===================== LAT3.py =====================
-
-
 Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
-
 Usage Examples:
     Tuning all cuts:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -all
@@ -12,14 +9,9 @@ Usage Examples:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -ch channel -bcMax
     Custom cut:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -Custom "bcMax/bcMin"
-
-
     Applying cuts:
         ./lat3.py -cut /path/to/bkg/files /path/to/output/files -db -s DS subDS Module
-
-
 v1: 03 Oct 2017
-
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
 import sys, time, ROOT, glob
@@ -49,12 +41,13 @@ def main(argv):
     if len(argv) == 0:
         return
     for i, opt in enumerate(argv):
+
         # -- Cut tuning options --
         if opt == "-all":
             parList.append('bcMax'), parNameList.append('bcMax')
             parList.append('fitSlo'), parNameList.append('fitSlo')
             parList.append('riseNoise'), parNameList.append('riseNoise')
-            print ("Tuning all cuts")
+            print "Tuning all cuts"
         if opt == "-bcMax":
             parList.append('bcMax'), parNameList.append('bcMax')
             print "Tuning bcMax"
@@ -78,19 +71,21 @@ def main(argv):
             customPar = str(argv[i+1])
             parList.append(customPar), parNameList.append('customPar')
             print "Tuning custom cut parameter: ", customPar
+
         # Tune specific range -- input as string with comma separation:
         if opt == "-Range":
             rangeName = str(argv[i+1])
             tuneNames = rangeName.split(',')
-            print ("Tuning ranges: ", tuneNames)
+            print "Tuning ranges: ", tuneNames
             # Standard Ranges: tuneNames = ["50_90", "90_130", "130_170", "170_210"]
+
         # -- Input/output options --
         if opt == "-s":
             dsNum, subNum, modNum = int(argv[i+1]), int(argv[i+2]), int(argv[i+3])
-            print "Processing DS-%d subDS-%d Module-%d"%(dsNum, subNum, modNum)
+            print "Processing DS-%d subDS-%d Module-%d" % (dsNum, subNum, modNum)
         if opt == "-d":
             pathToInput, pathToOutput = argv[i+1], argv[i+2]
-            print "Custom paths: Input %s" % (pathToInput)
+            print "Custom paths: Input %s" % pathToInput
         if opt == "-ch":
             chNum = int(argv[i+1])
             print "Tuning specific channel %d" % (chNum)
@@ -104,6 +99,7 @@ def main(argv):
         if opt == "-db":
             fDB = True
             print "DB mode"
+
         # -- Database options --
         #TODO -- Flesh out cut database options
         if opt == "-force":
@@ -126,9 +122,9 @@ def main(argv):
         print "DS, subDS, or module number not set properly, exiting"
         return
     elif fTune:
-        # Limit to 10 calibration runs because that's all Clint processed!
-        calList = cInfo.GetCalList("ds%d_m%d"%(dsNum, modNum), subNum, runLimit=10)
-        for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*"%(pathToInput, dsNum, i))
+        # Limit to 10 calibration runs because that's all Clint processed!  What a jerk.
+        calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), subNum, runLimit=10)
+        for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*" % (pathToInput, dsNum, i))
     elif fCut:
         # Add Background Data
         skimTree.Add("%s/latSkimDS%d_%d_0.root"%(pathToInput, dsNum, subNum))
@@ -145,7 +141,7 @@ def main(argv):
     # -- Load channel list --
     if chNum == -1:
         chList = ds.GetGoodChanList(dsNum)
-        if dsNum==5 and modNum == 1: # remove 692 and 1232
+        if dsNum==5 and modNum == 1: # remove 692 and 1232 (both beges, so who cares)
             chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
         if dsNum==5 and modNum == 2:
             chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
@@ -164,17 +160,14 @@ def main(argv):
         for par, parName in zip(parList, parNameList):
             for idx, tName in enumerate(tuneNames):
                 tRange = []
-                if tName == "Continuum":
-                    tRange = [5, 50]
-                elif tName == "Peak":
-                    tRange = [236, 240]
-                else:
-                    tRange = [int(tName.split("_")[0]), int(tName.split("_")[1])]
+                if tName == "Continuum": tRange = [5, 50]
+                elif tName == "Peak": tRange = [236, 240]
+                else: tRange = [int(tName.split("_")[0]), int(tName.split("_")[1])]
+
                 key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
                 cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
-                if fDB:
-                    wl.setDBCalRecord({"key":key,"vals":cutDict})
-                #
+
+                if fDB: wl.setDBCalRecord({"key":key,"vals":cutDict})
                 if fCSV:
                     dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                     dummyDict2 = dict(dummyDict.items() + cutDict.items())

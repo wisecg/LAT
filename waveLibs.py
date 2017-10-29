@@ -30,6 +30,7 @@ def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=No
     if yTitle!="": h1.GetYaxis().SetTitle(yTitle)
     return h1
 
+
 def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
     nameStr, titleStr = "", ""
     if Name == None: nameStr = str(random.uniform(1.,2.))
