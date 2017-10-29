@@ -26,7 +26,7 @@ The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key,
 
 ### Cal Tables (gives run coverages)
 
-    key: ds[DS]_calIdx.
+    key: ds[DS]\_calIdx
     vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
 
 - Print one with `waveLibs.getDBCalTable(dsNum, verbose=True)`
@@ -35,7 +35,7 @@ The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key,
 
 - Channel list comes from DataSetInfo.py
 
-    key: ds[DS]_idx[n]
+    key: ds[DS]\_idx[n]
     vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
 
 ### Cut records
@@ -46,7 +46,7 @@ The database `calDB.json` is a tinyDB whose items are nested dicts: `{"key":key,
 - Names are: "riseNoise", "fitSlo", "bcMax", "pol2", and "pol3"
 - idx is the calIdx
 - Descriptor is two numbers (energy range), "continuum", or "peak"
-- descriptors: Peak, Continuum, 50_90, 90_130, 130_170, 170_210
+- descriptors: Peak, Continuum, 50\_90, 90\_130, 130\_170, 170\_210
 - Continuum range is 5-50 kev
 - Peak is 236-240
 
