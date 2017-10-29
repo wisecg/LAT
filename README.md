@@ -22,7 +22,7 @@ LAT was written by typing on keyboards.  Mainly by Clint Wiseman and Brian Zhu, 
 
 ### LAT Database Notes
 
-tinyDB items are nested dicts
+The database `calDB.json` is a tinyDB whose items are nested dicts:
 
     {"key":key, "vals":vals}
 
@@ -36,11 +36,11 @@ Cal Tables (gives run coverages)
     wl.getDBCalTable(dsNum, verbose=True)
 
 Cal Records (calib consts for each channel in each calIdx)
+- Channel list comes from DataSetInfo.py
 
     key: ds[DS]_idx[n]
     vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
 
-- Channel list comes from DataSetInfo.py
 
 Cut records
 
