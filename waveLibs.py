@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, pywt, random
+import sys, pywt, random, os, glob
 import numpy as np
 import tinydb as db
 from scipy.fftpack import fft
@@ -11,12 +11,16 @@ import scipy.special as sp
 from ROOT import TTree, std, TH1D, TH2D
 from ROOT import MGTWaveform
 import DataSetInfo as ds
-limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 """
 A collection of 'useful' crap.
 C. Wiseman, B. Zhu
 v1. 20 March 2017
 """
+
+limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
+homePath = os.path.expanduser('~')
+bgDir = homePath + "/project/bg-lat"
+calDir = homePath + "/project/cal-lat"
 
 def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
     nameStr, titleStr = "", ""
@@ -774,3 +778,49 @@ def getDBCalRecord(key):
 
 # def setDBCutRecord(key):
 # def getDBCutRecord(key):
+
+
+def getNCalIdxs(dsNum, module):
+    """ Access the CalInfo object in DataSetInfo.py and tell me how many calIdx's are in a given dataset. """
+    calInfo = ds.CalInfo()
+    calKeys = calInfo.GetKeys(dsNum)
+    for key in calKeys:
+        if "m%d" % module in key:
+            return calInfo.GetIdxs(key)
+    return 0
+
+
+def getCalFiles(dsNum, calIdx=None, verbose=False):
+    """ Get a list of all files for a particular dsNum+calIdx.
+        This uses the CalInfo object in DataSetInfo.py, NOT the cal records in the DB.
+        This will match the cut record entries in the DB.
+    """
+
+    calInfo = ds.CalInfo()
+    calKeys = calInfo.GetKeys(dsNum)
+
+    fList = []
+    for key in calKeys:
+        print key
+
+        # number of cal subsets
+        nIdx = calInfo.GetIdxs(key)
+
+        # get the runs in each calIdx
+        runList = []
+        if calIdx!=None:
+            runList = calInfo.GetCalList(key, calIdx, 10)
+            if verbose: print runList
+        else:
+            for idx in range(nIdx):
+                tmp = calInfo.GetCalList(key, idx, 10)
+                if verbose: print tmp
+                runList += tmp
+
+        # make a list of the actual file paths
+        for run in runList:
+            fPath = "%s/latSkimDS%d_run%d*.root" % (calDir, dsNum, run)
+            fList += glob.glob(fPath)
+
+    # for f in fList: print f
+    return fList
