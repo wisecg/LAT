@@ -4,10 +4,12 @@
 # Clint Wiseman, USC
 # 12 July 2017
 
-import sys
-from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform,MJTMSWaveform
+import sys, imp, glob, os
+sys.argv.append("-b") # kill all interactive crap
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
+wl = imp.load_source('waveLibs','../waveLibs.py')
+from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform,MJTMSWaveform,GATDataSet
 import ROOT
-import waveLibs as wl
 import numpy as np
 from scipy.signal import butter, lfilter
 import matplotlib.pyplot as plt
@@ -21,22 +23,28 @@ def main(argv):
     """
 
     # Set input file and cuts
-    gatFile = TFile("~/project/mjddatadir/gatified/mjd_run27012.root") # generate w/ process_mjd_data_p1
-    bltFile = TFile("~/project/mjddatadir/built/OR_run27012.root")
-    gatTree = gatFile.Get("mjdTree")
-    bltTree = bltFile.Get("MGTree")
+    # gatFile = TFile("~/project/mjddatadir/gatified/mjd_run27012.root") # generate w/ process_mjd_data_p1
+    # bltFile = TFile("~/project/mjddatadir/built/OR_run27012.root")
+    # gatTree = gatFile.Get("mjdTree")
+    # bltTree = bltFile.Get("MGTree")
+    run = 23725
+    ds = GATDataSet(run)
+    gatTree = ds.GetGatifiedChain()
+    bltTree = ds.GetBuiltChain()
     gatTree.AddFriend(bltTree)
     print "Found",gatTree.GetEntries(),"input entries."
 
     # Get first timestamp
     gatTree.GetEntry(0)
-    firstTime = gatTree.timestamp.at(0)/1e8
+    # print type(gatTree.localTime.localTime)
 
-    theCut = "channel == 674" # C1P7D3
+
+    theCut = "Entry$<50"
+    # theCut = "channel == 674" # C1P7D3
     # theCut = "trapE < 6000 && channel==674 && timestamp/1e8 > 148359"
     # theCut = "channel==632 && timestamp/1e8 > 148359"
 
-    outFile = "movie_run27012.mp4"
+    outFile = "../plots/movie_run%d.mp4" % run
 
     # Print cut and events passing cut
     print "Using cut:\n",theCut,"\n"
@@ -77,6 +85,8 @@ def main(argv):
         chanList = list(set(int(chans[n]) for n in xrange(numPass)))
         event = bltTree.event
 
+        locTime = gatTree.localTime.localTime # wow, srsly?
+
         # Loop over hits passing cuts
         hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
         for iH in hitList:
@@ -93,8 +103,9 @@ def main(argv):
             run = gatTree.run
             chan = gatTree.channel.at(iH)
             energy = gatTree.trapE.at(iH)
-            timestamp = gatTree.timestamp.at(iH) / 1e8
-            locTime = timestamp - firstTime
+            # timestamp = gatTree.timestamp.at(iH) / 1e8
+            # locTime = timestamp - firstTime
+
 
             signal = wl.processWaveform(wf)
             waveRaw = signal.GetWaveRaw()
@@ -117,7 +128,7 @@ def main(argv):
             p1.set_xdata(waveTS)
             p2.set_ydata(trap)
             p2.set_xdata(trapTS)
-            plt.title("Run %d  Channel %d  Entry %d  trapE %.1f  timestamp %.0f  locTime %.1f s" % (run,chan,iList,energy,timestamp,locTime))
+            plt.title("Run %d  Channel %d  Entry %d  trapE %.1f  locTime %.1f s" % (run,chan,iList,energy,locTime))
 
             # dynamically scale the axes
             xmin, xmax = np.amin(waveTS), np.amax(waveTS)
@@ -143,7 +154,7 @@ def main(argv):
     # the video can be embedded in html5.  You may need to adjust this for
     # your system: for more information, see
     # http://matplotlib.sourceforge.net/api/animation_api.html
-    anim.save(outFile, fps=20, extra_args=['-vcodec', 'libx264'])
+    anim.save(outFile, fps=20)#, extra_args=['-vcodec', 'libx264'])
 
 
 def trapFilt(data,ramp=400,flat=200,decay=72,trapThresh=2.,padAfter=False):
