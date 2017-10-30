@@ -50,7 +50,7 @@ def wfStd():
     h1 = wl.H2D(lat,500,0,50,500,0,50,"wfstd:trapENFCalC",calCut,"Energy (keV)","wfStd","")
     h1.Draw("colz")
     c.SetLogz(1)
-    c.Print("./plots/wfStd.pdf")
+    c.Print("../plots/wfStd.pdf")
 
 
 
