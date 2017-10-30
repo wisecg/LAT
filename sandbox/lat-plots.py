@@ -31,27 +31,28 @@ def fitMu():
 def wfStd():
 
     dsNum = 1
-    calIdx = 7
+    calIdx = 10
     fileList = wl.getCalFiles(dsNum, calIdx)
     lat = TChain("skimTree")
-    for f in fileList: lat.Add(f)
+    for f in fileList:
+        print f
+        lat.Add(f)
     cutFile = TFile(fileList[0])
     calCut = cutFile.Get("theCut").GetTitle()
     print "Found",lat.GetEntries(),"entries.  Using cut:",calCut
 
+    # the wfstd draw segfaulted for one of the calIdx's.  ds 1, calIdx 10
     b1 = lat.GetBranch("wfstd")
     b2 = lat.GetBranch("trapENFCalC")
     print type(b1), type(b2)
     print b1.GetEntries(), b2.GetEntries()
-
     # lat.Draw("wfstd")
 
-
-    h1 = wl.H2D(lat,500,0,50,500,0,50,"wfstd:trapENFCalC",calCut,"Energy (keV)","wfStd","")
-    h1.Draw("colz")
-    c.SetLogz(1)
-    c.Print("../plots/wfStd.pdf")
-
+    # theCut = calCut + "&& gain==0"
+    # h1 = wl.H2D(lat,50,0,5,50,0,5,"wfstd:trapENFCalC",theCut,"Energy (keV)","wfStd","")
+    # h1.Draw("colz")
+    # c.SetLogz(1)
+    # c.Print("../plots/wfStd.pdf")
 
 
 
