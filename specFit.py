@@ -54,45 +54,47 @@ def main(argv):
         "65ZnL":1.10, "68GeL":1.29, "49V":   4.97,  # "51Cr": 5.46,
         "54Mn": 5.99, "55Fe": 6.54, # "5678Co":7.11,  "56Ni": 7.71,
         "65ZnK":8.98, "68Ga": 9.66, "68GeK": 10.37, # "734As":11.10,
-        "41Ca": 3.31,
-        "36Cl": 2.307,
+        # "41Ca": 3.31,
+        # "36Cl": 2.307,
         # "ax_Si_Ka1a2":1.739, "ax_Si_Kb1":1.836,
         # "ax_S_Ka1a2":2.307,
         # "ax_S_Kb1":2.464
         }
 
-    getSpecPDFs()
-    # runFit()
+    # generatePDFs()
+    runFit()
     # plotSpectrum()
     # plotProfiles()
-    # calculate_g_ae()
     # plotContours()
     # plotMCSpectrum()
     # runMCStudy()
+    # calculate_g_ae()
+
 
 # ===================================================================================================
-
-
-def getSpecPDFs():
-    """ Return a set of TH1D's to be turned into RooDataHist objects.
-        Make the binning 0.01 keV intervals - hopefully that's fine enough.
-        NOT including diagnostic plots: see ./sandbox/redondo.py for that.
+def generatePDFs(ma=0):
+    """ Generate a set of TH1D's to be turned into RooDataHist objects.
+        Takes axion mass (in keV) as a parameter.
+        Full suite of diganostic plots is in ./sandbox/specPlots.py
+        Make the binning 0.02 keV intervals - hopefully that's fine enough.
         TODO: BDM/ALP pdf Get from Kris's analysis in GAT
         TODO: WIMP pdf?  Get PyWIMP from Graham
     """
+
+    f = TFile("./data/inputHists.root","RECREATE")
+    redondoScale = 1e19 * 0.511e-10**-2 # convert table to [cts / (keV cm^2 d)]
+
     axData, phoData, tritData = [], [], []
     with open("./data/redondoFlux.txt") as f1: # 23577 entries
         lines = f1.readlines()[11:]
         for line in lines:
             data = line.split()
             axData.append([float(data[0]),float(data[1])])
-
     with open("./data/ge76peXS.txt") as f2: # 2499 entries, 0.01 kev intervals
         lines = f2.readlines()
         for line in lines:
             data = line.split()
             phoData.append([float(data[0]),float(data[1])])
-
     with open("./data/TritiumSpectrum.txt") as f3: # 20000 entries
         lines = f3.readlines()[1:]
         for line in lines:
@@ -100,70 +102,67 @@ def getSpecPDFs():
             conv = float(data[2]) # raw spectrum convolved w/ ge cross section
             if conv < 0: conv = 0.
             tritData.append([float(data[1]),conv])
-
     axData, phoData, tritData = np.array(axData), np.array(phoData), np.array(tritData)
 
-    # -- open an output file --
-    f4 = TFile("./data/inputHists.root","RECREATE")
+    def sig_ae(E,m):
+        beta = (1 - m**2./E**2.)**(1./2)
+        return (1 - (1./3.)*beta**(2./3.)) * (3. * E**2.) / (16. * np.pi * (1./137.) * 511.**2. * beta)
 
-    # set the energy range from 0 to 50
-    kevPerBin = 0.02
-    nBins = int(50./kevPerBin)
-    hPhoto = TH1D("hPhoto","hPhoto",nBins, 0., 50.)
-    hAxio = TH1D("hAxio","hAxio",nBins, 0., 50.)
-    hTritium = TH1D("hTritium","hTritium",nBins, 0., 50.)
-    hAxionFlux = TH1D("hAxionFlux","hAxionFlux",nBins, 0., 50.)
-    hAxionConv = TH1D("hAxionConv","hAxionConv",nBins, 0., 50.)
+    kpb = 0.02
+    eLo, eHi = 0.1, 30.
+    nBins = int((eHi-eLo)/kpb)
+    h1 = TH1D("h1","photoelectric",nBins,eLo,eHi)  # [cm^2 / kg]
+    h2 = TH1D("h2","axioelectric",nBins,eLo,eHi)   # [cm^2 / kg]
+    h3 = TH1D("h3","axion flux",nBins,eLo,eHi)     # [cts / (keV cm^2 d)]
+    h4 = TH1D("h4","convolved flux",nBins,eLo,eHi) # [cts / (keV d kg)]
+    h5 = TH1D("h5","tritium",nBins,eLo,eHi)        # [cts] (normalized to 1)
 
     for i in range(nBins):
-
-        ene = i * kevPerBin
-        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
-
-        # ignore "mean of empty slice" errors (they're harmless)
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category=RuntimeWarning)
 
-            # get the average value of column 1 for a range of energies (column 0)
+            # if ma>0, we ignore entries with E <= m.
+
+            # photoelectric x-section [cm^2 / kg]
+            idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
+            pho = np.mean(phoData[idx][:,1]) * 1000
+            if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
+            if phoData[idx][:,1] <= ma: pho = 0.
+            h1.SetBinContent(i,pho)
+
+            # axioelectric x-section [cm^2 / kg]
+            if ene > ma: axio = pho * sig_ae(ene, ma)
+            else: axio=0.
+            h2.SetBinContent(i,axio)
+
+            # axion flux [cts / (cm^2 d keV)]
+            idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
+            flux = np.mean(axData[idx][:,1]) * redondoScale
+            if np.isnan(flux): flux = 0.
+            h3.SetBinContent(i,flux)
+
+            # axion flux convolved [cts / (keV d kg)]
+            axConv = axio * flux
+            h4.SetBinContent(i, axConv)
+
+            # tritium
             idx = np.where((tritData[:,0] >= eneLo) & (tritData[:,0] <= eneHi))
             trit = np.mean(tritData[idx][:,1])
             if np.isnan(trit): trit = 0.
-            hTritium.SetBinContent(i, trit)
-            if trit==0.: print "Trit bin %d is zero" % i
+            h5.SetBinContent(i, trit)
 
-            idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
-            pho = np.mean(phoData[idx][:,1])
-            if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
-            hPhoto.SetBinContent(i, pho)
-            if pho==0.: print "Pho bin %d is zero" % i
-
-            idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
-            axFlux = np.mean(axData[idx][:,1])
-            if np.isnan(axFlux): axFlux = 0.
-            hAxionFlux.SetBinContent(i, axFlux)
-            if axFlux==0.: print "axFlux bin %d is zero" % i
-
-            axo = pho * np.power(ene,2.)
-            hAxio.SetBinContent(i, axo)
-
-            axConv = axFlux * axo
-            hAxionConv.SetBinContent(i, axConv)
-
-        # print ene, pho, trit, axFlux, axConv, bremFlux, bremConv
-
-    # TODO: SCALE FACTORS
-    hPhoto.Scale(1./0.)
-
-    # write to file.
-    hPhoto.Write()
-    hTritium.Write()
-    hAxionFlux.Write()
-    hAxionConv.Write()
-    f4.Close()
+    h1.Write()
+    h2.Write()
+    h3.Write()
+    h4.Write()
+    h5.Write()
+    f.Close()
 
 
 class pkModel:
-    def __init__(self,ene,name,fEnergy):
+    def __init__(self,fEnergy,name,ene,amp=0):
         """ TODO: add in constraints to the likelihood function instead of hard bounds
         https://root.cern.ch/root/html/tutorials/roofit/rf604_constraints.C.html
         """
@@ -174,9 +173,14 @@ class pkModel:
         if eHi > 10.: ampHi = 2000. # 68GeK is around 1700, all the rest are under 500
 
         # specifying a min/max value allows the var to float
-        self.pkNum = ROOT.RooRealVar("amp-"+name, "amp-"+name, -0.1, 500.)
-        self.pkMu = ROOT.RooRealVar("mu-"+name, "mu-"+name, ene, muLo, muHi)
-        self.pkSig = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sgLo, sgHi)
+        if amp!=0:
+            self.pkNum = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp)
+            self.pkMu = ROOT.RooRealVar("mu-"+name, "mu-"+name, ene)
+            self.pkSig = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig)
+        else:
+            self.pkNum = ROOT.RooRealVar("amp-"+name, "amp-"+name, ampLo, ampHi)
+            self.pkMu = ROOT.RooRealVar("mu-"+name, "mu-"+name, ene, muLo, muHi)
+            self.pkSig = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sgLo, sgHi)
 
         # pdf and extended pdf
         self.pkGaus = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, fEnergy, self.pkMu, self.pkSig)
@@ -213,15 +217,20 @@ def runFit():
     for key in pkList:
         ene = pkList[key]
         if eLo <= ene <= eHi:
-            thisPk = pkModel(ene, key, fEnergy)
+            if key=="68GeL":
+                thisPk = pkModel(ene, key, fEnergy)
+            else:
+                thisPk = pkModel(ene, key, fEnergy)
             peaks[key] = thisPk
             pdfList.add(thisPk.GetPkExt())
+
+    return
 
     # axion continuum
     axNum = ROOT.RooRealVar("amp-axion","amp-axion",100., 0., 10000.)
     # axNum = ROOT.RooRealVar("amp-axion","amp-axion",16.904) # hardcode the profile upper limit
     f2 = TFile("./data/inputHists.root")
-    axTH1D = f2.Get("hAxionConv")
+    axTH1D = f2.Get("h4")
     axDataHist = ROOT.RooDataHist("ax", "ax", ROOT.RooArgList(fEnergy), RF.Import(axTH1D))
     fEnergy.setRange(eLo, eHi) # have to reset after loading a histo w/ different bounds
     axPdf = ROOT.RooHistPdf("axPdf","axPdf", ROOT.RooArgSet(fEnergy), axDataHist, 2)
@@ -661,10 +670,16 @@ def getRooArgDict(arglist):
 
 def calculate_g_ae():
 
-    N_expected = getSpecPDFs()
-    N_observed = 16.904 # profile U.L.
-    # N_observed = 40.8
-    print "g_ae U.L.:", np.power(N_observed/N_expected, 1./4.)
+    f = TFile("./data/inputHists.root")
+    hConv = f.Get("h4")
+    ax = hConv.GetXaxis()
+
+    malbekExpo = 89.5 # kg-d
+    nExp = hConv.Integral(ax.FindBin(eLo), ax.FindBin(eHi), "width") * malbekExpo # [cts / (keV d kg)] * [kg d]
+    print "nExp",nExp
+
+    nObs = 40.8
+    print "g_ae U.L.:", np.power(nObs/nExp, 1./4.)
 
 
 if __name__=="__main__":

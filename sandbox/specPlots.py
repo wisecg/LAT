@@ -11,14 +11,18 @@ from array import array
 gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
 
-if __name__ == "__main__":
+def main():
+    runAllPlots()
+    # generatePDFs()
 
+
+def runAllPlots():
     c = TCanvas("c","c",800,600)
     c.SetLogy()
     c.SetGrid(1,1)
 
     # CONSTANTS
-    kevPerBin = 0.02
+    kpb = 0.02
     eLo, eHi = 0.1, 12.
     binRange = 2.
     pks = [1.739, 1.836, 2.307, 2.464, 6.404]
@@ -58,11 +62,11 @@ if __name__ == "__main__":
     l1.Draw("same")
 
     # verify the algorithm to translate into a hist (used for RooFit) works correctly
-    nBins = int((eHi-eLo)/kevPerBin)
+    nBins = int((eHi-eLo)/kpb)
     h1 = TH1D("h1","h1",nBins, eLo, eHi)
     for i in range(nBins):
-        ene = i * kevPerBin + eLo
-        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
         idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
         flux = 0.
         with warnings.catch_warnings(): # ignore "mean of empty slice" errors (they're harmless)
@@ -81,8 +85,8 @@ if __name__ == "__main__":
     clintFlux = []
     ax = h1.GetXaxis()
     for pk in pks:
-         # "* kevPerBin" is same as using "width" option in integral
-        intFlux = h1.Integral(ax.FindBin(pk-kevPerBin*binRange), ax.FindBin(pk+kevPerBin*binRange)) * kevPerBin
+         # "* kpb" is same as using "width" option in integral
+        intFlux = h1.Integral(ax.FindBin(pk-kpb*binRange), ax.FindBin(pk+kpb*binRange)) * kpb
         clintFlux.append(intFlux)
     g3 = TGraph(len(pks), array('d',pks), array('d', clintFlux))
     g3.SetMarkerStyle(20)
@@ -141,7 +145,7 @@ if __name__ == "__main__":
             phoData.append([float(data[0]),float(data[1])])
             phoEne.append(float(data[0]))
             phoVal.append(float(data[1]))
-    phoData = np.array(phoData)
+    phoData, phoEne, phoVal = np.array(phoData), np.array(phoEne), np.array(phoVal)
 
     c.Clear()
     c.SetCanvasSize(800,600)
@@ -166,29 +170,44 @@ if __name__ == "__main__":
     axioVal = [phoVal[idx] * sigAeScale * phoEne[idx]**2. * barnsPerAtom for idx in range(len(phoVal))]
 
     g7 = TGraph(len(phoEne), array('d',phoEne), array('d',axioVal))
-    g7.SetTitle(" ")
+    g7.Draw("AL")
+
     g7.GetXaxis().SetTitle("Energy (keV)")
     g7.GetYaxis().SetTitle("#sigma_{ae} (barns/atom)")
     g7.GetXaxis().SetRangeUser(0.1, 12.)
-    g7.SetMarkerColor(ROOT.kBlue)
+    g7.SetTitle(" ")
+    g7.SetLineColor(ROOT.kBlue)
+    g7.SetLineWidth(2)
     g7.SetMinimum(1)
     g7.SetMaximum(6e2)
-    g7.Draw()
+    c.Update()
 
-    # TODO: Figure out how Graham did the 5 keV axion.
-    # beta = 5.
-    # sigAeScale = beta**-1 * 3./(16. * np.pi * (1./137.) * 511.**2.) * (1 - beta**(2./3.)/3)
-    # axioVal2 = [phoVal[idx] * sigAeScale * phoEne[idx]**2. for idx in range(len(phoVal))]
-    # g8 = TGraph(len(phoEne), array('d',phoEne), array('d',axioVal2))
-    # g8.SetMarkerColor(ROOT.kRed)
-    # g8.Draw("same")
+
+    # 5 kev axion (new formula for sigma_ae)
+    def sig_ae(E,m):
+        beta = (1 - m**2./E**2.)**(1./2)
+        return (1 - (1./3.)*beta**(2./3.)) * (3. * E**2.) / (16. * np.pi * (1./137.) * 511.**2. * beta)
+    idx = np.where(phoEne > 5)
+    axioVal2 = [phoVal[idx][i] * sig_ae(phoEne[idx][i],5.) * barnsPerAtom for i in range(len(phoVal[idx]))]
+    axioVal2.insert(0,0.)
+    phoEne2 = phoEne[idx].tolist()
+    phoEne2.insert(0,5.)
+
+    g8 = TGraph(len(phoEne2), array('d',phoEne2), array('d',axioVal2))
+    g8.SetLineColor(ROOT.kRed)
+    g8.Draw("L same")
+
+    leg2 = TLegend(0.65,0.75,0.85,0.85)
+    leg2.AddEntry(g7,"m_{a}= 0 keV","l")
+    leg2.AddEntry(g8,"m_{a}= 5 keV","l")
+    leg2.Draw("same")
 
     # convert to histogram (for RooDataHist)
-    nBins = int((eHi - eLo)/kevPerBin)
+    nBins = int((eHi - eLo)/kpb)
     h2 = TH1D("h2","h2",nBins, eLo, eHi)
     for i in range(nBins):
-        ene = i * kevPerBin + eLo
-        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
         # ignore "mean of empty slice" errors (they're harmless)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category=RuntimeWarning)
@@ -197,18 +216,18 @@ if __name__ == "__main__":
             if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
             axio = pho * ene**2. * sigAeScale * barnsPerAtom
             h2.SetBinContent(i, axio)
-    h2.SetLineColor(ROOT.kRed)
+    h2.SetLineColor(ROOT.kBlack)
     h2.Draw("hist same")
 
     c.Print("../plots/axioElectric.pdf")
 
     # 6. convolve the axion flux w/ the axioelectric effect.  (bins are different so use a histogram)
 
-    nBins = int((eHi - eLo)/kevPerBin)
+    nBins = int((eHi - eLo)/kpb)
     h3 = TH1D("h3","",nBins,eLo,eHi)
     for i in range(nBins):
-        ene = i * kevPerBin + eLo
-        eneLo, eneHi = ene - kevPerBin/2., ene + kevPerBin/2.
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
         # ignore "mean of empty slice" errors (they're harmless)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category=RuntimeWarning)
@@ -247,7 +266,7 @@ if __name__ == "__main__":
     phos, axos, cFlux, cRateHist = [], [], [], []
     ax1, ax3 = h1.GetXaxis(), h3.GetXaxis()
     for pk in pks:
-        eneLo, eneHi = pk - kevPerBin, pk + kevPerBin
+        eneLo, eneHi = pk - kpb, pk + kpb
 
         # photoelectric
         idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
@@ -258,11 +277,11 @@ if __name__ == "__main__":
         axos.append( pho * pk**2. * sigAeScale)
 
         # axion flux
-        flux = h1.Integral(ax1.FindBin(pk-kevPerBin*binRange), ax1.FindBin(pk+kevPerBin*binRange)) * kevPerBin
+        flux = h1.Integral(ax1.FindBin(pk-kpb*binRange), ax1.FindBin(pk+kpb*binRange)) * kpb
         cFlux.append(flux)
 
         # axion rate - integrate histogram directly (proof it's correct if it matches frank's table)
-        conv = h3.Integral(ax3.FindBin(pk-kevPerBin*binRange), ax3.FindBin(pk+kevPerBin*binRange)) * kevPerBin * axConvScale
+        conv = h3.Integral(ax3.FindBin(pk-kpb*binRange), ax3.FindBin(pk+kpb*binRange)) * kpb * axConvScale
         cRateHist.append(conv)
 
     frankRates = [axos[i] * frankFlux[i] for i in range(len(axos))]
@@ -300,14 +319,136 @@ if __name__ == "__main__":
     print "Clint's Histo g_ae: %.2e" % g_ae
 
     print "Histo peaks expected counts: ",N_exp
-    N_exp = h3.Integral(ax3.FindBin(1.5), ax3.FindBin(8.)) * kevPerBin * axConvScale * exposure
+    N_exp = h3.Integral(ax3.FindBin(1.5), ax3.FindBin(8.)) * kpb * axConvScale * exposure
     print "Continuum expected counts: ",N_exp
 
 
     # 8. do the tritium plot
 
+    tritData, tritEne, tritVal = [], [], []
+    with open("../data/TritiumSpectrum.txt") as f3: # 20000 entries
+        lines = f3.readlines()[1:]
+        for line in lines:
+            data = line.split()
+            conv = float(data[2]) # raw spectrum convolved w/ ge cross section
+            if conv < 0: conv = 0.
+            tritData.append([float(data[1]),conv])
+            tritEne.append(float(data[1]))
+            tritVal.append(conv)
+    tritData = np.array(tritData)
+
+    c.Clear()
+    c.SetLogy(0)
+    g8 = TGraph(len(tritEne),array('d',tritEne),array('d',tritVal))
+    g8.SetTitle(" ")
+    g8.GetXaxis().SetTitle("Energy (keV)")
+    g8.GetYaxis().SetTitle("Counts (norm.)")
+    g8.SetMarkerColor(ROOT.kRed)
+    g8.Draw()
+
+    kpb = 0.02
+    eLo, eHi = 0.1, 20.
+    nBins = int((eHi-eLo)/kpb)
+    h4 = TH1D("h4","h4",nBins,eLo,eHi)
+    for i in range(nBins):
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=RuntimeWarning)
+            idx = np.where((tritData[:,0] >= eneLo) & (tritData[:,0] <= eneHi))
+            trit = np.mean(tritData[idx][:,1])
+            if np.isnan(trit): trit = 0.
+            h4.SetBinContent(i, trit)
+            if trit==0.: print "Trit bin %d is zero" % i
+
+    h4.SetLineColor(ROOT.kBlue)
+    h4.Draw("hist same")
+    c.Print("../plots/tritSpec.pdf")
 
 
+def generatePDFs(ma=0):
+    """ Generate pdfs for fitting. Takes axion mass (in keV) as a parameter. """
+
+    f = TFile("../data/inputHists.root","RECREATE")
+    redondoScale = 1e19 * 0.511e-10**-2 # convert table to [cts / (keV cm^2 d)]
+
+    axData, phoData, tritData = [], [], []
+    with open("../data/redondoFlux.txt") as f1: # 23577 entries
+        lines = f1.readlines()[11:]
+        for line in lines:
+            data = line.split()
+            axData.append([float(data[0]),float(data[1])])
+    with open("../data/ge76peXS.txt") as f2: # 2499 entries, 0.01 kev intervals
+        lines = f2.readlines()
+        for line in lines:
+            data = line.split()
+            phoData.append([float(data[0]),float(data[1])])
+    with open("../data/TritiumSpectrum.txt") as f3: # 20000 entries
+        lines = f3.readlines()[1:]
+        for line in lines:
+            data = line.split()
+            conv = float(data[2]) # raw spectrum convolved w/ ge cross section
+            if conv < 0: conv = 0.
+            tritData.append([float(data[1]),conv])
+    axData, phoData, tritData = np.array(axData), np.array(phoData), np.array(tritData)
+
+    def sig_ae(E,m):
+        beta = (1 - m**2./E**2.)**(1./2)
+        return (1 - (1./3.)*beta**(2./3.)) * (3. * E**2.) / (16. * np.pi * (1./137.) * 511.**2. * beta)
+
+    kpb = 0.02
+    eLo, eHi = 0.1, 30.
+    nBins = int((eHi-eLo)/kpb)
+    h1 = TH1D("h1","photoelectric",nBins,eLo,eHi)  # [cm^2 / kg]
+    h2 = TH1D("h2","axioelectric",nBins,eLo,eHi)   # [cm^2 / kg]
+    h3 = TH1D("h3","axion flux",nBins,eLo,eHi)     # [cts / (keV cm^2 d)]
+    h4 = TH1D("h4","convolved flux",nBins,eLo,eHi) # [cts / (keV d kg)]
+    h5 = TH1D("h5","tritium",nBins,eLo,eHi)        # [cts] (normalized to 1)
+
+    for i in range(nBins):
+        ene = i * kpb + eLo
+        eneLo, eneHi = ene - kpb/2., ene + kpb/2.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=RuntimeWarning)
+
+            # if ma>0, we ignore entries with E <= m.
+
+            # photoelectric x-section [cm^2 / kg]
+            idx = np.where((phoData[:,0] >= eneLo) & (phoData[:,0] <= eneHi))
+            pho = np.mean(phoData[idx][:,1]) * 1000
+            if np.isnan(pho) or len(phoData[idx][:,1]) == 0: pho = 0.
+            if phoData[idx][:,1] <= ma: pho = 0.
+            h1.SetBinContent(i,pho)
+
+            # axioelectric x-section [cm^2 / kg]
+            if ene > ma: axio = pho * sig_ae(ene, ma)
+            else: axio=0.
+            h2.SetBinContent(i,axio)
+
+            # axion flux [cts / (cm^2 d keV)]
+            idx = np.where((axData[:,0] >= eneLo) & (axData[:,0] <= eneHi))
+            flux = np.mean(axData[idx][:,1]) * redondoScale
+            if np.isnan(flux): flux = 0.
+            h3.SetBinContent(i,flux)
+
+            # axion flux convolved [cts / (keV d kg)]
+            axConv = axio * flux
+            h4.SetBinContent(i, axConv)
+
+            # tritium
+            idx = np.where((tritData[:,0] >= eneLo) & (tritData[:,0] <= eneHi))
+            trit = np.mean(tritData[idx][:,1])
+            if np.isnan(trit): trit = 0.
+            h5.SetBinContent(i, trit)
+
+    h1.Write()
+    h2.Write()
+    h3.Write()
+    h4.Write()
+    h5.Write()
+    f.Close()
 
 
+if __name__ == "__main__":
+    main()
 
