@@ -747,7 +747,7 @@ def setDBCalRecord(entry, forceUpdate=False):
         print "WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!"
 
 
-def getDBCalRecord(key):
+def getDBCalRecord(key,verbose=False):
     """ View a particular calibration record. """
 
     calDB = db.TinyDB('calDB.json')
@@ -759,13 +759,13 @@ def getDBCalRecord(key):
         print "Record %s doesn't exist" % key
         return 0
     elif nRec == 1:
-        print "Found record:\n%s" % key
+        if verbose: print "Found record:\n%s" % key
         rec = recList[0]['vals']  # whole record
 
         # sort the TinyDB string keys numerically (obvs only works for integer keys)
         result = {}
         for key in sorted([int(k) for k in rec]):
-            print key, rec[u'%d' % key]
+            if verbose: print key, rec[u'%d' % key]
             result[key] = rec[u'%d' % key]
         return result
     else:

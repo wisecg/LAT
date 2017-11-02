@@ -36,7 +36,7 @@ def main(argv):
     skimTree = ROOT.TChain("skimTree")
     customPar = ""
     tuneNames, calList, parList, parNameList, chList = [], [], [], [], []
-    fTune, fCut, fFor, fUpd, fastMode, fDB, fCSV = False, False, False, False, False, False, False
+    fTune, fCut, fFor, fastMode, fDB, fCSV = False, False, False, False, False, False
 
     if len(argv) == 0:
         return
@@ -109,13 +109,15 @@ def main(argv):
             fTune = True
             pathToInput = argv[i+1]
             print ("Cut tune mode. Input path for cal files: ", pathToInput)
+
+        # -- Apply channel cuts (exits after running this) --
         if opt == "-cut":
-            pathToInput, pathToOutput = argv[i+1], argv[i+2]
-            fCut = True
+            dsNum = int(argv[i+1])
             print ("Cut application mode.")
-        if opt == "-upd":
-            fUpd = True
-            print ("File update mode.")
+            ApplyChannelCuts(dsNum)
+            stopT = time.clock()
+            print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
+            return
 
     # -- Load calibration files --
     if dsNum == -1 or subNum == -1 or modNum == -1:
@@ -176,21 +178,6 @@ def main(argv):
             dfTot = pd.concat(dfList)
             dfTot.to_csv("./output/Cuts_ds%d_idx%d_m%d.csv"%(dsNum,subNum,modNum))
 
-    # -- Apply cuts --
-    if fCut:
-        megaCut = MakeCutList(cInfo, skimTree, theCut, dsNum, modNum, chList)
-        print megaCut
-        for idx, ch in enumerate(chList):
-            print theCut+'&&'+megaCut[ch][2:]
-            outFile = TFile(pathToOutput+"latCutSkimDS%d_%d_ch%d.root"%(dsNum,subNum,ch),"RECREATE")
-            outTree = TTree()
-            outTree = skimTree.CopyTree(theCut+'&&gain==0&&'+megaCut[ch][2:])
-            outTree.Write()
-            # cutUsed = ROOT.TNamed("theCut_ch%d_idx%d"%(ch,subNum),theCut+'&&'+megaCut[ch][2:])
-            cutUsed = ROOT.TNamed("theCut",theCut+'&&gain==0&&'+megaCut[ch][2:])
-            cutUsed.Write()
-            outFile.Close()
-
     stopT = time.clock()
     print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
 
@@ -209,6 +196,7 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
         nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
+
         # Error and warning messages
         if len(nCutList) == 0 or len(nEnergyList) == 0:
             print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0,0,0]"%(ch)
@@ -224,6 +212,7 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
+
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
@@ -282,31 +271,98 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     c.Print(outPlot)
     return cut99,cut95,cut01,cut05,cut90
 
-def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
-    """ Pass in background run and it generates a dictionary of cuts for all good channels"""
-    nPass = skimTree.Draw("run", basicCut, "goff")
-    nRun = skimTree.GetV1()
-    runList = list(set(int(nRun[n]) for n in xrange(nPass)))
-    print "Processing Runs", runList
-    idxMin = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runList[0])
-    idxMax = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runList[-1])
+
+def ApplyChannelCuts(dsNum):
+    """ ./lat3.py -cut [dsNum]
+    This is going to run over a whole dataset. """
+
+    cInfo = ds.CalInfo()
+    nRanges = ds.dsMap[dsNum]
+    nMods = [1]
+    if dsNum == 4: nMods = [2]
+    if dsNum == 5: nMods = [1,2]
+
+    for modNum in nMods:
+
+        for subNum in range(nRanges):
+
+            fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, subNum)
+            fList = glob.glob(fRegex)
+            file0 = fList[0]
+
+            print "DS-%d Sub-%d M%d N: %d" % (dsNum, subNum, modNum, len(fList))
+
+            skimTree = TChain("skimTree")
+            skimTree.Add(fRegex)
+            f = TFile(file0)
+            theCut = f.Get("theCut").GetTitle()
+            theCut += "&& gain==0 && "
+            chList = ds.GetGoodChanList(dsNum)
+
+            # find calIdx boundaries for these runs
+            skimTree.GetEntry(0)
+            firstRun = skimTree.run
+            skimTree.GetEntry(skimTree.GetEntries()-1)
+            lastRun = skimTree.run
+            calIdxLo = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), firstRun)
+            calIdxHi = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), lastRun)
+
+            print "    Entries %d  firstRun %d  lastRun %d  calIdxLo %d  calIdxHi %d" % (skimTree.GetEntries(),firstRun,lastRun,calIdxLo,calIdxHi)
+
+            megaCut = MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi)
+
+            for idx, ch in enumerate(chList):
+
+
+
+                if ch==608:
+                    print idx, ch, theCut+megaCut[ch]
+                    print outFile
+
+
+            #     chanCut = theCut+'&&'+megaCut[ch][2:]
+            #     outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+            #     print "Writing to:",outFile
+            #     print "Cut used:",chanCut
+            #
+            #     outFile = TFile(outFile,"RECREATE")
+            #     outTree = TTree()
+            #     outTree = skimTree.CopyTree(chanCut)
+            #     outTree.Write()
+            #     cutUsed = TNamed("chanCut",chanCut)
+            #     cutUsed.Write()
+            #     outFile.Close()
+
+            # return
+
+
+def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):
+    """ Generate a dict of run-channel-specific cuts, to be appended to the main data cleaning cut.
+        Create an entry for all channels in the "good" list . """
+
     megaCut = {}
-    if mode == 'db':
-        for subNum in range(idxMin,idxMax+1):
-            fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
-            rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
-            bcD = wl.getDBCalRecord("bcMax_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
-            runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
-            for ch in chList:
+    for subNum in range(calIdxLo,calIdxHi+1):
+
+        fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
+
+        runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)] [subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
+
+        for ch in chList:
+
+            fsVal = fsD[ch][2] # 90% value
+
+            # use an 'if' condition for zeros - those are bad cut records
+            if fsVal > 0:
                 if ch in megaCut.keys():
-                    megaCut[ch] += '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][2])
+                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
                 else:
-                    megaCut[ch] = '||(run>=%d&&run<=%d&&fitSlo<%.2f&&riseNoise<%.2f)'%(runMin,runMax,fsD[ch][2], rnD[ch][2])
-    elif mode == 'csv':
-        print('Not implemented!')
-        return 0
+                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
+
+    for key in megaCut:
+        megaCut[key] += ")"
 
     return megaCut
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
