@@ -17,7 +17,7 @@ v1: 03 Oct 2017
 import sys, time, ROOT, glob
 sys.argv += [ '-b' ] # force ROOT to be loaded in batch mode.
 from ROOT import gROOT, gStyle, gPad
-from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine, TGraph
+from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine, TGraph, TNamed
 import numpy as np
 from DataSetInfo import CalInfo
 import DataSetInfo as ds
@@ -276,6 +276,8 @@ def ApplyChannelCuts(dsNum):
     """ ./lat3.py -cut [dsNum]
     This is going to run over a whole dataset. """
 
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
+
     cInfo = ds.CalInfo()
     nRanges = ds.dsMap[dsNum]
     nMods = [1]
@@ -296,7 +298,6 @@ def ApplyChannelCuts(dsNum):
             skimTree.Add(fRegex)
             f = TFile(file0)
             theCut = f.Get("theCut").GetTitle()
-            theCut += "&& gain==0 && "
             chList = ds.GetGoodChanList(dsNum)
 
             # find calIdx boundaries for these runs
@@ -313,27 +314,19 @@ def ApplyChannelCuts(dsNum):
 
             for idx, ch in enumerate(chList):
 
+                outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+                chanCut = theCut + " && gain==0 && channel==%d && " % (ch) + megaCut[ch]
 
+                print "    Writing to:",outFile
+                print "    Cut used:",chanCut,"\n"
 
-                if ch==608:
-                    print idx, ch, theCut+megaCut[ch]
-                    print outFile
-
-
-            #     chanCut = theCut+'&&'+megaCut[ch][2:]
-            #     outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-            #     print "Writing to:",outFile
-            #     print "Cut used:",chanCut
-            #
-            #     outFile = TFile(outFile,"RECREATE")
-            #     outTree = TTree()
-            #     outTree = skimTree.CopyTree(chanCut)
-            #     outTree.Write()
-            #     cutUsed = TNamed("chanCut",chanCut)
-            #     cutUsed.Write()
-            #     outFile.Close()
-
-            # return
+                outFile = TFile(outFile,"RECREATE")
+                outTree = TTree()
+                outTree = skimTree.CopyTree(chanCut)
+                outTree.Write()
+                cutUsed = TNamed("chanCut",chanCut)
+                cutUsed.Write()
+                outFile.Close()
 
 
 def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):

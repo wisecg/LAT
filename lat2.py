@@ -456,6 +456,13 @@ def updateFile(dsNum, cal):
         f.Close()
 
 
+def debugFiles():
+    """ Unfortunately, updateFile gave some files a segfault problem.
+        Let's try to debug it. """
+
+        print "hi!"
+
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

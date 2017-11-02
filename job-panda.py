@@ -42,7 +42,7 @@ def main(argv):
 
     # get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
-    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q r s'),False) # make a bunch of bools
+    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q r s t'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
 
         if opt == "-ds": dsNum = int(argv[i+1])
@@ -85,6 +85,7 @@ def main(argv):
         if opt == "-applyChannelCut" : applyChannelCut(int(argv[i+1]),int(argv[i+2]))
         if opt == "-applyCuts": applyCuts(int(argv[i+1]))
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
+        if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]))
 
 
     # -- calibration stuff --
@@ -781,6 +782,8 @@ def tuneCuts(argString, dsNum=None):
 def applyChannelCut(dsNum,ch):
     """ ./job-panda.py -applyChannelCut [dsNum] [ch]
 
+    DEPRECATED, DO NOT USE.  REFER TO LAT3
+
         Creates ROOT files for each channel in a dataset.
     The "mega cut" is saved into the file, though it **appears**
     that it's not necessary to re-apply the cut in a draw command.
@@ -934,6 +937,11 @@ def cleanUpCuts(dsNum):
         thisCut = TNamed("theCut",megaCut)
         thisCut.Write("",TObject.kOverwrite)
         finalFile.Close()
+
+
+def lat3ApplyCuts(dsNum):
+    """ ./job-panda.py -lat3 [dsNum] """
+    sh("""%s './lat3.py -cut %d'""" % (qsubStr, dsNum))
 
 
 def getEff():
