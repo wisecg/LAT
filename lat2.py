@@ -13,7 +13,7 @@ v1: 07 Aug 2017
 
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
-import sys, time, os, glob
+import sys, time, os, glob, ROOT, signal
 import numpy as np
 import tinydb as db
 import DataSetInfo as ds
@@ -24,6 +24,7 @@ from scipy.optimize import curve_fit
 homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
+
 
 def main(argv):
 
@@ -46,6 +47,11 @@ def main(argv):
         if opt == "-p":
             fPlt = True
             print "Writing plots mode."
+        if opt == "-debug":
+            debugFiles()
+            stopT = time.clock()
+            print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
+            exit()
         if opt == "-force":
             fFor = True
             print "Force DB update mode."
@@ -415,7 +421,9 @@ def updateFile(dsNum, cal):
 
         # wipe the wfstd branch if it already exists before creating a new one
         b0 = tree.GetListOfBranches().FindObject("wfstd")
-        if isinstance(b0, ROOT.TBranchElement): tree.GetListOfBranches().Remove(b0)
+        if isinstance(b0, ROOT.TBranchElement):
+            tree.GetListOfBranches().Remove(b0)
+            tree.Write()
 
         wfstd = std.vector("double")()
         b1 = tree.Branch("wfstd",wfstd)
@@ -458,9 +466,56 @@ def updateFile(dsNum, cal):
 
 def debugFiles():
     """ Unfortunately, updateFile gave some files a segfault problem.
-        Let's try to debug it. """
+    Let's try to debug it.
 
-        print "hi!"
+    deleted wfstd branch: /global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root
+    DS3 bg otherwise OK.  i'm going to just move the file.
+
+    fk.  DS0 and DS5 have errors basically throughout from LAT2.
+    the trees are unreadable even after the wfstd branch is deleted.
+    have to re-run LAT.
+    """
+
+    # startHere = False
+    fList = glob.glob("/global/homes/w/wisecg/project/bg-lat/latSkimDS3*")
+    for fName in sorted(fList):
+        # if fName == "/global/homes/w/wisecg/project/bg-lat/latSkimDS5_3_0.root":
+            # startHere = True
+        # if not startHere: continue
+        print fName
+        f = TFile(fName)
+        t = f.Get("skimTree")
+        b1 = t.GetBranch("trapENFCalC")
+        b2 = t.GetBranch("wfstd")
+        print t.GetEntries(), b1.GetEntries(), b2.GetEntries()
+        if b1.GetEntries() != b2.GetEntries(): print "WTF"
+        t.GetEntry(0)
+        print t.trapENFCalC.at(0), t.wfstd.at(0)
+        f.Close()
+
+    # f = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root","UPDATE")
+    # t = f.Get("skimTree")
+
+    # wipe the wfstd branch
+    # b0 = t.GetListOfBranches().FindObject("wfstd")
+    # b0 = t.GetBranch("wfstd")
+    # print type(b0)
+    # if isinstance(b0, ROOT.TBranchElement):
+
+    # t.GetListOfBranches().Remove(b0)
+    # t.Write()
+
+    # ROOT.gInterpreter.ProcessLine("gDebug=2") # this prints out a crazy amount of output
+
+    # b1 = t.GetBranch("trapENFCalC")
+    # b2 = t.GetBranch("wfstd")
+    # print t.GetEntries(), b1.GetEntries() #, b2.GetEntries()
+    # if b1.GetEntries() != b2.GetEntries(): print "WTF"
+    # t.GetEntry(0)
+    # print t.trapENFCalC.at(0) #, t.wfstd.at(0)
+    # f.Close()
+
+
 
 
 
