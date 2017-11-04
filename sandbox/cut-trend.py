@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """
 ===================== cut-trend.py =====================
-Draws trend of cuts from saved CSV files
+Draws trend of cuts from database
 
-Will/should add a DB mode to extract cut values directly from the database
+Usage:
+    ./cut-trend.py
 
 """
 import sys, os, glob
@@ -11,16 +12,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import waveLibs as wl
 import DataSetInfo as ds
 sns.set_style('whitegrid')
 sns.set_context('talk')
 
 def main(argv):
+    cInfo = ds.CalInfo()
     dsNum, modNum = 1, 1
     inDir, outDir = '.', '.'
     chNum, dfList = -1, []
     parList, chList = [], []
-    perc = 99
+    perc = 90
     if len(argv) == 0:
         return
     for i, opt in enumerate(argv):
@@ -53,6 +56,9 @@ def main(argv):
         if opt == "-riseNoise":
             parList.append('riseNoise')
             print ("Drawing riseNoise")
+        if opt == "-wfstd":
+            parList.append('wfstd')
+            print ("Drawing wfstd")
 
         # -- Input/output options --
         if opt == "-s":
@@ -78,35 +84,36 @@ def main(argv):
     else:
         chList = [chNum]
 
-    cutFiles = glob.glob('%s/Cuts_ds%d_*.csv'%(inDir, dsNum))
-    for f in cutFiles:
-        try:
-            dfList.append(pd.read_csv(f))
-        except:
-            print (f, "is broken, SAD")
-
-    dfTot = pd.concat(dfList)
-    # Cut by a certain percentage and sort w.r.t SubDS number
-    # dfCut = dfTot.query('Percentage==%d'%(perc)).sort_values('SubDS')
-    dfCut = dfTot[dfTot.Percentage == perc].sort_values('SubDS')
-    dfCut.set_index('Cut', inplace=True)
-
+    # Everything done by DB now!
     fig = plt.figure(figsize=(12,7))
     ax = fig.add_subplot(111)
     ch_idx = np.linspace(0, 1, len(chList))
+    parValList = {}
+    for ch in chList: parValList[ch] = []
     for par in parList:
         ax.cla()
+        for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
+            # fsD = wl.getDBCalRecord("%s_ds%d_idx%d_m%d_Peak"%(par,dsNum,subNum,modNum))
+            fsD = wl.getDBCalRecord("%s_ds%d_idx%d_m%d"%(par,dsNum,subNum,modNum))
+            for idx2, ch in enumerate(chList):
+                # if parValList[idx2]:
+                parValList[ch].append(fsD[ch][2]) # 90% value
+                # else:
+                    # parValList[idx2] = [fsD[ch][2]]
+
+        print parValList
         for idx,ch in zip(ch_idx, chList):
             # Grab the array for the channel + cut combo
-            parVals0 = dfCut.loc[par, str(ch)].values
+            # parVals0 = dfCut.loc[par, str(ch)].values
             # Fill any potential zeros
-            parVals = FillZeros(parVals0)
-            ax.plot(np.linspace(0, len(parVals), len(parVals)), parVals, marker='o', label='Ch %s'%(ch), color = plt.cm.tab20c(idx))
+            # parVals = FillZeros(parVals0)
+            # ax.plot(np.linspace(0, len(parVals), len(parVals)), parVals, marker='o', label='Ch %s'%(ch), color = plt.cm.tab20c(idx))
+            ax.plot(np.linspace(0, len(parValList[ch]), len(parValList[ch])), parValList[ch], marker='o', label='Ch %s'%(ch), color = plt.cm.tab20c(idx))
         # Make stuff pretty
         ax.set_title('DS%d %s Trend (%s)'%(dsNum, par, perc))
         ax.set_xlabel('SubDS')
         ax.set_ylabel(par)
-        ax.xaxis.set_ticks(np.arange(0, len(parVals)+1, 2) )
+        ax.xaxis.set_ticks(np.arange(0, len(parValList[chList[0]])+1, 2) )
         plt.tight_layout()
         # Shrink current axis and put legend on the side
         box = ax.get_position()
