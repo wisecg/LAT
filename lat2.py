@@ -20,6 +20,11 @@ import DataSetInfo as ds
 import waveLibs as wl
 from ROOT import gROOT, TFile, TChain
 from scipy.optimize import curve_fit
+from scipy.stats import linregress
+
+import matplotlib
+matplotlib.use('Agg') # noninteractive backend
+import matplotlib.pyplot as plt
 
 homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
@@ -51,6 +56,11 @@ def main(argv):
             debugFiles()
             stopT = time.clock()
             print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
+            exit()
+        if opt == "-fitRN":
+            fitDBRiseNoise()
+            # stopT = time.clock()
+            # print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
             exit()
         if opt == "-force":
             fFor = True
@@ -516,7 +526,86 @@ def debugFiles():
     # f.Close()
 
 
+def fitDBRiseNoise():
+    """ ./lat2.py -fitRN
 
+    For each dataset, for every channel, for every calIdx:
+    pull the 95% riseNoise value for 50-90, 90-130, 130-170, 170-210.
+    Then do a simple linear fit and save the channel value.
+    """
+
+    dsNum = 1
+
+    # parse database
+    # { recordName : { chan : 95% value } }  - recordName is idxN-e50-90, etc
+
+    dbDict = {}
+    calDB = db.TinyDB('calDB.json')
+    for item in calDB:
+        d = dict(item)
+        key = d["key"]
+        vals = d["vals"]
+        tmp = key.split("_")
+        tmp = [str(t) for t in tmp]
+
+        # ex - ['riseNoise', 'ds1', 'idx12', 'm1', '130', '170']
+        if tmp[0]=="riseNoise" and tmp[1]=="ds%d" % dsNum and tmp[4]!="Peak" and tmp[4]!="Continuum":
+            calIdx = int(tmp[2][3:])
+            eLo, eHi = int(tmp[4]), int(tmp[5])
+            recName = "idx%s-%d-%d" % (calIdx, eLo, eHi)
+            recDict = {}
+            for ch in vals:
+                chan = int(ch)
+                val95 = vals[ch][3] # ex - [1%, 5%, 90%, 95%, 99%]
+                recDict[chan] = val95
+            dbDict[recName] = recDict
+
+
+    dsNum, module = 1, 1
+    if dsNum == 4: module = 2
+
+    nIdx = wl.getNCalIdxs(dsNum, module)
+
+    # for plots
+    # { chan : { calIdx : [vals] } }
+    # plotDict = {}
+
+    # for ch in ds.GetGoodChanList(dsNum):
+    ch = 578
+
+    calIdx = 0
+
+    chEne = [70,110,150,190]
+
+    chVals = []
+    chVals.append(dbDict["idx%d-%d-%d" % (calIdx,50,90)][ch])
+    chVals.append(dbDict["idx%d-%d-%d" % (calIdx,90,130)][ch])
+    chVals.append(dbDict["idx%d-%d-%d" % (calIdx,130,170)][ch])
+    chVals.append(dbDict["idx%d-%d-%d" % (calIdx,170,210)][ch])
+
+    chEne, chVals = np.array(chEne), np.array(chVals)
+
+    slope, yint, r_val, p_val, std_err = linregress(chEne, chVals)
+
+    # plt.figure()
+    # plt.plot(chEne, chVals, 'o', label='riseNoise vals')
+    # plt.plot(chEne, yint + slope*chEne, 'r', label='fit')
+    # plt.legend(loc="best")
+    # plt.xlabel("Energy (keV)")
+    # plt.ylabel("riseNoise 95% val")
+    # plt.show()
+    # plt.savefig("./plots/linFit.png")
+
+    print "ch",ch,"vals:",chVals,slope,yint,r_val,p_val,std_err
+
+    # build a db record
+    # key: [Name]_ds[i]_idx[j]_module[k]_[descriptor]
+    # vals: {[chan] : [slope, yint]} --> need a value for every channel.
+    # fk.  the linear fit is going to overcut. i don't even want to use it.
+
+    rnKey = "riseNoise_ds%d_idx%d_m%d_idx%d-ch%d"
+
+    return
 
 
 if __name__ == "__main__":

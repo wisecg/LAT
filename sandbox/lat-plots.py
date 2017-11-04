@@ -6,9 +6,15 @@ wl = imp.load_source('waveLibs','../waveLibs.py')
 import ROOT
 from ROOT import gROOT, gStyle, gPad
 from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TH2D, TF1, TLegend, TLine, TGraph
+
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set(style='whitegrid', context='talk')
+
 homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
+
 c = TCanvas("c","Bob Ross's Canvas",800,600)
 
 def fitMu():
@@ -55,10 +61,67 @@ def wfStd():
     # c.Print("../plots/wfStd.pdf")
 
 
+def bkgHists():
+    """ brian wrote this one """
+
+    dsNum, modNum = 1, 1
+
+    chList = ds.GetGoodChanList(dsNum)
+    if dsNum==5 and modNum == 1: # remove 692 and 1232 (both beges, so who cares)
+        chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
+    if dsNum==5 and modNum == 2:
+        chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
+
+    bins,lower,upper = 2500,0,250
+
+    skimTree = ROOT.TChain("skimTree")
+    skimTree.Add("/projecta/projectdirs/majorana/users/wisecg/bg-lat/latSkimDS%d_*.root"%(dsNum))
+
+    cuts = "gain==0 && trapENFCal>0.7 && mHL==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0"
+
+    skimCut = ROOT.TChain("skimTree")
+    hList = []
+    hCutList = []
+    outFile = ROOT.TFile("./data/BkgHisto_DS%d.root"%(dsNum), "RECREATE")
+    outFile.cd()
+    hFullTotal = ROOT.TH1D("hFullTotal", "", bins,lower,upper)
+    hfitSloTotal = ROOT.TH1D("hfitSloTotal", "", bins,lower,upper)
+    for idx, ch in enumerate(chList):
+        print "Drawing histograms for channel", ch
+        hList.append(ROOT.TH1D())
+        hCutList.append(ROOT.TH1D())
+        skimCut.Reset()
+        skimCut.Add("/projecta/projectdirs/majorana/users/wisecg/cuts/fs/fitSlo-DS%d-*-ch%d.root"%(dsNum, ch))
+        hCutList[idx] = wl.H1D(skimCut,bins,lower,upper, "trapENFCalC", cuts+"&&channel==%d"%(ch), Title="hfitSlo_ch%d"%(ch))
+        hList[idx] = wl.H1D(skimTree,bins,lower,upper,"trapENFCalC", cuts+"&&channel==%d"%(ch),Title="hFull_ch%d"%(ch))
+        hfitSloTotal.Add(hCutList[idx])
+        hFullTotal.Add(hList[idx])
+        hCutList[idx].Write()
+        hList[idx].Write()
+
+    hfitSloTotal.Write()
+    hFullTotal.Write()
+    outFile.Close()
+
+
+def fitSlo():
+    """ make a raw spectrum + fitslo cut for each ds.
+        rn we have DS1234.
+    """
+
+    dsNum = 1
+    fsList = glob.glob("/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d*" % dsNum)
+    latList = glob.glob("/globa/homes/w/wisecg/project/bg-lat/latSkimDS%d" % dsNum)
+
+    # chList = ds.GetGoodChanList(dsNum)
+    # outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+
+
 
 if __name__=="__main__":
     gStyle.SetOptStat(0)
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
     # fitMu()
-    wfStd()
+    # wfStd()
+    fitSlo()
