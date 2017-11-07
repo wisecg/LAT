@@ -4,7 +4,7 @@
 Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
 Usage Examples:
     Tuning all cuts:
-        ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -all
+        ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -all -Range "Min_Max"
     Specific cut and/or channel:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -ch channel -bcMax
     Custom cut:
@@ -23,6 +23,10 @@ from DataSetInfo import CalInfo
 import DataSetInfo as ds
 import waveLibs as wl
 from scipy.stats import mode
+from scipy.optimize import curve_fit
+from matplotlib import pyplot as plt
+import seaborn as sns
+sns.set(style='whitegrid', context='talk')
 
 def main(argv):
 
@@ -77,7 +81,6 @@ def main(argv):
             rangeName = str(argv[i+1])
             tuneNames = rangeName.split(',')
             print "Tuning ranges: ", tuneNames
-            # Standard Ranges: tuneNames = ["50_90", "90_130", "130_170", "170_210"]
 
         # -- Input/output options --
         if opt == "-s":
@@ -158,16 +161,19 @@ def main(argv):
         tunedPars = {}
         # Default is peak only
         if not tuneNames: tuneNames.append("Peak")
-
         for par, parName in zip(parList, parNameList):
             for idx, tName in enumerate(tuneNames):
                 tRange = []
                 if tName == "Continuum": tRange = [5, 50]
                 elif tName == "Peak": tRange = [236, 240]
+                elif tName == "SoftPlus": tRange = [] # Maybe should be another boolean
                 else: tRange = [int(tName.split("_")[0]), int(tName.split("_")[1])]
 
                 key = "%s_ds%d_idx%d_m%d_%s"%(parName,dsNum,subNum,modNum,tName)
-                cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
+                if not tRange:
+                    cutDict = TuneSoftPlus(dsNum, subNum, tName, skimTree, chList, par, parName, theCut, fastMode)
+                else:
+                    cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
 
                 if fDB: wl.setDBCalRecord({"key":key,"vals":cutDict})
                 if fCSV:
@@ -212,6 +218,62 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
+
+def TuneSoftPlus(dsNum, subNum, tName, cal, chList, par, parName, theCut, fastMode):
+    nTest = np.linspace(0, 250, 1000)
+    cutDict = {}
+    for ch in chList:
+        cutDict[ch] = [0,0,0,0]
+        nPass1 = cal.Draw("trapENFCalC:%s"%(par),  theCut + "&& trapENFCal>5 && trapENFCal<50 && channel==%d"%(ch), "goff")
+        nCutArray1, nCutArray2, nCutArray3 = [], [], []
+        if nPass1 != 0:
+            nEnergy1 = cal.GetV1()
+            nCut1 = cal.GetV2()
+            nCutList1 = list(float(nCut1[n]) for n in xrange(nPass1))
+            nEnergyList1 = list(float(nEnergy1[n]) for n in xrange(nPass1))
+            nCutArray1 = [[x,y] for x,y in zip(nCutList1, nEnergyList1) if x > np.percentile(nCutList1, 5) and x < np.percentile(nCutList1, 85)]
+        nPass2 = cal.Draw("trapENFCalC:%s"%(par),  theCut+"&& trapENFCal>50 && trapENFCal<150 && channel==%d"%(ch), "goff")
+        if nPass2 != 0:
+            nEnergy2 = cal.GetV1()
+            nCut2 = cal.GetV2()
+            nCutList2 = list(float(nCut2[n]) for n in xrange(nPass2))
+            nEnergyList2 = list(float(nEnergy2[n]) for n in xrange(nPass2))
+            nCutArray2 = [[x,y] for x,y in zip(nCutList2, nEnergyList2) if x > np.percentile(nCutList2, 5) and x < np.percentile(nCutList2, 90)]
+        nPass3 = cal.Draw("trapENFCalC:%s"%(par),  theCut+"&& trapENFCal>150 && trapENFCal<240 && channel==%d"%(ch), "goff")
+        if nPass3 != 0:
+            nEnergy3 = cal.GetV1()
+            nCut3 = cal.GetV2()
+            nCutList3 = list(float(nCut3[n]) for n in xrange(nPass3))
+            nEnergyList3 = list(float(nEnergy3[n]) for n in xrange(nPass3))
+            nCutArray3 = [[x,y] for x,y in zip(nCutList3, nEnergyList3) if x > np.percentile(nCutList3, 5) and x < np.percentile(nCutList3, 90)]
+        nCutArray = np.asarray(nCutArray1 + nCutArray2 + nCutArray3)
+
+        if len(nCutArray) == 0:
+            print "No events (setting to [0,0,0,0]), skipping channel ", ch
+            continue
+        popt,_ = curve_fit(softplus, nCutArray[:,1], nCutArray[:,0], p0=[1., 0.005, 10, 0.5], bounds = ((-10,0,-10,0),(10,10,150,100)))
+
+        cutDict[ch] = [popt[0], popt[1], popt[2], popt[3]]
+        if fastMode: continue
+
+        # Draw plots
+        yFit = softplus(nTest, *popt)
+        g2 = sns.JointGrid(x=nCutArray[:,1], y=nCutArray[:,0], size=10, space=0.2)
+        g2.plot_joint(sns.kdeplot)
+        plt.plot(nTest, yFit, "-", color='red')
+        plt.ylabel('%s'%(parName))
+        plt.xlabel('Energy')
+        plt.title('Y-Offset: %.2f  Slope: %.3f  X-Shift: %.2f  Curvature: %.2f'%(popt[0], popt[1], popt[2], popt[3]))
+        g2.ax_marg_y.set_axis_off()
+        _ = g2.ax_marg_x.hist(np.array(nEnergyList1 + nEnergyList2 + nEnergyList3), alpha=0.8, bins=np.linspace(0, 250, 500))
+        g2.savefig("./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch))
+    return cutDict
+
+def softplus(x, a, b, c, d):
+    """
+        A = Y-offset, B = Slope , C = X shift for flatness, D = Curvature
+    """
+    return a + b*np.log(1+np.exp((x - c)/d) )
 
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
@@ -315,7 +377,8 @@ def ApplyChannelCuts(dsNum):
             for idx, ch in enumerate(chList):
 
                 outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-                chanCut = theCut + " && gain==0 && channel==%d && " % (ch) + megaCut[ch]
+                # Added blanket fitSlo > 0 into the cut
+                chanCut = theCut + " && gain==0 && channel==%d && fitSlo>0" % (ch) + megaCut[ch]
 
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
