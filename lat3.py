@@ -400,6 +400,8 @@ def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):
     for subNum in range(calIdxLo,calIdxHi+1):
 
         fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
+        rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,subNum,modNum))
+        rnFD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,subNum,modNum))
 
         runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)] [subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
 
@@ -410,9 +412,9 @@ def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):
             # use an 'if' condition for zeros - those are bad cut records
             if fsVal > 0:
                 if ch in megaCut.keys():
-                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
+                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.2f+%.2f*TMath::Log(1+TMath::Exp((trapENFCalC-%.2f)/%.2f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][5]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
                 else:
-                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
+                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.2f+%.2f*TMath::Log(1+TMath::Exp((trapENFCalC-%.2f)/%.2f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][5]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
 
     for key in megaCut:
         megaCut[key] += ")"

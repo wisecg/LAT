@@ -3,6 +3,7 @@ import ROOT
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
+import waveLibs as wl
 import seaborn as sns
 sns.set(style='whitegrid', context='talk')
 
@@ -23,8 +24,8 @@ def calibres(x, a, b, c):
 if __name__ == "__main__":
     skimTree = ROOT.TChain("skimTree")
     # Pick arbitrary range
-    # skimTree.Add("~/project/cal-lat/latSkimDS1_run940*_*.root")
-    # skimTree.Add("~/project/cal-lat/latSkimDS1_run941*_*.root")
+    skimTree.Add("~/project/cal-lat/latSkimDS1_run940*_*.root")
+    skimTree.Add("~/project/cal-lat/latSkimDS1_run941*_*.root")
     # skimTree.Add("~/project/cal-lat/latSkimDS1_run945*_*.root")
     # skimTree.Add("~/project/cal-lat/latSkimDS1_run946*_*.root")
     # skimTree.Add("~/project/cal-lat/latSkimDS1_run949*_*.root")
@@ -34,12 +35,14 @@ if __name__ == "__main__":
     theCut = "isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && gain == 0"
 
     # DS1 good channels
-    # chList = [578, 580, 582, 592, 598, 600, 608, 610, 626, 632, 640, 648, 664, 672, 690, 692]
+    chList = [578, 580, 582, 592, 598, 600, 608, 610, 626, 632, 640, 648, 664, 672, 690, 692]
 
     # DS5 good channels
-    chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
+    # chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
     # chList = [626]
     # chList = [672]
+    rnD = wl.getDBCalRecord("riseNoise_ds1_idx1_m1_Continuum")
+
     for ch in chList:
         nPass1 = skimTree.Draw("trapENFCalC:riseNoise",  theCut + "&& trapENFCal>5 && trapENFCal<50 && channel==%d"%(ch), "goff")
         nCutArray1, nCutArray2, nCutArray3 = [], [], []
@@ -75,13 +78,14 @@ if __name__ == "__main__":
         nTest = np.linspace(0, 250, 1000)
         print popt
         yFit = softplus(nTest, *popt)
-        # g2 = sns.JointGrid(x=np.array(nEnergyList), y=np.array(nCutList), size=10, space=0.2)
+        yFit2 = softplus(nTest, max(rnD[ch][4], popt[0]), popt[1], popt[2], popt[3])
+
         g2 = sns.JointGrid(x=nCutArray[:,1], y=nCutArray[:,0], size=10, space=0.2)
         g2.plot_joint(sns.kdeplot)
-        plt.plot(nTest, yFit, "-", color='red')
-        # plt.plot(nTest, yFit2, "-", color='blue')
+        plt.plot(nTest, yFit, "-", color='red', label='SoftPlus Fit')
+        plt.plot(nTest, yFit2, "-", color='blue', label='SoftPlus 99%')
         plt.title('Y-Offset: %.2f  Slope: %.3f  X-Shift: %.2f  Curvature: %.2f'%(popt[0], popt[1], popt[2], popt[3]))
         g2.ax_marg_y.set_axis_off()
         _ = g2.ax_marg_x.hist(np.array(nEnergyList1 + nEnergyList2 + nEnergyList3), alpha=0.8, bins=np.linspace(0, 250, 500))
-        # plt.show()
-        g2.savefig("/Users/brianzhu/macros/code/LAT/plots/SoftPlus/Test4SoftPlus_riseNoise_ch%d.png"%(ch))
+        plt.legend()
+        g2.savefig("/Users/brianzhu/macros/code/LAT/plots/SoftPlus/SoftPlus_riseNoise_ch%d.png"%(ch))
