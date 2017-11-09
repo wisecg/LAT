@@ -360,7 +360,12 @@ def ApplyChannelCuts(dsNum):
             skimTree.Add(fRegex)
             f = TFile(file0)
             theCut = f.Get("theCut").GetTitle()
-            chList = ds.GetGoodChanList(dsNum)
+
+            if dsNum != 5: chList = ds.GetGoodChanList(dsNum)
+            if dsNum==5 and modNum == 1: # remove 692 and 1232 (both beges, so who cares)
+                chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
+            if dsNum==5 and modNum == 2:
+                chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
 
             # find calIdx boundaries for these runs
             skimTree.GetEntry(0)
@@ -378,11 +383,12 @@ def ApplyChannelCuts(dsNum):
 
                 outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
                 # Added blanket fitSlo > 0 into the cut
-                if ch in megaCut:
+                if ch in megaCut.keys():
                     chanCut = theCut + " && gain==0 && channel==%d && fitSlo>0 &&" % (ch) + megaCut[ch]
                 else:
                     print "Channel %d doesn't exist, skipping"%(ch)
-
+                    continue
+                    
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
 
