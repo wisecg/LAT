@@ -378,7 +378,10 @@ def ApplyChannelCuts(dsNum):
 
                 outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
                 # Added blanket fitSlo > 0 into the cut
-                chanCut = theCut + " && gain==0 && channel==%d && fitSlo>0 &&" % (ch) + megaCut[ch]
+                if ch in megaCut:
+                    chanCut = theCut + " && gain==0 && channel==%d && fitSlo>0 &&" % (ch) + megaCut[ch]
+                else:
+                    print "Channel %d doesn't exist, skipping"%(ch)
 
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
