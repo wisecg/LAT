@@ -421,9 +421,9 @@ def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):
             # use an 'if' condition for zeros - those are bad cut records
             if fsVal > 0:
                 if ch in megaCut.keys():
-                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-%.3f)/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
+                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
                 else:
-                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-%.3f)/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
+                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
 
     for key in megaCut:
         megaCut[key] += ")"
