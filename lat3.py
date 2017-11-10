@@ -348,7 +348,7 @@ def ApplyChannelCuts(dsNum):
 
     for modNum in nMods:
 
-        for subNum in range(nRanges):
+        for subNum in range(nRanges+1):
 
             fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, subNum)
             fList = glob.glob(fRegex)
