@@ -12,8 +12,8 @@ gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
 
 def main():
-    runAllPlots()
-    # generatePDFs()
+    # runAllPlots()
+    generatePDFs()
 
 
 def runAllPlots():
@@ -440,6 +440,10 @@ def generatePDFs(ma=0):
             trit = np.mean(tritData[idx][:,1])
             if np.isnan(trit): trit = 0.
             h5.SetBinContent(i, trit)
+
+    # normalize tritium to 1 (see sandbox/gae2.py::tritBkgIndex for how to normalize to a 3H activation rate)
+    normTrit = h5.Integral("width")
+    h5.Scale(1./normTrit)
 
     h1.Write()
     h2.Write()

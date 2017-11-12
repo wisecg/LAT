@@ -51,7 +51,7 @@ def getBkgIndexes():
     h2 = H1D(t2,bins,eLo,eHi,"calENF","enr","Energy (keV)","Counts/kg-d"," ")
 
     ax2 = h2.GetXaxis()
-    ds0int = h2.Integral(ax2.FindBin(5.), ax2.FindBin(8.),"width")
+    ds0int = h2.Integral(ax2.FindBin(5.), ax2.FindBin(8.))
     print "vorren:",ds0int," B:",6.5*ds0int/4.
 
     h2.Scale(1./ds0exp)
@@ -61,16 +61,16 @@ def getBkgIndexes():
 
 def getExpectedCts():
 
-        f = TFile("../data/inputHists.root")
-        hConv = f.Get("h4")
-        ax = hConv.GetXaxis()
+    f = TFile("../data/inputHists.root")
+    hConv = f.Get("h4")
+    ax = hConv.GetXaxis()
 
-        malbekExpo = 89.5 # kg-d
-        nExp = hConv.Integral(ax.FindBin(1.5), ax.FindBin(8.), "width") * malbekExpo # [cts / (keV d kg)] * [kg d]
-        print "nExp",nExp
+    malbekExpo = 89.5 # kg-d
+    nExp = hConv.Integral(ax.FindBin(1.5), ax.FindBin(8.), "width") * malbekExpo # [cts / (keV d kg)] * [kg d]
+    print "nExp",nExp
 
-        nObs = 40.8
-        print "g_ae U.L.:", np.power(nObs/nExp, 1./4.)
+    nObs = 40.8
+    print "g_ae U.L.:", np.power(nObs/nExp, 1./4.)
 
 
 def ratioMethod():
@@ -116,7 +116,8 @@ def directMethod():
         # f is the fraction that axions contribute to the total
         # background, using a background index proportional to the # counts in DS1.
         # b = (E2-E1) * (\int_5^8 (DS-0 bkg) dE)/4
-        b = 19.98
+        # b = 19.98
+        b = 1500.
         axCts = 2.3119e44
         nObs = f * b
         return (nObs / (expo * axCts))**0.25
@@ -142,6 +143,7 @@ def directMethod():
     plt.axvline(dsExpos["1-4,5b"],color="green",label="recommended cutoff")
 
     plt.axhline(4.35e-12,color="red",label="most recent pandaX limit")
+    plt.axhline(6.5e-12,color="orange",label="graham's 100kg-y MJD projection")
 
     plt.legend(loc="best")
     plt.xlabel("Exposure (kg-y)")
@@ -153,6 +155,84 @@ def directMethod():
     print "g_ae at cutoff, w/ axion cts < 0.03: ",gaeFunc(dsExpos["1-4,5b"],0.03)
 
 
+def attempt2():
+
+    def gaeFunc(expo,B):
+
+        gae = 2.6e-11
+        malbekExpo = 0.25 # kg-y
+        malbekNobs = 50 # fit result
+        return gae * ((B * malbekExpo)/(malbekNobs * expo))**0.25
+
+    x = np.arange(0.1,100,0.1)
+
+    fig = plt.figure(figsize=(8,7),facecolor='w')
+
+    plt.plot(x,gaeFunc(x,0.03*6.5),c='b',label="bg")
+
+    plt.axhline(4.35e-12,c='r',label="most recent pandaX limit")
+    plt.axhline(6.5e-12,c='orange',label="graham's 100kg-y MJD projection")
+    plt.legend(loc="best")
+    plt.xlabel("Exposure (kg-y)")
+    plt.ylabel("g_ae Projected U.L.")
+
+    plt.show(block=False)
+    plt.savefig("../plots/gae-sensitivity.pdf")
+
+
+def brians():
+
+    malbekAxRate = np.sqrt(1534)/89.5
+
+    Exposure = np.linspace(1, 20, 1000)
+    Sensitivity_1 = [np.power(np.sqrt(0.01*6.5*365.25*x)/(365.25*x)/(malbekAxRate),0.25)*2.6e-11 for x in Exposure]
+    Sensitivity_2 = [np.power(np.sqrt(0.02*6.5*365.25*x)/(365.25*x)/(malbekAxRate),0.25)*2.6e-11 for x in Exposure]
+    Sensitivity_3 = [np.power(np.sqrt(0.03*6.5*365.25*x)/(365.25*x)/(malbekAxRate),0.25)*2.6e-11 for x in Exposure]
+
+    SensitivityPandaX = np.full(Exposure.shape, 0.435e-11)
+
+    fig = plt.figure(figsize=(12, 7))
+    ax = fig.add_subplot(111)
+    ax.plot(Exposure, Sensitivity_1, label='0.01 c/keV/kg/day')
+    ax.plot(Exposure, Sensitivity_2, label='0.02 c/keV/kg/day')
+    ax.plot(Exposure, Sensitivity_3, label='0.03 c/keV/kg/day')
+    ax.plot(Exposure, SensitivityPandaX, label='PandaX limit')
+    ax.set_title('Axion Limit Extrapolation')
+    ax.set_ylabel('g_ae (E-11)')
+    ax.set_xlabel('Exposure (kg-yr)')
+    plt.tight_layout()
+    ax.legend()
+    fig.savefig('../plots/MJDAxionLimit.png')
+
+
+def correctVersion():
+
+    eLo, eHi = 1.5, 8.
+    f = TFile("../data/inputHists.root")
+    hConv = f.Get("h4")
+    ax = hConv.GetXaxis()
+    axCtsPerExp = hConv.Integral(ax.FindBin(0.), ax.FindBin(18.),"width") # need w.o exposure.  [cts/kg-d].
+
+    def gaeFunc(x,B):
+        return ((B * (eHi-eLo) * 365.25)/(x))**(1./8.) * axCtsPerExp**-(1./4.)
+
+    def gaeRatio(x,B):
+        return 2.6e-11 * (()/())^(1./8.)
+
+    x = np.arange(0.1,100.,0.1)
+    # B = 0.00034 # cts/(kev-kg-d)
+    B = 0.03
+
+    print "val at 100kg-y", gaeFunc(100,B)
+
+    # fig = plt.figure(figsize=(8,6),facecolor='w')
+    # plt.plot(x, gaeFunc(x,B), c='b', label='proj')
+    # plt.axhline(4.35e-12,c='r',label="most recent pandaX limit")
+    # plt.axhline(6.5e-12,c='orange',label="graham's 100kg-y MJD projection")
+    # plt.legend(loc="best")
+    # plt.xlabel("Exposure (kg-y)")
+    # plt.ylabel("g_ae Projected U.L.")
+    # plt.savefig("../plots/gae-sensitivity.pdf")
 
 
 
@@ -161,5 +241,10 @@ if __name__=="__main__":
     # getBkgIndexes()
     # getExpectedCts()
     # ratioMethod()
-    directMethod()
+    # directMethod()
+
+    # attempt2()
+    # brians()
+
+    correctVersion()
 
