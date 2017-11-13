@@ -398,27 +398,33 @@ def updateFile(dsNum, cal):
     if cal==True:
         filePath = calDir + "/latSkimDS%d*.root" % dsNum
 
+    print "Globbing",filePath
+
     files = glob.glob(filePath)
+    # print files
 
     # comment this block out for normal running
     # skip ahead to where these jobs died last
     # ds0 - latSkimDS0_17_22.root last BG to be completed
     # ds5 - latSkimDS5_29_13.root last BG to be completed
-    smallList = []
-    foundLeftOff = False
-    for fileName in files:
-        if dsNum==0:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == bgDir + "/latSkimDS0_17_22.root":
-                foundLeftOff = True
-        elif dsNum==5:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == bgDir + "/latSkimDS5_29_13.root":
-                foundLeftOff = True
-    print len(files), len(smallList)
-    files = smallList
+    # smallList = []
+    # foundLeftOff = False
+    # for fileName in files:
+    #     if dsNum==0:
+    #         if foundLeftOff:
+    #             smallList.append(fileName)
+    #         if fileName == bgDir + "/latSkimDS0_17_22.root":
+    #             foundLeftOff = True
+    #     elif dsNum==5:
+    #         if foundLeftOff:
+    #             smallList.append(fileName)
+    #         if fileName == bgDir + "/latSkimDS5_29_13.root":
+    #             foundLeftOff = True
+    # print len(files), len(smallList)
+    # files = smallList
+
+    # run over just one file
+    # files = ["/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root"]
 
     for fileName in files:
 
@@ -475,21 +481,20 @@ def updateFile(dsNum, cal):
 
 
 def debugFiles():
-    """ Unfortunately, updateFile gave some files a segfault problem.
-    Let's try to debug it.
+    """ ./lat2.py -debug
 
-    deleted wfstd branch: /global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root
-    DS3 bg otherwise OK.  i'm going to just move the file.
-
-    fk.  DS0 and DS5 have errors basically throughout from LAT2.
-    the trees are unreadable even after the wfstd branch is deleted.
-    have to re-run LAT.
+    When we tried running this on the SLURM queue in Oct. 2017, it caused a bunch of
+    files to segfault.  We've repaired the damage now.
+    This works by adjusting the "glob" string to scan a group of files, and attempts
+    to access the wfStd and trapENFCalC branches.  If it doesn't segfault, then
+    the file is OK for reading.
     """
 
-    # startHere = False
-    fList = glob.glob("/global/homes/w/wisecg/project/bg-lat/latSkimDS3*")
+    startHere = False
+    fList = glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS0*")
+    # fList = ["/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root"] # check one file
     for fName in sorted(fList):
-        # if fName == "/global/homes/w/wisecg/project/bg-lat/latSkimDS5_3_0.root":
+        # if fName == "/global/homes/w/wisecg/project/cal-lat/latSkimDS0_run2572_0.root":
             # startHere = True
         # if not startHere: continue
         print fName

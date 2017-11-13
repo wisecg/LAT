@@ -85,7 +85,7 @@ def main(argv):
         if opt == "-applyChannelCut" : applyChannelCut(int(argv[i+1]),int(argv[i+2]))
         if opt == "-applyCuts": applyCuts(int(argv[i+1]))
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
-        if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]))
+        if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]),argv[i+2])
 
 
     # -- calibration stuff --
@@ -939,9 +939,9 @@ def cleanUpCuts(dsNum):
         finalFile.Close()
 
 
-def lat3ApplyCuts(dsNum):
-    """ ./job-panda.py -lat3 [dsNum] """
-    sh("""%s './lat3.py -cut %d'""" % (qsubStr, dsNum))
+def lat3ApplyCuts(dsNum, cutType):
+    """ ./job-panda.py -lat3 [dsNum] [cutType]"""
+    sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, dsNum, cutType))
 
 
 def getEff():

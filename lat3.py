@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
 ===================== LAT3.py =====================
-Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%
+Tunes cut parameters in LAT, calculates the 1%, 5%, 90%, 95%, and 99%.
+Also applies cuts to create channel-specific files.
 Usage Examples:
     Tuning all cuts:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -all -Range "Min_Max"
@@ -116,8 +117,9 @@ def main(argv):
         # -- Apply channel cuts (exits after running this) --
         if opt == "-cut":
             dsNum = int(argv[i+1])
-            print ("Cut application mode.")
-            ApplyChannelCuts(dsNum)
+            cutType = argv[i+2]
+            print "Applying %s cut to DS-%d ..." % (cutType, dsNum)
+            ApplyChannelCuts(dsNum, cutType)
             stopT = time.clock()
             print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
             return
@@ -219,6 +221,7 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
         cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
     return cutDict
 
+
 def TuneSoftPlus(dsNum, subNum, tName, cal, chList, par, parName, theCut, fastMode):
     nTest = np.linspace(0, 250, 1000)
     cutDict = {}
@@ -269,15 +272,15 @@ def TuneSoftPlus(dsNum, subNum, tName, cal, chList, par, parName, theCut, fastMo
         g2.savefig("./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch))
     return cutDict
 
+
 def softplus(x, a, b, c, d):
-    """
-        A = Y-offset, B = Slope , C = X shift for flatness, D = Curvature
-    """
+    """ A = Y-offset, B = Slope , C = X shift for flatness, D = Curvature """
     return a + b*np.log(1+np.exp((x - c)/d) )
 
 
 def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
-    """ Repeated code is the DEVIL.  Even if you have to pass in 1,000,000 arguments. """
+    """ Creates a channel-specific energy calibration plot. """
+
     # Calculate cut vals (assumes plot range is correct)
     h1 = wl.H1D(cal,vb,vlo,vhi,var,d1Cut)
     h1Sum = h1.Integral()
@@ -334,64 +337,112 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     return cut99,cut95,cut01,cut05,cut90
 
 
-def ApplyChannelCuts(dsNum):
-    """ ./lat3.py -cut [dsNum]
-    This is going to run over a whole dataset. """
+def ApplyChannelCuts(dsNum, cutType):
+    """ ./lat3.py -cut [dsNum] [cutType]
+    This runs over whole datasets. """
 
-    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
-
+    # setup a loop over modules and dataset ranges
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
     cInfo = ds.CalInfo()
-    nRanges = ds.dsMap[dsNum]
+    nRanges = [0, ds.dsMap[dsNum]]
+    if dsNum==5: nRanges[0] = 80 # exclude DS-5A
     nMods = [1]
     if dsNum == 4: nMods = [2]
     if dsNum == 5: nMods = [1,2]
 
     for modNum in nMods:
+        for subNum in range(nRanges[0], nRanges[1]+1):
 
-        for subNum in range(nRanges+1):
-
+            # build the file list
             fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, subNum)
             fList = glob.glob(fRegex)
             file0 = fList[0]
+            print "DS-%d subset %d, Mod-%d.  N_files: %d" % (dsNum, subNum, modNum, len(fList))
 
-            print "DS-%d Sub-%d M%d N: %d" % (dsNum, subNum, modNum, len(fList))
+            # build the channel list  (remove 692 and 1232 from DS5 for now.)
+            chList = ds.GetGoodChanList(dsNum)
+            if dsNum==5 and modNum==1:
+                chList = [ch for ch in chList if ch < 1000 and ch!=692]
+            if dsNum==5 and modNum==2:
+                chList = [ch for ch in chList if ch > 1000 and ch!=1232]
 
+            # load the chains and find the right calIdx's.
             skimTree = TChain("skimTree")
             skimTree.Add(fRegex)
             f = TFile(file0)
             theCut = f.Get("theCut").GetTitle()
-
-            if dsNum != 5: chList = ds.GetGoodChanList(dsNum)
-            if dsNum==5 and modNum == 1: # remove 692 and 1232 (both beges, so who cares)
-                chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
-            if dsNum==5 and modNum == 2:
-                chList = [1106, 1110, 1120, 1124, 1128, 1170, 1172, 1174, 1176, 1204, 1208, 1298, 1302, 1330, 1332]
-
-            # find calIdx boundaries for these runs
             skimTree.GetEntry(0)
             firstRun = skimTree.run
             skimTree.GetEntry(skimTree.GetEntries()-1)
             lastRun = skimTree.run
-            calIdxLo = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), firstRun)
-            calIdxHi = cInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), lastRun)
-
+            calIdxLo = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), firstRun)
+            calIdxHi = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), lastRun)
             print "    Entries %d  firstRun %d  lastRun %d  calIdxLo %d  calIdxHi %d" % (skimTree.GetEntries(),firstRun,lastRun,calIdxLo,calIdxHi)
 
-            megaCut = MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi)
+            # -- create a dict of cuts for each channel, covering each calIdx. --
+            cutDict = {}
+            for subNum in range(calIdxLo, calIdxHi+1):
 
+                runCovMin = cInfo.master["ds%d_m%d" % (dsNum, modNum)][subNum][1]
+                runCovMax = cInfo.master["ds%d_m%d" % (dsNum, modNum)][subNum][2]
+
+                fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
+                rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,subNum,modNum))
+                rnSD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,subNum,modNum))
+
+                for ch in chList:
+
+                    # check the 90% fitSlo value is positive
+                    if fsD[ch][2] > 0:
+                        fsCut = "(run>=%d && run<=%d && fitSlo<%.2f)" % (runCovMin, runCovMax, fsD[ch][2])
+
+                    # check the softplus curvature is positive
+                    if rnSD[ch][3] > 0:
+
+                        rnTmp = "riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
+
+                        rnCut = "(run>=%d && run %d && %s)" % (runCovMin, runCovMax, rnTmp)
+
+                    # set the channel cut based on the input cutType
+                    if cutType == "fs" and fsCut!=None:  chanCut = fsCut
+                    if cutType == "rn" and rnCut!=None:  chanCut = rnCut
+                    if cutType == "fs+rn" and fsCut!=None and rnCut!=None:
+                        chanCut = "(run>=%d && run<=%d && fitSlo<%.2f && %s)" % (runCovMin, runCovMax, fsD[ch][2], rnTmp)
+
+                    # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
+                    if ch in cutDict.keys() and chanCut!=None:
+                        cutDict[ch] += "||%s" % chanCut
+                    elif ch not in cutDict.keys() and chanCut!=None:
+                        cutDict[ch] = "(%s" % chanCut
+
+            # close the parens for each channel entry
+            for key in cutDict:
+                cutDict[key] += ")"
+
+
+            # -- finally, loop over each channel, get its cut, and create an output file. --
             for idx, ch in enumerate(chList):
 
-                outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-                # Added blanket fitSlo > 0 into the cut
-                if ch in megaCut.keys():
-                    chanCut = theCut + " && gain==0 && channel==%d && fitSlo>0 &&" % (ch) + megaCut[ch]
-                else:
-                    print "Channel %d doesn't exist, skipping"%(ch)
+                if ch not in cutDict.keys():
+                    print "Channel %d doesn't exist, skipping ..." % ch
                     continue
+
+                chanCut = theCut + " && gain==0 && channel==%d" % ch
+
+                if cutType == "fs":
+                    outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+                    chanCut += " && fitSlo>0 && %s" % cutDict[ch]
+
+                if cutType == "rn":
+                    outFile = "/global/homes/w/wisecg/project/cuts/rn/riseNoise-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+                    chanCut += " && %s" % cutDict[ch]
+
+                if cutType == "fs+rn":
+                    outFile = "/global/homes/w/wisecg/project/cuts/fs_rn/fs_rn-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
+                    chanCut += " && fitSlo>0 && %s" % cutDict[ch]
 
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
-
                 outFile = TFile(outFile,"RECREATE")
                 outTree = TTree()
                 outTree = skimTree.CopyTree(chanCut)
@@ -399,36 +450,6 @@ def ApplyChannelCuts(dsNum):
                 cutUsed = TNamed("chanCut",chanCut)
                 cutUsed.Write()
                 outFile.Close()
-
-
-def MakeCutDict(cInfo, dsNum, modNum, chList, calIdxLo, calIdxHi):
-    """ Generate a dict of run-channel-specific cuts, to be appended to the main data cleaning cut.
-        Create an entry for all channels in the "good" list . """
-
-    megaCut = {}
-    for subNum in range(calIdxLo,calIdxHi+1):
-
-        fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
-        rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,subNum,modNum))
-        rnFD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,subNum,modNum))
-
-        runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
-
-        for ch in chList:
-
-            fsVal = fsD[ch][2] # 90% value
-
-            # use an 'if' condition for zeros - those are bad cut records
-            if fsVal > 0:
-                if ch in megaCut.keys():
-                    megaCut[ch] += "||(run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
-                else:
-                    megaCut[ch] = "((run>=%d && run<=%d && fitSlo<%.2f && riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f))) )" % (runMin, runMax, fsVal, max(rnFD[ch][0], rnCD[ch][4]),rnFD[ch][1], rnFD[ch][2],rnFD[ch][3])
-
-    for key in megaCut:
-        megaCut[key] += ")"
-
-    return megaCut
 
 
 if __name__ == "__main__":
