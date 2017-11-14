@@ -399,34 +399,33 @@ def updateFile(dsNum, cal):
         filePath = calDir + "/latSkimDS%d*.root" % dsNum
 
     print "Globbing",filePath
-
     files = glob.glob(filePath)
     # print files
 
+    # return
+
     # comment this block out for normal running
     # skip ahead to where these jobs died last
-    # ds0 - latSkimDS0_17_22.root last BG to be completed
-    # ds5 - latSkimDS5_29_13.root last BG to be completed
-    # smallList = []
-    # foundLeftOff = False
-    # for fileName in files:
-    #     if dsNum==0:
-    #         if foundLeftOff:
-    #             smallList.append(fileName)
-    #         if fileName == bgDir + "/latSkimDS0_17_22.root":
-    #             foundLeftOff = True
-    #     elif dsNum==5:
-    #         if foundLeftOff:
-    #             smallList.append(fileName)
-    #         if fileName == bgDir + "/latSkimDS5_29_13.root":
-    #             foundLeftOff = True
-    # print len(files), len(smallList)
-    # files = smallList
+    smallList = []
+    foundLeftOff = False
+    for fileName in sorted(files):
+        if dsNum==0:
+            if foundLeftOff:
+                smallList.append(fileName)
+            if fileName == calDir + "/latSkimDS0_run3439_0.root":
+                foundLeftOff = True
+        elif dsNum==1:
+            if foundLeftOff:
+                smallList.append(fileName)
+            if fileName == calDir + "/latSkimDS1_run12729_2.root":
+                foundLeftOff = True
+    print len(files), len(smallList)
+    files = smallList
 
     # run over just one file
-    # files = ["/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root"]
+    # files = ["/global/homes/w/wisecg/project/cal-lat/latSkimDS0_run4841_0.root"]
 
-    for fileName in files:
+    for fileName in sorted(files):
 
         start = time.clock()
         print "Now scanning",fileName

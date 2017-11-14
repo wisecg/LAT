@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 import sys, pywt, random, os, glob
 import numpy as np
 import tinydb as db
@@ -824,3 +824,34 @@ def getCalFiles(dsNum, calIdx=None, verbose=False):
 
     # for f in fList: print f
     return fList
+
+
+def getOldCalFiles():
+    """ There might be cal files that don't match the current version of
+        DataSetInfo.py::calInfo.  Find them.
+    """
+    runLimit = 10 # yeah I'm hardcoding this, sue me.
+    calList = []
+    calInfo = ds.CalInfo()
+
+    for dsNum in range(6):
+        calKeys = calInfo.GetKeys(dsNum)
+        for key in calKeys:
+            for idx in range(calInfo.GetIdxs(key)):
+                lst = calInfo.GetCalList(key,idx,runLimit)
+                # print lst
+                calList += lst
+
+    calFiles = glob.glob("/global/homes/w/wisecg/project/cal-lat/*.root")
+
+    deleteRuns = []
+    for f in calFiles:
+        foundRun = int(f.split("_")[1][3:])
+        if foundRun not in calList:
+            deleteRuns.append(f)
+    if len(deleteRuns) > 0:
+        print "Remove these runs:"
+        for f in sorted(deleteRuns):
+            print f
+    else:
+        print "Cal directory is clean."

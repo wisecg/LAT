@@ -941,7 +941,12 @@ def cleanUpCuts(dsNum):
 
 def lat3ApplyCuts(dsNum, cutType):
     """ ./job-panda.py -lat3 [dsNum] [cutType]"""
-    sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, dsNum, cutType))
+
+    if dsNum==-1:
+        for ds in range(6):
+            sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, ds, cutType))
+    else:
+        sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, dsNum, cutType))
 
 
 def getEff():
