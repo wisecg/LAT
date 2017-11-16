@@ -332,7 +332,7 @@ def GetBkgIdx(dsNum, runNum):
     try:
         return bkgidx[0]
     except:
-        print "Run not found in Dataset, returning -1"
+        print "Run %d not found in Dataset, returning -1"%(runNum)
         return -1
 
 
