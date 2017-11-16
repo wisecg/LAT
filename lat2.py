@@ -390,6 +390,11 @@ def updateFile(dsNum, cal):
     Cruel twist of fate: Not gonna use the calibration stuff above rn.
     Am gonna use this to update each dataset's LAT files with Ralph's
     sigma parameter.
+
+    11/16/2017 - This has big problems when used on the PDSF queue.  It randomly corrupts files and
+    causes segfaults when the tree is read. For some reason it works fine when run on login nodes.
+    Short term fix for wfStd is to do it with the login nodes.
+    If we ever implement LAT2 energy calibration, we will have to deal with this issue.
     """
     import ROOT
     from ROOT import std
@@ -406,21 +411,21 @@ def updateFile(dsNum, cal):
 
     # comment this block out for normal running
     # skip ahead to where these jobs died last
-    smallList = []
-    foundLeftOff = False
-    for fileName in sorted(files):
-        if dsNum==0:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == calDir + "/latSkimDS0_run3439_0.root":
-                foundLeftOff = True
-        elif dsNum==1:
-            if foundLeftOff:
-                smallList.append(fileName)
-            if fileName == calDir + "/latSkimDS1_run12729_2.root":
-                foundLeftOff = True
-    print len(files), len(smallList)
-    files = smallList
+    # smallList = []
+    # foundLeftOff = False
+    # for fileName in sorted(files):
+    #     if dsNum==0:
+    #         if foundLeftOff:
+    #             smallList.append(fileName)
+    #         if fileName == calDir + "/latSkimDS0_run3439_0.root":
+    #             foundLeftOff = True
+    #     elif dsNum==1:
+    #         if foundLeftOff:
+    #             smallList.append(fileName)
+    #         if fileName == calDir + "/latSkimDS1_run12729_2.root":
+    #             foundLeftOff = True
+    # print len(files), len(smallList)
+    # files = smallList
 
     # run over just one file
     # files = ["/global/homes/w/wisecg/project/cal-lat/latSkimDS0_run4841_0.root"]
@@ -489,23 +494,41 @@ def debugFiles():
     the file is OK for reading.
     """
 
+    # try to catch ROOT segfaults, but this just hangs forever
+    # def sig_handler(signum, frame):
+    #     print "segfault"
+    #     return None
+    # signal.signal(signal.SIGSEGV, sig_handler)
+
     startHere = False
-    fList = glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS0*")
+    fList = glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS1*")
+    fList = sorted(fList)
+
     # fList = ["/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root"] # check one file
-    for fName in sorted(fList):
-        # if fName == "/global/homes/w/wisecg/project/cal-lat/latSkimDS0_run2572_0.root":
-            # startHere = True
-        # if not startHere: continue
-        print fName
-        f = TFile(fName)
-        t = f.Get("skimTree")
-        b1 = t.GetBranch("trapENFCalC")
-        b2 = t.GetBranch("wfstd")
-        print t.GetEntries(), b1.GetEntries(), b2.GetEntries()
-        if b1.GetEntries() != b2.GetEntries(): print "WTF"
-        t.GetEntry(0)
-        print t.trapENFCalC.at(0), t.wfstd.at(0)
-        f.Close()
+    for idx, fName in enumerate(fList):
+        if fName == "/global/homes/w/wisecg/project/cal-lat/latSkimDS1_run12729_2.root":
+            startHere = True
+        if not startHere: continue
+
+        # be careful with this!
+        # print "going to delete", fName
+        # os.remove(fName)
+
+        # standard segfault trap
+        # print "Current: ",fName
+        # if idx < len(fList)-1:
+        #     print "   (next):",fList[idx+1]
+        # f = TFile(fName)
+        # t = f.Get("skimTree")
+        # b1 = t.GetBranch("trapENFCalC")
+        # b2 = t.GetBranch("wfstd")
+        # print t.GetEntries()
+        # print b1.GetEntries()
+        # print b2.GetEntries()
+        # if b1.GetEntries() != b2.GetEntries(): print "WTF"
+        # t.GetEntry(0)
+        # print t.trapENFCalC.at(0), t.wfstd.at(0)
+        # f.Close()
 
     # f = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root","UPDATE")
     # t = f.Get("skimTree")
