@@ -327,6 +327,7 @@ BkgInfo[5] = {0:[18623,18624, 18628,18629, 18645,18652],1:[18654,18685],2:[18686
 
 def GetBkgIdx(dsNum, runNum):
     """ Not completely accurate way of finding the background idx """
+    #TODO: Add way of finding missing runs in a subDS (does it even matter?)
     bkgidx = [key for key in BkgInfo[dsNum] if runNum <= BkgInfo[dsNum][key][-1] and runNum >= BkgInfo[dsNum][key][0]]
     try:
         return bkgidx[0]
