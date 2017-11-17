@@ -394,20 +394,19 @@ def ApplyChannelCuts(dsNum, cutType):
 
                     # check the 90% fitSlo value is positive
                     if fsD[ch][2] > 0:
-                        fsCut = "(run>=%d && run<=%d && fitSlo<%.2f)" % (runCovMin, runCovMax, fsD[ch][2])
+                        fsCut = "(run>=%d&&run<=%d && fitSlo<%.2f)" % (runCovMin, runCovMax, fsD[ch][2])
 
                     # check the softplus curvature is positive
                     if rnSD[ch][3] > 0:
+                        rnTmp = "riseNoise<(%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
 
-                        rnTmp = "riseNoise < (%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCalC-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
-
-                        rnCut = "(run>=%d && run %d && %s)" % (runCovMin, runCovMax, rnTmp)
+                        rnCut = "(run>=%d&&run<=%d && %s)" % (runCovMin, runCovMax, rnTmp)
 
                     # set the channel cut based on the input cutType
                     if cutType == "fs" and fsCut!=None:  chanCut = fsCut
                     if cutType == "rn" and rnCut!=None:  chanCut = rnCut
                     if cutType == "fs+rn" and fsCut!=None and rnCut!=None:
-                        chanCut = "(run>=%d && run<=%d && fitSlo<%.2f && %s)" % (runCovMin, runCovMax, fsD[ch][2], rnTmp)
+                        chanCut = "(run>=%d&&run<=%d&&fitSlo<%.2f&&%s)" % (runCovMin, runCovMax, fsD[ch][2], rnTmp)
 
                     # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
                     if ch in cutDict.keys() and chanCut!=None:
@@ -427,19 +426,19 @@ def ApplyChannelCuts(dsNum, cutType):
                     print "Channel %d doesn't exist, skipping ..." % ch
                     continue
 
-                chanCut = theCut + " && gain==0 && channel==%d" % ch
+                chanCut = theCut + "&&gain==0&&channel==%d" % ch
 
                 if cutType == "fs":
                     outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-                    chanCut += " && fitSlo>0 && %s" % cutDict[ch]
+                    chanCut += "&&fitSlo>0&&%s" % cutDict[ch]
 
                 if cutType == "rn":
                     outFile = "/global/homes/w/wisecg/project/cuts/rn/riseNoise-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-                    chanCut += " && %s" % cutDict[ch]
+                    chanCut += "&&%s" % cutDict[ch]
 
                 if cutType == "fs+rn":
                     outFile = "/global/homes/w/wisecg/project/cuts/fs_rn/fs_rn-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-                    chanCut += " && fitSlo>0 && %s" % cutDict[ch]
+                    chanCut += "&&fitSlo>0&&%s" % cutDict[ch]
 
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
