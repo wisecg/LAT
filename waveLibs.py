@@ -237,28 +237,36 @@ def trapFilter(signalRaw, rampTime=400, flatTime=200, decayTime=0.):
         decayConstant = 1./(np.exp(1./decayTime) - 1)
         norm *= decayConstant
 
-    trapOutput = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
-    fVector = np.linspace(0, len(signalRaw), num=len(signalRaw), dtype=np.double)
+    trapOutput = np.zeros_like(signalRaw)
+    fVector = np.zeros_like(signalRaw)
+    scratch = np.zeros_like(signalRaw)
 
     fVector[0] = signalRaw[0] - baseline
     trapOutput[0] = (decayConstant+1.)*(signalRaw[0] - baseline)
-    scratch = 0.
-    for x in xrange(1,len(signalRaw)):
-        scratch = signalRaw[x] - (
-            signalRaw[x-rampTime] if x >= rampTime else baseline) - (
-            signalRaw[x-flatTime-rampTime] if x >= (flatTime+rampTime) else baseline) + (
-            signalRaw[x-flatTime-2*rampTime] if x >= (flatTime+2*rampTime) else baseline)
-        if decayConstant != 0:
-            fVector[x] = fVector[x-1] + scratch
-            trapOutput[x] = trapOutput[x-1] + fVector[x] + decayConstant*scratch
-        else:
-            trapOutput[x] = trapOutput[x-1] + scratch
+
+    wf_minus_ramp = np.zeros_like(signalRaw)
+    wf_minus_ramp[:rampTime] = baseline
+    wf_minus_ramp[rampTime:] = signalRaw[:len(signalRaw)-rampTime]
+
+    wf_minus_ft_and_ramp = np.zeros_like(signalRaw)
+    wf_minus_ft_and_ramp[:(flatTime+rampTime)] = baseline
+    wf_minus_ft_and_ramp[(flatTime+rampTime):] = signalRaw[:len(signalRaw)-flatTime-rampTime]
+
+    wf_minus_ft_and_2ramp = np.zeros_like(signalRaw)
+    wf_minus_ft_and_2ramp[:(flatTime+2*rampTime)] = baseline
+    wf_minus_ft_and_2ramp[(flatTime+2*rampTime):] = signalRaw[:len(signalRaw)-flatTime-2*rampTime]
+
+    scratch = signalRaw - (wf_minus_ramp + wf_minus_ft_and_ramp + wf_minus_ft_and_2ramp )
+
+    if decayConstant != 0:
+        fVector = np.cumsum(fVector + scratch)
+        trapOutput = np.cumsum(trapOutput +fVector+ decayConstant*scratch)
+    else:
+        trapOutput = np.cumsum(trapOutput + scratch)
 
     # Normalize and resize output
-    for x in xrange(2*rampTime+flatTime, len(signalRaw)):
-        trapOutput[x-(2*rampTime+flatTime)] = trapOutput[x]/norm
+    trapOutput[:len(signalRaw) - (2*rampTime+flatTime)] = trapOutput[2*rampTime+flatTime:]/norm
     trapOutput.resize( (len(signalRaw) - (2*rampTime+flatTime)))
-
     return trapOutput
 
 
