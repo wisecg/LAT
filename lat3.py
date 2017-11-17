@@ -11,7 +11,7 @@ Usage Examples:
     Custom cut:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -Custom "bcMax/bcMin"
     Applying cuts:
-        ./lat3.py -cut /path/to/bkg/files /path/to/output/files -db -s DS subDS Module
+        ./lat3.py -cut [dsNum] [cutType]
 v1: 03 Oct 2017
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
@@ -41,7 +41,7 @@ def main(argv):
     skimTree = ROOT.TChain("skimTree")
     customPar = ""
     tuneNames, calList, parList, parNameList, chList = [], [], [], [], []
-    fTune, fCut, fFor, fastMode, fDB, fCSV = False, False, False, False, False, False
+    fTune, fFor, fastMode, fDB, fCSV = False, False, False, False, False
 
     if len(argv) == 0:
         return
@@ -105,7 +105,6 @@ def main(argv):
             print "DB mode"
 
         # -- Database options --
-        #TODO -- Flesh out cut database options
         if opt == "-force":
             fFor = True
             print "Force DB update mode."
@@ -132,9 +131,6 @@ def main(argv):
         # Limit to 10 calibration runs because that's all Clint processed!  What a jerk.
         calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), subNum, runLimit=10)
         for i in calList: skimTree.Add("%s/latSkimDS%d_run%d_*" % (pathToInput, dsNum, i))
-    elif fCut:
-        # Add Background Data
-        skimTree.Add("%s/latSkimDS%d_%d_0.root"%(pathToInput, dsNum, subNum))
     else:
         print "Tune or Cut option not set"
         return
@@ -352,7 +348,6 @@ def ApplyChannelCuts(dsNum, cutType):
 
     for modNum in nMods:
         for subNum in range(nRanges[0], nRanges[1]+1):
-
             # build the file list
             fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, subNum)
             fList = glob.glob(fRegex)
@@ -391,7 +386,6 @@ def ApplyChannelCuts(dsNum, cutType):
                 rnSD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,subNum,modNum))
 
                 for ch in chList:
-
                     # check the 90% fitSlo value is positive
                     if fsD[ch][2] > 0:
                         fsCut = "(run>=%d&&run<=%d && fitSlo<%.2f)" % (runCovMin, runCovMax, fsD[ch][2])
