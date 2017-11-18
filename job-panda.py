@@ -14,7 +14,7 @@ Dependencies:
 
 =================== C. Wiseman, 2 June 2017 ===================
 """
-import sys, shlex, glob, os, re
+import sys, shlex, glob, os, re, time
 import subprocess as sp
 import DataSetInfo as ds
 
@@ -86,6 +86,7 @@ def main(argv):
         if opt == "-applyCuts": applyCuts(int(argv[i+1]))
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
         if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]),argv[i+2])
+        if opt == "-cron": cronTest()
 
 
     # -- calibration stuff --
@@ -1112,6 +1113,12 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
         for i in calList:
             sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, calWaveDir, pandaDir))
 
+
+def cronTest():
+    """ ./job-panda.py -cron """
+
+    f=open("jobQueue.txt", "a+")
+    f.write("Appended at %s\n" % time.strftime('%X %x %Z'))
 
 
 if __name__ == "__main__":

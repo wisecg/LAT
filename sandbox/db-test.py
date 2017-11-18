@@ -33,9 +33,138 @@ from ROOT import gROOT
         vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
         - channel list comes from DataSetInfo.py
         - calIdx list comes from the CalInfo object in DataSetInfo.py, NOT the cal tables in the DB!!!
+
+    wfStd record:
+        key: wfstd_ds[i]_idx[j]_mod[k]
+        (idx's match the Module 1 calIdx for each dataset, including DS5-Mod2 - i.e. we don't have a separate run coverage for M2.)
+        vals: {[chan]:[y/n, expo, aThresh, a, b, c, d, e, base, n, m, chi2]}
+
 """
 
 def main():
+
+    wfStdParse()
+    # wfStdDBEntry()
+
+
+def wfStdParse():
+
+    dsNum = 0
+
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+
+    # # use a regexp to search the DB ... very handy.
+    recList = calDB.search(pars.key.matches("wfstd*"))
+    print len(recList)
+    for idx in range(len(recList)):
+
+        key = recList[idx]['key']
+        vals = recList[idx]['vals']
+
+        # print key
+        for ch in vals: # simple iteration over chans
+            if len(vals[ch])!=12: print ch, len(vals[ch]), vals[ch]
+            # return
+
+    # wipe the DB of bad entries.  careful ...
+    # calDB.remove(pars.key.matches("wfstd*"))
+
+
+def wfStdDBEntry():
+
+    updateDB = True
+    cInfo = ds.CalInfo()
+
+    for dsNum in [1,2,3,4,5]:
+
+        # reverse the CPD dictionary to look up channels
+        dictCPD = ds.CPD[dsNum]
+        dictChanHG = {i[1]:i[0] for i in dictCPD.items() if i[0] % 2 == 0}
+
+        # parse ralph's tables
+        with open("../data/DS%d_ralph.txt" % dsNum, "r") as f:
+            table = f.readlines()
+
+        wfStdVals = {}
+        prevCalIdx, prevTmp = 0, []
+
+        # for line in table:
+        for idx, line, in enumerate(table):
+            tmp = (line.rstrip()).split("\t")
+
+            # the values are:
+            # 0 = runMin, 1 = runMax, 2 = CPD, 3 = y/n, 4 = throwaway, 5 = exposure, 6 = throwaway, 7 = Analysis Thresh, 8 = throwaway, 9 = throwaway, 10 = a, 11 = b, 12 = c, 13 = d, 14 = e, 15 = base, 16 = throwaway, 17 = n, 18 = m, 19 = throwaway, 20 = chi2
+            runLo = int(tmp[0])
+            runHi = int(tmp[1])
+            CPD = int(tmp[2])
+            useMe = tmp[3]
+            expo = float(tmp[5])
+            aThresh = float(tmp[7])
+            a = float(tmp[10])
+            b = float(tmp[11])
+            c = float(tmp[12])
+            d = float(tmp[13])
+            e = float(tmp[14])
+            base = float(tmp[15])
+            n = float(tmp[17])
+            m = float(tmp[18])
+            chan = dictChanHG[CPD]
+
+            chi2 = float(tmp[20])
+            if tmp[20] == "inf":
+                chi2 = 9999999.
+
+            key = "ds%d_m1" % dsNum # run coverage for DS5-M2 is the same as M1.
+            if dsNum==4: key = "ds4_m2"
+            calIdxLo = cInfo.GetCalIdx(key,runLo)
+            calIdxHi = cInfo.GetCalIdx(key,runHi)
+            if calIdxLo == calIdxHi:
+                calIdx = calIdxHi
+            else:
+                print "error: hey, cal indexes don't match!"
+                return
+
+            if idx==0: prevCalIdx = calIdx
+            print runLo, runHi, CPD, chan, calIdx, prevCalIdx, chi2
+
+
+            # Update the DB at each new calIdx, and clear wfStdVals for the next one
+            if calIdx != prevCalIdx:
+                dbKey = "wfstd_ds%d_idx%d_mod%s" % (dsNum, prevCalIdx, prevTmp[2][0])
+                print "OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"..."
+                for ch in sorted(wfStdVals):
+                    print ch, wfStdVals[ch]
+
+                # actually update the DB
+                if updateDB:
+                    wl.setDBCalRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+                    print "DB updated."
+
+                wfStdVals = {}
+
+            # add entries to wfStdVals
+            if chan not in wfStdVals.keys():
+                wfStdVals[chan] = [useMe, expo, aThresh, a, b, c, d, e, base, n, m, chi2]
+            else:
+                print "Channel",chan,"already in wfStdVals for calIdx",calIdx
+                return
+
+            # remember this calIdx and module number
+            prevCalIdx = calIdx
+            prevTmp = tmp
+
+        # do the last one
+        dbKey = "wfstd_ds%d_idx%d_mod%s" % (dsNum, prevCalIdx, tmp[2][0])
+        print "OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"..."
+        for ch in sorted(wfStdVals):
+            print ch, wfStdVals[ch]
+        if updateDB:
+            wl.setDBCalRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+            print "DB updated."
+
+
+def lat3Test():
 
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
