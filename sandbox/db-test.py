@@ -64,7 +64,15 @@ def wfStdParse():
 
         # print key
         for ch in vals: # simple iteration over chans
-            if len(vals[ch])!=12: print ch, len(vals[ch]), vals[ch]
+            a, b, c, d, e, base = vals[ch][3], vals[ch][4], vals[ch][5], vals[ch][6], vals[ch][7], vals[ch][8]
+
+            # check what string format these numbers need in a TCut.
+            print "%s -- %.4e  %.4e  %.4e  %.2e  %.2e  %.4f" % (ch,a,b,c,d,e,base)
+
+            # if len(vals[ch])!=12: print ch, len(vals[ch]), vals[ch]
+            # if vals[ch][9] > 0 or vals[ch][10] > 0:
+                # print key
+                # print ch, vals[ch][9], vals[ch][10]
             # return
 
     # wipe the DB of bad entries.  careful ...

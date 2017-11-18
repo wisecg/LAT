@@ -493,7 +493,6 @@ def debugFiles():
     to access the wfStd and trapENFCalC branches.  If it doesn't segfault, then
     the file is OK for reading.
     """
-
     # try to catch ROOT segfaults, but this just hangs forever
     # def sig_handler(signum, frame):
     #     print "segfault"
@@ -501,34 +500,32 @@ def debugFiles():
     # signal.signal(signal.SIGSEGV, sig_handler)
 
     startHere = False
-    fList = glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS1*")
+    # fList = glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS*")
+    fList = glob.glob("/global/homes/w/wisecg/project/bg-lat/latSkimDS*")
     fList = sorted(fList)
 
     # fList = ["/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root"] # check one file
     for idx, fName in enumerate(fList):
-        if fName == "/global/homes/w/wisecg/project/cal-lat/latSkimDS1_run12729_2.root":
-            startHere = True
-        if not startHere: continue
+        # if fName == "/global/homes/w/wisecg/project/cal-lat/latSkimDS1_run12729_2.root":
+            # startHere = True
+        # if not startHere: continue
 
         # be careful with this!
         # print "going to delete", fName
         # os.remove(fName)
 
         # standard segfault trap
-        # print "Current: ",fName
-        # if idx < len(fList)-1:
-        #     print "   (next):",fList[idx+1]
-        # f = TFile(fName)
-        # t = f.Get("skimTree")
-        # b1 = t.GetBranch("trapENFCalC")
-        # b2 = t.GetBranch("wfstd")
-        # print t.GetEntries()
-        # print b1.GetEntries()
-        # print b2.GetEntries()
-        # if b1.GetEntries() != b2.GetEntries(): print "WTF"
-        # t.GetEntry(0)
-        # print t.trapENFCalC.at(0), t.wfstd.at(0)
-        # f.Close()
+        print "Current: ",fName
+        # if idx < len(fList)-1: print "   (next):",fList[idx+1]
+        f = TFile(fName)
+        t = f.Get("skimTree")
+        b1 = t.GetBranch("trapENFCalC")
+        b2 = t.GetBranch("wfstd")
+        print t.GetEntries(), b1.GetEntries(), b2.GetEntries()
+        if b1.GetEntries() != b2.GetEntries(): print "WTF"
+        t.GetEntry(0) # this catches it
+        print t.trapENFCalC.at(0), t.wfstd.at(0)
+        f.Close()
 
     # f = TFile("/global/homes/w/wisecg/project/bg-lat/latSkimDS3_3_4.root","UPDATE")
     # t = f.Get("skimTree")
