@@ -95,6 +95,7 @@ def main(argv):
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
         if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]),argv[i+2])
         if opt == "-cron": cronJobs()
+        if opt == "-shifter": shifterTest()
 
 
     # -- calibration stuff --
@@ -1133,33 +1134,39 @@ def cronJobs():
     MAILTO="" # can put in some address here if you LOVE emails
     #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
     """
-    nMaxRunning, nMaxPending = 10, 100
+    os.chdir(home+"/lat/")
+    print "Cron:",time.strftime('%X %x %Z'),"cwd:",os.getcwd()
 
-    print "Cron:",time.strftime('%X %x %Z')
+    nMaxRun, nMaxPend = 15, 200
 
     with open(cronFile) as f:
         jobList = [line.rstrip('\n') for line in f]
+    nList = len(jobList)
 
     status = os.popen('slusers | grep wisecg').read()
     status = status.split()
     nRun = int(status[0]) if len(status) > 0 else 0  # Rjob Rcpu Rcpu*h PDjob PDcpu user:account:partition
     nPend = int(status[3]) if len(status) > 0 else 0
 
-    if nPend < nMaxPending:
-        nSubmit = nMaxRunning - nRun
+    nSubmit = (nMaxRun-nRun) if nRun < nMaxRun else 0
+    nSubmit = nList if nList < nSubmit else nSubmit
+    nSubmit = 0 if nPend >= nMaxPend else nSubmit
 
-    print "PDSF Queue, running: %d  pending: %d. " % (nRun, nPend)
-    print "Panda Queue, pending: %d, # to submit: %d" % (len(jobList), nSubmit)
+    print "   nRun %d  (max %d)  nPend %d (max %d)  nList %d  nSubmit %d" % (nRun,nMaxRun,nPend,nMaxPend,nList,nSubmit)
 
     with open(cronFile, 'w') as f:
-
         for idx, job in enumerate(jobList):
             if idx < nSubmit:
                 print "Submitted:",job
                 sh(job)
             else:
-                print "Waiting:", job
+                # print "Waiting:", job
                 f.write(job + "\n")
+
+def shifterTest():
+    """ ./job-panda.py -shifter """
+
+    print "hi"
 
 
 if __name__ == "__main__":
