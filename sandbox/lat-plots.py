@@ -17,6 +17,18 @@ calDir = homePath + "/project/cal-lat"
 
 c = TCanvas("c","Bob Ross's Canvas",800,600)
 
+def main(argv):
+
+    print argv
+
+    # gStyle.SetOptStat(0)
+    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    # fitMu()
+    # wfStd()
+    # fitSlo()
+
+
 def fitMu():
 
     # load cal files the way job-panda does
@@ -119,9 +131,4 @@ def fitSlo():
 
 
 if __name__=="__main__":
-    gStyle.SetOptStat(0)
-    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
-
-    # fitMu()
-    # wfStd()
-    fitSlo()
+    main(sys.argv[1:])

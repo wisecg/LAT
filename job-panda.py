@@ -32,6 +32,8 @@ pandaDir   = home+"/project/panda-skim"
 # pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
 # qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
 qsubStr = "sbatch slurm-job.sh" # SLURM mode
+cronFile = home + "/lat/cron/jobQueue.txt"
+
 
 # =============================================================
 def main(argv):
@@ -40,10 +42,16 @@ def main(argv):
         print "Read the main function, broh!"
         return
 
+    global useJobQueue
+    useJobQueue = False
+
     # get some margs
     dsNum, subNum, runNum, argString = None, None, None, None
+
     f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q r s t'),False) # make a bunch of bools
     for i,opt in enumerate(argv):
+
+        if opt == "-q": useJobQueue = True
 
         if opt == "-ds": dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
@@ -86,7 +94,7 @@ def main(argv):
         if opt == "-applyCuts": applyCuts(int(argv[i+1]))
         if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
         if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]),argv[i+2])
-        if opt == "-cron": cronTest()
+        if opt == "-cron": cronJobs()
 
 
     # -- calibration stuff --
@@ -120,8 +128,15 @@ def main(argv):
 # =============================================================
 
 def sh(cmd):
-    """ Just a quick way to call the shell."""
-    sp.call(shlex.split(cmd))
+    """ Either call the shell or put the command in our cron queue.
+        Uses the global bool 'useJobQueue' and the global path 'cronFile'.
+    """
+    if not useJobQueue:
+        sp.call(shlex.split(cmd))
+        return
+    with open(cronFile,"a+") as f:
+        print "Adding to cronfile (%s): %s" % (cronFile, cmd)
+        f.write(cmd + "\n")
 
 
 def makeSlurm():
@@ -255,8 +270,6 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit skim_mjd_data jobs.
     """
-    sh("make -s")
-
     # bg
     if not calList:
         # -ds
@@ -279,8 +292,6 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit wave-skim jobs.
     """
-    sh("make -s")
-
     # bg
     if not calList:
         # -ds
@@ -1114,30 +1125,40 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
             sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, calWaveDir, pandaDir))
 
 
-def cronTest():
+def cronJobs():
     """ ./job-panda.py -cron
+    Uses the global string 'cronFile'.
     Crontab should contain the following lines (crontab -e):
     SHELL=/bin/bash
     MAILTO="" # can put in some address here if you LOVE emails
-    #*/1 * * * * source ~/env/EnvBatch.sh; ~/lat/cron/run-cron.sh >> ~/lat/cron/cron.log 2>&1
-    #*/1 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
+    #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
     """
+    nMaxJobs = 3
 
-    with open(home+"/lat/cron/jobQueue.txt") as f:
+    print "Cron:",time.strftime('%X %x %Z')
+
+    with open(cronFile) as f:
         jobList = [line.rstrip('\n') for line in f]
 
-    for job in jobList:
-        print job
-
     # Rjob Rcpu Rcpu*h PDjob PDcpu user:account:partition
-    status = os.popen('slusers | grep mjd').read()
+    status = os.popen('slusers | grep wisecg').read()
     status = status.split()
     nRun = status[0] if len(status) > 0 else 0
     nPend = status[3] if len(status) > 0 else 0
-    print "Running:",nRun,"Pending:",nPend
+    nSubmit = nMaxJobs - nRun
 
-    # with open(home+"/lat/cron/jobQueue.txt","a+") as f:
-        # f.write("Appended at %s\n" % time.strftime('%X %x %Z'))
+    print "PDSF Queue, running: %d  pending: %d. " % (nRun, nPend)
+    print "Panda Queue, pending: %d, # to submit: %d" % (len(jobList), nSubmit)
+
+    with open(cronFile, 'w') as f:
+
+        for idx, job in enumerate(jobList):
+            if idx < nSubmit:
+                print "Submitted:",job
+                sh(job)
+            else:
+                print "Waiting:", job
+                f.write(job + "\n")
 
 
 if __name__ == "__main__":
