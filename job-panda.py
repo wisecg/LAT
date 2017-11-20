@@ -1115,10 +1115,29 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def cronTest():
-    """ ./job-panda.py -cron """
+    """ ./job-panda.py -cron
+    Crontab should contain the following lines (crontab -e):
+    SHELL=/bin/bash
+    MAILTO="" # can put in some address here if you LOVE emails
+    #*/1 * * * * source ~/env/EnvBatch.sh; ~/lat/cron/run-cron.sh >> ~/lat/cron/cron.log 2>&1
+    #*/1 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
+    """
 
-    f=open("jobQueue.txt", "a+")
-    f.write("Appended at %s\n" % time.strftime('%X %x %Z'))
+    with open(home+"/lat/cron/jobQueue.txt") as f:
+        jobList = [line.rstrip('\n') for line in f]
+
+    for job in jobList:
+        print job
+
+    # Rjob Rcpu Rcpu*h PDjob PDcpu user:account:partition
+    status = os.popen('slusers | grep mjd').read()
+    status = status.split()
+    nRun = status[0] if len(status) > 0 else 0
+    nPend = status[3] if len(status) > 0 else 0
+    print "Running:",nRun,"Pending:",nPend
+
+    # with open(home+"/lat/cron/jobQueue.txt","a+") as f:
+        # f.write("Appended at %s\n" % time.strftime('%X %x %Z'))
 
 
 if __name__ == "__main__":
