@@ -173,7 +173,7 @@ def main(argv):
                 else:
                     cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
 
-                if fDB: wl.setDBCalRecord({"key":key,"vals":cutDict})
+                if fDB: wl.setDBCalRecord({"key":key,"vals":cutDict}, forceUpdate=fFor)
                 if fCSV:
                     dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                     dummyDict2 = dict(dummyDict.items() + cutDict.items())
