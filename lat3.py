@@ -335,7 +335,10 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
 
 def ApplyChannelCuts(dsNum, cutType):
     """ ./lat3.py -cut [dsNum] [cutType]
-    This runs over whole datasets. """
+    This runs over whole datasets.
+    cutTypes:
+        fs, rn, wf, fs+rn, fs+wf, rn+wf, fs+rn+wf
+    """
 
     # setup a loop over modules and dataset ranges
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
@@ -381,48 +384,52 @@ def ApplyChannelCuts(dsNum, cutType):
 
                 runCovMin = cInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][1]
                 runCovMax = cInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][2]
+                runCut = "run>=%d && run<=%d" % (runCovMin, runCovMax)
 
                 fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,calIdx,modNum))
                 rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,calIdx,modNum))
                 rnSD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,calIdx,modNum))
                 wfD = wl.getDBCalRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)) # returns 0 for ranges where we have no data
 
-                # for ch in wfD:
-                    # print ch,wfD[ch][0]
-
                 for ch in chList:
-                    # check the 90% fitSlo value is positive
+
+                    # fitSlo: check the 90% value is positive
                     if fsD[ch][2] > 0:
-                        fsCut = "(run>=%d&&run<=%d && fitSlo<%.2f)" % (runCovMin, runCovMax, fsD[ch][2])
+                        fsCut = "fitSlo<%.2f" % fsD[ch][2]
 
-                    # check the softplus curvature is positive
+                    # riseNoise: check the softplus curvature is positive
                     if rnSD[ch][3] > 0:
-                        rnTmp = "riseNoise<(%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCal-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
+                        rnCut = "riseNoise<(%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCal-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
 
-                        rnCut = "(run>=%d&&run<=%d && %s)" % (runCovMin, runCovMax, rnTmp)
+                    # wfStd: check if ralph says this is ok to use
+                    if wfD!=0 and ch in wfD.keys() and wfD[ch][0]==u'y':
+                        wfCut = "abs(wfstd - sqrt((%.4e + %.4e*trapENFCal + %.4e*trapENFCal**2 + %.2e*pow(trapENFCal,3) + %.2e*pow(trapENFCal,4))**2 + %.4f)) < (%.2f+%.3f*trapENFCal)" % (wfD[ch][3], wfD[ch][4], wfD[ch][5], wfD[ch][6], wfD[ch][7], wfD[ch][8], wfD[ch][9], wfD[ch][10])
 
-                    # check that ralph says these wfstd values are good.
-                    # also we don't have entries for all calIdx's.
-                    if cutType == "wf" and wfD==0: continue
-                    if cutType == "wf" and ch not in wfD.keys(): continue
-                    if wfD[ch][0] == u'y':
+                    # set the combination channel cut
+                    if cutType == "fs" and fsCut!=None:
+                        chanCut = "(%s && %s)" % (runCut, fsCut)
 
-                        # print "cut for ch",ch
-                        wfStdTmp = "abs(wfstd - sqrt((%.4e + %.4e*trapENFCal + %.4e*trapENFCal**2 + %.2e*pow(trapENFCal,3) + %.2e*pow(trapENFCal,4))**2 + %.4f)) < (%.2f+%.3f*trapENFCal)" % (wfD[ch][3], wfD[ch][4], wfD[ch][5], wfD[ch][6], wfD[ch][7], wfD[ch][8], wfD[ch][9], wfD[ch][10])
+                    if cutType == "rn" and rnCut!=None:
+                        chanCut = "(%s && %s)" % (runCut, rnCut)
 
-                        wfStdCut = "(run>=%d&&run<=%d && %s)" % (runCovMin, runCovMax, wfStdTmp)
+                    if cutType == "wf" and wfCut!=None:
+                        chanCut = "(%s && %s)" % (runCut, wfCut)
 
-                    # set the channel cut based on the input cutType
-                    if cutType == "fs" and fsCut != None:  chanCut = fsCut
-                    if cutType == "rn" and rnCut != None:  chanCut = rnCut
-                    if cutType == "fs+rn" and fsCut != None and rnCut!=None:
-                        chanCut = "(run>=%d&&run<=%d&&fitSlo<%.2f&&%s)" % (runCovMin, runCovMax, fsD[ch][2], rnTmp)
-                    if cutType == "wf" and wfStdCut != None:
-                        chanCut = wfStdCut
+                    if cutType == "fs+rn" and fsCut!=None and rnCut!=None:
+                        chanCut = "(%s && %s && %s)" % (runCut, fsCut, rnCut)
+
+                    if cutType == "fs+wf" and fsCut!=None and wfCut!=None:
+                        chanCut = "(%s && %s && %s)" % (runCut, fsCut, wfCut)
+
+                    if cutType == "rn+wf" and rnCut!=None and wfCut!=None:
+                        chanCut = "(%s && %s && %s)" % (runCut, rnCut, wfCut)
+
+                    if cutType == "fs+rn+wf" and fsCut!=None and rnCut!=None and wfCut!=None:
+                        chanCut = "(%s && %s && %s && %s)" % (runCut, fsCut, rnCut, wfCut)
 
                     # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
                     if ch in cutDict.keys() and chanCut!=None:
-                        cutDict[ch] += "||%s" % chanCut
+                        cutDict[ch] += " || %s" % chanCut
                     elif ch not in cutDict.keys() and chanCut!=None:
                         cutDict[ch] = "(%s" % chanCut
 
@@ -430,30 +437,40 @@ def ApplyChannelCuts(dsNum, cutType):
             for key in cutDict:
                 cutDict[key] += ")"
 
-            # -- finally, loop over each channel, get its cut, and create an output file. --
-            for ch in chList:
+            # -- finally, loop over each channel we have an entry for, get its cut, and create an output file. --
+            for ch in cutDict:
 
-                if ch not in cutDict.keys():
-                    print "Channel %d doesn't exist, skipping ...\n" % ch
-                    continue
+                # TODO: threshold cut (or at least save the value for each bkgIdx)
 
-                chanCut = theCut + "&&gain==0&&channel==%d" % ch
+                chanCut = theCut + "&& gain==0 && channel==%d" % ch
 
                 if cutType == "fs":
-                    outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
-                    chanCut += "&&fitSlo>0&&%s" % cutDict[ch]
+                    outFile = "~/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 if cutType == "rn":
-                    outFile = "/global/homes/w/wisecg/project/cuts/rn/riseNoise-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
-                    chanCut += "&&%s" % cutDict[ch]
-
-                if cutType == "fs+rn":
-                    outFile = "/global/homes/w/wisecg/project/cuts/fs_rn/fs_rn-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
-                    chanCut += "&&fitSlo>0&&%s" % cutDict[ch]
+                    outFile = "~/project/cuts/rn/riseNoise-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& %s" % cutDict[ch]
 
                 if cutType == "wf":
-                    outFile = "/global/homes/w/wisecg/project/cuts/wf/wfstd-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
-                    chanCut += "&&%s" % cutDict[ch]
+                    outFile = "~/project/cuts/wf/wfstd-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& %s" % cutDict[ch]
+
+                if cutType == "fs+rn":
+                    outFile = "~/project/cuts/fs_rn/fs_rn-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
+
+                if cutType == "fs+wf":
+                    outFile = "~/project/cuts/fs_wf/fs_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
+
+                if cutType == "rn+wf":
+                    outFile = "~/project/cuts/rn_wf/rn_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& %s" % cutDict[ch]
+
+                if cutType == "fs+rn+wf":
+                    outFile = "~/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 print "    Writing to:",outFile
                 print "    Cut used:",chanCut,"\n"
@@ -465,6 +482,7 @@ def ApplyChannelCuts(dsNum, cutType):
                 cutUsed.Write()
                 print "Wrote",outTree.GetEntries(),"entries."
                 outFile.Close()
+                # return
 
 
 if __name__ == "__main__":
