@@ -1133,19 +1133,20 @@ def cronJobs():
     MAILTO="" # can put in some address here if you LOVE emails
     #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
     """
-    nMaxJobs = 3
+    nMaxRunning, nMaxPending = 10, 100
 
     print "Cron:",time.strftime('%X %x %Z')
 
     with open(cronFile) as f:
         jobList = [line.rstrip('\n') for line in f]
 
-    # Rjob Rcpu Rcpu*h PDjob PDcpu user:account:partition
     status = os.popen('slusers | grep wisecg').read()
     status = status.split()
-    nRun = status[0] if len(status) > 0 else 0
-    nPend = status[3] if len(status) > 0 else 0
-    nSubmit = nMaxJobs - nRun
+    nRun = int(status[0]) if len(status) > 0 else 0  # Rjob Rcpu Rcpu*h PDjob PDcpu user:account:partition
+    nPend = int(status[3]) if len(status) > 0 else 0
+
+    if nPend < nMaxPending:
+        nSubmit = nMaxRunning - nRun
 
     print "PDSF Queue, running: %d  pending: %d. " % (nRun, nPend)
     print "Panda Queue, pending: %d, # to submit: %d" % (len(jobList), nSubmit)
