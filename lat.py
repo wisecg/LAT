@@ -163,7 +163,7 @@ def main(argv):
     t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
-    tE50, latE50 = std.vector("double")(), std.vector("double")()
+    tE50, latE50, wfstd = std.vector("double")(), std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
@@ -182,7 +182,7 @@ def main(argv):
     b31, b32, b33, b34 = out.Branch("t0_SLE",t0_SLE), out.Branch("t0_ALE",t0_ALE), out.Branch("lat",lat), out.Branch("latF",latF)
     b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
     b38 = out.Branch("nMS",nMS)
-    b39, b40 = out.Branch("tE50", tE50), out.Branch("latE50", latE50)
+    b39, b40, b41 = out.Branch("tE50", tE50), out.Branch("latE50", latE50), out.Branch("wfstd", wfstd)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -201,7 +201,7 @@ def main(argv):
         "riseNoise":[riseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
-        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40]
+        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfstd":[wfstd,b41]
     }
 
 
@@ -637,6 +637,9 @@ def main(argv):
                 # print "%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh)
             nMS[iH] = len(maxtab)
 
+            # =========================================================
+            # wfstd parameter
+            wfstd[iH] = np.std(data[5:-5])
 
             # ------------------------------------------------------------------------
             # End waveform processing.
