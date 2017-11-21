@@ -1,0 +1,18 @@
+1)
+use makecut to create 2D histograms for each detector and subset as given in data.txt
+the histogram has trapENFCal (x-axis) and wfstd (y-axis) in 0.1 keV binning wfstd is calculated based on the waveforms
+
+2)
+use makecut3 to run over all the 2histograms in the root files
+- it fits the calibration files and uses the fitfunction in the background to set cut. 
+- it set the threshold after the spectrum came down after the noise wall (if there is one left)
+- use this to calcualte exposure curves (for each subset!)
+- if fit wasnt good, remove subset from exposure
+
+3)
+in the output directory, use makeplot to make the plots, efficiencyof the cut is calculated based on the events 
+  in the calibration that are removed above the threshold set in 2)
+  if efficiency < 60% ignore this data and increase threshold (assume cut wasnt good)
+  sum up over datasets and modules
+  
+  
