@@ -55,19 +55,21 @@ def wfStdParse():
     pars = db.Query()
 
     # # use a regexp to search the DB ... very handy.
-    recList = calDB.search(pars.key.matches("wfstd*"))
+    # recList = calDB.search(pars.key.matches("wfstd_ds5_*"))
+    recList = calDB.search(pars.key.matches("thresh"))
+
     print len(recList)
     for idx in range(len(recList)):
 
         key = recList[idx]['key']
-        vals = recList[idx]['vals']
-
-        # print key
-        for ch in vals: # simple iteration over chans
-            a, b, c, d, e, base = vals[ch][3], vals[ch][4], vals[ch][5], vals[ch][6], vals[ch][7], vals[ch][8]
-
-            # check what string format these numbers need in a TCut.
-            print "%s -- %.4e  %.4e  %.4e  %.2e  %.2e  %.4f" % (ch,a,b,c,d,e,base)
+        # vals = recList[idx]['vals']
+        #
+        print key
+        # for ch in vals: # simple iteration over chans
+        #     a, b, c, d, e, base = vals[ch][3], vals[ch][4], vals[ch][5], vals[ch][6], vals[ch][7], vals[ch][8]
+        #
+        #     # check what string format these numbers need in a TCut.
+        #     print "%s -- %.4e  %.4e  %.4e  %.2e  %.2e  %.4f" % (ch,a,b,c,d,e,base)
 
             # if len(vals[ch])!=12: print ch, len(vals[ch]), vals[ch]
             # if vals[ch][9] > 0 or vals[ch][10] > 0:

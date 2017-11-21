@@ -344,7 +344,7 @@ def ApplyChannelCuts(dsNum, cutType):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
     cInfo = ds.CalInfo()
     nRanges = [0, ds.dsMap[dsNum]]
-    if dsNum==5: nRanges[0] = 80 # exclude DS-5A
+    # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
     nMods = [1]
     if dsNum == 4: nMods = [2]
     if dsNum == 5: nMods = [1,2]
@@ -392,6 +392,10 @@ def ApplyChannelCuts(dsNum, cutType):
                 wfD = wl.getDBCalRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)) # returns 0 for ranges where we have no data
 
                 for ch in chList:
+
+                    fsCut, rnCut, wfCut, chanCut = None, None, None, None
+
+                    # print ch,":",fsD[ch][2]
 
                     # fitSlo: check the 90% value is positive
                     if fsD[ch][2] > 0:

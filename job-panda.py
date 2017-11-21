@@ -32,8 +32,8 @@ pandaDir   = home+"/project/panda-skim"
 # pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
 
 # qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
-# qsubStr = "sbatch slurm-job.sh" # SLURM mode
-qsubStr = "sbatch shifter.slr" # SLURM+Shifter mode
+qsubStr = "sbatch slurm-job.sh" # SLURM mode
+# qsubStr = "sbatch shifter.slr" # SLURM+Shifter mode
 
 cronFile = home + "/lat/cron.queue"
 
