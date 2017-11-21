@@ -1,0 +1,8 @@
+#!/bin/bash
+#---SBATCH --job-name=jcgw-test
+#SBATCH --workdir=/global/homes/w/wisecg/lat/cron
+#SBATCH --output=/global/homes/w/wisecg/lat/cron/slurm-%j.txt
+#---SBATCH --error=/global/homes/w/wisecg/lat/cron/error-%j.txt
+#SBATCH -p shared --image=custom:pdsf-chos-sl64:v4
+
+shifter --volume=/global/project:/project /bin/bash shifter-job.sh

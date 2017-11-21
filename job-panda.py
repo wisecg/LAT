@@ -30,9 +30,12 @@ pandaDir   = home+"/project/panda-skim"
 # waveDir = "/projecta/projectdirs/majorana/users/bxyzhu/waveskim"
 # latDir = "/projecta/projectdirs/majorana/users/bxyzhu/latskim"
 # pandaDir = "/projecta/projectdirs/majorana/users/bxyzhu/pandaskim"
+
 # qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
-qsubStr = "sbatch slurm-job.sh" # SLURM mode
-cronFile = home + "/lat/cron/jobQueue.txt"
+# qsubStr = "sbatch slurm-job.sh" # SLURM mode
+qsubStr = "sbatch shifter.slr" # SLURM+Shifter mode
+
+cronFile = home + "/lat/cron.queue"
 
 
 # =============================================================
@@ -82,6 +85,7 @@ def main(argv):
         if opt == "-purge": purgeLogs()
         if opt == "-makeScript": makeScript()
         if opt == "-makeSlurm": makeSlurm()
+        if opt == "-makeShifter": makeShifter()
         if opt == "-checkLogs": checkLogErrors()
         if opt == "-checkLogs2": checkLogErrors2()
         if opt == "-checkFiles": checkFiles()
@@ -212,6 +216,52 @@ def makeScript():
     """
     # remove tabs and first empty line
     script = dedent(qsub_file_text).split("\n",1)[1]
+    outFile.write(script)
+    outFile.close()
+
+
+def makeShifter():
+    """ ./job-panda.py -makeShifter
+        Makes SLURM+Shifter submission scripts (it needs two)
+        Only need to run this function once.
+    """
+    from textwrap import dedent
+    print "Generating SLURM+shifter scripts ..."
+
+    outFile = open('shifter.slr','w+')
+    shifter_file_text = """
+    #!/bin/bash
+    #SBATCH --workdir=/global/homes/w/wisecg/lat
+    #SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
+    #SBATCH -p shared --image=custom:pdsf-chos-sl64:v4
+    shifter --volume=/global/project:/project /bin/bash shifter-job.sh ${@}
+    """
+    script = dedent(shifter_file_text).split("\n",1)[1]
+    outFile.write(script)
+    outFile.close()
+
+    outFile = open('shifter-job.sh','w+')
+    job_file_text = """
+    #!/bin/bash
+    echo "Job Start:"
+    date
+    echo "Node(s):  "$SLURM_JOB_NODELIST
+    echo "Job ID:  "$SLURM_JOB_ID
+    echo inShifter:`env|grep  SHIFTER_RUNTIME`
+    echo $CHOS
+    echo `pwd`
+    echo $SHELL
+    echo $MJSWDIR
+    echo "homedir is:"$HOMEDIR
+
+    # This runs whatever commands we pass to it.
+    echo "${@}"
+    ${@}
+
+    echo "Job Complete:"
+    date
+    """
+    script = dedent(job_file_text).split("\n",1)[1]
     outFile.write(script)
     outFile.close()
 
@@ -1132,7 +1182,7 @@ def cronJobs():
     Crontab should contain the following lines (crontab -e):
     SHELL=/bin/bash
     MAILTO="" # can put in some address here if you LOVE emails
-    #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron/cron.log 2>&1
+    #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron.log 2>&1
     """
     os.chdir(home+"/lat/")
     print "Cron:",time.strftime('%X %x %Z'),"cwd:",os.getcwd()
@@ -1163,10 +1213,13 @@ def cronJobs():
                 # print "Waiting:", job
                 f.write(job + "\n")
 
+
 def shifterTest():
     """ ./job-panda.py -shifter """
 
-    print "hi"
+    # os.chdir(home+"/lat/cron")
+    print "Shifter:",time.strftime('%X %x %Z'),"cwd:",os.getcwd()
+    sh("""sbatch shifter.slr './lat3.py -cut 2 fs'""")
 
 
 if __name__ == "__main__":
