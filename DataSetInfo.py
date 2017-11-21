@@ -797,8 +797,32 @@ def GetGoodChanList(dsNum):
     return sorted(goodList)
 
 
-
 def GetThreshDicts(dsNum, threshCut=0.9):
+    """
+        Threshold run list finder, pulls thresholds from DB
+        Quite a bit slower than before since it needs to make a bunch of DB calls
+        Not sure if this is even necessary in lat3 since everything is done by bkgidx now
+    """
+    import numpy as np
+    import waveLibs as wl
+    goodRuns, badRuns = {}, {}
+    for idx in range(1, dsMap[dsNum]+1):
+        threshDict = wl.getDBCalRecord("thresh_ds%d_bkgidx%d"%(dsNum, idx))
+        runRange = np.transpose(np.array([bkgRunsDS[dsNum][idx][::2], bkgRunsDS[dsNum][idx][1::2]]))
+        for ch, vals in threshDict.iteritems():
+            if vals[0] <= threshCut:
+                if ch in goodRuns.keys():
+                    goodRuns[ch].extend(runRange)
+                elif ch not in goodRuns.keys():
+                    goodRuns[ch] = list(runRange)
+            else:
+                if ch in badRuns.keys():
+                    badRuns[ch].extend(runRange)
+                elif ch not in badRuns.keys():
+                    badRuns[ch] = list(runRange)
+    return goodRuns,badRuns
+
+def GetThreshDictsOld(dsNum, threshCut=0.9):
     #TODO: Update with DB once DB parameters are implemented!
     import numpy as np
     import pandas as pd
@@ -826,5 +850,4 @@ def GetThreshDicts(dsNum, threshCut=0.9):
                 goodRunErfs[col].append([hi,lo,thresh,sigma])
             else:
                 badRuns[col].append([hi,lo])
-
     return goodRuns,badRuns,goodRunErfs
