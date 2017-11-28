@@ -39,6 +39,11 @@ from ROOT import gROOT
         (idx's match the Module 1 calIdx for each dataset, including DS5-Mod2 - i.e. we don't have a separate run coverage for M2.)
         vals: {[chan]:[y/n, expo, aThresh, a, b, c, d, e, base, n, m, chi2]}
 
+
+    threshold record:
+        key: thresh_ds[i]_bkgidx[j]
+        vals: {[chan]:[50 pct mean, sigma]}
+
 """
 
 def main():
@@ -62,10 +67,17 @@ def wfStdParse():
     for idx in range(len(recList)):
 
         key = recList[idx]['key']
-        # vals = recList[idx]['vals']
-        #
+        vals = recList[idx]['vals']
+
         print key
+        for ch in vals:
+            print ch, vals[ch]
+        return
+
         # for ch in vals: # simple iteration over chans
+            # print int(ch)
+            # return
+
         #     a, b, c, d, e, base = vals[ch][3], vals[ch][4], vals[ch][5], vals[ch][6], vals[ch][7], vals[ch][8]
         #
         #     # check what string format these numbers need in a TCut.
@@ -272,7 +284,6 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
                     megaCut[ch] = "|| (run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
 
     return megaCut
-
 
 
 def getCalFiles(dsNum, calIdx=None, verbose=False):

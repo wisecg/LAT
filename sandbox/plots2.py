@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import sys, imp, glob, os, time
+import tinydb as db
 sys.argv.append("-b") # kill interactivity before loading ROOT (PDSF)
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 wl = imp.load_source('waveLibs','../waveLibs.py')
 from ROOT import gStyle, gROOT
-from ROOT import TFile, TChain, TTree, TNamed, TCanvas, TLegend
+from ROOT import TFile, TChain, TTree, TNamed, TCanvas, TLegend, TH1D, TF1
 import ROOT
 
 def main(argv):
@@ -302,37 +303,81 @@ def applyThresholdCut(dsNum):
 
     chList = ds.GetGoodChanList(dsNum)
     chList = [ch for ch in chList if ch!=692 and ch!=1232]
-    # if dsNum==5 and modNum==1:
-    #     chList = [ch for ch in chList if ch < 1000 and ch!=692]
-    # if dsNum==5 and modNum==2:
-    #     chList = [ch for ch in chList if ch > 1000 and ch!=1232]
 
-    # build the cut file list sequentially by bkgIdx and channel
-    fList, fMissing = [], []
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+
+    hTot = TH1D("hThr","hThr",nBins,eLo,eHi) # total
+
+    fList, fMissing, fNoThresh = [], [], []
     dsPath = "/global/homes/w/wisecg/project/cuts/fs_rn_wf"
+
     for bkgIdx in range(ds.dsMap[dsNum]+1):
-        tmp = glob.glob("%s/fs_rn_wf-DS%d-%d-*.root" % (dsPath, dsNum, bkgIdx))
-        nFiles = len(tmp)
+
+        threshKey = "thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx)
+        # recList = calDB.search(pars.key.matches(threshKey))
+        recList = calDB.search(pars.key == threshKey)
+        if len(recList)!=1:
+            print "Error: found too many records for key:",threshKey
+            for record in recList:
+                print record
+            return
+        threshDict = recList[0]['vals']
+
         for chan in chList:
+
+            # save threshold information
+            chKey = u'%d' % chan
+            if chKey not in threshDict.keys():
+                fNoThresh.append([dsNum,bkgIdx,chan])
+                continue
+            mu, sig = threshDict[u'%d' % chan][0], threshDict[u'%d' % chan][1]
+
+            # save file paths
             fName = "%s/fs_rn_wf-DS%d-%d-ch%d.root" % (dsPath, dsNum, bkgIdx, chan)
             if os.path.isfile(fName) == True:
                 fList.append(fName)
             else:
                 fMissing.append(fName)
+                continue
 
-    print "nFound: %d  nMissing: %d" % (len(fList),len(fMissing))
+            fTmp = TFile(fName)
+            tTmp = fTmp.Get("skimTree")
+            cTmp = fTmp.Get("chanCut").GetTitle()
+            hTmp = wl.H1D(tTmp,nBins,eLo,eHi,"trapENFCal",cTmp,"hTmp","hTmp")
 
-    # save ds+bkgIdx+ch as a key to do a quick threshold lookup?  Maybe fList is a dict?
+            # calculate efficiency curve
+            thisErf = TF1("thisErf","0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))")
+            thisErf.SetParameter(0,mu)
+            thisErf.SetParameter(1,sig)
+            hTmp.Divide(thisErf)
 
-    # fileFSRNWF = sorted(glob.glob("/global/homes/w/wisecg/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-*.root" % dsNum))
+            hTot.Add(hTmp)
 
-    # chainFSRNWF = TChain("skimTree")
-    # [chainFSRNWF.Add(f) for f in fileFSRNWF]
-    # hFSRNWF = wl.H1D(chainFSRNWF,nBins,eLo,eHi,"trapENFCal","","trapENFCal","","hFSRNWF")
+    print "nFound: %d  nMissing: %d  nNoThresh: %d" % (len(fList),len(fMissing), len(fNoThresh))
 
-    # c = TCanvas("c","Shan is pretty",800,600)
+    # compare the spectrum w/o the threshold cut
+    fileFSRNWF = sorted(glob.glob("/global/homes/w/wisecg/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-*.root" % dsNum))
+    chainFSRNWF = TChain("skimTree")
+    [chainFSRNWF.Add(f) for f in fileFSRNWF]
+    hFSRNWF = wl.H1D(chainFSRNWF,nBins,eLo,eHi,"trapENFCal","","trapENFCal","","hFSRNWF")
 
+    c = TCanvas("c","Shan is pretty",800,600)
+    hTot.SetLineColor(ROOT.kBlue)
+    hTot.SetTitle("")
+    hTot.GetXaxis().SetTitle("trapENFCal")
+    hTot.GetYaxis().SetTitle("Counts")
+    hTot.Draw("hist")
 
+    hFSRNWF.SetLineColor(ROOT.kRed)
+    hFSRNWF.Draw("hist same")
+
+    leg = TLegend(0.6,0.85,0.7,0.85)
+    leg.AddEntry(hFSRNWF,"cuts w/o thresh correction","l")
+    leg.AddEntry(hTot,"with thresholds")
+    leg.Draw("same")
+
+    c.Print("../plots/threshSpecDS%d.pdf" % (dsNum))
 
 
 if __name__=="__main__":
