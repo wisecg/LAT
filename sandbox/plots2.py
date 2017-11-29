@@ -24,8 +24,10 @@ def main(argv):
         if opt == "-ord": optimizeCutOrder(int(argv[i+1]))
         if opt == "-cut": makeCutSpectra(int(argv[i+1]))
         if opt == "-all":
-            [makeCutSpectra(dsNum) for dsNum in [0,1,2,3,4,5]]
+            # [makeCutSpectra(dsNum) for dsNum in [0,1,2,3,4,5]]
+            [applyThresholdCut(dsNum) for dsNum in [0,1,2,3,4,5]]
         if opt == "-thr": applyThresholdCut(int(argv[i+1]))
+        if opt == "-plt": plotThreshSpectra()
 
 
 def genRawHists(dsNum):
@@ -295,10 +297,19 @@ def makeCutSpectra(dsNum):
 
 
 def applyThresholdCut(dsNum):
-    """ ./plots2.py -thr [dsNum] """
+    """ ./plots2.py -thr [dsNum]
 
-    kpb = 0.1
-    eLo, eHi = 0., 15.
+    Create "after cuts" histograms for each dataset (similar to genRawHists)
+    Use a super fine binning and huge energy range for versatility.
+    Don't distinguish between enriched and natural detectors in 2D plots.
+        1. sum histogram 'hSum'
+        2. cpd vs energy 'hCPDE'
+        3. cpd vs run    'hCPDrun'
+    """
+    threshCutE = 0.9 # require the mu to be at least this high to keep the channel
+
+    kpb = 0.01
+    eLo, eHi = 0., 15000.
     nBins = int((eHi-eLo)/kpb)
 
     chList = ds.GetGoodChanList(dsNum)
@@ -307,15 +318,19 @@ def applyThresholdCut(dsNum):
     calDB = db.TinyDB('../calDB.json')
     pars = db.Query()
 
-    hTot = TH1D("hThr","hThr",nBins,eLo,eHi) # total
+    hTot = TH1D("hTot","hTot",nBins,eLo,eHi)
+    hEnr = TH1D("hEnr","hEnr",nBins,eLo,eHi)
+    hNat = TH1D("hNat","hNat",nBins,eLo,eHi)
 
-    fList, fMissing, fNoThresh = [], [], []
+    fList, fMissing, fNoThresh, fCut = [], [], [], []
     dsPath = "/global/homes/w/wisecg/project/cuts/fs_rn_wf"
 
+    runLo, runHi = 0, 0
     for bkgIdx in range(ds.dsMap[dsNum]+1):
 
+        if bkgIdx % 10 == 0 and bkgIdx > 0: print 100. * bkgIdx / float(ds.dsMap[dsNum]+1), "% done."
+
         threshKey = "thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx)
-        # recList = calDB.search(pars.key.matches(threshKey))
         recList = calDB.search(pars.key == threshKey)
         if len(recList)!=1:
             print "Error: found too many records for key:",threshKey
@@ -336,48 +351,149 @@ def applyThresholdCut(dsNum):
             # save file paths
             fName = "%s/fs_rn_wf-DS%d-%d-ch%d.root" % (dsPath, dsNum, bkgIdx, chan)
             if os.path.isfile(fName) == True:
-                fList.append(fName)
+                if 0. < mu < threshCutE:
+                    fList.append(fName)
+                    # print "ch %d  bkgIdx %d  mu %.2f  sig %.2f" % (chan,bkgIdx,mu,sig)
+                else:
+                    fCut.append(fName)
+                    # print "ch %d  bkgIdx %d  mu %.2f  sig %.2f" % (chan,bkgIdx,mu,sig)
             else:
                 fMissing.append(fName)
                 continue
 
-            fTmp = TFile(fName)
-            tTmp = fTmp.Get("skimTree")
-            cTmp = fTmp.Get("chanCut").GetTitle()
-            hTmp = wl.H1D(tTmp,nBins,eLo,eHi,"trapENFCal",cTmp,"hTmp","hTmp")
-
             # calculate efficiency curve
             thisErf = TF1("thisErf","0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))")
             thisErf.SetParameter(0,mu)
-            thisErf.SetParameter(1,sig)
-            hTmp.Divide(thisErf)
+            thisErf.SetParameter(1,abs(sig))
 
+            fTmp = TFile(fName)
+            tTmp = fTmp.Get("skimTree")
+
+            tTmp.GetEntry(0)
+            if runLo==0: runLo = tTmp.run
+            tTmp.GetEntry(tTmp.GetEntries()-1)
+            if tTmp.run > runHi:
+                runHi = tTmp.run
+
+            cTmp = fTmp.Get("chanCut").GetTitle()
+            hTmp = wl.H1D(tTmp,nBins,eLo,eHi,"trapENFCal",cTmp,"hTmp","hTmp")
+            hTmp.Divide(thisErf)
             hTot.Add(hTmp)
 
-    print "nFound: %d  nMissing: %d  nNoThresh: %d" % (len(fList),len(fMissing), len(fNoThresh))
+            hTmpEnr = wl.H1D(tTmp,nBins,eLo,eHi,"trapENFCal",cTmp+" && isEnr && trapENFCal > %.1f" % mu,"hTmpEnr","hTmpEnr")
+            hTmpEnr.Divide(thisErf)
+            hEnr.Add(hTmpEnr)
 
-    # compare the spectrum w/o the threshold cut
-    fileFSRNWF = sorted(glob.glob("/global/homes/w/wisecg/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-*.root" % dsNum))
+            hTmpNat = wl.H1D(tTmp,nBins,eLo,eHi,"trapENFCal",cTmp+" && !isEnr && trapENFCal > %.1f" % mu,"hTmpNat","hTmpNat")
+            hTmpNat.Divide(thisErf)
+            hNat.Add(hTmpNat)
+
+    print "DS-%d  nFound: %d  nMissing: %d  nCut: %d  nNoThresh: %d" % (dsNum,len(fList),len(fMissing),len(fCut),len(fNoThresh))
+
+    # save to a permanent place
+    fOut = TFile("../data/latThresh_DS%d.root" % dsNum, "RECREATE")
+    hTot.Write()
+    hEnr.Write()
+    hNat.Write()
+
+    # load the full chain w/ files passing threshold cut (but no efficiency correction applied.)
+
     chainFSRNWF = TChain("skimTree")
-    [chainFSRNWF.Add(f) for f in fileFSRNWF]
+    [chainFSRNWF.Add(f) for f in fList]
     hFSRNWF = wl.H1D(chainFSRNWF,nBins,eLo,eHi,"trapENFCal","","trapENFCal","","hFSRNWF")
 
+    cpdLo, cpdHi = 111, 175
+    if dsNum==4: cpdLo, cpdHi = 211, 275
+    if dsNum==5: cpdLo, cpdHi = 111, 275
+    nCPD = cpdHi - cpdLo
+
+    hCPDE = wl.H2D(chainFSRNWF,nBins,eLo,eHi,nCPD,cpdLo,cpdHi,"C*100+P*10+D:trapENFCal","","trapENFCal","CPD","CPD vs. E","hCPDE")
+    hCPDE.Write()
+
+    chainFSRNWF.GetEntry(0)
+    runLo = chainFSRNWF.run
+    chainFSRNWF.GetEntry(chainFSRNWF.GetEntries()-1)
+    runHi = chainFSRNWF.run
+    nRuns = runHi - runLo + 1
+    print "First run:",runLo,"Last run:",runHi
+
+    nRuns = runHi - runLo + 1
+    hCPDrun = wl.H2D(chainFSRNWF,nRuns,runLo,runHi,nCPD,cpdLo,cpdHi,"C*100+P*10+D:run","","run","CPD","CPD vs. run","hCPDrun")
+    hCPDrun.Write()
+
+    kpb = 0.1
+    rebinFactor = int(kpb/0.01)
+    hTot = hTot.Rebin(rebinFactor) # this creates a new histogram
+    hTot.GetXaxis().SetRangeUser(0.,12.)
+
     c = TCanvas("c","Shan is pretty",800,600)
+    c.SetLogy(1)
+    hTot.SetMinimum(0.5)
     hTot.SetLineColor(ROOT.kBlue)
     hTot.SetTitle("")
     hTot.GetXaxis().SetTitle("trapENFCal")
     hTot.GetYaxis().SetTitle("Counts")
     hTot.Draw("hist")
 
+    hFSRNWF = hFSRNWF.Rebin(rebinFactor)
+    hFSRNWF.GetXaxis().SetRangeUser(0.,12.)
     hFSRNWF.SetLineColor(ROOT.kRed)
     hFSRNWF.Draw("hist same")
 
-    leg = TLegend(0.6,0.85,0.7,0.85)
-    leg.AddEntry(hFSRNWF,"cuts w/o thresh correction","l")
-    leg.AddEntry(hTot,"with thresholds")
+    leg = TLegend(0.7,0.75,0.89,0.89)
+    leg.AddEntry(hFSRNWF,"no thresh corr.","l")
+    leg.AddEntry(hTot,"w/ thresh","l")
     leg.Draw("same")
 
-    c.Print("../plots/threshSpecDS%d.pdf" % (dsNum))
+    c.Print("../plots/latThresh_DS%d.pdf" % dsNum)
+
+    fOut.Close()
+
+
+def plotThreshSpectra():
+    """ ./plots2.py -plt """
+
+    eLo, eHi = 0., 12.
+    kpb = 0.1
+    rebinFactor = int(kpb/0.01)
+
+    roughEnrExp = {0:460.052, 1:661.811, 2:106.286, 3:368.523, 4:102.858, 5:1934.934, "5a":1270.584, "5b":674.351}
+    roughNatExp = {0:171.021, 1:63.294, 2:10.679, 3:81.741, 4:73.845, 5:963.816, "5a":627.585, "5b":336.23}
+
+    analysisThresh = {0:2., 1:2., 2:2., 3:2., 4:2., 5:2.}
+
+    # load everything (files are small)
+    fList = [TFile("../data/latThresh_DS%d.root" % ds) for ds in [0,1,2,3,4,5]]
+
+    for dsNum, f in enumerate(fList):
+        print dsNum
+
+        hNat = f.Get("hNat")
+        hNat = hNat.Rebin(rebinFactor)
+        hNat.GetXaxis().SetRangeUser(analysisThresh[dsNum],12.)
+        hNat.SetLineColor(ROOT.kBlue)
+        hNat.SetTitle("")
+        hNat.GetXaxis().SetTitle("trapENFCal")
+        hNat.GetYaxis().SetTitle("Counts / kg-d")
+        hNat.Scale(1./roughNatExp[dsNum])
+
+        hEnr = f.Get("hEnr")
+        hEnr = hEnr.Rebin(rebinFactor)
+        hEnr.GetXaxis().SetRangeUser(analysisThresh[dsNum],12.)
+        hEnr.SetLineColor(ROOT.kRed)
+        hEnr.Scale(1./roughEnrExp[dsNum])
+
+        c = TCanvas("c","c",800,600)
+        hNat.Draw("hist")
+        hEnr.Draw("hist same")
+
+        leg = TLegend(0.7,0.75,0.89,0.89)
+        leg.AddEntry(hEnr,"Enriched (%d kg-d)" % roughEnrExp[dsNum],"l")
+        leg.AddEntry(hNat,"Natural (%d kg-d)" % roughNatExp[dsNum],"l")
+        leg.Draw("same")
+
+        c.Print("../plots/threshEnrNat_DS%d.pdf" % dsNum)
+
 
 
 if __name__=="__main__":
