@@ -57,8 +57,8 @@ def main(argv):
             parList.append('bcMax'), parNameList.append('bcMax')
             print "Tuning bcMax"
         if opt == "-noiseWeight":
-            parList.append('(waveS4-waveS1)/bcMax/trapENFCalC'), parNameList.append('noiseWeight')
-            print "Tuning noiseWeight ((waveS4-waveS1)/bcMax/trapENFCalC)"
+            parList.append('(waveS4-waveS1)/bcMax/trapENFCal'), parNameList.append('noiseWeight')
+            print "Tuning noiseWeight ((waveS4-waveS1)/bcMax/trapENFCal)"
         if opt == "-bcTime":
             parList.append('(bandTime-tOffset-1100)/(matchTime-tOffset)'), parNameList.append('bcTime')
             print "Tuning bcTime"
@@ -193,9 +193,9 @@ def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut,
     for ch in chList:
         cutDict[ch] = [0,0,0,0,0]
         eb, elo, ehi = (tMax-tMin),tMin,tMax
-        d1Cut = theCut + " && trapENFCalC > %d && trapENFCalC < %d && channel==%d" % (elo,ehi,ch)
+        d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (elo,ehi,ch)
         d2Cut = theCut + " && channel==%d" % ch
-        nPass = cal.Draw("trapENFCalC:%s"%(par), d1Cut, "goff")
+        nPass = cal.Draw("trapENFCal:%s"%(par), d1Cut, "goff")
         nEnergy = cal.GetV1()
         nCut = cal.GetV2()
         nCutList = list(float(nCut[n]) for n in xrange(nPass))
@@ -223,7 +223,7 @@ def TuneSoftPlus(dsNum, subNum, tName, cal, chList, par, parName, theCut, fastMo
     cutDict = {}
     for ch in chList:
         cutDict[ch] = [0,0,0,0]
-        nPass1 = cal.Draw("trapENFCalC:%s"%(par),  theCut + "&& trapENFCal>5 && trapENFCal<50 && channel==%d"%(ch), "goff")
+        nPass1 = cal.Draw("trapENFCal:%s"%(par),  theCut + "&& trapENFCal>5 && trapENFCal<50 && channel==%d"%(ch), "goff")
         nCutArray1, nCutArray2, nCutArray3 = [], [], []
         if nPass1 != 0:
             nEnergy1 = cal.GetV1()
@@ -231,14 +231,14 @@ def TuneSoftPlus(dsNum, subNum, tName, cal, chList, par, parName, theCut, fastMo
             nCutList1 = list(float(nCut1[n]) for n in xrange(nPass1))
             nEnergyList1 = list(float(nEnergy1[n]) for n in xrange(nPass1))
             nCutArray1 = [[x,y] for x,y in zip(nCutList1, nEnergyList1) if x > np.percentile(nCutList1, 5) and x < np.percentile(nCutList1, 85)]
-        nPass2 = cal.Draw("trapENFCalC:%s"%(par),  theCut+"&& trapENFCal>50 && trapENFCal<150 && channel==%d"%(ch), "goff")
+        nPass2 = cal.Draw("trapENFCal:%s"%(par),  theCut+"&& trapENFCal>50 && trapENFCal<150 && channel==%d"%(ch), "goff")
         if nPass2 != 0:
             nEnergy2 = cal.GetV1()
             nCut2 = cal.GetV2()
             nCutList2 = list(float(nCut2[n]) for n in xrange(nPass2))
             nEnergyList2 = list(float(nEnergy2[n]) for n in xrange(nPass2))
             nCutArray2 = [[x,y] for x,y in zip(nCutList2, nEnergyList2) if x > np.percentile(nCutList2, 5) and x < np.percentile(nCutList2, 90)]
-        nPass3 = cal.Draw("trapENFCalC:%s"%(par),  theCut+"&& trapENFCal>150 && trapENFCal<240 && channel==%d"%(ch), "goff")
+        nPass3 = cal.Draw("trapENFCal:%s"%(par),  theCut+"&& trapENFCal>150 && trapENFCal<240 && channel==%d"%(ch), "goff")
         if nPass3 != 0:
             nEnergy3 = cal.GetV1()
             nCut3 = cal.GetV2()
@@ -303,7 +303,7 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
 
     c.cd(1)
     gPad.SetLogy(0)
-    cal.Draw("%s:trapENFCalC>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb+10,elo-5,ehi+5,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
+    cal.Draw("%s:trapENFCal>>b(%d,%d,%d,%d,%.3E,%.3E)"%(var,eb+10,elo-5,ehi+5,vb,cut01-abs(0.25*cut01),cut99+abs(0.25*cut99)) ,d2Cut)
 
     l1, l2, l3 = TLine(), TLine(), TLine()
     l1.SetLineColor(ROOT.kGreen)
