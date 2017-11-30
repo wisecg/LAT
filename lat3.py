@@ -360,7 +360,7 @@ def ApplyChannelCuts(dsNum, cutType, dType):
             nRanges = [0, ds.dsMap[dsNum]]
             # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
         elif dType == "cal":
-            nRange = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])]
+            nRanges = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])]
 
         # Loop over bkgIdx, even though for calibration runs this will represent calIdx
         for bkgIdx in range(nRanges[0], nRanges[1]+1):
@@ -376,8 +376,9 @@ def ApplyChannelCuts(dsNum, cutType, dType):
                 skimTree.Add(fRegex)
             elif dType == "cal":
                 calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), bkgIdx, runLimit=10)
+                fList = []
                 for i in calList:
-                    fList += glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root")%(dsNum,i)
+                    fList += glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root"%(dsNum,i))
                     skimTree.Add("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root" % (dsNum, i))
             file0 = fList[0]
             print "DS-%d subset %d, Mod-%d.  N_files: %d" % (dsNum, bkgIdx, modNum, len(fList))
