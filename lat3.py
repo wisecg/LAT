@@ -11,7 +11,7 @@ Usage Examples:
     Custom cut:
         ./lat3.py -tune /path/to/calib/files -db -s DS subDS Module -Custom "bcMax/bcMin"
     Applying cuts:
-        ./lat3.py -cut [dsNum] [cutType]
+        ./lat3.py -cut [dsNum] [cutType] [dataType]
 v1: 03 Oct 2017
 ========= C. Wiseman (USC), B. Zhu (LANL) =========
 """
@@ -117,8 +117,9 @@ def main(argv):
         if opt == "-cut":
             dsNum = int(argv[i+1])
             cutType = argv[i+2]
-            print "Applying %s cut to DS-%d ..." % (cutType, dsNum)
-            ApplyChannelCuts(dsNum, cutType)
+            dType = argv[i+3]
+            print "Applying %s cut to DS-%d (%s)..." % (cutType, dsNum, dType)
+            ApplyChannelCuts(dsNum, cutType, dType)
             stopT = time.clock()
             print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
             return
@@ -333,30 +334,71 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     return cut99,cut95,cut01,cut05,cut90
 
 
-def ApplyChannelCuts(dsNum, cutType):
+def ApplyChannelCuts(dsNum, cutType, dType):
     """ ./lat3.py -cut [dsNum] [cutType]
     This runs over whole datasets.
     cutTypes:
         fs, rn, wf, fs+rn, fs+wf, rn+wf, fs+rn+wf
+
+    dTypes:
+        bkg, cal
     """
 
     # setup a loop over modules and dataset ranges
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
     cInfo = ds.CalInfo()
-    nRanges = [0, ds.dsMap[dsNum]]
-    # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
     nMods = [1]
     if dsNum == 4: nMods = [2]
     if dsNum == 5: nMods = [1,2]
+    # Dummy string for file writing -- adds nothing to the directories if background
+    dString = ""
+    if dType == "cal":
 
     for modNum in nMods:
+
+        # Changed so range of idx are set here to take advantage of module number
+        if dType == "bkg":
+            nRanges = [0, ds.dsMap[dsNum]]
+            # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
+        elif dType == "cal":
+            nRange = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])]
+
+        # Loop over bkgIdx, even though for calibration runs this will represent calIdx
         for bkgIdx in range(nRanges[0], nRanges[1]+1):
 
+            # load the chains and find the right calIdx's.
+            skimTree = TChain("skimTree")
+
             # build the file list
-            fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, bkgIdx)
-            fList = glob.glob(fRegex)
+            fRegex = ""
+            if dType == "bkg":
+                fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, bkgIdx)
+                fList = glob.glob(fRegex)
+                skimTree.Add(fRegex)
+            elif dType == "cal":
+                calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), bkgIdx, runLimit=10)
+                for i in calList:
+                    fList += glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root")%(dsNum,i)
+                    skimTree.Add("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root" % (dsNum, i))
             file0 = fList[0]
             print "DS-%d subset %d, Mod-%d.  N_files: %d" % (dsNum, bkgIdx, modNum, len(fList))
+
+            # Print some basic info about files
+            f = TFile(file0)
+            theCut = f.Get("theCut").GetTitle()
+            if dType == "bkg":
+                skimTree.GetEntry(0)
+                firstRun = skimTree.run
+                skimTree.GetEntry(skimTree.GetEntries()-1)
+                lastRun = skimTree.run
+                calIdxLo = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), firstRun)
+                calIdxHi = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), lastRun)
+            elif dType == "cal":
+                # All the idx are the same for calibration!
+                calIdxLo = calIdxHi = bkgIdx
+                firstRun, lastRun = calList[0], calList[-1]
+
+            print "    Entries %d  firstRun %d  lastRun %d  calIdxLo %d  calIdxHi %d" % (skimTree.GetEntries(),firstRun,lastRun,calIdxLo,calIdxHi)
 
             # build the channel list  (remove 692 and 1232 from DS5 for now.)
             chList = ds.GetGoodChanList(dsNum)
@@ -364,19 +406,6 @@ def ApplyChannelCuts(dsNum, cutType):
                 chList = [ch for ch in chList if ch < 1000 and ch!=692]
             if dsNum==5 and modNum==2:
                 chList = [ch for ch in chList if ch > 1000 and ch!=1232]
-
-            # load the chains and find the right calIdx's.
-            skimTree = TChain("skimTree")
-            skimTree.Add(fRegex)
-            f = TFile(file0)
-            theCut = f.Get("theCut").GetTitle()
-            skimTree.GetEntry(0)
-            firstRun = skimTree.run
-            skimTree.GetEntry(skimTree.GetEntries()-1)
-            lastRun = skimTree.run
-            calIdxLo = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), firstRun)
-            calIdxHi = cInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), lastRun)
-            print "    Entries %d  firstRun %d  lastRun %d  calIdxLo %d  calIdxHi %d" % (skimTree.GetEntries(),firstRun,lastRun,calIdxLo,calIdxHi)
 
             # -- create a dict of cuts for each channel, covering each calIdx. --
             cutDict = {}
@@ -443,37 +472,36 @@ def ApplyChannelCuts(dsNum, cutType):
 
             # -- finally, loop over each channel we have an entry for, get its cut, and create an output file. --
             for ch in cutDict:
-
                 # TODO: threshold cut (or at least save the value for each bkgIdx)
 
                 chanCut = theCut + "&& gain==0 && channel==%d" % ch
 
                 if cutType == "fs":
-                    outFile = "~/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%sfs/%sfitSlo-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 if cutType == "rn":
-                    outFile = "~/project/cuts/rn/riseNoise-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%srn/%sriseNoise-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& %s" % cutDict[ch]
 
                 if cutType == "wf":
-                    outFile = "~/project/cuts/wf/wfstd-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%swf/%swfstd-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& %s" % cutDict[ch]
 
                 if cutType == "fs+rn":
-                    outFile = "~/project/cuts/fs_rn/fs_rn-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%sfs_rn/%sfs_rn-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 if cutType == "fs+wf":
-                    outFile = "~/project/cuts/fs_wf/fs_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%sfs_wf/%sfs_wf-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 if cutType == "rn+wf":
-                    outFile = "~/project/cuts/rn_wf/rn_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%srn_wf/%srn_wf-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& %s" % cutDict[ch]
 
                 if cutType == "fs+rn+wf":
-                    outFile = "~/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-%d-ch%d.root" % (dsNum, bkgIdx, ch)
+                    outFile = "~/project/cuts/%sfs_rn_wf/%sfs_rn_wf-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
                     chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
 
                 print "    Writing to:",outFile
