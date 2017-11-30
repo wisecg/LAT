@@ -356,27 +356,30 @@ def ApplyChannelCuts(dsNum, cutType, dType):
 
     for modNum in nMods:
         # Changed so range of idx are set here to take advantage of module number
+        nRanges = []
         if dType == "bkg":
             nRanges = [0, ds.dsMap[dsNum]]
             # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
         elif dType == "cal":
             nRanges = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])-1]
+        else:
+            print "cal or bkg not set, returning"
+            return 0
 
         # Loop over bkgIdx, even though for calibration runs this will represent calIdx
         for bkgIdx in range(nRanges[0], nRanges[1]+1):
-
             # load the chains and find the right calIdx's.
             skimTree = TChain("skimTree")
 
             # build the file list
             fRegex = ""
+            fList = []
             if dType == "bkg":
                 fRegex = "/global/homes/w/wisecg/project/bg-lat/latSkimDS%d_%d_*.root" % (dsNum, bkgIdx)
                 fList = glob.glob(fRegex)
                 skimTree.Add(fRegex)
             elif dType == "cal":
                 calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), bkgIdx, runLimit=10)
-                fList = []
                 for i in calList:
                     fList += glob.glob("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root"%(dsNum,i))
                     skimTree.Add("/global/homes/w/wisecg/project/cal-lat/latSkimDS%d_run%d_*.root" % (dsNum, i))
@@ -385,6 +388,7 @@ def ApplyChannelCuts(dsNum, cutType, dType):
 
             # Print some basic info about files
             f = TFile(file0)
+            firstRun, lastRun, calIdxLo, calIdxHi = 0,0,0,0
             theCut = f.Get("theCut").GetTitle()
             if dType == "bkg":
                 skimTree.GetEntry(0)

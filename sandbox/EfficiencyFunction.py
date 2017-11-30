@@ -57,5 +57,7 @@ if __name__ == "__main__":
         c1.SaveAs("TestDS2Eff_ch%d.pdf"%(ch))
 
     c1 = ROOT.TCanvas("cTot", "cTot", 800,600)
+    histTot.GetXaxis().SetTitle("Energy (keV)")
+    histTot.GetYaxis().SetTitle("Exposure (kg-yr)")
     histTot.Draw()
     c1.SaveAs("TestD2Eff_Tot.pdf")
