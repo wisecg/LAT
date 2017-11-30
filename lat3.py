@@ -352,10 +352,9 @@ def ApplyChannelCuts(dsNum, cutType, dType):
     if dsNum == 5: nMods = [1,2]
     # Dummy string for file writing -- adds nothing to the directories if background
     dString = ""
-    if dType == "cal":
+    if dType == "cal": dString = "cal"
 
     for modNum in nMods:
-
         # Changed so range of idx are set here to take advantage of module number
         if dType == "bkg":
             nRanges = [0, ds.dsMap[dsNum]]
