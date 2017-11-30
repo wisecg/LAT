@@ -360,7 +360,7 @@ def ApplyChannelCuts(dsNum, cutType, dType):
             nRanges = [0, ds.dsMap[dsNum]]
             # if dsNum==5: nRanges[0] = 80 # exclude DS-5A
         elif dType == "cal":
-            nRanges = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])]
+            nRanges = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])-1]
 
         # Loop over bkgIdx, even though for calibration runs this will represent calIdx
         for bkgIdx in range(nRanges[0], nRanges[1]+1):
