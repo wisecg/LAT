@@ -757,16 +757,16 @@ def setDBCalRecord(entry, forceUpdate=False, dbFile="calDB.json"):
         print "WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!"
 
 
-def getDBCalRecord(key,verbose=False):
+def getDBCalRecord(key, verbose=False, calDB=None, pars=None):
     """ View a particular calibration record. """
 
-    calDB = db.TinyDB('calDB.json')
-    pars = db.Query()
+    if type(calDB)==None: calDB = db.TinyDB('calDB.json')
+    if type(pars)==None: pars = db.Query()
 
     recList = calDB.search(pars.key == key)
     nRec = len(recList)
     if nRec == 0:
-        print "Record %s doesn't exist" % key
+        if verbose: print "Record %s doesn't exist" % key
         return 0
     elif nRec == 1:
         if verbose: print "Found record:\n%s" % key
