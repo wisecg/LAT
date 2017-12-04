@@ -105,7 +105,7 @@ void GetDSRunAndStartTimes(int dsNum, double &runTime_s, double &startTime0)
 }
 
 
-void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
+map<int, vector<int> > LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
 {
   map<int, vector<int> > runRanges;
 
@@ -473,7 +473,7 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
 
   else {
     cout << "Error: LoadDataSet(): Unknown dataset: " << dsNum << endl;
-    return;
+    return runRanges;
   }
 
   // Now add the runs to the GATDataSet object
@@ -486,6 +486,8 @@ void LoadDataSet(GATDataSet& ds, int dsNum, int subNum=-1)
   else
     for (size_t i = 0; i < runRanges[subNum].size(); i+=2)
       ds.AddRunRange(runRanges[subNum][i], runRanges[subNum][i+1]);
+
+  return runRanges;
 }
 
 
