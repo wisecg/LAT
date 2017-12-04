@@ -343,6 +343,9 @@ def ApplyChannelCuts(dsNum, cutType, dType):
     dTypes:
         bkg, cal
     """
+    # load the database
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
 
     # setup a loop over modules and dataset ranges
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
@@ -419,10 +422,10 @@ def ApplyChannelCuts(dsNum, cutType, dType):
                 runCovMax = cInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][2]
                 runCut = "run>=%d && run<=%d" % (runCovMin, runCovMax)
 
-                fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,calIdx,modNum))
-                rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,calIdx,modNum))
-                rnSD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,calIdx,modNum))
-                wfD = wl.getDBCalRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)) # returns 0 for ranges where we have no data
+                fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnSD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnCD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum, calIdx, modNum), False, calDB, pars)
+                wfD = wl.getDBCalRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
 
                 for ch in chList:
 

@@ -12,6 +12,7 @@
 #include <sstream>
 #include <iterator>
 #include <array>
+#include <random>
 #include "TFile.h"
 #include "TChain.h"
 #include "TTreeReader.h"
@@ -42,6 +43,8 @@ double getLivetimeAverage(map<int, double> livetimes, string opt="");
 double getVectorUncertainty(vector<double> aVector);
 double getVectorAverage(vector<double> aVector);
 vector<uint32_t> getBestIDs(vector<uint32_t> input);
+double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> expUnc, vector<uint32_t> IDs, int nIterations=1000);
+
 
 bool check_num(std::string const &in) {
     char *end;
@@ -192,11 +195,12 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   map <int,double> channelRuntimeStd2;
   map <int,int> detChanToDetIDMap;
   map <int,vector<double>> livetimeMap, livetimeMapBest;
+  map <int,vector<double>> hwDeadTimes;
   map<string, vector<double>> dtMap;
-  bool firstTimeInSubset=true;     // Allows us to only add in pulser deadtime once per subset
-  double dtfRunTime=0;             // dummy runtime for deadtime fraction (hg and lg det's)
-  double dtfRunTimeBest=0;         // dummy runtime for deadtime fraction ('best' det's)
-  vector<double> dtfDeadTime(10,0); // individual deadtimes
+  bool firstTimeInSubset=true;            // Allows us to only add in pulser deadtime once per subset
+  double dtfRunTimeHG=0, dtfRunTimeLG=0;  // dummy runtimes for deadtime fraction (hg and lg det's)
+  double dtfRunTimeBest=0;                // dummy runtime for deadtime fraction ('best' det's)
+  vector<double> dtfDeadTime(10,0);       // individual deadtimes
   time_t prevStop=0;
   int prevSubSet=-1;
   for (size_t r = 0; r < runList.size(); r++)
@@ -210,6 +214,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     int runInSet = -1;
     string dtFilePath;
     if (!noDT) locateRunRange(run,ranges,runInSet,dtFilePath,noDT);
+    double hgDeadAvg=0, lgDeadAvg=0, orDeadAvg=0;
     if (!noDT && (runInSet != prevSubSet))
     {
       cout << "Subset " << runInSet << ", loading DT file:" << dtFilePath << endl;
@@ -238,25 +243,42 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
             >> det >> p1 >> p2 >> p3 >> p4 >> p5 >> p6;
         // cout << Form("%i %i %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %s %.0f %.0f %.0f %.0f %.0f %.0f\n" ,id,pos,hgFWHM,hgNeg,hgPos,hgDead,lgFWHM,lgNeg,lgPos,lgDead,orDead,det.c_str(),p1,p2,p3,p4,p5,p6);
 
-        // Check if anything is nan.  We'll take it to mean 100% dead.
-        // This is maximally conservative, as it could be 100% live.
-        if(hgDead != hgDead) hgDead = 100.0;
-        if(lgDead != lgDead) lgDead = 100.0;
-        if(orDead != orDead) orDead = 100.0;
+        // Check if anything is nan.  We'll set its value to -9.99 (bad) and deal with it later in the calculation.
+        if(hgDead != hgDead) hgDead = -9.99;
+        if(lgDead != lgDead) lgDead = -9.99;
+        if(orDead != orDead) orDead = -9.99;
 
         // fill the deadtime map
-        dtMap[det] = {hgDead,lgDead,orDead,p1,p2,p3};
+        dtMap[det] = {hgDead,lgDead,orDead,p1,p2,p3,p4};
       }
+
+      // calculate the averages of only good hg, lg, and or deadtimes:
+      int goodHG=0, goodLG=0, goodOR=0;
+      for (auto &dt : dtMap) {
+        string det = dt.first;
+        vector<double> vals = dt.second;
+        double hgDead=vals[0], lgDead=vals[1], orDead=vals[2];
+        if (hgDead >= 0) { hgDeadAvg += hgDead; goodHG++; }
+        if (lgDead >= 0) { lgDeadAvg += lgDead; goodLG++; }
+        if (orDead >= 0) { orDeadAvg += orDead; goodOR++; }
+      }
+      hgDeadAvg /= (double)goodHG;
+      lgDeadAvg /= (double)goodLG;
+      orDeadAvg /= (double)goodOR;
+      // cout << Form("hgDeadAvg %.2f  lgDeadAvg %.2f  orDeadAvg %.2f\n", hgDeadAvg,lgDeadAvg,orDeadAvg);
+      hgDeadAvg /= 100.; // convert to fractions
+      lgDeadAvg /= 100.;
+      orDeadAvg /= 100.;
 
       // Save the subset number
       prevSubSet = runInSet;
     }
+    // if (firstTimeInSubset) continue; // debugging for printing out deadtime maps
 
     // Load built file
     GATDataSet ds;
     string bltPath = ds.GetPathToRun(run,GATDataSet::kBuilt);
     TFile *bltFile = new TFile(bltPath.c_str());
-
 
     // Get the runtime for this run.
     // Cover a bunch of stupid edge cases.
@@ -283,10 +305,10 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         thisRunTime = (stopUnix-startUnix);
         printf("Reverting to the unix timestamps (%.2f) for run %d \n",thisRunTime,run);
         thisRuntimeUncertainty = 1;   // 1 second of uncertainty with unix timestamps
-      }      
+      }
 
       runTime += thisRunTime;
-      
+
       // still need unix times for LN fill deadtime calculation
       startUnix = runInfo->GetStartTime();
       stopUnix = runInfo->GetStopTime();
@@ -416,9 +438,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     }
 
     // Now try and load a channel selection object and pop any other bad detectors
-    // NOTE: future versions of this code should use the 'official version' argument in GetChannelSelectionPath.
-    //       but as of 9/8/17 for the 0nbb paper, that directory is empty.  If the 0nbb dataset deadtime needs
-    //       to be recalculated, this change must be made, so that the channel selection files are the same.
+    // NOTE: this code uses the 'official version' argument (1) in GetChannelSelectionPath, which points to the
+    //       channel selection files stored in $MJDDATADIR/surfmjd/analysis/channelselection .
     string chSelPath = GetChannelSelectionPath(dsNum,1);
     if (FILE *file = fopen(chSelPath.c_str(), "r")) {
       fclose(file);
@@ -475,7 +496,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     }
 
 
-    // ==== Finally, add to the total runtime and livetime of ONLY GOOD detectors. =====
+    // ==== Calculate runtime, deadtime, and livetime of ONLY GOOD detectors. ====
 
     // Add to HG and LG runtimes + livetimes
     vector<uint32_t> bestIDs = getBestIDs(enabledIDs);
@@ -484,22 +505,21 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       if (detChanToDetIDMap[ch] == -1) continue;  // don't include pulser monitors.
 
       // Runtime
-      channelRuntime[ch] += thisRunTime; // creates new entry if one doesn't exist      
+      channelRuntime[ch] += thisRunTime; // creates new entry if one doesn't exist
       channelRuntimeStd2[ch] += (thisRuntimeUncertainty*thisRuntimeUncertainty);
-      
+
       if (noDT) continue;
 
       double thisLiveTime=0;
-
       string pos = chMap->GetDetectorPos(ch);
       if (dtMap.find(pos) != dtMap.end())
       {
+        // calculate hardware deadtime and handle bad values (val<0)
         double hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
         double lgDead = dtMap[pos][1]/100.0;
-
-        // Convert any negative fraction into a 1% deadtime. (David Radford says that's a safe assumption)
-        if (hgDead < 0) hgDead = 0.01;
-        if (lgDead < 0) lgDead = 0.01;
+        if (hgDead < 0 && lgDead >= 0) hgDead = lgDead;
+        if (lgDead < 0 && hgDead >= 0) lgDead = hgDead;
+        if (lgDead < 0 && hgDead < 0) { hgDead = hgDeadAvg; lgDead = lgDeadAvg; }
 
         // The following assumes only DS2 uses presumming, and may not always be true
         // Takes out 62 or 100 us per pulser as deadtime.
@@ -513,11 +533,13 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
           thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[0] += thisRunTime * hgDead;
           dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
+          dtfRunTimeHG += thisRunTime;
         }
         if (ch%2 == 1) {
           thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[1] += thisRunTime * lgDead;
           dtfDeadTime[4] += lgPulserDT*(firstTimeInSubset?1:0);
+          dtfRunTimeLG += thisRunTime;
         }
       }
       else {
@@ -544,9 +566,9 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
 
-      // increment runtime for deadtime fraction
-      dtfRunTime += thisRunTime;
     }
+    // cout << "dtfRunTimeHG " << dtfRunTimeHG << " dtfRunTimeLG " << dtfRunTimeLG << endl;
+    // cout << "Now best\n";
 
     // Add to "Best" Livetime:  One entry per detector (loops over 'best' channel list)
     for (auto ch : bestIDs)
@@ -558,14 +580,52 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       string pos = chMap->GetDetectorPos(ch);
       if (dtMap.find(pos) != dtMap.end())
       {
-        double orDead = dtMap[pos][2]/100.0;
-        if (orDead < 0) orDead = 0.01;
+        // calculate hardware deadtime and handle bad values (val<0)
+        double hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
+        double lgDead = dtMap[pos][1]/100.0;
+        if (hgDead < 0 && lgDead >= 0) hgDead = lgDead;
+        if (lgDead < 0 && hgDead >= 0) lgDead = hgDead;
+        if (lgDead < 0 && hgDead < 0) { hgDead = hgDeadAvg; lgDead = lgDeadAvg; }
 
-        double orPulsers = dtMap[pos][5];
-        double orPulserDT = orPulsers*(dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
-        bestLiveTime = thisRunTime * (1 - orDead) - orPulserDT*(firstTimeInSubset?1:0);
+        // calculate the "or" deadtime, correctly handling edge cases w/ no pulser counts
+        double p1=dtMap[pos][3], p2=dtMap[pos][4], p3=dtMap[pos][5], p4=dtMap[pos][6];
+        double orDead = dtMap[pos][2]/100.;
+        if (orDead < 0) {
+          bool hgGood=false, lgGood=false, hgGuess=false, lgGuess=false, hgBad=false, lgBad=false;
+          if (p1 > 0 && p4 > 0 && hgGood >= 0) hgGood=true;
+          if (p2 > 0 && p4 > 0 && hgGood >= 0) lgGood=true;
+          if (p1 == 0 && hgDead >= 0.) hgGuess=true;
+          if (p2 == 0 && lgDead >= 0.) lgGuess=true;
+          if (p1 == 0 && hgDead < 0) hgBad=true;
+          if (p2 == 0 && lgDead < 0) lgBad=true;
+
+          if (hgGood) orDead = hgDead;
+          else if (hgGuess && lgGood) orDead = lgDead;
+          else if (hgGuess && lgGuess) orDead = hgDead;
+          else if (hgGuess && lgBad) orDead = hgDead;
+          else if (hgBad && (lgGood || lgGuess)) orDead = lgDead;
+          else orDead = orDeadAvg; // punt.  will be 0.01 if there are somehow no good entries in the whole subset.
+        }
+        // make sure fractions are never negative
+        if (hgDead < 0 || lgDead < 0 || orDead < 0) {
+          cout << Form("Error, negative deadtime fraction.  ch %d  runTime %.2f  hgDead %.2f  lgDead %.2f  orDead %.2f\n", ch,thisRunTime,hgDead*100,lgDead*100,orDead*100);
+          return;
+        }
         dtfDeadTime[2] += thisRunTime * orDead;
+
+        // calculate pulser deadtime only if we have a nonzero number of OR pulsers
+        double orPulsers = p3;
+        double orPulserDT = orPulsers*(dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
         dtfDeadTime[5] += orPulserDT*(firstTimeInSubset?1:0);
+
+        // get best livetime
+        bestLiveTime = thisRunTime * (1 - orDead) - orPulserDT*(firstTimeInSubset?1:0);
+        if (bestLiveTime < 0) {
+          cout << Form("Error, negative livetime.  ch %d  orDead %.4f  orPulser %.4f\n", ch, orDead, orPulserDT);
+          return;
+        }
+
+        if(firstTimeInSubset) hwDeadTimes[ch].push_back(orDead);
       }
       else {
         cout << "Warning: Detector " << pos << " not found! Exiting ...\n";
@@ -590,6 +650,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
       dtfRunTimeBest += thisRunTime;
     }
+    // cout << "dtfRunTimeBest is " << dtfRunTimeBest << endl;
+    // return;
 
     // Only subtract out the pulser deadtimes for each channel (for the entire subset)
     // if this is the first run in the subset.
@@ -619,6 +681,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   map <int,double> channelExposure;
   map <int,double> channelExposureUnc;
 
+  cout << "Looking at all channels" << endl;
+
   // If we don't have deadtime information, only report RUNTIME-based results
   map <int,double> chanResults;
   if (noDT) chanResults = channelRuntime;
@@ -633,11 +697,13 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
     channelExposure[chan] = activeMass * livetime;
 
-    double ltHWUnc = livetime*getVectorUncertainty(livetimeMapBest[chan]);
+    if(hwDeadTimes[chan].size() < 1){
+
+    }
+    double ltHWUnc = livetime*getVectorUncertainty(hwDeadTimes[chan]);  // TODO: This should maybe not use hwDeadTimes
     double totalLTUnc = sqrt(channelRuntimeStd2[chan] + ltHWUnc*ltHWUnc)/(3600*24);
-    // double totalLTUnc = sqrt(channelRuntimeStd2[chan]);   // no deadtime uncertainty included
-    
-    channelExposureUnc[chan] = channelExposure[chan]*( (activeMassUnc/activeMass)*(activeMassUnc/activeMass)  + (totalLTUnc/livetime)*(totalLTUnc/livetime) ); 
+
+    channelExposureUnc[chan] = channelExposure[chan]*sqrt( pow(activeMassUnc/activeMass,2)  + pow(totalLTUnc/livetime,2) );
 
     // don't double count LG channels or include pulser monitors
     if (chan%2==1 || detID==-1) continue;
@@ -666,7 +732,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   // Only do this if we have deadtime information.
   // Also calculate deadtime fractions.
   double m1EnrExpBest=0, m1NatExpBest=0, m2EnrExpBest=0, m2NatExpBest=0;
-  double m1EnrExpBestUnc2=0, m1NatExpBestUnc2=0, m2EnrExpBestUnc2=0, m2NatExpBestUnc2=0;  // uncertainties squared
   double m1EnrExpBestUnc=0, m1NatExpBestUnc=0, m2EnrExpBestUnc=0, m2NatExpBestUnc=0;      // The actual uncertainties
   double m1EnrExpBestLTUnc2=0, m1NatExpBestLTUnc2=0, m2EnrExpBestLTUnc2=0, m2NatExpBestLTUnc2=0;          // Exposure uncertainty squared with only LT uncertainty, no active mass
   double m1EnrExpBestLTUnc=0, m1NatExpBestLTUnc=0, m2EnrExpBestLTUnc=0, m2NatExpBestLTUnc=0;              // The actual uncertainties, no active mass
@@ -674,8 +739,9 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   vector<double> dtFrac(10,0);
   map <int,double> bestExposure;
   map <int,double> bestExposureUnc;
-  map <int,double> bestExposureLTUnc;   // exposure uncertainty for LT only (no active mass uncertainty is included) 
+  map <int,double> bestExposureLTUnc;   // exposure uncertainty for LT only (no active mass uncertainty is included)
 
+  cout << "Looking at Best Livetime" << endl;
   if (!noDT) {
     for (auto &live : channelLivetimeBest)
     {
@@ -683,66 +749,62 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       double livetime = live.second;
       int detID = detChanToDetIDMap[chan];
       double activeMass = actM4Det_g[detID]/1000;
-      double activeMassUnc = actMUnc4Det_g[detID]/1000;      
-          
+      double activeMassUnc = actMUnc4Det_g[detID]/1000;
+
       if(bestExposure.find(detID) == bestExposure.end()) // if detID does not exist
         {bestExposure[detID] = activeMass * livetime;}
       else // if this detector has been seen already
         {bestExposure[detID] += activeMass * livetime;}
 
-      double ltHWUnc = livetime*getVectorUncertainty(livetimeMapBest[chan]);
+      double ltHWUnc = livetime*getVectorUncertainty(hwDeadTimes[chan]);
       double totalLTUnc = sqrt(channelRuntimeStd2[chan] + ltHWUnc*ltHWUnc)/(3600*24);
-      // double totalLTUnc = sqrt(channelRuntimeStd2[chan])/(3600*24);   // no contribution from deadtime uncertainty
-      
-      bestExposureUnc[detChanToDetIDMap[chan]]   = channelExposure[chan]*( (activeMassUnc/activeMass)*(activeMassUnc/activeMass)  + (totalLTUnc/livetime)*(totalLTUnc/livetime) ); 
-      bestExposureLTUnc[detChanToDetIDMap[chan]] = channelExposure[chan]*(                           0                            + (totalLTUnc/livetime)*(totalLTUnc/livetime) ); 
-      }
+
+      bestExposureUnc[detID]   = bestExposure[detID]*sqrt( pow( activeMassUnc/activeMass ,2)  + pow( totalLTUnc/livetime,2) );
+      bestExposureLTUnc[detID] = bestExposure[detID]*sqrt(               0                    + pow( totalLTUnc/livetime,2) );
+
+    }
 
     // only add to the final values ONCE for each detector!
     for (auto &expo : bestExposure) {
-      int detID = expo.first;  
+      int detID = expo.first;
       if (detID == -1) continue;
       if (CheckModule(detID)==1 && detIsEnr[detID]==1){
         m1EnrExpBest += bestExposure[detID];
-        m1EnrExpBestUnc2   += bestExposureUnc[detID]*bestExposureUnc[detID];
+        m1EnrExpBestUnc   += bestExposureUnc[detID];
         m1EnrExpBestLTUnc2 += bestExposureLTUnc[detID]*bestExposureLTUnc[detID];
       }
       if (CheckModule(detID)==1 && detIsEnr[detID]==0){
         m1NatExpBest += bestExposure[detID];
-        m1NatExpBestUnc2 += bestExposureUnc[detID]*bestExposureUnc[detID];  
-        m1NatExpBestLTUnc2 += bestExposureLTUnc[detID]*bestExposureLTUnc[detID];        
+        m1NatExpBestUnc += bestExposureUnc[detID];
+        m1NatExpBestLTUnc2 += bestExposureLTUnc[detID]*bestExposureLTUnc[detID];
       }
       if (CheckModule(detID)==2 && detIsEnr[detID]==1){
         m2EnrExpBest += bestExposure[detID];
-        m2EnrExpBestUnc2 += bestExposureUnc[detID]*bestExposureUnc[detID]; 
+        m2EnrExpBestUnc += bestExposureUnc[detID];
         m2EnrExpBestLTUnc2 += bestExposureLTUnc[detID]*bestExposureLTUnc[detID];
       }
       if (CheckModule(detID)==2 && detIsEnr[detID]==0){
         m2NatExpBest += bestExposure[detID];
-        m2NatExpBestUnc2 += bestExposureUnc[detID]*bestExposureUnc[detID];
+        m2NatExpBestUnc += bestExposureUnc[detID];
         m2NatExpBestLTUnc2 += bestExposureLTUnc[detID]*bestExposureLTUnc[detID];
       }
     }
-    m1EnrExpBestUnc = sqrt(m1EnrExpBestUnc2);
-    m1NatExpBestUnc = sqrt(m1NatExpBestUnc2);
-    m2EnrExpBestUnc = sqrt(m2EnrExpBestUnc2);
-    m2NatExpBestUnc = sqrt(m2NatExpBestUnc2);   
 
     m1EnrExpBestLTUnc = sqrt(m1EnrExpBestLTUnc2);
     m1NatExpBestLTUnc = sqrt(m1NatExpBestLTUnc2);
     m2EnrExpBestLTUnc = sqrt(m2EnrExpBestLTUnc2);
-    m2NatExpBestLTUnc = sqrt(m2NatExpBestLTUnc2); 
+    m2NatExpBestLTUnc = sqrt(m2NatExpBestLTUnc2);
 
     // find deadtime fractions, 'dtFrac'
-    dtFrac[0] = dtfDeadTime[0] / dtfRunTime;     // hardware HG
-    dtFrac[1] = dtfDeadTime[1] / dtfRunTime;     // hardware LG
+    dtFrac[0] = dtfDeadTime[0] / dtfRunTimeHG;   // hardware HG
+    dtFrac[1] = dtfDeadTime[1] / dtfRunTimeLG;   // hardware LG
     dtFrac[2] = dtfDeadTime[2] / dtfRunTimeBest; // hardware OR/best
-    dtFrac[3] = dtfDeadTime[3] / dtfRunTime;     // pulser HG
-    dtFrac[4] = dtfDeadTime[4] / dtfRunTime;     // pulser LG
+    dtFrac[3] = dtfDeadTime[3] / dtfRunTimeHG;   // pulser HG
+    dtFrac[4] = dtfDeadTime[4] / dtfRunTimeLG;   // pulser LG
     dtFrac[5] = dtfDeadTime[5] / dtfRunTimeBest; // pulser OR/best
-    dtFrac[6] = dtfDeadTime[6] / dtfRunTime;     // LN HG/LG
+    dtFrac[6] = dtfDeadTime[6] / dtfRunTimeHG;   // LN HG/LG (just use HG)
     dtFrac[7] = dtfDeadTime[7] / dtfRunTimeBest; // LN OR/best
-    dtFrac[8] = dtfDeadTime[8] / dtfRunTime;     // muon veto HG/LG
+    dtFrac[8] = dtfDeadTime[8] / dtfRunTimeHG;   // muon veto HG/LG (just use HG)
     dtFrac[9] = dtfDeadTime[9] / dtfRunTimeBest; // muon veto OR/best
   }
 
@@ -789,7 +851,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   if (!noDT)
   {
     cout << "\nDetector summary with best (H or L) gain and deadtime correction : \n"
-         << "Chan  DetID     A.M.(kg)  Runtime(d)  Livetime(d)  LT-Expo(kg-d) LT-Expo-Unc   AvgLTFrac  AvgLTUnc RTUnc NRuns\n";
+         << "Chan  DetID     A.M.(kg)  Runtime(d)  Livetime(d)  LT-Expo(kg-d) LT-Expo-Unc   AvgLTFrac   LTUnc[s]  NRuns\n";
     for(auto &live : channelLivetimeBest)
     {
       int chan = live.first;
@@ -800,10 +862,10 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       double activeMass = actM4Det_g[detID]/1000;
       double ltAvg = getVectorAverage(livetimeMapBest[chan]);
       double ltHWUnc = getVectorUncertainty(livetimeMapBest[chan]);
-    
-      double totalLTUnc = sqrt(channelRuntimeStd2[chan] + ltHWUnc*ltHWUnc)/(3600*24);
 
-      cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-11.4f  %-13.4f  %-13.4f  %-9.5f  %.5f  %.5f %zu\n", chan,detID,activeMass,channelRuntime[chan],chLive,bestExposure[detID],bestExposureUnc[detID],ltAvg,ltHWUnc,totalLTUnc, livetimeMapBest[chan].size());
+      double totalLTUnc = sqrt(channelRuntimeStd2[chan] + ltHWUnc*ltHWUnc);
+
+      cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-11.4f  %-13.4f  %-13.4f  %-9.5f  %.5f %zu\n", chan,detID,activeMass,channelRuntime[chan],chLive,bestExposure[detID],bestExposureUnc[detID],ltAvg,totalLTUnc, livetimeMapBest[chan].size());
     }
 
     // Now report some average values for "all", "best", HG, and LG channel sets
@@ -830,15 +892,15 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
     // Now report deadtime fractions
     cout << "Deadtime summary (percent, sum deadtime, sum runtime):"
-         << Form("\n   Hardware HG:       %.4e  %.4e  %.4e",dtFrac[0]*100,dtfDeadTime[0],dtfRunTime)
-         << Form("\n   Hardware LG:       %.4e  %.4e  %.4e",dtFrac[1]*100,dtfDeadTime[1],dtfRunTime)
+         << Form("\n   Hardware HG:       %.4e  %.4e  %.4e",dtFrac[0]*100,dtfDeadTime[0],dtfRunTimeHG)
+         << Form("\n   Hardware LG:       %.4e  %.4e  %.4e",dtFrac[1]*100,dtfDeadTime[1],dtfRunTimeLG)
          << Form("\n   Hardware OR/Best:  %.4e  %.4e  %.4e",dtFrac[2]*100,dtfDeadTime[2],dtfRunTimeBest)
-         << Form("\n   Pulser HG:         %.4e  %.4e  %.4e",dtFrac[3]*100,dtfDeadTime[3],dtfRunTime)
-         << Form("\n   Pulser LG:         %.4e  %.4e  %.4e",dtFrac[4]*100,dtfDeadTime[4],dtfRunTime)
+         << Form("\n   Pulser HG:         %.4e  %.4e  %.4e",dtFrac[3]*100,dtfDeadTime[3],dtfRunTimeHG)
+         << Form("\n   Pulser LG:         %.4e  %.4e  %.4e",dtFrac[4]*100,dtfDeadTime[4],dtfRunTimeLG)
          << Form("\n   Pulser OR/Best HG: %.4e  %.4e  %.4e",dtFrac[5]*100,dtfDeadTime[5],dtfRunTimeBest)
-         << Form("\n   LN Fill HG+LG:     %.4e  %.4e  %.4e",dtFrac[6]*100,dtfDeadTime[6],dtfRunTime)
+         << Form("\n   LN Fill HG:        %.4e  %.4e  %.4e",dtFrac[6]*100,dtfDeadTime[6],dtfRunTimeHG)
          << Form("\n   LN Fill OR/Best:   %.4e  %.4e  %.4e",dtFrac[7]*100,dtfDeadTime[7],dtfRunTimeBest)
-         << Form("\n   Muon Veto HG+LG:   %.4e  %.4e  %.4e",dtFrac[8]*100,dtfDeadTime[8],dtfRunTime)
+         << Form("\n   Muon Veto HG:      %.4e  %.4e  %.4e",dtFrac[8]*100,dtfDeadTime[8],dtfRunTimeHG)
          << Form("\n   Muon Veto OR/Best: %.4e  %.4e  %.4e\n",dtFrac[9]*100,dtfDeadTime[9],dtfRunTimeBest);
   }
 
@@ -857,7 +919,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   }
 }
 
-
+// =======================================================================================
 int mergeIntervals(vector<pair<int,int>> vals, int start, int stop)
 {
   // Start with a vector of start/stop intervals, and sort in order of increasing start times.
@@ -1157,18 +1219,29 @@ double getLivetimeAverage(map<int, double> livetimes, string opt)
 
 double getVectorUncertainty(vector<double> aVector)
 {
-  double sum_x = 0;
-  double sum_x2 = 0;
+  // double sum_x = 0;
+  // double sum_x2 = 0;
   int n = aVector.size();
-
-  for (int i=0; i<n; i++)
-  {
-    sum_x += aVector[i];
-    sum_x2 += aVector[i]*aVector[i];
+  if(n<=1){
+    // cout << "ERROR: Trying to take a stdev with n=0" << endl;
+    return 0;
   }
-  double mean = sum_x / n;
-  double stdev = sqrt((sum_x2 / n) - (mean * mean));
-  return stdev / sqrt(n) ;
+
+  double mean = 0, M2 = 0, variance =0;
+  for(int i=0; i<n; ++i) {
+      double delta = aVector[i] - mean;
+      mean += delta/n;
+      M2 += delta*(aVector[i] - mean);
+      variance = M2/(n - 1);
+  }
+
+  double stdevN = sqrt(variance) / sqrt(n);
+
+  if(stdevN != stdevN){
+    cout<< "ERROR: stdevN is NaN. Maybe because of " << mean << ", " << M2 << ", " << variance << ", or " << n << endl;
+  }
+
+  return stdevN;
 
 }
 
@@ -1196,9 +1269,16 @@ vector<uint32_t> getBestIDs(vector<uint32_t> input)
   vector<uint32_t> goodIDs;
   int n = input.size();
 
+  // cout << "Getting best IDs" << endl;
+
   for(int i=0; i<n; i++)
   {
     uint32_t aChannel = input[i];
+
+	  if(std::find(goodIDs.begin(), goodIDs.end(), aChannel) != goodIDs.end()){
+		  cout << "That's weird, we already put " << aChannel << " in the array" << endl;
+		  continue;
+	  }
 
     if(aChannel%2==1) // if it is LG
     {
@@ -1209,7 +1289,51 @@ vector<uint32_t> getBestIDs(vector<uint32_t> input)
         goodIDs.push_back(aChannel);
       }
     }
-    else{ goodIDs.push_back(aChannel); }
+    else{
+		  goodIDs.push_back(aChannel);
+	  }
   }
+
+  // for (auto i: goodIDs)
+  // {
+  //   std::cout << i << ' ';
+  // }
+  // cout << "\n\n";
+
   return goodIDs;
 }
+
+
+double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> expUnc, vector<uint32_t> IDs, int nIterations)
+{
+  // Uses a Monte Carlo method to estimate the uncertainty.
+  // map<int,vector<double>> exposureTrials;   // exposure[det] is a vector of all trial values
+  vector<double> exposureTrials;
+  std::default_random_engine generator;
+
+  for(int trial=0; trial<nIterations; trial++)
+  {
+    double sum = 0;
+    for(auto i: IDs)
+    {
+      std::normal_distribution<double> dist(expMean[i],expUnc[i]);
+      double value = dist(generator); // the sampled best value
+
+      sum += value;
+
+      // exposureTrials[chan].push_back(value);
+    }
+
+    exposureTrials.push_back(sum);
+
+  }
+
+  // get average
+  double finalSum = 0;
+  for(auto& val: exposureTrials){finalSum += val;}
+
+
+  return finalSum/exposureTrials.size();
+
+}
+
