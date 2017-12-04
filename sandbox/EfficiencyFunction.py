@@ -23,6 +23,8 @@ if __name__ == "__main__":
     dummyExposure = 1.
     for bkgidx in range(nRanges[0], nRanges[1]+1):
         tD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+        # Get Analysis Threshold Dictionary here
+        # Get Exposure Dictionary here
         for idx, ch in enumerate(chList):
             if ch in tD.keys():
                 mu, sigma = tD[ch][0], tD[ch][1]
@@ -33,7 +35,7 @@ if __name__ == "__main__":
                 threshFnc = ROOT.TF1("fEff_%d_%d_%d"%(dsNum, ch,bkgidx),"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))", 0, 2)
                 threshFnc.SetParameters(mu, abs(sigma))
 
-                # If cut efficiency functions exist, add as TF1
+                # If cut efficiency functions exist, add as TF1 here
 
                 # Easiest to just add as histogram... is this the right way to go? In the future we can replace with a giganto-function?
                 h3 = ROOT.TH1D("hCh%d_Bkgidx%d"%(ch, bkgidx), "", 20000,0,2)
@@ -49,6 +51,8 @@ if __name__ == "__main__":
                 else:
                     threshDict[ch] = h3.Clone("Efficiency_ch%d"%(ch))
 
+
+    # Draw here
     histTot = ROOT.TH1D("DS%dTot"%(dsNum), "DS%d Total"%(dsNum), 20000,0,2)
     for ch, hist in threshDict.iteritems():
         c1 = ROOT.TCanvas("c%d"%(ch), "c%d"%(ch), 800,600)
