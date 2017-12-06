@@ -292,7 +292,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     }
     // if (firstTimeInSubset) continue; // debugging for printing out deadtime maps
 
-    // -bkgIdx option: At each new bkgIdx, print out the exposure for all detectors.
+    // '-idx' option: At each new bkgIdx, print out the exposure for all detectors.
     if (idx) {
       if ( std::find(bkgIdxRuns.begin(), bkgIdxRuns.end(), run) != bkgIdxRuns.end() ) {
         cout << "bkgIdx " << bkgIdx << endl;
@@ -543,11 +543,12 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
       double thisLiveTime=0;
       string pos = chMap->GetDetectorPos(ch);
+      double hgDead=0, lgDead=0, hgPulserDT=0, lgPulserDT=0;
       if (dtMap.find(pos) != dtMap.end())
       {
         // calculate hardware deadtime and handle bad values (val<0)
-        double hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
-        double lgDead = dtMap[pos][1]/100.0;
+        hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
+        lgDead = dtMap[pos][1]/100.0;
         if (hgDead < 0 && lgDead >= 0) hgDead = lgDead;
         if (lgDead < 0 && hgDead >= 0) lgDead = hgDead;
         if (lgDead < 0 && hgDead < 0) { hgDead = hgDeadAvg; lgDead = lgDeadAvg; }
@@ -556,8 +557,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         // Takes out 62 or 100 us per pulser as deadtime.
         double hgPulsers = dtMap[pos][3];
         double lgPulsers = dtMap[pos][4];
-        double hgPulserDT = hgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
-        double lgPulserDT = lgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
+        hgPulserDT = hgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
+        lgPulserDT = lgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
 
         // Get livetime for this channel.
         // OLD: Subtract off the pulser deadtime from the entire subset only once.
@@ -566,6 +567,9 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         if (ch%2 == 0) {
           // thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
           thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT / (double)nRunsDTSubset;
+          if (thisLiveTime < 0) {
+            cout << Form("ch %i  rt %.2f  dead %.2f  pulserDt %.6f\n",ch,thisRunTime,hgDead,hgPulserDT/(double)nRunsDTSubset);
+          }
           dtfDeadTime[0] += thisRunTime * hgDead;
           // dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[3] += hgPulserDT / (double)nRunsDTSubset;
@@ -601,10 +605,16 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       thisLiveTime -= vetoDeadRun;
       dtfDeadTime[8] += vetoDeadRun;
 
+      // Sanity check - livetime must always be >= 0.
+      if (thisLiveTime < 0) {
+        cout << Form("ERROR - ch %d livetime is < 0: %.3e.  runtime %.2f deadtimes:  hg %.2e  lg %.2e  pulser %.2e  veto %.2e  LN %.2e\n" ,ch,thisLiveTime,thisRunTime,hgDead,lgDead,lgPulserDT/(double)nRunsDTSubset,vetoDeadRun,thisLNDeadTime);
+        return;
+      }
+
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
 
-      // bkgIdx option: increment channel exposure (low-energy, so use HG channels only)
+      // bkgIdx option: increment channel exposure (used w/ low-energy, so print HG channels only)
       if (idx && ch%2==0) {
         int detID = detChanToDetIDMap[ch];
         double activeMass = actM4Det_g[detID]/1000;
@@ -711,7 +721,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   // print out the last bkgIdxExposure
   if (idx) {
     int nLastBkgIdx = GetDataSetSequences(dsNum);
-    cout << "bkgIdx: " << nLastBkgIdx << endl;
+    cout << "last bkgIdx: " << nLastBkgIdx << endl;
     for(auto &idx : bkgIdxExposure) {
       int chan = idx.first;
       double exposure = idx.second;
@@ -958,7 +968,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
          << Form("\n   Muon Veto OR/Best: %.4e  %.4e  %.4e\n",dtFrac[9]*100,dtfDeadTime[9],dtfRunTimeBest);
   }
 
-  cout << "\nAll-channel summary (no deadtime corrections) : \n"
+  cout << "\nAll-channel summary: \n"
        << "Chan  DetID     A.M.(kg)  Runtime(d)  RT-Expo(kg-d)\n";
 
   for(auto &raw : channelRuntime) // Loop over raw, not reduced livetimes for now.
