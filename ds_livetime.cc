@@ -221,7 +221,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   for (size_t r = 0; r < runList.size(); r++)
   {
     int run = runList[r];
-    // cout << "Scanning run " << run << endl;
     if (fmod(100*(double)r/runList.size(), 10.0) < 0.1)
       cout << 100*(double)r/runList.size() << " % done, run " << run << endl;
 
@@ -445,6 +444,9 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     m2LNDead += (double)m2LNDeadRun;
     // if (m1LNDeadRun > 0 || m2LNDeadRun > 0)
       // cout << Form("Found LN fill, run %i:  M1 nFills %lu  run %i  total %.0f -- M2 nFills %lu  run %i  total %.0f\n", run,runFills[0].size(),m1LNDeadRun,m1LNDead,runFills[1].size(),m2LNDeadRun,m2LNDead);
+
+    cout << Form("run %i  veto %.4f  total %.4f  LN %i  total %.4f\n",run,vetoDeadRun,vetoDead,m1LNDeadRun,m1LNDead);
+    if (run > 2750) break;
 
 
     // Calculate EACH ENABLED DETECTOR's runtime and livetime for this run, IF IT'S "GOOD".
@@ -988,7 +990,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     if (detID==-1) continue; // don't print pulser monitor chans
     double activeMass = actM4Det_g[detID]/1000;
 
-    cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-13.4f\n", chan,detID,activeMass,chRun,channelExposure[chan]);
+    cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-13.10f\n", chan,detID,activeMass,chRun,channelExposure[chan]);
   }
 }
 
