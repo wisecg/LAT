@@ -620,6 +620,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       }
       else {
         // subtract UP TO 'thisRunTime' from the counters.
+        cout << " This happened for channel " << ch << endl;
         dtfDeadTime[6] -= (thisLiveTime > thisLNDeadTime) ? thisLNDeadTime : thisLiveTime;
         dtfDeadTime[8] -= (thisLiveTime > vetoDeadRun) ? vetoDeadRun : thisLiveTime;
         thisLiveTime = 0;
