@@ -11,6 +11,8 @@
 // -- PulserDT's are now calculated as FRACTIONS, instead of being applied once per subset.
 //    There was a slight difference between David's run selection and the 0nbb selection,
 //    which caused ONLY pulser deadtime to be very slightly overcounted.
+// -- Corrected a small bug that allowed a "dead" detector (no pulser counts) to have a
+//    negative livetime for a single run when the muon and LN vetos were applied.
 
 #include <iostream>
 #include <map>
@@ -567,9 +569,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         if (ch%2 == 0) {
           // thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
           thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT / (double)nRunsDTSubset;
-          if (thisLiveTime < 0) {
-            cout << Form("ch %i  rt %.2f  dead %.2f  pulserDt %.6f\n",ch,thisRunTime,hgDead,hgPulserDT/(double)nRunsDTSubset);
-          }
           dtfDeadTime[0] += thisRunTime * hgDead;
           // dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[3] += hgPulserDT / (double)nRunsDTSubset;
@@ -590,40 +589,49 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       }
       channelLivetime[ch] += thisLiveTime;
 
-      // LN reduction - depends on if channel is M1 or M2
+      // Sanity check: livetime must always be >= 0.
+      if (thisLiveTime < 0){
+        cout << Form("ERROR - ch %i  LT %.2f  ",ch,thisLiveTime);
+        if (ch%2==0) cout << Form("hgDead %.2f  pulserDead %.4f\n",hgDead,hgPulserDT/(double)nRunsDTSubset);
+        if (ch%2==1) cout << Form("lgDead %.2f  pulserDead %.4f\n",lgDead,lgPulserDT/(double)nRunsDTSubset);
+        return;
+      }
+
+      // Calculate LN dead time
       double thisLNDeadTime = 0;
       GATDetInfoProcessor gp;
       int detID = gp.GetDetIDFromName( chMap->GetString(ch, "kDetectorName") );
       if (CheckModule(detID)==1) thisLNDeadTime = m1LNDeadRun;
       if (CheckModule(detID)==2) thisLNDeadTime = m2LNDeadRun;
-      channelLivetime[ch] -= thisLNDeadTime;
-      thisLiveTime -= thisLNDeadTime;
-      dtfDeadTime[6] += thisLNDeadTime;
 
-      // Veto reduction - applies to all channels in BOTH modules.
-      channelLivetime[ch] -= vetoDeadRun;
-      thisLiveTime -= vetoDeadRun;
-      dtfDeadTime[8] += vetoDeadRun;
+      // Apply veto and LN reductions.
+      if ((thisLNDeadTime + vetoDeadRun) <= thisLiveTime)
+      {
+          channelLivetime[ch] -= thisLNDeadTime;
+          thisLiveTime -= thisLNDeadTime;
+          dtfDeadTime[6] += thisLNDeadTime;
 
-      // Sanity check - livetime must always be >= 0.
-      if (thisLiveTime < 0) {
-        cout << Form("ERROR - ch %d livetime is < 0: %.3e.  runtime %.2f deadtimes:  hg %.2e  lg %.2e  pulser %.2e  veto %.2e  LN %.2e\n" ,ch,thisLiveTime,thisRunTime,hgDead,lgDead,lgPulserDT/(double)nRunsDTSubset,vetoDeadRun,thisLNDeadTime);
-        return;
+          channelLivetime[ch] -= vetoDeadRun;
+          thisLiveTime -= vetoDeadRun;
+          dtfDeadTime[8] += vetoDeadRun;
+      }
+      else {
+        // subtract UP TO 'thisRunTime' from the counters.
+        dtfDeadTime[6] -= (thisLiveTime > thisLNDeadTime) ? thisLNDeadTime : thisLiveTime;
+        dtfDeadTime[8] -= (thisLiveTime > vetoDeadRun) ? vetoDeadRun : thisLiveTime;
+        thisLiveTime = 0;
       }
 
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
 
-      // bkgIdx option: increment channel exposure (used w/ low-energy, so print HG channels only)
+      // '-idx' option: increment channel exposure (used w/ low-energy, so print HG channels only)
       if (idx && ch%2==0) {
         int detID = detChanToDetIDMap[ch];
         double activeMass = actM4Det_g[detID]/1000;
         bkgIdxExposure[ch] += activeMass * thisLiveTime/86400.0;
       }
-
     }
-    // cout << "dtfRunTimeHG " << dtfRunTimeHG << " dtfRunTimeLG " << dtfRunTimeLG << endl;
-    // cout << "Now best\n";
 
     // Add to "Best" Livetime:  One entry per detector (loops over 'best' channel list)
     for (auto ch : bestIDs)
@@ -969,7 +977,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   }
 
   cout << "\nAll-channel summary: \n"
-       << "Chan  DetID     A.M.(kg)  Runtime(d)  RT-Expo(kg-d)\n";
+       << "Chan  DetID     A.M.(kg)  Runtime(d)  Exposure (w/DT) (kg-d)\n";
 
   for(auto &raw : channelRuntime) // Loop over raw, not reduced livetimes for now.
   {
