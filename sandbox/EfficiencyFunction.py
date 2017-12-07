@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import ROOT
 import numpy as np
 from matplotlib import pyplot as plt

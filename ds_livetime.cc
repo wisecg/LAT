@@ -304,7 +304,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
           cout << chan << " : " << exposure << endl;
         }
         bkgIdx++;
-        bkgIdxExposure.clear();
+        // bkgIdxExposure.clear();
+        cout << "Warning, not clearing bkgIdxExposure\n";
       }
     }
 
@@ -729,7 +730,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   // print out the last bkgIdxExposure
   if (idx) {
     int nLastBkgIdx = GetDataSetSequences(dsNum);
-    cout << "last bkgIdx: " << nLastBkgIdx << endl;
+    cout << "bkgIdx " << nLastBkgIdx << endl;
     for(auto &idx : bkgIdxExposure) {
       int chan = idx.first;
       double exposure = idx.second;
