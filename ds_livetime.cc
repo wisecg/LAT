@@ -446,7 +446,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       // cout << Form("Found LN fill, run %i:  M1 nFills %lu  run %i  total %.0f -- M2 nFills %lu  run %i  total %.0f\n", run,runFills[0].size(),m1LNDeadRun,m1LNDead,runFills[1].size(),m2LNDeadRun,m2LNDead);
 
     cout << Form("run %i  veto %.4f  total %.4f  LN %i  total %.4f\n",run,vetoDeadRun,vetoDead,m1LNDeadRun,m1LNDead);
-    if (run > 2750) break;
+    if (run > 2673) break;
 
 
     // Calculate EACH ENABLED DETECTOR's runtime and livetime for this run, IF IT'S "GOOD".
@@ -590,7 +590,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         cout << "Warning: Detector " << pos << " not found! Exiting ...\n";
         return;
       }
-      channelLivetime[ch] += thisLiveTime;
 
       // Sanity check: livetime must always be >= 0.
       if (thisLiveTime < 0){
@@ -610,21 +609,22 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       // Apply veto and LN reductions.
       if ((thisLNDeadTime + vetoDeadRun) <= thisLiveTime)
       {
-          channelLivetime[ch] -= thisLNDeadTime;
           thisLiveTime -= thisLNDeadTime;
           dtfDeadTime[6] += thisLNDeadTime;
 
-          channelLivetime[ch] -= vetoDeadRun;
           thisLiveTime -= vetoDeadRun;
           dtfDeadTime[8] += vetoDeadRun;
       }
       else {
         // subtract UP TO 'thisRunTime' from the counters.
-        cout << " This happened for channel " << ch << endl;
+        cout << Form("This happened, channel %i  lnDead %.1f  vetoDead %.1f  thisLT %.1f\n", ch,thisLNDeadTime,vetoDeadRun,thisLiveTime);
         dtfDeadTime[6] -= (thisLiveTime > thisLNDeadTime) ? thisLNDeadTime : thisLiveTime;
         dtfDeadTime[8] -= (thisLiveTime > vetoDeadRun) ? vetoDeadRun : thisLiveTime;
         thisLiveTime = 0;
       }
+
+      // increment the global counter
+      channelLivetime[ch] += thisLiveTime;
 
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
