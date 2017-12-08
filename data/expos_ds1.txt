@@ -913,46 +913,46 @@ bkgIdx 47
 672 : 0.802962
 690 : 0.727428
 692 : 0.710909
-Error, the runtime is negative! 79488119040.0  -  0.0  = -79.49
-Reverting to the unix timestamps (3601.00) for run 13529
-Error, the runtime is negative! 838110.0  -  0.0  = -0.00
-Reverting to the unix timestamps (3600.00) for run 13530
-Error, the runtime is negative! 7573890.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3600.00) for run 13531
-Error, the runtime is negative! 17240530.0  -  0.0  = -0.02
-Reverting to the unix timestamps (3600.00) for run 13532
-Error, the runtime is negative! 7160660.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3601.00) for run 13533
-Error, the runtime is negative! 4330.0  -  0.0  = -0.00
-Reverting to the unix timestamps (3600.00) for run 13534
-Error, the runtime is negative! 27984260.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3601.00) for run 13535
-Error, the runtime is negative! 27920920.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13536
-Error, the runtime is negative! 11746950.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3600.00) for run 13537
-Error, the runtime is negative! 24349310.0  -  0.0  = -0.02
-Reverting to the unix timestamps (3600.00) for run 13538
-Error, the runtime is negative! 27774880.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13539
-Error, the runtime is negative! 847610.0  -  0.0  = -0.00
-Reverting to the unix timestamps (3600.00) for run 13540
-Error, the runtime is negative! 28017020.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13541
-Error, the runtime is negative! 62131900.0  -  0.0  = -0.06
-Reverting to the unix timestamps (3600.00) for run 13542
-Error, the runtime is negative! 51969990.0  -  0.0  = -0.05
-Reverting to the unix timestamps (3601.00) for run 13543
-Error, the runtime is negative! 10381440.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3600.00) for run 13544
-Error, the runtime is negative! 4367800.0  -  0.0  = -0.00
-Reverting to the unix timestamps (3600.00) for run 13545
-Error, the runtime is negative! 74072380.0  -  0.0  = -0.07
-Reverting to the unix timestamps (3600.00) for run 13546
-Error, the runtime is negative! 30488780.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13547
-Error, the runtime is negative! 12063200.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3380.00) for run 13548
+Error, the runtime is negative! 79488119040.0  -  0.0  = -79.49   
+Reverting to the unix timestamps (3601.00) for run 13529 
+Error, the runtime is negative! 838110.0  -  0.0  = -0.00   
+Reverting to the unix timestamps (3600.00) for run 13530 
+Error, the runtime is negative! 7573890.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3600.00) for run 13531 
+Error, the runtime is negative! 17240530.0  -  0.0  = -0.02   
+Reverting to the unix timestamps (3600.00) for run 13532 
+Error, the runtime is negative! 7160660.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3601.00) for run 13533 
+Error, the runtime is negative! 4330.0  -  0.0  = -0.00   
+Reverting to the unix timestamps (3600.00) for run 13534 
+Error, the runtime is negative! 27984260.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3601.00) for run 13535 
+Error, the runtime is negative! 27920920.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13536 
+Error, the runtime is negative! 11746950.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3600.00) for run 13537 
+Error, the runtime is negative! 24349310.0  -  0.0  = -0.02   
+Reverting to the unix timestamps (3600.00) for run 13538 
+Error, the runtime is negative! 27774880.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13539 
+Error, the runtime is negative! 847610.0  -  0.0  = -0.00   
+Reverting to the unix timestamps (3600.00) for run 13540 
+Error, the runtime is negative! 28017020.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13541 
+Error, the runtime is negative! 62131900.0  -  0.0  = -0.06   
+Reverting to the unix timestamps (3600.00) for run 13542 
+Error, the runtime is negative! 51969990.0  -  0.0  = -0.05   
+Reverting to the unix timestamps (3601.00) for run 13543 
+Error, the runtime is negative! 10381440.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3600.00) for run 13544 
+Error, the runtime is negative! 4367800.0  -  0.0  = -0.00   
+Reverting to the unix timestamps (3600.00) for run 13545 
+Error, the runtime is negative! 74072380.0  -  0.0  = -0.07   
+Reverting to the unix timestamps (3600.00) for run 13546 
+Error, the runtime is negative! 30488780.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13547 
+Error, the runtime is negative! 12063200.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3380.00) for run 13548 
 Subset 43, loading DT file:./deadtime/ds1_49.DT
 bkgIdx 48
 578 : 1.19174
@@ -972,26 +972,26 @@ bkgIdx 48
 672 : 0.771849
 690 : 0.702315
 692 : 0.478577
-Error, the runtime is negative! 8567770.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3600.00) for run 13699
-Error, the runtime is negative! 25661520.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13700
-Error, the runtime is negative! 19351170.0  -  0.0  = -0.02
-Reverting to the unix timestamps (3600.00) for run 13701
-Error, the runtime is negative! 45319020.0  -  0.0  = -0.05
-Reverting to the unix timestamps (3600.00) for run 13702
-Error, the runtime is negative! 65734080.0  -  0.0  = -0.07
-Reverting to the unix timestamps (3600.00) for run 13703
-Error, the runtime is negative! 96948150.0  -  0.0  = -0.10
-Reverting to the unix timestamps (3601.00) for run 13715
-Error, the runtime is negative! 49070570.0  -  0.0  = -0.05
-Reverting to the unix timestamps (3601.00) for run 13716
-Error, the runtime is negative! 32220160.0  -  0.0  = -0.03
-Reverting to the unix timestamps (3600.00) for run 13717
-Error, the runtime is negative! 3026600.0  -  0.0  = -0.00
-Reverting to the unix timestamps (3600.00) for run 13718
-Error, the runtime is negative! 8956850.0  -  0.0  = -0.01
-Reverting to the unix timestamps (3600.00) for run 13719
+Error, the runtime is negative! 8567770.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3600.00) for run 13699 
+Error, the runtime is negative! 25661520.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13700 
+Error, the runtime is negative! 19351170.0  -  0.0  = -0.02   
+Reverting to the unix timestamps (3600.00) for run 13701 
+Error, the runtime is negative! 45319020.0  -  0.0  = -0.05   
+Reverting to the unix timestamps (3600.00) for run 13702 
+Error, the runtime is negative! 65734080.0  -  0.0  = -0.07   
+Reverting to the unix timestamps (3600.00) for run 13703 
+Error, the runtime is negative! 96948150.0  -  0.0  = -0.10   
+Reverting to the unix timestamps (3601.00) for run 13715 
+Error, the runtime is negative! 49070570.0  -  0.0  = -0.05   
+Reverting to the unix timestamps (3601.00) for run 13716 
+Error, the runtime is negative! 32220160.0  -  0.0  = -0.03   
+Reverting to the unix timestamps (3600.00) for run 13717 
+Error, the runtime is negative! 3026600.0  -  0.0  = -0.00   
+Reverting to the unix timestamps (3600.00) for run 13718 
+Error, the runtime is negative! 8956850.0  -  0.0  = -0.01   
+Reverting to the unix timestamps (3600.00) for run 13719 
 Subset 45, loading DT file:./deadtime/ds1_50.DT
 bkgIdx 49
 578 : 0.405566
@@ -1051,18 +1051,18 @@ bkgIdx 51
 Looking at all channels
 Looking at Best Livetime
 
-DS 1 Results, 2017/12/6
+DS 1 Results, 2017/12/7
 	Veto Runtime 58.768
 	Veto Deadtime 0.0372605
 Module 1:
 	Runtime : 58.7676
-	Number of runs: 1502
+	Number of runs: 1502 
 	LN Deadtime : 0.590475 (0.0100476)
 	Active Enr Mass (kg): 11.901  Active Nat Mass: 1.121
-	Best Enr Exposure : 661.811 +/- 9.69312 ( 0.000684082 w/o active mass unc)
-	Best Nat Exposure : 63.2937 +/- 1.46803 ( 5.04908e-05 w/o active mass unc)
+	Best Enr Exposure : 661.811 +/- 9.69312 ( 0.000684082 w/o active mass unc) 
+	Best Nat Exposure : 63.2937 +/- 1.46803 ( 5.04908e-05 w/o active mass unc) 
 
-Detector summary with best (H or L) gain and deadtime correction :
+Detector summary with best (H or L) gain and deadtime correction : 
 Chan  DetID     A.M.(kg)  Runtime(d)  Livetime(d)  LT-Expo(kg-d) LT-Expo-Unc   AvgLTFrac   LTUnc[s]  NRuns
 578   1425380   0.968     58.7676     57.3137      55.4797        0.7451         0.97381    5.47725 1502
 580   1426612   0.811     58.7676     57.8146      46.8877        0.6938         0.98203    5.47725 1502
@@ -1082,8 +1082,8 @@ Chan  DetID     A.M.(kg)  Runtime(d)  Livetime(d)  LT-Expo(kg-d) LT-Expo-Unc   A
 673   1426610   0.632     55.0751     3.2328       33.4173        0.5816         0.78557    5.47756 100
 690   1426620   0.572     58.7676     57.4076      32.8486        0.5396         0.97537    5.47725 1502
 692   28474     0.560     58.7676     57.5496      32.2278        0.7481         0.97768    5.47725 1502
-Channel livetime averages - All 54.2675  Best 52.4881  HG 54.2675  LG 54.2675
-Channel livetime avg unc -  All 0.9717  Best 2.9015  HG 0.9717  LG 0.9717
+Channel livetime averages - All 54.2552  Best 52.4881  HG 54.2552  LG 54.2552
+Channel livetime avg unc -  All 0.9714  Best 2.9015  HG 0.9714  LG 0.9714
 Total average fractional livetime (all channels) : 0.956861
 Total average fractional livetime uncertainty    : 0.109181
 Deadtime summary (percent, sum deadtime, sum runtime):
@@ -1098,39 +1098,39 @@ Deadtime summary (percent, sum deadtime, sum runtime):
    Muon Veto HG:      1.2222e-01  1.0327e+05  8.4494e+07
    Muon Veto OR/Best: 6.2564e-02  5.3086e+04  8.4850e+07
 
-All-channel summary:
+All-channel summary: 
 Chan  DetID     A.M.(kg)  Runtime(d)  Exposure (w/DT) (kg-d)
-578   1425380   0.968     58.7676     53.7476
-579   1425380   0.968     58.7676     55.3950
-580   1426612   0.811     58.7676     46.8977
-581   1426612   0.811     58.7676     46.8977
-582   1425750   0.979     58.7676     56.5257
-583   1425750   0.979     46.8256     45.0101
-592   1425370   0.964     56.1303     51.5985
-593   1425370   0.964     56.1303     51.2972
-594   1426621   0.591     48.1066     27.9235
-595   1426621   0.591     27.1308     15.7356
-598   1425741   0.710     58.7676     40.7078
-599   1425741   0.710     58.7676     40.4366
-600   28482     0.561     58.7676     30.8391
-601   28482     0.561     58.7676     30.4499
-608   1425381   0.949     58.7676     53.3373
-609   1425381   0.949     58.7676     53.9355
-610   1426980   0.886     58.7676     50.3194
-611   1426980   0.886     58.7676     49.3056
-626   1425740   0.701     58.7676     40.6911
-627   1425740   0.701     58.7676     40.7505
-632   1425742   0.732     58.7676     38.5300
-633   1425742   0.732     58.7676     38.5887
-640   1426650   0.659     58.7676     38.0657
-641   1426650   0.659     58.7676     38.0611
-648   1426640   0.723     58.7676     38.8306
-649   1426640   0.723     58.7676     38.7284
-664   1425730   1.024     58.7676     54.8415
-665   1425730   1.024     58.7676     56.6220
-672   1426610   0.632     50.9516     31.3818
-673   1426610   0.632     55.0751     32.5746
-690   1426620   0.572     58.7676     32.7529
-691   1426620   0.572     58.7676     32.7971
-692   28474     0.560     58.7676     32.0239
-693   28474     0.560     58.7676     32.0340
+578   1425380   0.968     58.7676     53.7244912739
+579   1425380   0.968     58.7676     55.3831162996
+580   1426612   0.811     58.7676     46.8876823856
+581   1426612   0.811     58.7676     46.8876835491
+582   1425750   0.979     58.7676     56.5136427375
+583   1425750   0.979     46.8256     44.9980219084
+592   1425370   0.964     56.1303     51.5866665686
+593   1425370   0.964     56.1303     51.2853036668
+594   1426621   0.591     48.1066     27.9207121984
+595   1426621   0.591     27.1308     15.7356327061
+598   1425741   0.710     58.7676     40.6990787065
+599   1425741   0.710     58.7676     40.4278823092
+600   28482     0.561     58.7676     30.8323228384
+601   28482     0.561     58.7676     30.4431387063
+608   1425381   0.949     58.7676     53.3257283332
+609   1425381   0.949     58.7676     53.9239967756
+610   1426980   0.886     58.7676     50.3088702348
+611   1426980   0.886     58.7676     49.2883072102
+626   1425740   0.701     58.7676     40.6824474184
+627   1425740   0.701     58.7676     40.7418403765
+632   1425742   0.732     58.7676     38.5210934871
+633   1425742   0.732     58.7676     38.5795281837
+640   1426650   0.659     58.7676     38.0578616815
+641   1426650   0.659     58.7676     38.0529765885
+648   1426640   0.723     58.7676     38.8220914733
+649   1426640   0.723     58.7676     38.7194597709
+664   1425730   1.024     58.7676     54.8309484911
+665   1425730   1.024     58.7676     56.6110590454
+672   1426610   0.632     50.9516     31.3729846440
+673   1426610   0.632     55.0751     32.5649776298
+690   1426620   0.572     58.7676     32.7458196304
+691   1426620   0.572     58.7676     32.7900747906
+692   28474     0.560     58.7676     32.0169901399
+693   28474     0.560     58.7676     32.0271522830

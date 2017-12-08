@@ -98,7 +98,7 @@ def parseLivetimeOutput():
                 ch, exp = int(tmp[0]), float(tmp[2])
                 tmpDict[ch] = exp
 
-            if line == "All-channel summary:\n":
+            if line == "All-channel summary: \n":
                 summaryIdx = idx
 
         # get last bkgIdx
@@ -125,9 +125,18 @@ def parseLivetimeOutput():
         # now a final cross check
         print "DS%d, M%d" % (dsNum, modNum)
         for ch in chList:
+
+            if sum(expDict[ch]) > 0 and len(summaryDict[ch]) == 0:
+                print "That ain't shoulda happened"
+                exit(1)
+            elif len(summaryDict[ch]) == 0:
+                continue;
+
             mySum, ltResult, aMass = sum(expDict[ch]), summaryDict[ch][0], summaryDict[ch][1]
             diff = ((ltResult-mySum)/aMass) * 86400
+
             print "%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff)
+
         print " "
 
 

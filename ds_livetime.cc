@@ -303,8 +303,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
           cout << chan << " : " << exposure << endl;
         }
         bkgIdx++;
-        // bkgIdxExposure.clear();
-        cout << "Warning, not clearing bkgIdxExposure\n";
+        bkgIdxExposure.clear();
+        // cout << "Warning, not clearing bkgIdxExposure\n";
       }
     }
 
@@ -444,9 +444,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     m2LNDead += (double)m2LNDeadRun;
     // if (m1LNDeadRun > 0 || m2LNDeadRun > 0)
       // cout << Form("Found LN fill, run %i:  M1 nFills %lu  run %i  total %.0f -- M2 nFills %lu  run %i  total %.0f\n", run,runFills[0].size(),m1LNDeadRun,m1LNDead,runFills[1].size(),m2LNDeadRun,m2LNDead);
-
-    cout << Form("run %i  veto %.4f  total %.4f  LN %i  total %.4f\n",run,vetoDeadRun,vetoDead,m1LNDeadRun,m1LNDead);
-    if (run > 2673) break;
 
 
     // Calculate EACH ENABLED DETECTOR's runtime and livetime for this run, IF IT'S "GOOD".
@@ -617,7 +614,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       }
       else {
         // subtract UP TO 'thisRunTime' from the counters.
-        cout << Form("This happened, channel %i  lnDead %.1f  vetoDead %.1f  thisLT %.1f\n", ch,thisLNDeadTime,vetoDeadRun,thisLiveTime);
+        // cout << Form("This happened, channel %i  lnDead %.1f  vetoDead %.1f  thisLT %.1f\n", ch,thisLNDeadTime,vetoDeadRun,thisLiveTime);
         dtfDeadTime[6] -= (thisLiveTime > thisLNDeadTime) ? thisLNDeadTime : thisLiveTime;
         dtfDeadTime[8] -= (thisLiveTime > vetoDeadRun) ? vetoDeadRun : thisLiveTime;
         thisLiveTime = 0;
