@@ -41,8 +41,9 @@ So we're super sure that ds.GetGoodChanList is complete.
 
 def main():
 
+    testLivetimeOutput()
     # quickSearch()
-    parseLivetimeOutput()
+    # parseLivetimeOutput()
     # channelSelection()
 
 
@@ -57,8 +58,17 @@ def quickSearch():
         vals = recList[idx]['vals']
         print key
         for ch in vals:
+
             print ch, vals[ch]
             return
+
+
+def testLivetimeOutput():
+
+    dsNum, modNum, dPath = 2, 1, "../data"
+    expDict = ds.getExposureDict(dsNum, modNum, dPath)
+    for key in expDict:
+        print key, expDict[key]
 
 
 def parseLivetimeOutput():
@@ -140,7 +150,6 @@ def parseLivetimeOutput():
         print " "
 
 
-
 def getErrorCode(arr):
     binString = ''.join(['1' if x else '0' for x in arr])
     code = int(binString, 2)
@@ -162,10 +171,12 @@ def channelSelection():
 
     np.set_printoptions(threshold=np.inf) # print full numpy array
 
-    for dSet in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
-    # for dSet in [(4,2)]:
+    # for dSet in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
+    for dSet in [(4,2)]:
         dsNum, modNum = dSet[0], dSet[1]
         print "DS-%d, M-%d" % (dsNum, modNum)
+
+        expDict = ds.getExposureDict(dsNum, modNum, "../data")
 
         chList = ds.GetGoodChanList(dsNum)
         if dsNum==5 and modNum==1: chList = [ch for ch in chList if ch < 1000 and ch!=692]
@@ -181,17 +192,43 @@ def channelSelection():
 
         for bkgIdx in range(nBkg+1):
 
-            thD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+            # get the exposure and efficiency
+            thD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
 
+            chThreshList = (ch for ch in chList if ch in thD.keys()) # python generator expression
+            for ch in chThreshList:
+
+                mu, sig = thD[ch][0], thD[ch][1]
+                if mu > 5 or mu==0:
+                    print "Threshold for ch%d bkgidx%d zero or too high, skipping" % (ch, bkgIdx)
+                    continue
+
+                print bkgIdx, ch, mu, sig
+
+                threshFnc = ROOT.TF1("fEff_%d_%d_%d"%(dsNum, ch,bkgidx),"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))", 0, 2)
+                threshFnc.SetParameters(mu, abs(sigma))
+                # If cut efficiency functions exist, add as TF1 here
+                # Easiest to just add as histogram... is this the right way to go? In the future we can replace with a giganto-function?
+                h3 = ROOT.TH1D("hCh%d_Bkgidx%d"%(ch, bkgidx), "", 20000,0,2)
+                for i in range(h3.GetNbinsX()+1):
+                    if i < math.ceil(mu*10000): continue # Round up to set analysis threshold
+                    h3.SetBinContent(i, dummyExposure)
+                # Scale here
+                h3.Multiply(threshFnc)
+                if ch in threshDict.keys():
+                    threshDict[ch].Add(h3)
+                else:
+                    threshDict[ch] = h3.Clone("Efficiency_ch%d"%(ch))
+
+            return
+
+            # get the cut coverage
             runLo = bkgRuns[bkgIdx][0]
             runHi = bkgRuns[bkgIdx][-1]
-
             calIdxLo = calInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), runLo)
             calIdxHi = calInfo.GetCalIdx("ds%d_m%d" % (dsNum, modNum), runHi)
-
             # if calIdxHi != calIdxLo:
                 # print "DS-%d  bkgIdx %d  Multiple calIdxs: %d - %d" % (dsNum, bkgIdx, calIdxLo, calIdxHi)
-
             for calIdx in range(calIdxLo, calIdxHi+1):
 
                 xTicks.append(bkgIdx + 0.1*(calIdx - calIdxLo))
@@ -220,15 +257,15 @@ def channelSelection():
                     chStats[ch].append(code)
 
 
-        data = np.asarray([chStats[ch] for ch in chStats])
+        # -- Create efficiency plot
+
+
+        # -- Create bkgIdx vs. channel plot --
+
+        chData = np.asarray([chStats[ch] for ch in chStats])
         xTicks = [ int(t) if float(t).is_integer() else t for t in xTicks ]
         # yTicks = [ch for ch in chStats]
         yTicks = ["P%sD%s" % (str(ds.CPD[dsNum][ch])[1], str(ds.CPD[dsNum][ch])[2]) for ch in chStats]
-
-        # print "x:",xTicks
-        # print "y:",yTicks
-        # print "data:"
-        # print data
 
         a, b = int(len(xTicks)/3.), int(len(yTicks)/2.)
         if a < 12: a = 12
@@ -238,7 +275,7 @@ def channelSelection():
         fig = plt.figure(figsize=(a,b), facecolor='w')
         ax = plt.subplot(111)
 
-        im = plt.imshow(np.asarray(data),interpolation='nearest')
+        im = plt.imshow(np.asarray(chData),interpolation='nearest')
         ax.set_xlabel('bkgIdx',x=1., ha='right')
         ax.set_ylabel('Detector',rotation=0)
         ax.yaxis.set_label_coords(-0.01,1.01)
@@ -254,7 +291,7 @@ def channelSelection():
         ax.yaxis.set(ticks=ylocs, ticklabels=yTicks)
         ax.grid(True, which='minor')
 
-        values = np.unique(data.ravel())
+        values = np.unique(chData.ravel())
         colors = [im.cmap(im.norm(value)) for value in values]
 
         patches = []
