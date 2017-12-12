@@ -4,6 +4,8 @@ from matplotlib import pyplot as plt
 import waveLibs as wl
 import DataSetInfo as ds
 import math
+import seaborn as sns
+sns.set(style='whitegrid', context='talk')
 
 """
     Sample for getting analysis thresholds using Ralph's algorithm:
@@ -116,31 +118,68 @@ def GetAnaylsisThreshold(dsNum=2):
     for key in f1.GetListOfKeys():
         histName = key.GetName()
         if f1.Get(histName).Integral() == 0: continue
+        # f1.Get(histName).Rebin()
         name = ''.join(c for c in histName.split('_')[1] if c.isdigit())
         idx = ''.join(c for c in histName.split('_')[2] if c.isdigit())
         ch = int(name)
         bkgidx = int(idx)
-        if 'BkgIdx' in histName:
+        if 'BkgIdx' in histName and 'BkgFull' not in histName:
             if bkgidx not in bkgDict.keys(): bkgDict[bkgidx] = {}
             if ch not in bkgDict.keys(): bkgDict[bkgidx][ch] = []
             for xbin in range(f1.Get(histName).GetNbinsX()):
                 # Skip first 7 bins, -0.05 to 0.65 keV
-                if f1.Get(histName).GetBinCenter(xbin) < 0.7: continue
+                if f1.Get(histName).GetBinCenter(xbin) < 0.70: continue
                 if f1.Get(histName).GetBinCenter(xbin) > 50.: continue
                 bkgDict[bkgidx][ch].append(f1.Get(histName).GetBinContent(xbin))
 
-    # print bkgDict
-    # print bkgDict.keys()
     for bkgidx in bkgDict.keys():
-        # print bkgidx, bkgDict[bkgidx].keys()
+        # if 28 > bkgidx or bkgidx > 29: continue
+        if bkgidx != 7: continue
         tD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+        if 678 not in tD.keys(): continue
         for ch in bkgDict[bkgidx].keys():
+            if ch != 678: continue
             x = np.array(bkgDict[bkgidx][ch])
+            noWall = True
+            if np.cumsum(x[:50])[-1] > 5: noWall = False
+            print x
+            # Method 1: Find first 0 walking up in energy from threshold
+            # Works if no noise wall
             thresh1 = tD[ch][0]
-            thresh2 = 0.1*np.where(x==0)[0][0]+0.65 # Add 0.65 or 0.7 here?
-            print "Threshold %.2f, first zero %.2f"%(thresh1, thresh2)
-            print "Ch%d, idx%d -- Analysis threshold: %.1f"%(ch, bkgidx, max(thresh1, thresh2))
+            # thresh2 = 0.1*np.where(x==0)[0][0]+0.7 # Add 0.65 or 0.7 here?
+            # aThresh = max(thresh1, thresh2)
+            # amax = np.argmax(x[:100])
+            # print "Max arg", amax
+            # thresh3 = 0.1*(np.where(x[amax:]==0)[0][0]+amax) + 0.7
+            # print "Ch%d, idx%d -- Thresh: %.1f -- AThresh: %.1f -- AMaxThresh: %.1f"%(ch, bkgidx, thresh1, thresh2, thresh3)
+
+            if noWall:
+                thresh1 = tD[ch][0]
+                thresh2 = 0.1*np.where(x==0)[0][0]+0.7 # Add 0.65 or 0.7 here?
+                aThresh = max(thresh1, thresh2)
+
+                # amax = np.argmax(x[:50])
+                # thresh3 = 0.1*np.where(x[amax:]==0)[0][0] + 0.7
+                print "Ch%d, idx%d -- Thresh: %.1f -- AThresh: %.1f"%(ch, bkgidx, thresh1, thresh2)
+            elif not noWall:
+                print "Noise Wall Exists"
+                amax = np.argmax(x[:50])
+                thresh3 = 0.1*(np.where(x[amax:]==0)[0][0]+amax) + 0.7
+
+            # Method 2:
+            # csum = np.cumsum(np.insert(x,0,0))
+                # TestArr = (csum[10:] - csum[:-10])/10
+                # TestArr = np.diff(x)
+                # maxtab,_ = wl.peakdet(x[:500], 5)
+                # print maxtab.shape
+                # print "Peak location: %.1f keV "%(0.1*maxtab[0][0]+0.7)
+                # thresh3 = 0.1*np.where(x[int(maxtab[0][0]):]==0)[0][0]+0.7+0.1*maxtab[0][0]
+                print "Ch%d, idx%d -- AThresh: %.1f"%(ch, bkgidx, thresh3)
+                fig1,ax1 = plt.subplots(figsize=(10,6))
+                ax1.plot(np.linspace(1,len(x), len(x)), x)
+                plt.show()
+
 
 if __name__ == "__main__":
     # SaveHistogramsIDX()
-    GetAnaylsisThreshold(2)
+    GetAnaylsisThreshold(3)
