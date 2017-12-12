@@ -7,44 +7,45 @@ import tinydb as db
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+import scipy.special as sp
 """
-Remember, ApplyChannelCuts generates a file for each channel in each bkgIdx.
+    Remember, ApplyChannelCuts generates a file for each channel in each bkgIdx.
 
-What did we cut out when we ran LAT3::ApplyChannelCuts ?
-    - From outright channel selection (2 DS5 beges)
-    - From no data in cut tuning
-    - Files w/ no statistics after cuts (not actually a cut ...)
+    What did we cut out when we ran LAT3::ApplyChannelCuts ?
+        - From outright channel selection (2 DS5 beges)
+        - From no data in cut tuning
+        - Files w/ no statistics after cuts (not actually a cut ...)
 
-If the bkgIdx goes over multiple calIdx's, and we don't have data for all of them,
-we don't lose the whole bkgIdx, just the ranges that we don't have valid cuts for.
+    If the bkgIdx goes over multiple calIdx's, and we don't have data for all of them,
+    we don't lose the whole bkgIdx, just the ranges that we don't have valid cuts for.
 
-fitSlo - uses calIdx
-    keys: fitSlo_ds[i]_idx[j]_m[k]_Peak
-    vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
+    fitSlo - uses calIdx
+        keys: fitSlo_ds[i]_idx[j]_m[k]_Peak
+        vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
 
-riseNoise - uses calIdx
-    keys: riseNoise_ds[i]_idx[j]_m[k]_SoftPlus
-    vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
+    riseNoise - uses calIdx
+        keys: riseNoise_ds[i]_idx[j]_m[k]_SoftPlus
+        vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
 
-wfStd - uses M1 calIdx (including DS5-M2)
-    keys: wfstd_ds[i]_idx[j]_mod[k]
-    vals: {[chan]:[y/n, expo, aThresh, a, b, c, d, e, base, n, m, chi2]}
+    wfStd - uses M1 calIdx (including DS5-M2)
+        keys: wfstd_ds[i]_idx[j]_mod[k]
+        vals: {[chan]:[y/n, expo, aThresh, a, b, c, d, e, base, n, m, chi2]}
 
-threshold - uses bkgIdx
-    keys: thresh_ds[i]_bkgidx[j]
-    vals: {[chan]:[50 pct mean, sigma]}
+    threshold - uses bkgIdx
+        keys: thresh_ds[i]_bkgidx[j]
+        vals: {[chan]:[50 pct mean, sigma]}
 
-FUTURE: write a routine that identifies all active channels in a dataset
-and makes a plot of active channels vs. run number.
-So we're super sure that ds.GetGoodChanList is complete.
+    FUTURE: write a routine that identifies all active channels in a dataset
+    and makes a plot of active channels vs. run number.
+    So we're super sure that ds.GetGoodChanList is complete.
 """
 
 def main():
 
-    testLivetimeOutput()
+    # testLivetimeOutput()
     # quickSearch()
     # parseLivetimeOutput()
-    # channelSelection()
+    channelSelection()
 
 
 def quickSearch():
@@ -65,10 +66,15 @@ def quickSearch():
 
 def testLivetimeOutput():
 
-    dsNum, modNum, dPath = 2, 1, "../data"
+    dsNum, modNum, dPath = 4, 2, "../data"
     expDict = ds.getExposureDict(dsNum, modNum, dPath)
+
+    expTot = 0.
     for key in expDict:
-        print key, expDict[key]
+        expTot += sum(expDict[key])
+        # print key, expDict[key]
+
+    print "Total exposure:",expTot
 
 
 def parseLivetimeOutput():
@@ -171,8 +177,8 @@ def channelSelection():
 
     np.set_printoptions(threshold=np.inf) # print full numpy array
 
-    # for dSet in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
-    for dSet in [(4,2)]:
+    for dSet in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
+    # for dSet in [(4,2)]:
         dsNum, modNum = dSet[0], dSet[1]
         print "DS-%d, M-%d" % (dsNum, modNum)
 
@@ -189,6 +195,8 @@ def channelSelection():
         bkgRuns = ds.bkgRunsDS[dsNum]
         nCal = wl.getNCalIdxs(dsNum, modNum)
         calInfo = ds.CalInfo()
+        xThresh = np.arange(0, 5, 0.01)
+        yThreshTot = np.zeros(len(xThresh))
 
         for bkgIdx in range(nBkg+1):
 
@@ -202,25 +210,23 @@ def channelSelection():
                 if mu > 5 or mu==0:
                     print "Threshold for ch%d bkgidx%d zero or too high, skipping" % (ch, bkgIdx)
                     continue
+                # print bkgIdx, ch, mu, sig
 
-                print bkgIdx, ch, mu, sig
+                # threshold efficiency
+                yThresh = 0.5 * (1 + sp.erf( (xThresh - mu) / (2**(.5) * abs(sig))))
 
-                threshFnc = ROOT.TF1("fEff_%d_%d_%d"%(dsNum, ch,bkgidx),"0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1])))", 0, 2)
-                threshFnc.SetParameters(mu, abs(sigma))
-                # If cut efficiency functions exist, add as TF1 here
-                # Easiest to just add as histogram... is this the right way to go? In the future we can replace with a giganto-function?
-                h3 = ROOT.TH1D("hCh%d_Bkgidx%d"%(ch, bkgidx), "", 20000,0,2)
-                for i in range(h3.GetNbinsX()+1):
-                    if i < math.ceil(mu*10000): continue # Round up to set analysis threshold
-                    h3.SetBinContent(i, dummyExposure)
-                # Scale here
-                h3.Multiply(threshFnc)
-                if ch in threshDict.keys():
-                    threshDict[ch].Add(h3)
-                else:
-                    threshDict[ch] = h3.Clone("Efficiency_ch%d"%(ch))
+                # scale by exposure
+                yThresh *= expDict[ch][bkgIdx]
 
-            return
+                yThreshTot += yThresh
+
+                # # Scale here
+                # h3.Multiply(threshFnc)
+                # if ch in threshDict.keys():
+                #     threshDict[ch].Add(h3)
+                # else:
+                #     threshDict[ch] = h3.Clone("Efficiency_ch%d"%(ch))
+
 
             # get the cut coverage
             runLo = bkgRuns[bkgIdx][0]
@@ -257,7 +263,14 @@ def channelSelection():
                     chStats[ch].append(code)
 
 
-        # -- Create efficiency plot
+        # -- Create efficiency plot --
+        f1 = plt.figure(figsize=(9,6),facecolor='w')
+        ax = plt.subplot(111)
+        ax.plot(xThresh, yThreshTot, "r")
+        ax.set_xlabel('Energy (keV)', x=1., ha='right')
+        ax.set_ylabel('Exposure (kg-d)')
+        ax.set_title("DS-%d, Module %d" % (dsNum, modNum))
+        plt.savefig("../plots/expo-ds%d-m%d.pdf" % (dsNum, modNum))
 
 
         # -- Create bkgIdx vs. channel plot --
@@ -272,7 +285,7 @@ def channelSelection():
         if b < 8:  b = 8
         print "a",a,"b",b
 
-        fig = plt.figure(figsize=(a,b), facecolor='w')
+        f2 = plt.figure(figsize=(a,b), facecolor='w')
         ax = plt.subplot(111)
 
         im = plt.imshow(np.asarray(chData),interpolation='nearest')

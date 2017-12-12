@@ -404,12 +404,12 @@ bkgRunsDS[0] = {
     1:[2614,2629,2644,2649,2658,2673],
     2:[2689,2715],
     3:[2717,2750],
-    4: [2751,2757,2759,2784],
+    4:[2751,2757,2759,2784],
     5:[2785,2820],
     6:[2821,2855],
     7:[2856,2890],
     8:[2891,2907,2909,2920],
-    9: [3137,3166],
+    9:[3137,3166],
     10:[3167,3196],
     11:[3197,3199,3201,3226],
     12:[3227,3256],
@@ -801,7 +801,7 @@ def GetThreshDicts(dsNum, threshCut=0.9):
     """
         Threshold run list finder, pulls thresholds from DB
         Quite a bit slower than before since it needs to make a bunch of DB calls
-        Not sure if this is even necessary in lat3 since everything is done by bkgidx now
+        Not sure if this is even necessary in lat3 since everything is done by bkgIdx now
     """
     import numpy as np
     import waveLibs as wl
@@ -821,6 +821,7 @@ def GetThreshDicts(dsNum, threshCut=0.9):
                 elif ch not in badRuns.keys():
                     badRuns[ch] = list(runRange)
     return goodRuns,badRuns
+
 
 def GetThreshDictsOld(dsNum, threshCut=0.9):
     #TODO: Update with DB once DB parameters are implemented!
@@ -851,3 +852,79 @@ def GetThreshDictsOld(dsNum, threshCut=0.9):
             else:
                 badRuns[col].append([hi,lo])
     return goodRuns,badRuns,goodRunErfs
+
+
+def getExposureDict(dsNum, modNum, dPath="./data", verbose=False):
+
+    chList = GetGoodChanList(dsNum)
+    if dsNum==5 and modNum==1: chList = [ch for ch in chList if ch < 1000 and ch!=692]
+    if dsNum==5 and modNum==2: chList = [ch for ch in chList if ch > 1000 and ch!=1232]
+
+    expDict = {ch:[] for ch in chList}
+    tmpDict, bkgIdx, prevBkgIdx = {}, -1, -1
+
+    with open("%s/expos_ds%d.txt" % (dPath, dsNum), "r") as f:
+        table = f.readlines()
+
+    for idx, line in enumerate(table):
+        tmp = (line.rstrip()).split(" ")
+        if len(tmp)==0: continue
+
+        if bkgIdx != prevBkgIdx:
+            for ch in chList:
+                if ch in tmpDict.keys():
+                    expDict[ch].append(tmpDict[ch])
+                else:
+                    expDict[ch].append(0.)
+            tmpDict = {}
+            prevBkgIdx = bkgIdx
+
+        if tmp[0] == "bkgIdx":
+            bkgIdx = tmp[1]
+
+        if len(tmp) > 1 and tmp[1] == ":" and tmp[0].isdigit() and int(tmp[0]) in chList:
+            ch, exp = int(tmp[0]), float(tmp[2])
+            tmpDict[ch] = exp
+
+        if line == "All-channel summary: \n":
+            summaryIdx = idx
+
+    # get last bkgIdx
+    for ch in chList:
+        if ch in tmpDict.keys():
+            expDict[ch].append(tmpDict[ch])
+        else:
+            expDict[ch].append(0.)
+
+    # knock off the first element (it's 0).  Now expDict is done
+    for ch in expDict:
+        if expDict[ch][0] > 0:
+            print "ERROR, WTF"
+            exit(1)
+        expDict[ch].pop(0)
+
+    # now get the all-channel summary for HG channels
+    summaryDict = {ch:[] for ch in chList}
+    for line in table[summaryIdx+2:]:
+        tmp = (line.rstrip()).split()
+        ch, detID, aMass, runTime, expo = int(tmp[0]), int(tmp[1]), float(tmp[2]), float(tmp[3]), float(tmp[4])
+        summaryDict[ch] = [expo, aMass]
+
+    # now a final cross check
+    if verbose:
+        print "DS%d, M%d" % (dsNum, modNum)
+    for ch in chList:
+
+        if sum(expDict[ch]) > 0 and len(summaryDict[ch]) == 0:
+            print "That ain't shoulda happened"
+            exit(1)
+        elif len(summaryDict[ch]) == 0:
+            continue;
+
+        mySum, ltResult, aMass = sum(expDict[ch]), summaryDict[ch][0], summaryDict[ch][1]
+        diff = ((ltResult-mySum)/aMass) * 86400
+
+        if verbose:
+            print "%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff)
+
+    return expDict

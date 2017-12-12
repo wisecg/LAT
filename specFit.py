@@ -1,34 +1,34 @@
 #!/usr/bin/env python
 """
-specFit.py
-Likelihood analysis of MALBEK and MJD low energy spectra.
-Adapted from GPXFitter by Brian Zhu, LANL.  Much thanks to Brian, Graham, and Lukas.
-Clint Wiseman, USC
+    specFit.py
+    Likelihood analysis of MALBEK and MJD low energy spectra.
+    Adapted from GPXFitter by Brian Zhu, LANL.  Much thanks to Brian, Graham, and Lukas.
+    Clint Wiseman, USC
 
-v1. 5 Oct. 2017 (ported GPXFitter, performed MALBEK study)
+    v1. 5 Oct. 2017 (ported GPXFitter, performed MALBEK study)
 
-Inputs:
-  - MALBEK data from Graham, with rise time cuts and efficiency correction applied
-  - MJD data from LAT
-Background Model:
-  - Polynomial (linear) background function
-  - Cosmogenic peaks (CoGeNT (Clint's thesis proposal, slide 22), Graham's thesis, pg 78)
-  - It seems 41Ca and 36Cl also MAY be contributing to MALBEK [2] [3]:
-Axion Spectrum (Redondo)
-  - Can either look for discrete peaks [3]
-  - Or fit the entire spectrum [4].
-  - We use Mucal.c to convolve the axion flux with the photoelectric cross section [5]
+    Inputs:
+      - MALBEK data from Graham, with rise time cuts and efficiency correction applied
+      - MJD data from LAT
+    Background Model:
+      - Polynomial (linear) background function
+      - Cosmogenic peaks (CoGeNT (Clint's thesis proposal, slide 22), Graham's thesis, pg 78)
+      - It seems 41Ca and 36Cl also MAY be contributing to MALBEK [2] [3]:
+    Axion Spectrum (Redondo)
+      - Can either look for discrete peaks [3]
+      - Or fit the entire spectrum [4].
+      - We use Mucal.c to convolve the axion flux with the photoelectric cross section [5]
 
-Ref 1: http://www.nndc.bnl.gov/chart/decaysearchdirect.jsp?nuc=41CA&unc=nds
-Ref 2: http://www.kayelaby.npl.co.uk/atomic_and_nuclear_physics/4_2/4_2_1.html
-Ref 3: Solar x-ray table (but no axion fluxes): http://xdb.lbl.gov/Section1/Table_1-2.pdf
-Ref 4: Redondo's solar axion flux: http://wwwth.mpp.mpg.de/members/redondo/material.html
-Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
+    Ref 1: http://www.nndc.bnl.gov/chart/decaysearchdirect.jsp?nuc=41CA&unc=nds
+    Ref 2: http://www.kayelaby.npl.co.uk/atomic_and_nuclear_physics/4_2/4_2_1.html
+    Ref 3: Solar x-ray table (but no axion fluxes): http://xdb.lbl.gov/Section1/Table_1-2.pdf
+    Ref 4: Redondo's solar axion flux: http://wwwth.mpp.mpg.de/members/redondo/material.html
+    Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
 """
 import sys, time, warnings
 sys.argv.append("-b") # kill all interactive crap
 import ROOT
-from ROOT import TFile, TTree, TCanvas, TH1D, TLegend, TPad, TLine, TGraph
+from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TLegend, TPad, TLine, TGraph
 from ROOT import gStyle, gPad, gROOT, std
 from ROOT import RooFit as RF
 from ROOT import RooStats as RS
@@ -45,25 +45,29 @@ ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit") # the PLC doesn't work 
 def main(argv):
 
     global eLo, eHi
-    eLo, eHi = 1.5, 8. # graham's axion region
+    eLo, eHi = 1., 12.   # initial mjd region
+    # eLo, eHi = 1.5, 8. # graham's axion region
     # eLo, eHi = 8., 12.
     # eLo, eHi = 0.8, 5.
 
     global pkList
     pkList = {
-        "65ZnL":1.10, "68GeL":1.29, "49V":   4.97,  # "51Cr": 5.46,
-        "54Mn": 5.99, "55Fe": 6.54, # "5678Co":7.11,  "56Ni": 7.71,
-        "65ZnK":8.98, "68Ga": 9.66, "68GeK": 10.37, # "734As":11.10,
-        # "41Ca": 3.31,
-        # "36Cl": 2.307,
-        # "ax_Si_Ka1a2":1.739, "ax_Si_Kb1":1.836,
-        # "ax_S_Ka1a2":2.307,
-        # "ax_S_Kb1":2.464
+        "55Fe":6.54, "68Ga":9.66, "68GeK":10.37
+
+        # "65ZnL":1.10, "68GeL":1.29, "49V":   4.97,  # "51Cr": 5.46,
+        # "54Mn": 5.99, "55Fe": 6.54, # "5678Co":7.11,  "56Ni": 7.71,
+        # "65ZnK":8.98, "68Ga": 9.66, "68GeK": 10.37, # "734As":11.10,
+        ## "41Ca": 3.31,
+        ## "36Cl": 2.307,
+        ## "ax_Si_Ka1a2":1.739, "ax_Si_Kb1":1.836,
+        ## "ax_S_Ka1a2":2.307,
+        ## "ax_S_Kb1":2.464
         }
 
     # generatePDFs()
+    # loadDataMJD()
     runFit()
-    # plotSpectrum()
+    plotSpectrum()
     # plotProfiles()
     # plotContours()
     # plotMCSpectrum()
@@ -189,18 +193,41 @@ class pkModel:
     def GetPkExt(self): return self.pkExt
 
 
+def loadDataMJD():
+
+    dsNum = 1
+    ch = TChain("skimTree")
+    # ch.Add("~/project/cuts/fs/fitSlo-DS%d-*.root" % dsNum)
+    ch.Add("~/project/cuts/fs_rn/fs_rn-DS%d-*.root" % dsNum)
+    # ch.Add("~/project/cuts/fs_rn_wf/fs_rn_wf-DS%d-*.root" % dsNum)
+    # ch.Add("~/project/cuts/fs_wf/fs_wf-DS%d-*.root" % dsNum)
+    # ch.Add("~/project/cuts/rn/riseNoise-DS%d-*.root" % dsNum)
+    # ch.Add("~/project/cuts/rn_wf/rn_wf-DS%d-*.root" % dsNum)
+    # ch.Add("~/project/cuts/wf/wfstd-DS%d-*.root" % dsNum)
+    ch.Merge("./data/mjd_data.root")
+
+
 def runFit():
 
-    # load malbek data and create a workspace
-    f1 = TFile("./data/malbek_data.root")
-    t = f1.Get("malbek_wrt")
-    fEnergy = ROOT.RooRealVar("energy_keV","Energy",eLo,eHi,"keV")
-    fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
-    fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
+    useMalbek = False
+
+    # load data and create a workspace
+    if useMalbek:
+        f1 = TFile("./data/malbek_data.root")
+        t = f1.Get("malbek_wrt")
+        fEnergy = ROOT.RooRealVar("energy_keV","Energy",eLo,eHi,"keV")
+        fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
+        fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
+    else:
+        f1 = TFile("./data/mjd_data.root")
+        t = f1.Get("skimTree")
+        fEnergy = ROOT.RooRealVar("trapENFCal","Energy",eLo,eHi,"keV")
+        fData = ROOT.RooDataSet("data","data",t, ROOT.RooArgSet(fEnergy),"")
+
     fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
     getattr(fitWorkspace,'import')(fEnergy)
     getattr(fitWorkspace,'import')(fData)
-    getattr(fitWorkspace,'import')(fWeight)
+    if useMalbek: getattr(fitWorkspace,'import')(fWeight)
 
     # background model
     pdfList = ROOT.RooArgList("shapes")
@@ -218,24 +245,32 @@ def runFit():
         ene = pkList[key]
         if eLo <= ene <= eHi:
             if key=="68GeL":
-                thisPk = pkModel(ene, key, fEnergy)
+                thisPk = pkModel(fEnergy, key, ene) # reminder: can set peak-specific "amp" here
             else:
-                thisPk = pkModel(ene, key, fEnergy)
+                thisPk = pkModel(fEnergy, key, ene)
             peaks[key] = thisPk
             pdfList.add(thisPk.GetPkExt())
 
-    return
-
     # axion continuum
-    axNum = ROOT.RooRealVar("amp-axion","amp-axion",100., 0., 10000.)
+    axNum = ROOT.RooRealVar("amp-axion", "amp-axion", 100., 0., 10000.)
     # axNum = ROOT.RooRealVar("amp-axion","amp-axion",16.904) # hardcode the profile upper limit
     f2 = TFile("./data/inputHists.root")
     axTH1D = f2.Get("h4")
     axDataHist = ROOT.RooDataHist("ax", "ax", ROOT.RooArgList(fEnergy), RF.Import(axTH1D))
     fEnergy.setRange(eLo, eHi) # have to reset after loading a histo w/ different bounds
-    axPdf = ROOT.RooHistPdf("axPdf","axPdf", ROOT.RooArgSet(fEnergy), axDataHist, 2)
-    axExt = ROOT.RooExtendPdf("ext-axion","ext-axion", axPdf, axNum)
+    axPdf = ROOT.RooHistPdf("axPdf", "axPdf", ROOT.RooArgSet(fEnergy), axDataHist, 2)
+    axExt = ROOT.RooExtendPdf("ext-axion", "ext-axion", axPdf, axNum)
     pdfList.add(axExt)
+
+    # tritium (mjd only)
+    trNum = ROOT.RooRealVar("amp-trit", "amp-trit", 100., 0., 10000.)
+    trTH1D = f2.Get("h5")
+    trDataHist = ROOT.RooDataHist("tr", "tr", ROOT.RooArgList(fEnergy), RF.Import(trTH1D))
+    fEnergy.setRange(eLo, eHi)
+    trPdf = ROOT.RooHistPdf("trPdf", "trPdf", ROOT.RooArgSet(fEnergy), trDataHist, 2)
+    trExt = ROOT.RooExtendPdf("ext-trit", "ext-trit",trPdf,trNum)
+    if not useMalbek:
+        pdfList.add(trExt)
 
     # create total model pdf
     model = ROOT.RooAddPdf("model","total pdf",pdfList)
@@ -282,12 +317,12 @@ def plotSpectrum():
         var = itr.Next()
     pdfNames = sorted(pdfNames)
 
-
     # -- create spectrum rooplot --
     nCol = float(gStyle.GetNumberOfColors())
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
     fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
+    return
     fData.plotOn(fSpec)
     modelPDF.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("FullModel"))
     chiSquare = fSpec.chiSquare(nPars)
