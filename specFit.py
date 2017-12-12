@@ -1,29 +1,29 @@
 #!/usr/bin/env python
 """
-specFit.py
-Likelihood analysis of MALBEK and MJD low energy spectra.
-Adapted from GPXFitter by Brian Zhu, LANL.  Much thanks to Brian, Graham, and Lukas.
-Clint Wiseman, USC
+    specFit.py
+    Likelihood analysis of MALBEK and MJD low energy spectra.
+    Adapted from GPXFitter by Brian Zhu, LANL.  Much thanks to Brian, Graham, and Lukas.
+    Clint Wiseman, USC
 
-v1. 5 Oct. 2017 (ported GPXFitter, performed MALBEK study)
+    v1. 5 Oct. 2017 (ported GPXFitter, performed MALBEK study)
 
-Inputs:
-  - MALBEK data from Graham, with rise time cuts and efficiency correction applied
-  - MJD data from LAT
-Background Model:
-  - Polynomial (linear) background function
-  - Cosmogenic peaks (CoGeNT (Clint's thesis proposal, slide 22), Graham's thesis, pg 78)
-  - It seems 41Ca and 36Cl also MAY be contributing to MALBEK [2] [3]:
-Axion Spectrum (Redondo)
-  - Can either look for discrete peaks [3]
-  - Or fit the entire spectrum [4].
-  - We use Mucal.c to convolve the axion flux with the photoelectric cross section [5]
+    Inputs:
+      - MALBEK data from Graham, with rise time cuts and efficiency correction applied
+      - MJD data from LAT
+    Background Model:
+      - Polynomial (linear) background function
+      - Cosmogenic peaks (CoGeNT (Clint's thesis proposal, slide 22), Graham's thesis, pg 78)
+      - It seems 41Ca and 36Cl also MAY be contributing to MALBEK [2] [3]:
+    Axion Spectrum (Redondo)
+      - Can either look for discrete peaks [3]
+      - Or fit the entire spectrum [4].
+      - We use Mucal.c to convolve the axion flux with the photoelectric cross section [5]
 
-Ref 1: http://www.nndc.bnl.gov/chart/decaysearchdirect.jsp?nuc=41CA&unc=nds
-Ref 2: http://www.kayelaby.npl.co.uk/atomic_and_nuclear_physics/4_2/4_2_1.html
-Ref 3: Solar x-ray table (but no axion fluxes): http://xdb.lbl.gov/Section1/Table_1-2.pdf
-Ref 4: Redondo's solar axion flux: http://wwwth.mpp.mpg.de/members/redondo/material.html
-Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
+    Ref 1: http://www.nndc.bnl.gov/chart/decaysearchdirect.jsp?nuc=41CA&unc=nds
+    Ref 2: http://www.kayelaby.npl.co.uk/atomic_and_nuclear_physics/4_2/4_2_1.html
+    Ref 3: Solar x-ray table (but no axion fluxes): http://xdb.lbl.gov/Section1/Table_1-2.pdf
+    Ref 4: Redondo's solar axion flux: http://wwwth.mpp.mpg.de/members/redondo/material.html
+    Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
 """
 import sys, time, warnings
 sys.argv.append("-b") # kill all interactive crap
@@ -67,7 +67,7 @@ def main(argv):
     # generatePDFs()
     # loadDataMJD()
     runFit()
-    # plotSpectrum()
+    plotSpectrum()
     # plotProfiles()
     # plotContours()
     # plotMCSpectrum()
@@ -222,7 +222,7 @@ def runFit():
         f1 = TFile("./data/mjd_data.root")
         t = f1.Get("skimTree")
         fEnergy = ROOT.RooRealVar("trapENFCal","Energy",eLo,eHi,"keV")
-        fData = ROOT.RooDataSet("data","data",t, ROOT.RooArgSet(fEnergy))
+        fData = ROOT.RooDataSet("data","data",t, ROOT.RooArgSet(fEnergy),"")
 
     fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
     getattr(fitWorkspace,'import')(fEnergy)
@@ -317,12 +317,12 @@ def plotSpectrum():
         var = itr.Next()
     pdfNames = sorted(pdfNames)
 
-
     # -- create spectrum rooplot --
     nCol = float(gStyle.GetNumberOfColors())
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
     fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
+    return
     fData.plotOn(fSpec)
     modelPDF.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("FullModel"))
     chiSquare = fSpec.chiSquare(nPars)
