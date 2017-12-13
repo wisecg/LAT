@@ -780,6 +780,18 @@ def LoadVetoDetectorMap(dsNum):
     if dsNum == 6: detIDIsVetoOnly = [1426621, 28480, 1426641, 1235170, 1429090]
     return detIDIsVetoOnly
 
+# Updated 12-13-2017
+def LoadVetoDetectorMapNew(dsNum):
+    detIDIsVetoOnly = []
+    if dsNum == 0: detIDIsVetoOnly = [1425381, 1425742]
+    if dsNum == 1: detIDIsVetoOnly = [28480]
+    if dsNum == 2: detIDIsVetoOnly = [28480, 1425751, 1426621]
+    if dsNum == 3: detIDIsVetoOnly = [28480, 28470, 28463]
+    if dsNum == 4: detIDIsVetoOnly = [28459, 1426641, 1427481, 28456, 1427120, 1427121]
+    if dsNum == 5: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    if dsNum == 6: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    return detIDIsVetoOnly
+
 
 def GetGoodChanList(dsNum):
     badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
@@ -794,6 +806,20 @@ def GetGoodChanList(dsNum):
     # high-gain channels, without pulser monitors, without bad+veto channels.
     goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
     # print sorted(goodList)
+    return sorted(goodList)
+
+# Same as GetGoodChanList, except uses most up-to-date BadDetector and VetoDetector info (12-13-2017)
+# Using new function for now to not break some old code
+def GetGoodChanListNew(dsNum):
+    badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMapNew(dsNum)
+
+    # make a list of the channels corresponding to the bad IDs.
+    badChans = []
+    for badID in badIDs:
+        for ch, detID in DetID[dsNum].iteritems():
+            if badID == detID: badChans.append(ch)
+    # high-gain channels, without pulser monitors, without bad+veto channels.
+    goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
     return sorted(goodList)
 
 
