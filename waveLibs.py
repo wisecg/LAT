@@ -760,8 +760,8 @@ def setDBCalRecord(entry, forceUpdate=False, dbFile="calDB.json"):
 def getDBCalRecord(key, verbose=False, calDB=None, pars=None):
     """ View a particular calibration record. """
 
-    if type(calDB)==None: calDB = db.TinyDB('calDB.json')
-    if type(pars)==None: pars = db.Query()
+    if calDB is None: calDB = db.TinyDB('calDB.json')
+    if pars is None: pars = db.Query()
 
     recList = calDB.search(pars.key == key)
     nRec = len(recList)
