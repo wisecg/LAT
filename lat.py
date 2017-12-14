@@ -17,9 +17,11 @@ Usage:
          [-d [inPath] [outPath] set input and output directories]
          [-f [dsNum] [runNum] use single skim file]
          [-g [dsNum] [runNum] use single gat/blt file]
-         [-s -- use a custom file, must combine w/ path mode]
+         [-s [fileName] uses a custom file, use full file path]
          [-i [plotNum] interactive mode]
+         [-c "custom cut" -- adds custom cut application]
          [-b batch mode -- creates new file]
+
 
 v1: 27 May 2017
 v2: 04 Aug 2017 - improvements to wf fitting, handle multisampling, etc.
@@ -45,9 +47,9 @@ def main(argv):
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
     global batMode
     # let's get some (m)args
-    intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode = False, False, False, False, False, False, False
+    intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode, cutMode = False, False, False, False, False, False, False, False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
-    pathToInput, pathToOutput, manualInput, manualOutput = ".", ".", "", ""
+    pathToInput, pathToOutput, manualInput, manualOutput, customPar = ".", ".", "", "", ""
 
     if len(argv)==0: return
     for i,opt in enumerate(argv):
@@ -67,11 +69,14 @@ def main(argv):
             gatMode, runNum = True, int(argv[i+1])
             print "GATDataSet mode.  Scanning run %d" % (runNum)
         if opt == "-s":
-            singleMode, runNum, pathToInput = True, int(argv[i+1]), argv[i+2]
-            print "Single file mode.  Scanning run %d" % (runNum)
+            singleMode, pathToInput = True, argv[i+1]
+            print "Single file mode.  Scanning {}".format(pathToInput)
         if opt == "-i":
             intMode, plotNum = True, int(argv[i+1])
             print "Interactive mode selected. Use \"p\" for previous and \"q\" to exit."
+        if opt == "-c":
+            cutMode, customPar = True, str(argv[i+1])
+            print "Using custom cut parameter: {}".format(customPar)
         if opt == "-b":
             batMode = True
             import matplotlib
@@ -117,17 +122,11 @@ def main(argv):
         bltTree = bltFile.Get("MGTree")
         gatTree.AddFriend(bltTree)
     if singleMode:
+        inFile = TFile(pathToInput)
         gatTree = inFile.Get("skimTree")
-
-    # ============================================================
-    # Set cuts (maybe someday they should be read in ...)
-    # theCut += " && trapENFCal < 10 && trapENFCal > 2 && kvorrT/trapENFCal < 1"
-    # theCut += " && Entry$ < 5000"
-    # theCut = "trapENFCal < 10 && fitSlo > 30 && trapENFCal > 2"
-    # theCut += " && trapENFCalC < 6 && trapENFCalC > 1"
-    # theCut += " && trapENFCal > 50 && avse < -1"
-    # print "WARNING: Custom cut in use!"
-    # ============================================================
+    if cutMode:
+        theCut += customPar
+        print "WARNING: Custom cut in use!"
 
     gatTree.Draw(">>elist", theCut, "entrylist")
     elist = gDirectory.Get("elist")
