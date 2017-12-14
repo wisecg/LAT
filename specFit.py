@@ -321,6 +321,7 @@ def plotSpectrum():
     nCol = float(gStyle.GetNumberOfColors())
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
+    print type(eLo), type(eHi), type(nBins)
     fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
     return
     fData.plotOn(fSpec)
