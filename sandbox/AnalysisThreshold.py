@@ -1,9 +1,8 @@
-import ROOT
+import os, math, ROOT
 import numpy as np
 from matplotlib import pyplot as plt
 import waveLibs as wl
 import DataSetInfo as ds
-import math
 import seaborn as sns
 sns.set(style='whitegrid', context='talk')
 
@@ -49,35 +48,34 @@ def SaveHistogramsIDX():
             # Total channel histograms, split by dataset
             nRangesCal = [0, len(cInfo.master['ds%d_m%d'%(dsNum, modNum)])]
             nRangesBkg = [0, ds.dsMap[dsNum]]
-            for calidx in range(nRangesCal[0], nRangesCal[1]):
-                print "Drawing DS%d calidx%d mod%d"%(dsNum, calidx, modNum)
-                hCutList, hFullList = [], []
-                skimTreeCal.Reset()
-                calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), calidx, runLimit=10)
-                for run in calList:
-                    skimTreeCal.Add("%s/latSkimDS%d_run%d_*.root"%(calDir, dsNum, run))
 
-                for idx, ch in enumerate(chList):
+            # for calidx in range(nRangesCal[0], nRangesCal[1]):
+                # print "Drawing DS%d calidx%d mod%d"%(dsNum, calidx, modNum)
+                # hCutList, hFullList = [], []
+                # skimTreeCal.Reset()
+                # calList = cInfo.GetCalList("ds%d_m%d" % (dsNum, modNum), calidx, runLimit=10)
+                # for run in calList:
+                    # skimTreeCal.Add("%s/latSkimDS%d_run%d_*.root"%(calDir, dsNum, run))
+
+                # for idx, ch in enumerate(chList):
                     # Reset Tree every calidx + ch
-                    skimCutCal.Reset()
-                    skimCutCal.Add("%s/calfs_rn/calfs_rn-DS%d-%d-ch%d.root"%(calcutDir, dsNum, calidx, ch))
-                    if skimCutCal.GetEntries() == 0:
-                        hCutList.append(ROOT.TH1D())
-                        hFullList.append(ROOT.TH1D())
-                        print "Channel %d, calidx %d has no entries, skipping"%(ch, calidx)
-                        continue
+                    # skimCutCal.Reset()
+                    # if not os.path.exists("%s/calfs_rn/calfs_rn-DS%d-%d-ch%d.root"%(calcutDir, dsNum, calidx, ch)):
+                        # hCutList.append(ROOT.TH1D())
+                        # hFullList.append(ROOT.TH1D())
+                        # print "Channel %d, calidx %d doesn't exist, skipping"%(ch, calidx)
+                        # continue
+                    # skimCutCal.Add("%s/calfs_rn/calfs_rn-DS%d-%d-ch%d.root"%(calcutDir, dsNum, calidx, ch))
+                    # hCutList.append(ROOT.TH1D())
+                    # hFullList.append(ROOT.TH1D())
 
-                    hCutList.append(ROOT.TH1D())
-                    hFullList.append(ROOT.TH1D())
                     # Add additional cut here for channel
-                    hCutList[idx] = wl.H1D(skimCutCal,bins,lower,upper, "trapENFCal", cuts+"&& channel==%d"%(ch), Title="hCalDS%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx), Name="hDS%d_Ch%d_CalIdx%d"%(dsNum, ch,calidx))
-                    hFullList[idx] = wl.H1D(skimTreeCal,bins,lower,upper, "trapENFCal", cuts+"&&channel==%d"%(ch),Title="hFullDS_%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx), Name="hCalFullDS%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx))
+                    # hCutList[idx] = wl.H1D(skimCutCal,bins,lower,upper, "trapENFCal", cuts+"&& channel==%d"%(ch), Title="hCalDS%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx), Name="hDS%d_Ch%d_CalIdx%d"%(dsNum, ch,calidx))
+                    # hFullList[idx] = wl.H1D(skimTreeCal,bins,lower,upper, "trapENFCal", cuts+"&&channel==%d"%(ch),Title="hFullDS_%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx), Name="hCalFullDS%d_Ch%d_CalIdx%d"%(dsNum,ch,calidx))
 
-                    # Only write channel specific if there are counts
-                    if hCutList[idx].Integral() > 0:
-                        # Add ch+calidx histograms to ch total histogram if
-                        hCutList[idx].Write()
-                        hFullList[idx].Write()
+                    # Write all histograms (even if they're empty -- for debugging purposes)
+                    # hCutList[idx].Write()
+                    # hFullList[idx].Write()
 
             for bkgidx in range(nRangesBkg[0], nRangesBkg[1]+1):
                 print "Drawing DS%d bkgidx%d mod%d"%(dsNum, bkgidx, modNum)
@@ -88,23 +86,23 @@ def SaveHistogramsIDX():
                 for idx, ch in enumerate(chList):
                     # Reset Tree every bkgidx + ch
                     skimCutBkg.Reset()
-                    skimCutBkg.Add("%s/fs_rn/fs_rn-DS%d-%d-ch%d.root"%(bkgcutDir, dsNum, bkgidx, ch))
-                    if skimCutBkg.GetEntries() == 0:
+                    if not os.path.exists("%s/fs_rn/fs_rn-DS%d-%d-ch%d.root"%(bkgcutDir, dsNum, bkgidx, ch)):
                         hCutList.append(ROOT.TH1D())
                         hFullList.append(ROOT.TH1D())
                         print "Channel %d, bkgidx %d has no entries, skipping"%(ch, bkgidx)
                         continue
+                    skimCutBkg.Add("%s/fs_rn/fs_rn-DS%d-%d-ch%d.root"%(bkgcutDir, dsNum, bkgidx, ch))
+
+
                     hCutList.append(ROOT.TH1D())
                     hFullList.append(ROOT.TH1D())
                     # Add additional cut here for channel
                     hCutList[idx] = wl.H1D(skimCutBkg,bins,lower,upper, "trapENFCal", cuts+"&& channel==%d"%(ch), Title="hBkgDS%d_Ch%d_BkgIdx%d"%(dsNum,ch,bkgidx), Name="hDS%d_Ch%d_BkgIdx%d"%(dsNum, ch,bkgidx))
                     hFullList[idx] = wl.H1D(skimTreeBkg,bins,lower,upper, "trapENFCal", cuts+"&&channel==%d"%(ch),Title="hFullDS_%d_Ch%d_BkgIdx%d"%(dsNum,ch,bkgidx), Name="hBkgFullDS%d_Ch%d_BkgIdx%d"%(dsNum,ch,bkgidx))
 
-                    # Only write channel specific if there are counts
-                    if hCutList[idx].Integral() > 0:
-                        # Add ch+bkgidx histograms to ch total histogram if
-                        hCutList[idx].Write()
-                        hFullList[idx].Write()
+                    # Write all histograms -- for debugging
+                    hCutList[idx].Write()
+                    hFullList[idx].Write()
 
     # Write total histogram and close
     outFile.Close()
@@ -154,5 +152,5 @@ def GetAnaylsisThreshold(dsNum=2):
 
 
 if __name__ == "__main__":
-    # SaveHistogramsIDX()
-    GetAnaylsisThreshold(3)
+    SaveHistogramsIDX()
+    # GetAnaylsisThreshold(3)
