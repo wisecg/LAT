@@ -64,7 +64,7 @@ def main(argv):
         }
 
     # generatePDFs()
-    # loadDataMJD()
+    loadDataMJD()
     runFit()
     plotSpectrum()
     # plotProfiles()
@@ -207,19 +207,21 @@ def loadDataMJD():
     # ch.Add("~/project/cuts/wf/wfstd-DS%d-*.root" % dsNum)
 
     fOut = TFile("./data/mjd_data.root","RECREATE")
-    tOut = TTree("skimTree", "final MJD output")
+    tOut = TTree("skimTree", "skimTree")
 
     run = array('i',[0])
     iEvent = array('i',[0])
     iHit = array('i',[0])
     channel = array('i',[0])
     trapENFCal = array('d',[0.])
+    weight = array('d',[0.])
 
     tOut.Branch("run", run, "run/I")
     tOut.Branch("iEvent", iEvent, "iEvent/I")
     tOut.Branch("iHit", iHit, "iHit/I")
     tOut.Branch("channel", channel, "channel/I")
     tOut.Branch("trapENFCal", trapENFCal, "trapENFCal/D")
+    tOut.Branch("weight", weight, "weight/D")
 
     for iEvt in range(ch.GetEntries()):
         ch.GetEntry(iEvt)
@@ -229,6 +231,7 @@ def loadDataMJD():
             iHit[0] = ch.iHit.at(iH)
             channel[0] = ch.channel.at(iH)
             trapENFCal[0] = ch.trapENFCal.at(iH)
+            weight[0] = 1.
             tOut.Fill()
 
     tOut.Write()
@@ -242,7 +245,7 @@ def loadDataMJD():
 
 def runFit():
 
-    useMalbek = True
+    useMalbek = False
 
     # load data and create a workspace
     if useMalbek:
@@ -251,13 +254,14 @@ def runFit():
         t = f1.Get("malbek_wrt")
         fEnergy = ROOT.RooRealVar("energy_keV","Energy",eLo,eHi,"keV")
         fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
-        fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
+        fData = ROOT.RooDataSet("data", "data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
     else:
         print "Using MJD data ..."
         f1 = TFile("./data/mjd_data.root")
         t = f1.Get("skimTree")
         fEnergy = ROOT.RooRealVar("trapENFCal","Energy",eLo,eHi,"keV")
-        fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy))
+        fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
+        fData = ROOT.RooDataSet("data", "data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
 
     fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
     getattr(fitWorkspace,'import')(fEnergy)
