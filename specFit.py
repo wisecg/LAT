@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+import sys, time, warnings
+sys.argv.append("-b") # kill all interactive crap
+import ROOT
+from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TLegend, TPad, TLine, TGraph
+from ROOT import gStyle, gPad, gROOT, std
+from ROOT import RooFit as RF
+from ROOT import RooStats as RS
+import numpy as np
+from array import array
 """
     specFit.py
     Likelihood analysis of MALBEK and MJD low energy spectra.
@@ -25,16 +34,6 @@
     Ref 4: Redondo's solar axion flux: http://wwwth.mpp.mpg.de/members/redondo/material.html
     Ref 5: Mucal on the web: http://www.csrri.iit.edu/mucal.html
 """
-import sys, time, warnings
-sys.argv.append("-b") # kill all interactive crap
-import ROOT
-from ROOT import TFile, TTree, TChain, TCanvas, TH1D, TLegend, TPad, TLine, TGraph
-from ROOT import gStyle, gPad, gROOT, std
-from ROOT import RooFit as RF
-from ROOT import RooStats as RS
-import numpy as np
-from array import array
-
 gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
 # gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
@@ -194,7 +193,9 @@ class pkModel:
 
 
 def loadDataMJD():
-
+    """ RooFit can't handle the vector<double> format for energies.
+        So save a few select branches only (can add branches if necessary) into a new file.
+    """
     dsNum = 1
     ch = TChain("skimTree")
     # ch.Add("~/project/cuts/fs/fitSlo-DS%d-*.root" % dsNum)
@@ -204,7 +205,39 @@ def loadDataMJD():
     # ch.Add("~/project/cuts/rn/riseNoise-DS%d-*.root" % dsNum)
     # ch.Add("~/project/cuts/rn_wf/rn_wf-DS%d-*.root" % dsNum)
     # ch.Add("~/project/cuts/wf/wfstd-DS%d-*.root" % dsNum)
-    ch.Merge("./data/mjd_data.root")
+
+    fOut = TFile("./data/mjd_data.root","RECREATE")
+    tOut = TTree("skimTree", "final MJD output")
+
+    run = array('i',[0])
+    iEvent = array('i',[0])
+    iHit = array('i',[0])
+    channel = array('i',[0])
+    trapENFCal = array('d',[0.])
+
+    tOut.Branch("run", run, "run/I")
+    tOut.Branch("iEvent", iEvent, "iEvent/I")
+    tOut.Branch("iHit", iHit, "iHit/I")
+    tOut.Branch("channel", channel, "channel/I")
+    tOut.Branch("trapENFCal", trapENFCal, "trapENFCal/D")
+
+    for iEvt in range(ch.GetEntries()):
+        ch.GetEntry(iEvt)
+        run[0] = ch.run
+        iEvent[0] = ch.iEvent
+        for iH in range(ch.channel.size()):
+            iHit[0] = ch.iHit.at(iH)
+            channel[0] = ch.channel.at(iH)
+            trapENFCal[0] = ch.trapENFCal.at(iH)
+            tOut.Fill()
+
+    tOut.Write()
+    fOut.Close()
+
+    # verify
+    # f2 = TFile("./data/mjd_data.root")
+    # t2 = f2.Get("skimTree")
+    # t2.Scan()
 
 
 def runFit():
@@ -213,16 +246,18 @@ def runFit():
 
     # load data and create a workspace
     if useMalbek:
+        print "Using MALBEK data ..."
         f1 = TFile("./data/malbek_data.root")
         t = f1.Get("malbek_wrt")
         fEnergy = ROOT.RooRealVar("energy_keV","Energy",eLo,eHi,"keV")
         fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
         fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
     else:
+        print "Using MJD data ..."
         f1 = TFile("./data/mjd_data.root")
         t = f1.Get("skimTree")
         fEnergy = ROOT.RooRealVar("trapENFCal","Energy",eLo,eHi,"keV")
-        fData = ROOT.RooDataSet("data","data",t, ROOT.RooArgSet(fEnergy),"")
+        fData = ROOT.RooDataSet("data","data", t, ROOT.RooArgSet(fEnergy))
 
     fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
     getattr(fitWorkspace,'import')(fEnergy)
@@ -321,10 +356,11 @@ def plotSpectrum():
     nCol = float(gStyle.GetNumberOfColors())
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
-    print type(eLo), type(eHi), type(nBins)
-    fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
-    return
-    fData.plotOn(fSpec)
+    # fSpec = fEnergy.frame(ROOT.RooFit.Range(eLo,eHi))
+    fSpec = ROOT.RooPlot()
+    # fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
+    # fData.plotOn(fSpec)
+    fData.plotOn(fSpec, RF.Binning(nBins))
     modelPDF.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("FullModel"))
     chiSquare = fSpec.chiSquare(nPars)
 
