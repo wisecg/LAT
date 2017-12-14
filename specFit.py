@@ -242,7 +242,7 @@ def loadDataMJD():
 
 def runFit():
 
-    useMalbek = False
+    useMalbek = True
 
     # load data and create a workspace
     if useMalbek:
@@ -357,10 +357,10 @@ def plotSpectrum():
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
     # fSpec = fEnergy.frame(ROOT.RooFit.Range(eLo,eHi))
-    fSpec = ROOT.RooPlot()
-    # fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
-    # fData.plotOn(fSpec)
-    fData.plotOn(fSpec, RF.Binning(nBins))
+    # fSpec = ROOT.RooPlot()
+    fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
+    fData.plotOn(fSpec)
+    # fData.plotOn(fSpec, RF.Binning(nBins))
     modelPDF.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("FullModel"))
     chiSquare = fSpec.chiSquare(nPars)
 
