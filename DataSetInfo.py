@@ -829,9 +829,9 @@ def GetGoodChanList(dsNum, dType = None):
     goodList = []
     if dType is None:
         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    elif dType is 'Enr':
+    elif dType == 'Enr':
         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
-    elif dType is 'Nat':
+    elif dType == 'Nat':
         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
     else:
         print('Type not found, returning all channels')
