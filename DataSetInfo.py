@@ -397,6 +397,28 @@ CPD[5] = {
 
 PMon[5] = [612, 676, 596, 1112, 1104, 1200, 1240, 1334, 1300, 1336, 644]
 
+EnrNatMap = {
+    # Maps DetID to natural or enriched
+    # "1" denotes enriched, "0" denotes natural.
+    # M1
+    1426981:1, 1425750:1, 1426612:1, 1425380:1,
+    28474:0, 1426640:1, 1426650:1, 1426622:1,
+    28480:0, 1426980:1, 1425381:1, 1425730:1,
+    28455:0, 28470:0, 28463:0, 28465:0, 28469:0,
+    28477:0, 1425751:1, 1426610:1, 1425731:1,
+    1425742:1, 1426611:1, 1425740:1, 1426620:1,
+    28482:0, 1425741:1, 1426621:1, 1425370:1,
+    # M2
+    28459:0, 1426641:1, 1427481:1,1427480:1,
+    28481:0, 28576:0, 28594:0, 28595:0, 28461:0,
+    1427490:1, 1427491:1, 1428530:1, 28607:0,
+    28456:0, 28621:0, 28466:0, 28473:0, 28487:0,
+    1426651:1, 1428531:1, 1427120:1, 1235170:1,
+    1429091:1, 1429092:1, 1426652:1, 28619:0,
+    1427121:1, 1429090:1, 28717:0
+}
+
+
 # Copied from DataSetInfo.hh
 bkgRunsDS = [0,1,2,3,4,5,6]
 bkgRunsDS[0] = {
@@ -793,7 +815,7 @@ def LoadVetoDetectorMapNew(dsNum):
     return detIDIsVetoOnly
 
 
-def GetGoodChanList(dsNum):
+def GetGoodChanList(dsNum, dType = None):
     badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
 
     # make a list of the channels corresponding to the bad IDs.
@@ -804,8 +826,16 @@ def GetGoodChanList(dsNum):
     # print sorted(badChans)
 
     # high-gain channels, without pulser monitors, without bad+veto channels.
-    goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    # print sorted(goodList)
+    goodList = []
+    if dType is None:
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    elif dType is 'Enr':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
+    elif dType is 'Nat':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
+    else:
+        print('Type not found, returning all channels')
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
     return sorted(goodList)
 
 # Same as GetGoodChanList, except uses most up-to-date BadDetector and VetoDetector info (12-13-2017)
@@ -819,7 +849,16 @@ def GetGoodChanListNew(dsNum):
         for ch, detID in DetID[dsNum].iteritems():
             if badID == detID: badChans.append(ch)
     # high-gain channels, without pulser monitors, without bad+veto channels.
-    goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    goodList = []
+    if dType is None:
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    elif dType is 'Enr':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
+    elif dType is 'Nat':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
+    else:
+        print('Type not found, returning all channels')
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
     return sorted(goodList)
 
 
