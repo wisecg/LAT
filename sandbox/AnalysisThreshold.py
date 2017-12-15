@@ -110,12 +110,12 @@ def SaveHistogramsIDX():
 
 def GetAnaylsisThreshold(dsNum=2):
     inDir = '/Users/brianzhu/macros/code/LAT/plots/spectra'
-    f1 = ROOT.TFile("%s/AThresh_DS%d_mHL1.root"%(inDir, dsNum))
+    f1 = ROOT.TFile("%s/AThresh_mHL1.root"%(inDir, dsNum))
 
     bkgDict = {}
     for key in f1.GetListOfKeys():
         histName = key.GetName()
-        if f1.Get(histName).Integral() == 0: continue
+        if 'DS{}'.format(dsNum) not in histName: continue
         name = ''.join(c for c in histName.split('_')[1] if c.isdigit())
         idx = ''.join(c for c in histName.split('_')[2] if c.isdigit())
         ch = int(name)

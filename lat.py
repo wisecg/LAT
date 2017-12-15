@@ -148,7 +148,7 @@ def main(argv):
 
     waveS1, waveS2 = std.vector("double")(), std.vector("double")()
     waveS3, waveS4, waveS5 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-    tOffset = std.vector("double")()
+    # tOffset = std.vector("double")()
     bcMax, bcMin = std.vector("double")(), std.vector("double")()
     bandMax, bandTime = std.vector("double")(), std.vector("double")()
     den10, den50, den90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
@@ -167,7 +167,7 @@ def main(argv):
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
     b3, b4, b5 = out.Branch("waveS3",waveS3), out.Branch("waveS4",waveS4), out.Branch("waveS5",waveS5)
-    b6 = out.Branch("tOffset",tOffset)
+    # b6 = out.Branch("tOffset",tOffset)
     b7, b8 = out.Branch("bcMax",bcMax), out.Branch("bcMin",bcMin)
     b9, b10 = out.Branch("bandMax",bandMax), out.Branch("bandTime",bandTime)
     b11, b12, b13 = out.Branch("den10",den10), out.Branch("den50",den50), out.Branch("den90",den90)
@@ -187,7 +187,7 @@ def main(argv):
     brDict = {
         "waveS1":[waveS1, b1], "waveS2":[waveS2, b2],
         "waveS3":[waveS3, b3], "waveS4":[waveS4, b4], "waveS5":[waveS5, b5],
-        "tOffset":[tOffset, b6],
+        # "tOffset":[tOffset, b6],
         "bcMax":[bcMax, b7], "bcMin":[bcMin, b8],
         "bandMax":[bandMax, b9], "bandTime":[bandTime, b10],
         "den10":[den10, b11], "den50":[den50, b12], "den90":[den90, b13],
@@ -318,7 +318,7 @@ def main(argv):
             data = signal.GetWaveRaw()
             data_blSub = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
-            tOffset[iH] = signal.GetOffset()
+            # tOffset[iH] = signal.GetOffset()
             dataBL,dataNoise = signal.GetBaseNoise()
 
             # wavelet packet transform
