@@ -36,8 +36,8 @@ from array import array
 """
 gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
-# gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
-gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);")
+gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
+# gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);")
 ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit") # the PLC doesn't work w/ minuit2
 
 # ===================================================================================================
@@ -64,7 +64,7 @@ def main(argv):
         }
 
     # generatePDFs()
-    loadDataMJD()
+    # loadDataMJD()
     runFit()
     plotSpectrum()
     # plotProfiles()
@@ -215,6 +215,7 @@ def loadDataMJD():
     channel = array('i',[0])
     trapENFCal = array('d',[0.])
     weight = array('d',[0.])
+    isEnr = array('i',[0])
 
     tOut.Branch("run", run, "run/I")
     tOut.Branch("iEvent", iEvent, "iEvent/I")
@@ -222,6 +223,7 @@ def loadDataMJD():
     tOut.Branch("channel", channel, "channel/I")
     tOut.Branch("trapENFCal", trapENFCal, "trapENFCal/D")
     tOut.Branch("weight", weight, "weight/D")
+    tOut.Branch("isEnr", isEnr, "isEnr/I")
 
     for iEvt in range(ch.GetEntries()):
         ch.GetEntry(iEvt)
@@ -232,15 +234,20 @@ def loadDataMJD():
             channel[0] = ch.channel.at(iH)
             trapENFCal[0] = ch.trapENFCal.at(iH)
             weight[0] = 1.
+            if "P" in ch.detName.at(iH): isEnr[0] = 1
+            elif "B" in ch.detName.at(iH): isEnr[0] = 0
+            else:
+                print "WTF, error"
+                exit(0)
             tOut.Fill()
 
     tOut.Write()
     fOut.Close()
 
     # verify
-    # f2 = TFile("./data/mjd_data.root")
-    # t2 = f2.Get("skimTree")
-    # t2.Scan()
+    f2 = TFile("./data/mjd_data.root")
+    t2 = f2.Get("skimTree")
+    t2.Scan("run:channel:isEnr:trapENFCal")
 
 
 def runFit():
@@ -260,8 +267,9 @@ def runFit():
         f1 = TFile("./data/mjd_data.root")
         t = f1.Get("skimTree")
         fEnergy = ROOT.RooRealVar("trapENFCal","Energy",eLo,eHi,"keV")
-        fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
-        fData = ROOT.RooDataSet("data", "data", t, ROOT.RooArgSet(fEnergy,fWeight),"","weight")
+        fEnr = ROOT.RooRealVar("isEnr","isEnr",0,1,"")
+        # fWeight = ROOT.RooRealVar("weight","weight",1,10,"")
+        fData = ROOT.RooDataSet("data", "data", t, ROOT.RooArgSet(fEnergy,fEnr), "isEnr==0")
 
     fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
     getattr(fitWorkspace,'import')(fEnergy)
@@ -308,8 +316,7 @@ def runFit():
     fEnergy.setRange(eLo, eHi)
     trPdf = ROOT.RooHistPdf("trPdf", "trPdf", ROOT.RooArgSet(fEnergy), trDataHist, 2)
     trExt = ROOT.RooExtendPdf("ext-trit", "ext-trit",trPdf,trNum)
-    if not useMalbek:
-        pdfList.add(trExt)
+    if not useMalbek: pdfList.add(trExt)
 
     # create total model pdf
     model = ROOT.RooAddPdf("model","total pdf",pdfList)
@@ -334,13 +341,17 @@ def runFit():
 
 def plotSpectrum():
 
+    useMalbek = False
+    eName = "energy_keV"
+    eName = "trapENFCal"
+
     # load workspace
     f = TFile("./data/fitWorkspace.root")
     fitWorkspace = f.Get("fitWorkspace")
     fData = fitWorkspace.allData().front()
     fitResult = fitWorkspace.allGenericObjects().front()
     nPars = fitResult.floatParsFinal().getSize()
-    fEnergy = fitWorkspace.var("energy_keV")
+    fEnergy = fitWorkspace.var(eName)
     modelPDF = fitWorkspace.pdf("model")
     # fitWorkspace.Print()
 
@@ -360,11 +371,8 @@ def plotSpectrum():
     nCol = float(gStyle.GetNumberOfColors())
     binSize = 0.2
     nBins = int((eHi-eLo)/binSize + 0.5)
-    # fSpec = fEnergy.frame(ROOT.RooFit.Range(eLo,eHi))
-    # fSpec = ROOT.RooPlot()
     fSpec = fEnergy.frame(RF.Range(eLo,eHi), RF.Bins(nBins))
     fData.plotOn(fSpec)
-    # fData.plotOn(fSpec, RF.Binning(nBins))
     modelPDF.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("FullModel"))
     chiSquare = fSpec.chiSquare(nPars)
 
