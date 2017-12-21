@@ -26,7 +26,6 @@
 #include "MJVetoEvent.hh"
 #include "MJTRun.hh"
 #include "DataSetInfo.hh"
-#include "psaInfo.hh"
 #include "TTimeStamp.h"
 
 using namespace std;
