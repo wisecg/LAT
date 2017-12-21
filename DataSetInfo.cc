@@ -8,6 +8,9 @@
 
 using namespace std;
 
+// NOTE:
+// - LoadDataSet now returns a map 
+
 // ======================================================================
 // Contents:
 //
