@@ -1,36 +1,41 @@
 #!/usr/bin/env python
-import sys, imp, os
+import sys, imp
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
-# wl = imp.load_source('waveLibs','../waveLibs.py')
-# import ROOT
-from ROOT import TFile, TChain, TTree, TCanvas, TH1D, MGTWaveform
-# from ROOT import gDirectory, gStyle, std
-from ROOT import GATDataSet
-# import numpy as np
-# import matplotlib.pyplot as plt
+wl = imp.load_source('waveLibs','../waveLibs.py')
+from ROOT import gDirectory, TChain, MGTWaveform, MJTMSWaveform, GATDataSet
+import numpy as np
+import matplotlib.pyplot as plt
 
 def main():
+    """ baseline study:
+    1. high-e events in skim files
+    2. pulser events in gatified data
+    3. calibration data
 
-    baselineStudy()
+    fitBL - no better variable in skims.
+    MAYBE trapENFBL in gatified data, but that might not work
+    what about just loading the wf itself?
+    """
+
+    pulserBaselines()
     # baselineDB()
 
 
-def baselineStudy():
-    """ 1. high-e events in skim files
-        2. pulser events in gatified data
-        3. calibration data
-
-        fitBL - no better variable in skims.
-        MAYBE trapENFBL in gatified data, but that might not work
-        what about just loading the wf itself?
+def pulserBaselines():
+    """ For each bkgIdx, get the HG pulser events and all their baseline values.
+    Fill a dict of channels w/ the values, then make plots'n stuff.
     """
     dsNum, modNum = 1, 1
-    chList = ds.GetGoodChanList(dsNum)
+    goodList = ds.GetGoodChanList(dsNum)
 
-    for bkgIdx in range(ds.dsMap[dsNum]+1):
+    # thing we want to make histos with
+    baseDict = {ch:[] for ch in goodList}
 
-        if bkgIdx==1: break
+    # for bkgIdx in range(ds.dsMap[dsNum]+1):
+    for bkgIdx in range(1):
+
+        print "DS-%d, bkgIdx %d" % (dsNum, bkgIdx)
 
         runList = []
         bkgList = ds.bkgRunsDS[dsNum][bkgIdx]
@@ -39,12 +44,12 @@ def baselineStudy():
 
         gds = GATDataSet()
         [gds.AddRunNumber(run) for run in runList]
-        gatChain = gds.GetGatifiedChain()
-        bltChain = gds.GetBuiltChain()
-        gatChain.AddFriend(bltChain)
+        gatTree = gds.GetGatifiedChain()
+        bltTree = gds.GetBuiltChain()
+        gatTree.AddFriend(bltTree)
 
-        theCut = "EventDC1Bits && Entry$<10000"
-        gatTree.Draw(">>elist", theCut, "entrylist") # get a not insane number of pulsers
+        theCut = "EventDC1Bits && Entry$<5000 && channel%2==0 && trapENFCal>50" # select pulser subset
+        gatTree.Draw(">>elist", theCut, "entrylist")
         elist = gDirectory.Get("elist")
         gatTree.SetEntryList(elist)
 
@@ -57,37 +62,34 @@ def baselineStudy():
             numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
             chans = gatTree.GetV1()
             chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-            event = bltTree.event
+            hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in goodList)
 
-            hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)
             for iH in hitList:
-
                 if dsNum==2:
-                    wf_downsampled = event.GetWaveform(iH)
-                    wf_regular = event.GetAuxWaveform(iH)
+                    wf_downsampled = bltTree.event.GetWaveform(iH)
+                    wf_regular = bltTree.event.GetAuxWaveform(iH)
                     wf = MJTMSWaveform(wf_downsampled,wf_regular)
                 else:
-                    wf = event.GetWaveform(iH)
-
-                # maybe fill a buncha channel plots independently, instead of doing a buncha draw commands
-
-                run = gatTree.run
-                chan = gatTree.channel.at(iH)
-                energy = gatTree.trapE.at(iH)
-
+                    wf = bltTree.event.GetWaveform(iH)
+                chan = int(gatTree.channel.at(iH))
                 signal = wl.processWaveform(wf)
                 baseline,_ = signal.GetBaseNoise()
+                baseline = float("%.2f" % baseline) # kill precision to save on memory
+                baseDict[chan].append(baseline)
 
+    # could pickle the baseDict here, but idk, let's move on
 
+    fig = plt.figure(figsize=(8,7),facecolor='w')
+    p1 = plt.subplot(111)
+    # for ch in baseDict:
+    ch = 608
 
+    arr = np.asarray(baseDict[chan])
 
+    p1.hist(arr, bins='auto') # arguments are passed to np.histogram
+    p1.title("Channel 608")
 
-
-
-
-
-
-
+    plt.savefig("../plots/ch608-bl.pdf")
 
 
 
