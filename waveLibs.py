@@ -865,3 +865,33 @@ def getOldCalFiles():
             print f
     else:
         print "Cal directory is clean."
+
+
+def getLATList(dsNum, bkgIdx=None, latDir=None):
+    """ Return a list of LAT files.
+    Build a file list sequentially (a simple glob is unsorted)
+    """
+    home = os.path.expanduser('~')
+    if latDir == None:
+        latDir = home + "/project/bg-lat"
+
+    fList = []
+
+    bkgIdxList = (idx for idx in range(ds.dsMap[dsNum]+1))
+    if bkgIdx != None:
+        bkgIdxList = [bkgIdx]
+
+    for bkgIdx in bkgIdxList:
+        tmp = glob.glob("%s/latSkimDS%d_%d_*.root" % (latDir, dsNum, bkgIdx))
+        nFiles = len(tmp)
+        for subIdx in range(nFiles):
+            fFullPath = "%s/latSkimDS%d_%d_%d.root" % (latDir, dsNum, bkgIdx, subIdx)
+            fName = "latSkimDS%d_%d_%d.root" % (dsNum, bkgIdx, subIdx)
+            if os.path.isfile(fFullPath) == True:
+                fList.append(fName)
+            else:
+                print "File doesn't exist, exiting ...",fFullPath
+                return
+
+    return latDir, fList
+

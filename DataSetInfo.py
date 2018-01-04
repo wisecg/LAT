@@ -840,7 +840,7 @@ def GetGoodChanList(dsNum, dType = None):
 
 # Same as GetGoodChanList, except uses most up-to-date BadDetector and VetoDetector info (12-13-2017)
 # Using new function for now to not break some old code
-def GetGoodChanListNew(dsNum):
+def GetGoodChanListNew(dsNum, dType=None):
     badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMapNew(dsNum)
 
     # make a list of the channels corresponding to the bad IDs.
@@ -848,6 +848,7 @@ def GetGoodChanListNew(dsNum):
     for badID in badIDs:
         for ch, detID in DetID[dsNum].iteritems():
             if badID == detID: badChans.append(ch)
+
     # high-gain channels, without pulser monitors, without bad+veto channels.
     goodList = []
     if dType is None:

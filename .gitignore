@@ -16,3 +16,4 @@ slurm-job.sh
 data/mucal
 cron.log
 cron.queue
+data/parse*
