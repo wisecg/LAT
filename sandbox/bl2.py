@@ -18,19 +18,24 @@ def main():
 def bkgBaselines():
 
     # generate BL files (run once)
-    highECut = "channel%2==0 && trapENFCal > 100"
-    for dsNum in [2]:
-        goodList = ds.GetGoodChanListNew(dsNum)
-        parseLAT2(goodList, highECut, dsNum, None, True)
-    return
+    # highECut = "channel%2==0 && trapENFCal > 100"
+    # for dsNum in [2]:
+    #     goodList = ds.GetGoodChanListNew(dsNum)
+    #     parseLAT2(goodList, highECut, dsNum, None, True)
+    # return
 
-    dsNum = 0
+    dsNum = 2
     goodList = ds.GetGoodChanListNew(dsNum)
     with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
-    # print baseDict.keys()
-    # [608, 640, 578, 580, 582, 648, 664, 610, 592, 632, 594, 692, 626, 598, 690, 600, 672]
+    # clint, you were testing the new baseDict format with DS2.
+    # 1. you want to remake the pulser plots using e.g. global time
+    # 2. you want to update the other to parsers to use the new format
+
+    timeList = [baseDict[608][idx][1] for idx in range(len(baseDict[608]))]
+
+    return
 
     ch = 640
     fig = plt.figure(figsize=(9,5),facecolor='w')
@@ -97,6 +102,22 @@ def testParsers():
 
     # convert unicode keys back to ints
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
+
+    # format: baseDict[ch] = (baseline, globalTime, run)
+
+    # extract columns of numbers (e.g. globalTime's)
+
+    # 1 - list comprehension (faster)
+    start = time.time()
+    timeList = [baseDict[608][idx][1] for idx in range(len(baseDict[608]))]
+    print timeList
+    print time.time()-start,"seconds elapsed."
+
+    # 2 - np array, multi-axis slice
+    # start = time.time()
+    # B = np.array(baseDict[608])
+    # print B[:,0].tolist()
+    # print time.time()-start,"seconds elapsed."
 
 
 def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
