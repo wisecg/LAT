@@ -18,7 +18,8 @@ def main():
     what about just loading the wf itself?
     """
 
-    pulserBaselines()
+    # pulserBaselines()
+    skimBaselines()
     # baselineDB()
 
 
@@ -62,8 +63,8 @@ def pulserBaselines():
             numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
             chans = gatTree.GetV1()
             chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-            hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in goodList)
 
+            hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in goodList)
             for iH in hitList:
                 if dsNum==2:
                     wf_downsampled = bltTree.event.GetWaveform(iH)
@@ -86,10 +87,63 @@ def pulserBaselines():
 
     arr = np.asarray(baseDict[chan])
 
-    p1.hist(arr, bins='auto') # arguments are passed to np.histogram
-    p1.title("Channel 608")
+    p1.hist(arr)#, bins='auto') # arguments are passed to np.histogram
+    p1.set_title("Channel 608")
 
     plt.savefig("../plots/ch608-bl.pdf")
+
+
+def skimBaselines():
+
+    dsNum, modNum = 1, 1
+    goodList = ds.GetGoodChanList(dsNum)
+
+    # thing we want to make histos with
+    baseDict = {ch:[] for ch in goodList}
+
+    print "DS-%d" % (dsNum)
+
+    skimChain = TChain("skimTree")
+    skimChain.Add("~/project/bg-lat/latSkimDS%d_*.root" % dsNum)
+
+    theCut = "Entry$<5000 && channel%2==0 && trapENFCal>50" # select high-e subset
+    skimChain.Draw(">>elist", theCut, "entrylist")
+    elist = gDirectory.Get("elist")
+    skimChain.SetEntryList(elist)
+
+    for iList in range(elist.GetN()):
+
+        entry = skimChain.GetEntryNumber(iList);
+        skimChain.LoadTree(entry)
+        skimChain.GetEntry(entry)
+        nChans = skimChain.channel.size()
+        numPass = skimChain.Draw("channel",theCut,"GOFF",1,iList)
+        chans = skimChain.GetV1()
+        chanList = list(set(int(chans[n]) for n in xrange(numPass)))
+
+        hitList = (iH for iH in xrange(nChans) if skimChain.channel.at(iH) in goodList)
+        for iH in hitList:
+            wf = skimChain.MGTWaveforms.at(iH)
+            chan = int(skimChain.channel.at(iH))
+            signal = wl.processWaveform(wf)
+            baseline,_ = signal.GetBaseNoise()
+            baseline = float("%.2f" % baseline) # kill precision to save on memory
+            baseDict[chan].append(baseline)
+            
+
+    fig = plt.figure(figsize=(8,7),facecolor='w')
+    p1 = plt.subplot(111)
+    # for ch in baseDict:
+    ch = 608
+
+    arr = np.asarray(baseDict[chan])
+    print arr
+    return
+
+    p1.hist(arr, bins=50, range=(0,100)) # arguments are passed to np.histogram
+    p1.set_title("Channel 608")
+
+    plt.savefig("../plots/ch608-skim.pdf")
 
 
 
