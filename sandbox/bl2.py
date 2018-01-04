@@ -18,19 +18,57 @@ def main():
 def bkgBaselines():
 
     # generate BL files (run once)
-    # highECut = "channel%2==0 && trapENFCal > 100"
-    # for dsNum in [0,1,2,3,4,5]:
-    #     goodList = ds.GetGoodChanListNew(dsNum)
-    #     parseLAT2(goodList, highECut, dsNum, None, True)
+    highECut = "channel%2==0 && trapENFCal > 100"
+    for dsNum in [2]:
+        goodList = ds.GetGoodChanListNew(dsNum)
+        parseLAT2(goodList, highECut, dsNum, None, True)
+    return
 
-    dsNum = 1
+    dsNum = 0
     goodList = ds.GetGoodChanListNew(dsNum)
     with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
-    # ch = 608
-    # fig = plt.figure(fig)
+    # print baseDict.keys()
+    # [608, 640, 578, 580, 582, 648, 664, 610, 592, 632, 594, 692, 626, 598, 690, 600, 672]
 
+    ch = 640
+    fig = plt.figure(figsize=(9,5),facecolor='w')
+    p1 = plt.subplot(111)
+
+    cmap = plt.cm.get_cmap('hsv',len(baseDict.keys())+1)
+
+    # all baselines
+    ctr = 0
+    # for ch in sorted(baseDict.keys()):
+    for ch in [594,598,600]:
+        p1.plot(baseDict[ch],"o",markersize=1,c=cmap(ctr),label="ch%d"%ch)
+        ctr += 1
+    p1.set_title("DS-%d Baselines" % dsNum)
+    p1.set_xlabel("Entry")
+    p1.set_ylabel("ADC value")
+    p1.legend(loc='best')
+    plt.show(block=False)
+    print "tryna save"
+    plt.savefig("../plots/ds0_bljumps.pdf")
+
+    # histograms
+    # ctr = 0
+    # # for ch in sorted(baseDict.keys()):
+    # for ch in [594,598,600]:
+    #     # p1.cla()
+    #     p1.set_title("DS-%d Baselines" % dsNum)
+    #     p1.set_xlabel("ADC")
+    #     p1.set_ylabel("counts")
+    #     adcLo, adcHi, binsPerADC = min(baseDict[ch]), max(baseDict[ch]), 0.1
+    #     nBins = int((adcHi - adcLo)/binsPerADC)
+    #     p1.hist(baseDict[ch], nBins, range=(40,200), facecolor=cmap(ctr), histtype="step", label="ch%d"%ch)
+    #     ctr += 1
+    #     p1.legend(loc='best')
+    #     plt.show(block=False)
+    #     plt.savefig("../plots/bl_ch%d.pdf" % ch)
+
+    # plt.show()
 
 
 def testParsers():
@@ -221,17 +259,21 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     print "Loaded DS%d, %d entries.  Drawing ..." % (dsNum, latChain.GetEntries())
 
     # run the draw command
-    nPass = latChain.Draw("fitBL:channel",theCut,"goff")
+    nPass = latChain.Draw("fitBL:channel:run:globalTime",theCut,"goff")
     if nPass == 0: return
     arrBL = latChain.GetV1()
     arrCH = latChain.GetV2()
-    arrBL = [float("%.2f" % arrBL[idx]) for idx in range(nPass)]
-    arrCH = [float("%.2f" % arrCH[idx]) for idx in range(nPass)]
+    arrRN = latChain.GetV3()
+    arrGT = latChain.GetV4()
+    arrBL = [float("%.2f" % arrBL[idx]) for idx in range(nPass)] # save precision
+    arrCH = [int(arrCH[idx]) for idx in range(nPass)]
+    arrRN = [int(arrRN[idx]) for idx in range(nPass)]
+    arrGT = [int(arrGT[idx]) for idx in range(nPass)]
 
     # fill the baseDict
     for idx in range(nPass):
-        bl, ch = arrBL[idx], arrCH[idx]
-        baseDict[ch].append(bl)
+        ch, bl, gt, run = arrCH[idx], arrBL[idx], arrGT[idx], arrRN[idx]
+        baseDict[ch].append((bl,gt,run))
 
     print "DS-%d, bkgIdx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start)
 
