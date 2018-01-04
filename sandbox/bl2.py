@@ -1,13 +1,39 @@
 #!/usr/bin/env python
-import sys, imp, time
+import sys, imp, time, json
+gStart = time.time()
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 wl = imp.load_source('waveLibs','../waveLibs.py')
 from ROOT import gDirectory, TFile, TTree, TChain, MGTWaveform, MJTMSWaveform, GATDataSet
 import numpy as np
 import matplotlib.pyplot as plt
+print "import time:",time.time()-gStart
 
 def main():
+
+    # testParsers()
+    bkgBaselines()
+
+
+def bkgBaselines():
+
+    # generate BL files (run once)
+    # highECut = "channel%2==0 && trapENFCal > 100"
+    # for dsNum in [0,1,2,3,4,5]:
+    #     goodList = ds.GetGoodChanListNew(dsNum)
+    #     parseLAT2(goodList, highECut, dsNum, None, True)
+
+    dsNum = 1
+    goodList = ds.GetGoodChanListNew(dsNum)
+    with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
+    baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
+
+    # ch = 608
+    # fig = plt.figure(fig)
+
+
+
+def testParsers():
 
     dsNum = 0
     goodList = ds.GetGoodChanListNew(dsNum)
@@ -17,26 +43,22 @@ def main():
     testCut = "channel%2==0 && trapENFCal > 50"
 
     # functions to walk ROOT files and fill baseDict
-    baseDict = parseGAT(goodList, testCut, dsNum, 1, True)
-    baseDict1 = parseLAT1(goodList, testCut, dsNum, 1, True) # scans wfs directly
-    baseDict2 = parseLAT2(goodList, testCut, dsNum, 1, True) # uses 'fitBL' parameter (fastest)
+    # baseDict = parseGAT(goodList, testCut, dsNum, 1, True)
+    # baseDict1 = parseLAT1(goodList, testCut, dsNum, 1, True) # scans wfs directly
+    # baseDict2 = parseLAT2(goodList, testCut, dsNum, 1, True) # uses 'fitBL' parameter (fastest)
 
     # for ch in goodList:
     #     print "ch",ch
     #     print "  avg:",baseDict1[ch]
     #     print "  fit:",baseDict2[ch]
 
-    # load baseDict from file
-    # baseFile = np.load("../data/parseGAT_ds%d.npz" % dsNum)
-    # baseFile = np.load("../data/parseLAT1_ds%d.npz" % dsNum)
-    # baseFile = np.load("../data/parseLAT2_ds%d.npz" % dsNum)
-    # baseDict = baseFile['arr_0']
-    # print type(baseDict) # hmmm
+    # load baseDict from file (very quick)
+    # with open("../data/parseGAT_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
+    # with open("../data/parseLAT1_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
+    with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
 
-    # for ch in goodList:
-    #     print "ch",ch
-    #     print "  ",baseDict[ch]
-
+    # convert unicode keys back to ints
+    baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
 
 def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
@@ -66,7 +88,7 @@ def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
 
     # loop over files
     for run in runList:
-        start = time.clock()
+        start = time.time()
 
         # load trees
         gatFile = TFile(gatPath+"mjd_run%d.root" % run)
@@ -108,13 +130,15 @@ def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 baseline = float("%.2f" % baseline) # kill precision to save on memory
                 baseDict[chan].append(baseline)
 
-        print "Run %d, %d entries, %d passing cuts. %.2f sec." % (run, gatTree.GetEntries(), eList.GetN(), time.clock()-start)
+        print "Run %d, %d entries, %d passing cuts. %.2f sec." % (run, gatTree.GetEntries(), eList.GetN(), time.time()-start)
 
         gatFile.Close()
         bltFile.Close()
 
     # optionally save the output
-    if saveMe: np.savez("../data/parseGAT_ds%d.npz" % dsNum, baseDict)
+    if saveMe:
+        with open("../data/parseGAT_ds%d.json" % dsNum, 'w') as fOut:
+            json.dump(baseDict, fOut)
 
     return baseDict
 
@@ -126,14 +150,14 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     # this is what we return
     baseDict = {ch:[] for ch in goodList}
 
-    p1Start = time.clock()
+    p1Start = time.time()
 
     # get a sequential list of file names
     latDir, latList = wl.getLATList(dsNum, bkgIdx)
 
     # loop over each file in the list
     for fName in latList:
-        start = time.clock()
+        start = time.time()
 
         # load trees
         latFile = TFile(latDir + "/" + fName)
@@ -166,14 +190,16 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 baseline = float("%.2f" % baseline) # kill precision to save on memory
                 baseDict[chan].append(baseline)
 
-        print "%s, %d entries, %d passing cuts. %.2f sec." % (fName, latTree.GetEntries(), eList.GetN(), time.clock()-start)
+        print "%s, %d entries, %d passing cuts. %.2f sec." % (fName, latTree.GetEntries(), eList.GetN(), time.time()-start)
 
         latFile.Close()
 
     # optionally save the output
-    if saveMe: np.savez("../data/parseLAT1_ds%d.npz" % dsNum, baseDict)
+    if saveMe:
+        with open("../data/parseLAT1_ds%d.json" % dsNum, 'w') as fOut:
+            json.dump(baseDict, fOut)
 
-    print "Total Elapsed:",time.clock() - p1Start
+    print "Total Elapsed:",time.time() - p1Start
     return baseDict
 
 
@@ -184,7 +210,7 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     """
     # this is what we return
     baseDict = {ch:[] for ch in goodList}
-    start = time.clock()
+    start = time.time()
 
     # get a sequential list of file names
     latDir, latList = wl.getLATList(dsNum, bkgIdx)
@@ -192,6 +218,7 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     # load the chain
     latChain = TChain("skimTree")
     [latChain.Add(latDir + "/" + fName) for fName in latList]
+    print "Loaded DS%d, %d entries.  Drawing ..." % (dsNum, latChain.GetEntries())
 
     # run the draw command
     nPass = latChain.Draw("fitBL:channel",theCut,"goff")
@@ -206,10 +233,12 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
         bl, ch = arrBL[idx], arrCH[idx]
         baseDict[ch].append(bl)
 
-    print "DS-%d, bkgIdx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.clock()-start)
+    print "DS-%d, bkgIdx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start)
 
     # optionally save the output
-    if saveMe: np.savez("../data/parseLAT2_ds%d.npz" % dsNum, baseDict)
+    if saveMe:
+        with open("../data/parseLAT2_ds%d.json" % dsNum, 'w') as fOut:
+            json.dump(baseDict, fOut)
 
     return baseDict
 
