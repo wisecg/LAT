@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import sys, imp, time, json
+
+import sys, os, imp, time, json
 gStart = time.time()
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
@@ -7,13 +8,20 @@ wl = imp.load_source('waveLibs','../waveLibs.py')
 from ROOT import gDirectory, TFile, TTree, TChain, MGTWaveform, MJTMSWaveform, GATDataSet
 import numpy as np
 import matplotlib.pyplot as plt
-print "import time:",time.time()-gStart
+print "Imports: %.2f" % (time.time()-gStart)
+
 
 def main():
 
     # testParsers()
     # genBLFiles()
-    bkgBaselines()
+    # bkgBaselines()
+    calBaselines()
+
+def calBaselines():
+
+    dsNum = 1
+    goodList = ds.GetG
 
 
 def bkgBaselines():
@@ -78,26 +86,34 @@ def genBLFiles():
     """ Run parseLAT2 for each dataset and generate a json output file in ../data .
     Time to draw goes as the num. entries in the chains (DS0 and DS5 take ~10mins.)
     """
-    highECut = "channel%2==0 && trapENFCal > 100"
-    for dsNum in [0,1,2,3,4,5]:
+    # highECut = "channel%2==0 && trapENFCal > 100"
+    # for dsNum in [0,1,2,3,4,5]:
+    #     goodList = ds.GetGoodChanListNew(dsNum)
+    #     parseLAT2(goodList, highECut, dsNum, None, True)
+    # return
+
+    # for dsNum,modNum in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
+    for dsNum,modNum in [(5,1),(5,2)]:
+        calCut = "channel%2==0 && trapENFCal > 50 && Entry$ < 10000" # don't need that many events for each calIdx
         goodList = ds.GetGoodChanListNew(dsNum)
-        parseLAT2(goodList, highECut, dsNum, None, True)
-    return
+        for idx in range(wl.getNCalIdxs(dsNum, modNum)):
+            parseLAT2(goodList, calCut, dsNum, idx, True, True, modNum)
 
 
 def testParsers():
 
-    dsNum = 0
+    dsNum = 2
     goodList = ds.GetGoodChanListNew(dsNum)
 
     pulserCut = "EventDC1Bits && channel%2==0 && trapENFCal > 50" # SELECTS pulsers
     highECut = "!EventDC1Bits && channel%2==0 && trapENFCal > 50"
-    testCut = "channel%2==0 && trapENFCal > 50"
+    testCut = "channel%2==0 && trapENFCal > 50 && Entry$ < 100000" # don't need all cal events
 
     # functions to walk ROOT files and fill baseDict
     # baseDict = parseGAT(goodList, testCut, dsNum, 1, True)
     # baseDict1 = parseLAT1(goodList, testCut, dsNum, 1, True) # scans wfs directly
-    # baseDict2 = parseLAT2(goodList, testCut, dsNum, 1, True) # uses 'fitBL' parameter (fastest)
+    # baseDict2 = parseLAT2(goodList, testCut, dsNum, None, True, True) # uses 'fitBL' parameter (fastest)
+    # return
 
     # for ch in goodList:
     #     print "ch",ch
@@ -120,13 +136,13 @@ def testParsers():
     start = time.time()
     timeList = [baseDict[608][idx][1] for idx in range(len(baseDict[608]))]
     print timeList
-    print time.time()-start,"seconds elapsed."
+    print time.time()-start
 
     # 2 - np array, multi-axis slice
-    # start = time.time()
-    # B = np.array(baseDict[608])
-    # print B[:,0].tolist()
-    # print time.time()-start,"seconds elapsed."
+    start = time.time()
+    B = np.array(baseDict[608])
+    print B[:,0].tolist()
+    print time.time()-start
 
 
 def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
@@ -275,7 +291,7 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     return baseDict
 
 
-def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False):
+def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, modNum=None):
     """ Uses "fitBL" variable in LAT files to do a draw command and return an arbitrary object.
         This is able to use a TChain since it doesn't access any custom classes.
         Also it's faster.  But the TCut is global so it's maybe a little less flexible.
@@ -283,17 +299,18 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False):
     # this is what we return
     baseDict = {ch:[] for ch in goodList}
     start = time.time()
+    home = os.path.expanduser('~')
 
     # get a sequential list of file names
     if cal:
-        home = os.path.expanduser('~')
+        calIdx = bkgIdx
         latDir = home + "/project/cal-lat"
-        calList = wl.GetCalFiles(dsNum, bkgIdx) # treat bkgIdx as calIdx
-
+        calList = wl.getCalFiles(dsNum, calIdx, modNum, verbose=False)
+        latList = [f[f.find("latSkim"):] for f in calList ]
+        if bkgIdx is None:
+            print "Scanning",wl.getNCalIdxs(dsNum,module=1),"cal idx's..."
     else:
         latDir, latList = wl.getLATList(dsNum, bkgIdx)
-
-
 
     # load the chain
     latChain = TChain("skimTree")
@@ -315,14 +332,22 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False):
     # fill the baseDict
     for idx in range(nPass):
         ch, bl, gt, run = arrCH[idx], arrBL[idx], arrGT[idx], arrRN[idx]
+        if ch not in goodList: continue
         baseDict[ch].append((bl,gt,run))
 
-    print "DS-%d, bkgIdx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start)
+    print "DS-%d, idx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start)
 
     # optionally save the output
     if saveMe:
-        with open("../data/parseLAT2_ds%d.json" % dsNum, 'w') as fOut:
+        if bkgIdx is None:
+            fName = "%s/project/baselines/parseBL_ds%d_bkg.json" % (home, dsNum)
+        elif not cal:
+            fName = "%s/project/baselines/parseBL_ds%d_%d.json" % (home, dsNum, bkgIdx)
+        else:
+            fName = "%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home, dsNum, calIdx, modNum)
+        with open(fName, 'w') as fOut:
             json.dump(baseDict, fOut)
+        print "Saved json file:",fName
 
     return baseDict
 

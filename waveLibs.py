@@ -8,8 +8,6 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy import signal as sg
 import scipy.special as sp
 # from pysiggen import Detector
-from ROOT import TTree, std, TH1D, TH2D
-from ROOT import MGTWaveform
 import DataSetInfo as ds
 """
 A collection of 'useful' crap.
@@ -23,6 +21,7 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
+    from ROOT import TH1D
     nameStr, titleStr = "", ""
     if Name == None: nameStr = str(random.uniform(1.,2.))
     else: nameStr = str(Name)
@@ -36,6 +35,7 @@ def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=No
 
 
 def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
+    from ROOT import TH2D
     nameStr, titleStr = "", ""
     if Name == None: nameStr = str(random.uniform(1.,2.))
     else: nameStr = str(Name)
@@ -284,6 +284,7 @@ def wfDerivative(signalRaw,sp=10.):
 
 def MGTWFFromNpArray(npArr):
     """ Convert a numpy array back into an MGTWaveform. """
+    from ROOT import MGTWaveform, std
     vec = std.vector("double")()
     for adc in npArr: vec.push_back(adc)
     mgtwf = MGTWaveform()
@@ -507,6 +508,7 @@ class processWaveform:
        -> The easiest workaround is just to set remLo=4 for MS data.
     """
     def __init__(self, wave, remLo=0, remHi=2):
+        from ROOT import MGTWaveform
         # initialize
         self.waveMGT = wave
         self.offset = wave.GetTOffset()
@@ -536,36 +538,6 @@ class processWaveform:
     def GetWaveRaw(self): return self.waveRaw
     def GetWaveBLSub(self): return self.waveBLSub
 
-
-class latBranch:
-    # this was a good idea that ROOT will not play nice with.  Damn you, ROOT.
-
-    def __init__(self, name, outTree, val="double"):
-        self.vec = std.vector(val)
-        # fails -- "TypeError: can not resolve method template call for 'Branch'""
-        self.branch = outTree.Branch(name,self.vec)
-
-    def reset(self,nChans,val=-999):
-        self.vec.assign(nChans,val)
-
-    def assign(self,idx,val):
-        self.vec[idx] = val
-
-    def fill(self):
-        self.branch.Fill()
-
-    # # initialize
-    # waveS0 = std.vector("double")()
-    # bWaveS0 = outTree.Branch("waveS0", waveS0)
-    #
-    # # reset for every tree entry
-    # waveS0.assign(nChans,-999)
-    #
-    # # assign a value for a particular hit
-    # waveS0[iH] = np.sum(waveletYTrans[2:-1,1:-1])
-    #
-    # # fill the branch at event level
-    # bWaveS0.Fill()
 
 """
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
@@ -800,18 +772,20 @@ def getNCalIdxs(dsNum, module):
     return 0
 
 
-def getCalFiles(dsNum, calIdx=None, verbose=False):
+def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
     """ Get a list of all files for a particular dsNum+calIdx.
         This uses the CalInfo object in DataSetInfo.py, NOT the cal records in the DB.
         This will match the cut record entries in the DB.
     """
-
     calInfo = ds.CalInfo()
     calKeys = calInfo.GetKeys(dsNum)
 
     fList = []
     for key in calKeys:
-        print key
+        if modNum is not None and str(modNum) not in key:
+            continue
+
+        if verbose: print key
 
         # number of cal subsets
         nIdx = calInfo.GetIdxs(key)
