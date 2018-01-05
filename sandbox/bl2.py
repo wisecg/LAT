@@ -12,68 +12,77 @@ print "import time:",time.time()-gStart
 def main():
 
     # testParsers()
+    # genBLFiles()
     bkgBaselines()
 
 
 def bkgBaselines():
-
-    # generate BL files (run once)
-    # highECut = "channel%2==0 && trapENFCal > 100"
-    # for dsNum in [2]:
-    #     goodList = ds.GetGoodChanListNew(dsNum)
-    #     parseLAT2(goodList, highECut, dsNum, None, True)
-    # return
 
     dsNum = 2
     goodList = ds.GetGoodChanListNew(dsNum)
     with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
-    # clint, you were testing the new baseDict format with DS2.
-    # 1. you want to remake the pulser plots using e.g. global time
-    # 2. you want to update the other to parsers to use the new format
-
-    timeList = [baseDict[608][idx][1] for idx in range(len(baseDict[608]))]
-
-    return
-
-    ch = 640
     fig = plt.figure(figsize=(9,5),facecolor='w')
     p1 = plt.subplot(111)
-
     cmap = plt.cm.get_cmap('hsv',len(baseDict.keys())+1)
 
-    # all baselines
-    ctr = 0
-    # for ch in sorted(baseDict.keys()):
-    for ch in [594,598,600]:
-        p1.plot(baseDict[ch],"o",markersize=1,c=cmap(ctr),label="ch%d"%ch)
-        ctr += 1
-    p1.set_title("DS-%d Baselines" % dsNum)
-    p1.set_xlabel("Entry")
-    p1.set_ylabel("ADC value")
-    p1.legend(loc='best')
-    plt.show(block=False)
-    print "tryna save"
-    plt.savefig("../plots/ds0_bljumps.pdf")
-
-    # histograms
+    # 1 - baselines vs. time
     # ctr = 0
-    # # for ch in sorted(baseDict.keys()):
-    # for ch in [594,598,600]:
-    #     # p1.cla()
-    #     p1.set_title("DS-%d Baselines" % dsNum)
-    #     p1.set_xlabel("ADC")
-    #     p1.set_ylabel("counts")
-    #     adcLo, adcHi, binsPerADC = min(baseDict[ch]), max(baseDict[ch]), 0.1
-    #     nBins = int((adcHi - adcLo)/binsPerADC)
-    #     p1.hist(baseDict[ch], nBins, range=(40,200), facecolor=cmap(ctr), histtype="step", label="ch%d"%ch)
+    # for ch in sorted(baseDict.keys()):
+    # # for ch in [594,598,600]:
+    #     baseList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch]))]
+    #     timeList = [baseDict[ch][idx][1] for idx in range(len(baseDict[ch]))]
+    #     runsList = [baseDict[ch][idx][2] for idx in range(len(baseDict[ch]))]
+    #
+    #     p1.plot(runsList,baseList,"o",markersize=1,c=cmap(ctr),label="ch%d"%ch)
     #     ctr += 1
-    #     p1.legend(loc='best')
-    #     plt.show(block=False)
-    #     plt.savefig("../plots/bl_ch%d.pdf" % ch)
-
+    # p1.set_title("DS-%d Baselines" % dsNum)
+    # p1.set_xlabel("Entry")
+    # p1.set_ylabel("ADC value")
+    # p1.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0.)
+    # plt.tight_layout()
+    # plt.subplots_adjust(right=0.85)
     # plt.show()
+    # plt.savefig("../plots/ds%d_blHist.pdf" % dsNum)
+
+    # 2 - baseline histograms
+    bpa = 1
+    adcLo, adcHi = 50, 160
+    for ch in baseDict.keys():
+        baseList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch]))]
+        if max(baseList) > adcHi:
+            adcHi = max(baseList) + 10
+        elif min(baseList) < adcLo:
+            adcLo = min(baseList) - 10
+    nBins = int((adcHi-adcLo)/bpa)
+    ctr = 0
+    for ch in sorted(baseDict.keys()):
+    # for ch in [594,598,600]:
+        # p1.cla()
+        baseList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch]))]
+        p1.hist(baseList, nBins, facecolor=cmap(ctr), histtype="step", label="ch%d"%ch, range=(60,160))
+        ctr += 1
+    p1.legend(loc='best')
+    p1.set_title("DS-%d Baselines" % dsNum)
+    p1.set_xlabel("ADC")
+    p1.set_ylabel("counts")
+    p1.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0.)
+    plt.tight_layout()
+    plt.subplots_adjust(right=0.85)
+        # plt.savefig("../plots/bl_ds%d_ch%d.pdf" % (dsNum,ch))
+    plt.show()
+
+
+def genBLFiles():
+    """ Run parseLAT2 for each dataset and generate a json output file in ../data .
+    Time to draw goes as the num. entries in the chains (DS0 and DS5 take ~10mins.)
+    """
+    highECut = "channel%2==0 && trapENFCal > 100"
+    for dsNum in [0,1,2,3,4,5]:
+        goodList = ds.GetGoodChanListNew(dsNum)
+        parseLAT2(goodList, highECut, dsNum, None, True)
+    return
 
 
 def testParsers():
@@ -187,7 +196,9 @@ def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 signal = wl.processWaveform(wf)
                 baseline,_ = signal.GetBaseNoise()
                 baseline = float("%.2f" % baseline) # kill precision to save on memory
-                baseDict[chan].append(baseline)
+                globalTime = int(latTree.globalTime.fSec)
+                run = int(latTree.run)
+                baseDict[chan].append(baseline,globalTime,run)
 
         print "Run %d, %d entries, %d passing cuts. %.2f sec." % (run, gatTree.GetEntries(), eList.GetN(), time.time()-start)
 
@@ -247,7 +258,9 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 signal = wl.processWaveform(wf)
                 baseline,_ = signal.GetBaseNoise()
                 baseline = float("%.2f" % baseline) # kill precision to save on memory
-                baseDict[chan].append(baseline)
+                globalTime = int(latTree.globalTime.fSec)
+                run = int(latTree.run)
+                baseDict[chan].append(baseline,globalTime,run)
 
         print "%s, %d entries, %d passing cuts. %.2f sec." % (fName, latTree.GetEntries(), eList.GetN(), time.time()-start)
 
@@ -262,7 +275,7 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     return baseDict
 
 
-def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
+def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False):
     """ Uses "fitBL" variable in LAT files to do a draw command and return an arbitrary object.
         This is able to use a TChain since it doesn't access any custom classes.
         Also it's faster.  But the TCut is global so it's maybe a little less flexible.
@@ -272,11 +285,19 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     start = time.time()
 
     # get a sequential list of file names
-    latDir, latList = wl.getLATList(dsNum, bkgIdx)
+    if cal:
+        home = os.path.expanduser('~')
+        latDir = home + "/project/cal-lat"
+        calList = wl.GetCalFiles(dsNum, bkgIdx) # treat bkgIdx as calIdx
+
+    else:
+        latDir, latList = wl.getLATList(dsNum, bkgIdx)
+
+
 
     # load the chain
     latChain = TChain("skimTree")
-    [latChain.Add(latDir + "/" + fName) for fName in latList]
+    for fName in latList: latChain.Add(latDir + "/" + fName)
     print "Loaded DS%d, %d entries.  Drawing ..." % (dsNum, latChain.GetEntries())
 
     # run the draw command
