@@ -23,7 +23,7 @@ if __name__ == "__main__":
     threshDict = {}
     dummyExposure = 1.
     for bkgidx in range(nRanges[0], nRanges[1]+1):
-        tD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+        tD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
         # Get Analysis Threshold Dictionary here
         # Get Exposure Dictionary here
         for idx, ch in enumerate(chList):

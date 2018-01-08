@@ -117,5 +117,5 @@ if __name__ == "__main__":
                 print "NEGATIVE!", idx, ch, values
 
         # Finally fill DB here if all values look good
-        # wl.setDBCalRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=False)
-        # wl.setDBCalRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=True)
+        # wl.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=False)
+        # wl.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=True)

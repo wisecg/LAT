@@ -130,7 +130,7 @@ def GetAnaylsisThreshold(dsNum=2):
                 bkgDict[bkgidx][ch].append(f1.Get(histName).GetBinContent(xbin))
 
     for bkgidx in bkgDict.keys():
-        tD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+        tD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
         for ch in bkgDict[bkgidx].keys():
             x = np.array(bkgDict[bkgidx][ch])
             noWall = True

@@ -221,25 +221,25 @@ class CalInfo:
     def GetCalIdx(self,key,run):
         """ Look up the calibration index corresponding to a particular run. """
         if key not in self.covIdx:
-            print "Key %s not found in master list!" % key
+            print("Key %s not found in master list!" % key)
             return None
         else:
             idx = np.searchsorted(self.covIdx[key], run)
             if idx not in self.master[key]:
-                print "Run %d out of range of key %s.  calIdx was %d" % (run, key, idx)
+                print("Run %d out of range of key %s.  calIdx was %d" % (run, key, idx))
                 return None
             lst = self.master[key][idx]
             lo, hi = lst[1], lst[2]
             if lo <= run <= hi:
                 return idx
             else:
-                print "Run %d not found with key %s, lo=%d hi=%d" % (run,key,lo,hi)
+                print("Run %d not found with key %s, lo=%d hi=%d" % (run,key,lo,hi))
                 return None
 
     def GetCalList(self,key,idx,runLimit=None):
         """ Generate a list of runs for a given calibration index. """
         if key not in self.master:
-            print "Key %s not found in master list!" % key
+            print("Key %s not found in master list!" % key)
             return None
         else:
             runList = []
@@ -769,7 +769,7 @@ def GetBkgIdx(dsNum, runNum):
     try:
         return bkgidx[0]
     except:
-        print "Run %d not found in Dataset, returning -1"%(runNum)
+        print("Run %d not found in Dataset, returning -1"%(runNum))
         return -1
 
 
@@ -823,7 +823,7 @@ def GetGoodChanList(dsNum, dType = None):
     for badID in badIDs:
         for ch, detID in DetID[dsNum].iteritems():
             if badID == detID: badChans.append(ch)
-    # print sorted(badChans)
+    # print(sorted(badChans))
 
     # high-gain channels, without pulser monitors, without bad+veto channels.
     goodList = []
@@ -873,7 +873,7 @@ def GetThreshDicts(dsNum, threshCut=0.9):
     import waveLibs as wl
     goodRuns, badRuns = {}, {}
     for idx in range(1, dsMap[dsNum]+1):
-        threshDict = wl.getDBCalRecord("thresh_ds%d_bkgidx%d"%(dsNum, idx))
+        threshDict = wl.getDBRecord("thresh_ds%d_bkgidx%d"%(dsNum, idx))
         runRange = np.transpose(np.array([bkgRunsDS[dsNum][idx][::2], bkgRunsDS[dsNum][idx][1::2]]))
         for ch, vals in threshDict.iteritems():
             if vals[0] <= threshCut:
@@ -965,7 +965,7 @@ def getExposureDict(dsNum, modNum, dPath="./data", verbose=False):
     # knock off the first element (it's 0).  Now expDict is done
     for ch in expDict:
         if expDict[ch][0] > 0:
-            print "ERROR, WTF"
+            print("ERROR, WTF")
             exit(1)
         expDict[ch].pop(0)
 
@@ -978,11 +978,11 @@ def getExposureDict(dsNum, modNum, dPath="./data", verbose=False):
 
     # now a final cross check
     if verbose:
-        print "DS%d, M%d" % (dsNum, modNum)
+        print("DS%d, M%d" % (dsNum, modNum))
     for ch in chList:
 
         if sum(expDict[ch]) > 0 and len(summaryDict[ch]) == 0:
-            print "That ain't shoulda happened"
+            print("That ain't shoulda happened")
             exit(1)
         elif len(summaryDict[ch]) == 0:
             continue;
@@ -991,6 +991,6 @@ def getExposureDict(dsNum, modNum, dPath="./data", verbose=False):
         diff = ((ltResult-mySum)/aMass) * 86400
 
         if verbose:
-            print "%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff)
+            print("%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff))
 
     return expDict

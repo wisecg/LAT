@@ -201,7 +201,7 @@ def channelSelection():
         for bkgIdx in range(nBkg+1):
 
             # get the exposure and efficiency
-            thD = wl.getDBCalRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
+            thD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
 
             chThreshList = (ch for ch in chList if ch in thD.keys()) # python generator expression
             for ch in chThreshList:
@@ -242,9 +242,9 @@ def channelSelection():
                 calRunLo = calInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][1]
                 calRunHi = calInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][2]
 
-                fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
-                rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
-                wfD = wl.getDBCalRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
+                fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnD = wl.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
+                wfD = wl.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
 
                 goodFS = True if fsD!=0 else False
                 goodRN = True if rnD!=0 else False

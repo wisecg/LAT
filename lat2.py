@@ -96,7 +96,7 @@ def main(argv):
 
     if fCal:
         rec = calibrateRuns(dsNum,subNum,fPaths,fBat,fPlt,fRaw)
-        wl.setDBCalRecord(rec,fFor)
+        wl.setDBRecord(rec,fFor)
 
     if fUpd:
         updateFile(dsNum, fCalPath)
@@ -356,8 +356,8 @@ def testDB():
     Do database stuff. """
     # wl.setDBCalTable()
     # wl.getDBKeys()
-    # wl.getDBCalRecord("ds1_idx0")
-    # wl.getDBCalRecord("ds1_calIdx")
+    # wl.getDBRecord("ds1_idx0")
+    # wl.getDBRecord("ds1_calIdx")
     # wl.delDBRecord("ds1_idx0")
     # wl.getDBCalTable(5)
     # wl.getDBRunCoverage(1,9999)

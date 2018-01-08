@@ -729,7 +729,7 @@ def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
     if calIdx==None:
         for idx in calIdxs:
             print "======================================"
-            rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, idx) )
+            rec = wl.getDBRecord( "ds%d_idx%d" % (dsNum, idx) )
 
             if rec==None or forceUpdate:
                 if forceUpdate:
@@ -744,7 +744,7 @@ def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
             print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
             return
 
-        rec = wl.getDBCalRecord( "ds%d_idx%d" % (dsNum, calIdx) )
+        rec = wl.getDBRecord( "ds%d_idx%d" % (dsNum, calIdx) )
         if rec==None or forceUpdate:
             if forceUpdate:
                 # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, calIdx) )

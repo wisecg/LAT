@@ -40,7 +40,7 @@ def GetAnaylsisThreshold(dsNum=3):
                 bkgDict[bkgidx][ch].append(f1.Get(histName).GetBinContent(xbin))
 
     for bkgidx in bkgDict.keys():
-        tD = wl.getDBCalRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
+        tD = wl.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
         athreshDict[bkgidx] = {}
         for ch in bkgDict[bkgidx].keys():
             if ch not in tD.keys():
@@ -88,7 +88,7 @@ def GenerateCorrectedSpectra(dsNum = 1, dType = 'isNat'):
         UncorrTotalSpec = ROOT.TH1D('DS{}_{}_UnCorr'.format(dsNum, dType),'',bins,lower,upper)
         for bkgidx in range(nRanges[0], nRanges[1]+1):
             # Get Threshold dictionary
-            tD = wl.getDBCalRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
+            tD = wl.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
             specIDXDict[bkgidx] = {}
 
             # Get Analysis Threshold Dictionary and Exposure Dictionary here

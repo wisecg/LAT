@@ -77,9 +77,9 @@ def main(argv):
         runCut = "&&run>=%d&&run<=%d" % (cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][1], cInfo.master["ds%d_m%d"%(dsNum,modNum)][subNum][2])
 
         # DB style
-        fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
-        rnD = wl.getDBCalRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
-        bcD = wl.getDBCalRecord("bcMax_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+        fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+        rnD = wl.getDBRecord("riseNoise_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
+        bcD = wl.getDBRecord("bcMax_ds%d_idx%d_m%d_Peak"%(dsNum,subNum,modNum))
 
         # Get threshold info
         # goodRuns,badRuns,goodRunSigmas = ds.GetThreshDicts(dsNum)

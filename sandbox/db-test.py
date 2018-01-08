@@ -159,7 +159,7 @@ def wfStdDBEntry():
 
                 # actually update the DB
                 if updateDB:
-                    wl.setDBCalRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+                    wl.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
                     print "DB updated."
 
                 wfStdVals = {}
@@ -181,7 +181,7 @@ def wfStdDBEntry():
         for ch in sorted(wfStdVals):
             print ch, wfStdVals[ch]
         if updateDB:
-            wl.setDBCalRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+            wl.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
             print "DB updated."
 
 
@@ -269,7 +269,7 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
     for subNum in range(idxMin,idxMax+1):
 
         runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
-        fsD = wl.getDBCalRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
+        fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
 
         for ch in chList:
 
@@ -322,9 +322,9 @@ def testWLFunctions():
 
     # wl.setDBCalTable()
     # wl.getDBKeys()
-    # wl.getDBCalRecord("ds1_idx0")
-    # wl.getDBCalRecord("ds1_calIdx")
-    # wl.getDBCalRecord("fitSlo_ds1_idx55_m1_170_210")
+    # wl.getDBRecord("ds1_idx0")
+    # wl.getDBRecord("ds1_calIdx")
+    # wl.getDBRecord("fitSlo_ds1_idx55_m1_170_210")
     # wl.delDBRecord("ds1_idx0")
     # wl.getDBCalTable(5)
     # wl.getDBRunCoverage(1,9999)

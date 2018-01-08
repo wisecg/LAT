@@ -8,27 +8,207 @@ wl = imp.load_source('waveLibs','../waveLibs.py')
 from ROOT import gDirectory, TFile, TTree, TChain, MGTWaveform, MJTMSWaveform, GATDataSet
 import numpy as np
 import matplotlib.pyplot as plt
-print "Imports: %.2f" % (time.time()-gStart)
-
+import scipy.stats as stats
+from scipy.optimize import curve_fit
+home = os.path.expanduser('~')
+# print("Imports: %.2f" % (time.time()-gStart))
 
 def main():
 
     # testParsers()
     # genBLFiles()
     # bkgBaselines()
-    calBaselines()
+    # baselinesVsTime()
+    calBLFit()
 
-def calBaselines():
 
-    dsNum = 1
-    goodList = ds.GetG
+def calRunIdxLookup():
+    cInfo = 
+
+
+def calBLFit():
+
+    dsNum, modNum = 1, 1
+    goodList = ds.GetGoodChanListNew(dsNum)
+    with open("%s/project/baselines/parseBL_ds%d_bkg.json" % (home, dsNum), 'r') as fp:
+        baseDict = json.load(fp)
+    baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
+
+    nCal = wl.getNCalIdxs(dsNum,module=modNum)
+    calDicts = {}
+    for calIdx in range(nCal):
+        with open("%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home,dsNum,calIdx,modNum), 'r') as fp:
+            calDict = json.load(fp)
+        calDicts[calIdx] = {ch: calDict[u'%d'%ch] for ch in goodList}
+
+    fig = plt.figure(figsize=(9,5), facecolor='w')
+    p1 = plt.subplot(111)
+
+    calIdx = 0
+    calDict = calDicts[0]
+
+    # loop over channels (interactive to display plots)
+    intMode = True
+    iCh = -1
+    while True:
+        iCh += 1
+        if intMode==True and iCh != 0:
+            value = raw_input()
+            if value=='q': break        # quit
+            if value=='p': iCh -= 2   # go to previous
+            if (value.isdigit()):
+                iCh = int(value)      # go to channel number
+        if iCh >= len(goodList): break
+        ch = goodList[iCh]
+
+        print "DS%d, ch %d" % (dsNum, ch)
+
+        # get calibration baseline data for this channel
+        calBL = [calDict[ch][idx][0] for idx in range(len(calDict[ch]))]
+        calRuns = [calDict[ch][idx][2] for idx in range(len(calDict[ch]))]
+        if len(calBL)==0:
+            print "Ch %d ain't got no entries" % ch
+            continue
+
+        # get background baseline data matching the cal run
+        calRun = calRuns[0]
+
+        
+        
+        
+        # runLo, runHi = 
+
+
+        # find mode
+        calInt = [int(bl) for bl in calBL]
+        xMode = float(stats.mode(calInt)[0])
+        if not -8000 < int(xMode) < 8000:
+            print "Ch %d, mode is bad: %d" % (ch, xMode)
+            continue
+
+        # narrow window and estimate spread
+        xLo, xHi, bpa = xMode - 25, xMode + 5, 0.2
+        nBins = int((xHi-xLo)/bpa)
+        h1, x1 = np.histogram(np.asarray(calBL), bins=nBins, range=(xLo, xHi))
+        x1 = x1[:-1]
+        hInt = [h1[0]]
+        for i in range(1, len(h1)):
+            hInt.append( hInt[i-1] + h1[i] )
+        hInt = np.asarray(hInt)
+        idxLo = np.where(hInt >= 0.4 * hInt[-1])
+        idxHi = np.where(hInt >= 0.95 * hInt[-1])
+        adcLo = x1[idxLo][0]
+        adcHi = x1[idxHi][0]
+        sig = adcHi - adcLo
+
+        # run fit and compute reduced chi square
+        pGuess = [50., 1., 1., xMode, sig]
+        pFit,_ = curve_fit(crystalball, x1, h1, p0=pGuess)
+        fitVals = crystalball(x1,*pFit)
+        fitChi2 = np.sum(np.square(fitVals - h1)) / (len(h1) - len(pFit))
+
+        # -- make figure --
+        p1.cla()
+        p1.plot(x1,h1,ls="steps",color='blue',label='data')
+
+        # p1.axvline(xMode,color='red')
+        # p1.axvline(adcLo,color='green')
+        # p1.axvline(adcHi,color='green')
+
+        guessVals = crystalball(x1,*pGuess)
+        p1.plot(x1,guessVals,color='orange',label='guess',alpha=0.7)
+
+        from scipy.interpolate import spline
+        xnew = np.linspace(x1.min(),x1.max(),len(x1)*10)
+        fitSmooth = spline(x1,fitVals,xnew)
+        p1.plot(xnew,fitSmooth,color='red',label=r'result, $\chi^2 = %.2f$' % fitChi2)
+
+        p1.set_title("DS %d, ch %d" % (dsNum, ch))
+        p1.set_xlabel("ADC")
+        p1.set_ylabel("Counts")
+        p1.legend(loc=2)
+
+        plt.tight_layout()
+        plt.pause(0.0001)
+
+
+def crystalball(x,N,beta,m,mu,sig):
+    """ Scipy's crystalball function (doesn't exist in python2.)
+    https://github.com/scipy/scipy/blob/59cabc8/scipy/stats/_continuous_distns.py#L5798
+    """
+    from scipy._lib._util import _lazywhere
+    x = (x - mu)/sig
+    rhs = lambda x, beta, m: np.exp(-x**2 / 2)
+    lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
+    return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+
+
+def baselinesVsTime():
+
+    dsNum, modNum = 1, 1
+    goodList = ds.GetGoodChanListNew(dsNum)
+    with open("%s/project/baselines/parseBL_ds%d_bkg.json" % (home, dsNum), 'r') as fp:
+        baseDict = json.load(fp)
+    baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
+
+    nCal = wl.getNCalIdxs(dsNum,module=modNum)
+    calDicts = {}
+    for calIdx in range(nCal):
+        with open("%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home,dsNum,calIdx,modNum), 'r') as fp:
+            calDict = json.load(fp)
+        calDicts[calIdx] = {ch: calDict[u'%d'%ch] for ch in goodList}
+
+    ch = 592
+
+    fig = plt.figure(figsize=(9,5), facecolor='w')
+    p1 = plt.subplot(111)
+    # plt.show(block=False)
+
+    # loop over channels (interactive to display plots)
+    iCh = -1
+    while True:
+        iCh += 1
+        if iCh != 0:
+            value = raw_input()
+            if value=='q': break
+        if iCh > len(goodList): break
+        ch = goodList[iCh]
+
+        print "DS%d, ch %d" % (dsNum, ch)
+
+        p1.cla()
+
+        bList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch]))]
+        rList = [baseDict[ch][idx][2] for idx in range(len(baseDict[ch]))]
+
+        bMean = np.mean(bList)
+        p1.set_ylim([bMean - 300, bMean + 300])
+
+        p1.plot(rList,bList,"o",markersize=1,color='blue',label="bkg")
+
+        for calIdx in range(nCal):
+            calDict = calDicts[calIdx]
+            baseListC = [calDict[ch][idx][0] for idx in range(len(calDict[ch])) if calDict[ch][idx][0] > -8000]
+            runsListC = [calDict[ch][idx][2] for idx in range(len(calDict[ch])) if calDict[ch][idx][0] > -8000]
+
+            cLabel = "Cal" if calIdx==0 else None
+            p1.plot(runsListC, baseListC, "o", markersize=1, color='red', label=cLabel)
+
+
+        p1.set_title("DS%d, Ch %d" % (dsNum, ch))
+        p1.set_xlabel("Run")
+        p1.set_ylabel("ADC value")
+        p1.legend(loc='best')
+
+        plt.tight_layout()
+        plt.pause(0.00001)
 
 
 def bkgBaselines():
 
     dsNum = 2
     goodList = ds.GetGoodChanListNew(dsNum)
-    with open("../data/parseLAT2_ds%d.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
+    with open("../data/parseLAT2_ds%d_bkg.json" % dsNum, 'r') as fp: baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
     fig = plt.figure(figsize=(9,5),facecolor='w')
@@ -69,7 +249,7 @@ def bkgBaselines():
     # for ch in [594,598,600]:
         # p1.cla()
         baseList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch]))]
-        p1.hist(baseList, nBins, facecolor=cmap(ctr), histtype="step", label="ch%d"%ch, range=(60,160))
+        p1.hist(baseList, nBins, facecolor=cmap(ctr), histtype="step", label="ch%d"%ch, range=(60,160)) # in plt.plot it's ls='steps'
         ctr += 1
     p1.legend(loc='best')
     p1.set_title("DS-%d Baselines" % dsNum)
@@ -135,14 +315,14 @@ def testParsers():
     # 1 - list comprehension (faster)
     start = time.time()
     timeList = [baseDict[608][idx][1] for idx in range(len(baseDict[608]))]
-    print timeList
-    print time.time()-start
+    print(timeList)
+    print(time.time()-start)
 
     # 2 - np array, multi-axis slice
     start = time.time()
     B = np.array(baseDict[608])
-    print B[:,0].tolist()
-    print time.time()-start
+    print(B[:,0].tolist())
+    print(time.time()-start)
 
 
 def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
@@ -216,7 +396,7 @@ def parseGAT(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 run = int(latTree.run)
                 baseDict[chan].append(baseline,globalTime,run)
 
-        print "Run %d, %d entries, %d passing cuts. %.2f sec." % (run, gatTree.GetEntries(), eList.GetN(), time.time()-start)
+        print("Run %d, %d entries, %d passing cuts. %.2f sec." % (run, gatTree.GetEntries(), eList.GetN(), time.time()-start))
 
         gatFile.Close()
         bltFile.Close()
@@ -278,7 +458,7 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
                 run = int(latTree.run)
                 baseDict[chan].append(baseline,globalTime,run)
 
-        print "%s, %d entries, %d passing cuts. %.2f sec." % (fName, latTree.GetEntries(), eList.GetN(), time.time()-start)
+        print("%s, %d entries, %d passing cuts. %.2f sec." % (fName, latTree.GetEntries(), eList.GetN(), time.time()-start))
 
         latFile.Close()
 
@@ -287,7 +467,7 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
         with open("../data/parseLAT1_ds%d.json" % dsNum, 'w') as fOut:
             json.dump(baseDict, fOut)
 
-    print "Total Elapsed:",time.time() - p1Start
+    print( "Total Elapsed:",time.time() - p1Start)
     return baseDict
 
 
@@ -299,7 +479,6 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, mod
     # this is what we return
     baseDict = {ch:[] for ch in goodList}
     start = time.time()
-    home = os.path.expanduser('~')
 
     # get a sequential list of file names
     if cal:
@@ -308,14 +487,14 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, mod
         calList = wl.getCalFiles(dsNum, calIdx, modNum, verbose=False)
         latList = [f[f.find("latSkim"):] for f in calList ]
         if bkgIdx is None:
-            print "Scanning",wl.getNCalIdxs(dsNum,module=1),"cal idx's..."
+            print("Scanning %d cal idx's..." % wl.getNCalIdxs(dsNum,module=1))
     else:
         latDir, latList = wl.getLATList(dsNum, bkgIdx)
 
     # load the chain
     latChain = TChain("skimTree")
     for fName in latList: latChain.Add(latDir + "/" + fName)
-    print "Loaded DS%d, %d entries.  Drawing ..." % (dsNum, latChain.GetEntries())
+    print("Loaded DS%d, %d entries.  Drawing ..." % (dsNum, latChain.GetEntries()))
 
     # run the draw command
     nPass = latChain.Draw("fitBL:channel:run:globalTime",theCut,"goff")
@@ -335,7 +514,7 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, mod
         if ch not in goodList: continue
         baseDict[ch].append((bl,gt,run))
 
-    print "DS-%d, idx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start)
+    print("DS-%d, idx" % dsNum, bkgIdx,"%d entries passing cuts. %.2f sec." % (nPass, time.time()-start))
 
     # optionally save the output
     if saveMe:
@@ -347,7 +526,7 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, mod
             fName = "%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home, dsNum, calIdx, modNum)
         with open(fName, 'w') as fOut:
             json.dump(baseDict, fOut)
-        print "Saved json file:",fName
+        print("Saved json file:",fName)
 
     return baseDict
 

@@ -129,7 +129,7 @@ def evalXGaus(x,mu,sig,tau):
     if all(tmp < limit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
     else:
-        print "Exceeded limit ..."
+        print("Exceeded limit ...")
         # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
@@ -167,7 +167,7 @@ def th2Array(hist,xbins,xlo,xhi,ybins,ylo,yhi):
     """
     bx1,bx2,by1,by2 = Get2DBins(hist,xlo,xhi,ylo,yhi)
 
-    print "xbins %d  bx1 %d  bx2 %d" % (xbins,bx1,bx2)
+    print("xbins %d  bx1 %d  bx2 %d" % (xbins,bx1,bx2))
 
     arr = np.zeros((xbins,ybins),dtype=float)
     for i in range(bx1-1, bx2-1): # it's zero indexed
@@ -202,7 +202,7 @@ def findBaseline(signalRaw):
     try:
         c,_ = curve_fit(gauss_function, bins[:-1], hist, p0=[np.amax(hist), bins[np.argmax(hist)], 5])
     except:
-        print "baseline fit failed! using simpler method."
+        print("baseline fit failed! using simpler method.")
         c[2],_,c[1] = baselineParameters(signalRaw)
     mu, std = c[1], c[2]
     return mu, std
@@ -580,7 +580,7 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     #     wf = np.copy(detector.MakeSimWaveform(r, phi, z, ene, t0, wf_length, h_smoothing=smooth))
     #     ax0.plot(timesteps, wf, color = trap_constant_colors[idx],  label = "%0.1f us trapping" % trap_rc )
     #     ax1.plot(timesteps, wf_notrap - wf, color = trap_constant_colors[idx])
-    #     print "amplitude diff: %f" % ( (np.amax(wf_notrap) - np.amax(wf)) /  np.amax(wf_notrap) )
+    #     print("amplitude diff: %f" % ( (np.amax(wf_notrap) - np.amax(wf)) /  np.amax(wf_notrap) ))
 
     return wf_notrap, timesteps
 """
@@ -594,15 +594,15 @@ def getDBKeys(removeDups=False):
         d = dict(item)
         for keyType, key in d.iteritems():
             if type(key)==unicode:
-                print key
+                print(key)
                 keys.append(key)
 
     duplicates = set([x for x in keys if keys.count(x) > 1])
     if len(duplicates) > 0:
-        print "Duplicate entries found:"
-        print duplicates
+        print("Duplicate entries found:")
+        print(duplicates)
         if removeDups:
-            print "Removing all duplicates..."
+            print("Removing all duplicates...")
             for dup in duplicates: delDBRecord(dup)
 
     return keys
@@ -614,18 +614,23 @@ def delDBRecord(key):
     pars = db.Query()
 
     if len( calDB.search(pars.key == key)) == 0:
-        print "Record '%s' doesn't exist." % key
+        print("Record '%s' doesn't exist." % key)
     else:
-        print "Removing key:",key
+        print("Removing key:",key)
         calDB.remove(pars.key==key)
 
+"""
+OBSOLETE:
+Calibration info is now stored in DataSetInfo.py::CalInfo, not the DB.
+Don't use the DB for information on cal runs/ranges.
+Too bad, this was a buncha work ...
 
 def setDBCalTable(forceUpdate=False, startOver=False):
-    """ Create/update the lookup table for calibration records.
-    Right now, we're not distinguishing between M1 and M2 calibrations,
-    and hoping we get enough entries in the TChains to calibrate all channels.
-    This also avoids having to add fields like "m1, m2, m1m2" to the input list in data/calRanges.txt .
-    """
+    # Create/update the lookup table for calibration records.
+    # Right now, we're not distinguishing between M1 and M2 calibrations,
+    # and hoping we get enough entries in the TChains to calibrate all channels.
+    # This also avoids having to add fields like "m1, m2, m1m2" to the input list in data/calRanges.txt .
+
     calDB = db.TinyDB('calDB.json')
     if startOver: calDB.purge() # be careful ...
     pars = db.Query()
@@ -640,14 +645,14 @@ def setDBCalTable(forceUpdate=False, startOver=False):
             key = "ds%s_calIdx" % line
 
             if len( calDB.search(pars.key == key) )==0:
-                print "Record '%s' doesn't exist." % key
+                print("Record '%s' doesn't exist." % key)
                 if forceUpdate:
-                    print "Adding this element: ",key,vals
+                    print("Adding this element: ",key,vals)
                     calDB.insert({'key':key,'vals':vals})
             else:
-                print "Record '%s' exists." % key
+                print("Record '%s' exists." % key)
                 if forceUpdate:
-                    print "Overwriting it. Adding this element:",key,vals
+                    print("Overwriting it. Adding this element:",key,vals)
                     calDB.update({'key':key,'vals':vals}, pars.key==key)
 
             key, idx, vals = " ", -1, {}
@@ -659,7 +664,7 @@ def setDBCalTable(forceUpdate=False, startOver=False):
 
 
 def getDBCalTable(dsNum,verbose=False):
-    """ Return a dict for a dataset. """
+    # Return a dict for a dataset.
     calDB = db.TinyDB('calDB.json')
     pars = db.Query()
 
@@ -669,28 +674,28 @@ def getDBCalTable(dsNum,verbose=False):
     recList = calDB.search(pars.key==key)
     nRec = len(recList)
     if nRec==0:
-        print "Record %s doesn't exist in the DB." % key
+        print("Record %s doesn't exist in the DB." % key)
     elif nRec==1:
-        print "Found record.\n%s" % key
+        print("Found record.\n%s" % key)
         rec = recList[0]['vals']
 
         # sort the TinyDB string keys numerically (obvs only works for integer keys)
         for key in sorted([int(k) for k in rec]):
-            if verbose: print key, rec[u'%d' % key]
+            if verbose: print(key, rec[u'%d' % key])
             result[key] = rec[u'%d' % key]
         return result
 
     else:
-        print "Found multiple records for '%s'.  Need to do some cleanup!!"
+        print("Found multiple records for '%s'.  Need to do some cleanup!!")
         for rec in recList:
             if verbose:
                 for key in sorted([int(k) for k in rec]):
-                    print key, rec[u'%d' % key]
-                print " "
+                    print(key, rec[u'%d' % key])
+                print(" ")
 
 
 def getDBRunCoverage(dsNum, runNum):
-    """ Figure out which calIdx a run is in. """
+    # Figure out which calIdx a run is in.
 
     found, calIdx = False, -1
     calTable = getDBCalTable(dsNum)
@@ -699,16 +704,16 @@ def getDBRunCoverage(dsNum, runNum):
             found, calIdx = True, key
             break
     if not found:
-        print "Couldn't find run coverage for run", runNum
+        print("Couldn't find run coverage for run", runNum)
     else:
-        print "Run %d is in calIdx %d" % (runNum, calIdx)
+        print("Run %d is in calIdx %d" % (runNum, calIdx))
         return calIdx
+"""
 
-
-def setDBCalRecord(entry, forceUpdate=False, dbFile="calDB.json"):
+def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json"):
     """ Adds entries to the DB. Checks for duplicate records.
-        The format of 'entry' should be a nested dict:
-        myEntry = {"key":key, "vals":vals}
+    The format of 'entry' should be a nested dict:
+    myEntry = {"key":key, "vals":vals}
     """
     calDB = db.TinyDB(dbFile)
     pars = db.Query()
@@ -716,21 +721,20 @@ def setDBCalRecord(entry, forceUpdate=False, dbFile="calDB.json"):
     recList = calDB.search(pars.key==key)
     nRec = len(recList)
     if nRec == 0:
-        print "Record '%s' doesn't exist in the DB  Adding it ..." % key
+        print("Record '%s' doesn't exist in the DB  Adding it ..." % key)
         calDB.insert(entry)
     elif nRec == 1:
         prevRec = recList[0]['vals']
         if prevRec!=vals:
-            print "An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate)
+            print("An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate))
             if forceUpdate:
-                print "Updating record: ",key
+                print("Updating record: ",key)
                 calDB.update(entry, pars.key==key)
     else:
-        print "WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!"
+        print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
 
-
-def getDBCalRecord(key, verbose=False, calDB=None, pars=None):
-    """ View a particular calibration record. """
+def getDBRecord(key, verbose=False, calDB=None, pars=None):
+    """ View a particular database record. """
 
     if calDB is None: calDB = db.TinyDB('calDB.json')
     if pars is None: pars = db.Query()
@@ -738,29 +742,24 @@ def getDBCalRecord(key, verbose=False, calDB=None, pars=None):
     recList = calDB.search(pars.key == key)
     nRec = len(recList)
     if nRec == 0:
-        if verbose: print "Record %s doesn't exist" % key
+        if verbose: print("Record %s doesn't exist" % key)
         return 0
     elif nRec == 1:
-        if verbose: print "Found record:\n%s" % key
+        if verbose: print("Found record:\n%s" % key)
         rec = recList[0]['vals']  # whole record
 
         # sort the TinyDB string keys numerically (obvs only works for integer keys)
         result = {}
         for key in sorted([int(k) for k in rec]):
-            if verbose: print key, rec[u'%d' % key]
+            if verbose: print(key, rec[u'%d' % key])
             result[key] = rec[u'%d' % key]
         return result
     else:
-        print "WARNING: Found multiple records for key: %s.  Need to do some cleanup!" % key
+        print("WARNING: Found multiple records for key: %s.  Need to do some cleanup!" % key)
         for rec in recList:
             for key in sorted([int(k) for k in rec]):
-                print key, rec[u'%d' % key]
-            print " "
-
-
-# def setDBCutRecord(key):
-# def getDBCutRecord(key):
-
+                print(key, rec[u'%d' % key])
+            print(" ")
 
 def getNCalIdxs(dsNum, module):
     """ Access the CalInfo object in DataSetInfo.py and tell me how many calIdx's are in a given dataset. """
@@ -785,7 +784,7 @@ def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
         if modNum is not None and str(modNum) not in key:
             continue
 
-        if verbose: print key
+        if verbose: print(key)
 
         # number of cal subsets
         nIdx = calInfo.GetIdxs(key)
@@ -794,11 +793,11 @@ def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
         runList = []
         if calIdx!=None:
             runList = calInfo.GetCalList(key, calIdx, 10)
-            if verbose: print runList
+            if verbose: print(runList)
         else:
             for idx in range(nIdx):
                 tmp = calInfo.GetCalList(key, idx, 10)
-                if verbose: print tmp
+                if verbose: print(tmp)
                 runList += tmp
 
         # make a list of the actual file paths
@@ -806,7 +805,7 @@ def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
             fPath = "%s/latSkimDS%d_run%d*.root" % (calDir, dsNum, run)
             fList += glob.glob(fPath)
 
-    # for f in fList: print f
+    # for f in fList: print(f)
     return fList
 
 
@@ -823,7 +822,7 @@ def getOldCalFiles():
         for key in calKeys:
             for idx in range(calInfo.GetIdxs(key)):
                 lst = calInfo.GetCalList(key,idx,runLimit)
-                # print lst
+                # print(lst)
                 calList += lst
 
     calFiles = glob.glob("/global/homes/w/wisecg/project/cal-lat/*.root")
@@ -834,11 +833,11 @@ def getOldCalFiles():
         if foundRun not in calList:
             deleteRuns.append(f)
     if len(deleteRuns) > 0:
-        print "Remove these runs:"
+        print("Remove these runs:")
         for f in sorted(deleteRuns):
-            print f
+            print(f)
     else:
-        print "Cal directory is clean."
+        print("Cal directory is clean.")
 
 
 def getLATList(dsNum, bkgIdx=None, latDir=None):
@@ -864,7 +863,7 @@ def getLATList(dsNum, bkgIdx=None, latDir=None):
             if os.path.isfile(fFullPath) == True:
                 fList.append(fName)
             else:
-                print "File doesn't exist, exiting ...",fFullPath
+                print("File doesn't exist, exiting ...",fFullPath)
                 return
 
     return latDir, fList
