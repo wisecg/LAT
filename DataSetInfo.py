@@ -223,35 +223,43 @@ class CalInfo:
         if key not in self.covIdx:
             print("Key %s not found in master list!" % key)
             return None
+
+        idx = np.searchsorted(self.covIdx[key], run)
+        if idx not in self.master[key]:
+            print("Run %d out of range of key %s.  calIdx was %d" % (run, key, idx))
+            return None
+        lst = self.master[key][idx]
+        lo, hi = lst[1], lst[2]
+        if lo <= run <= hi:
+            return idx
         else:
-            idx = np.searchsorted(self.covIdx[key], run)
-            if idx not in self.master[key]:
-                print("Run %d out of range of key %s.  calIdx was %d" % (run, key, idx))
-                return None
-            lst = self.master[key][idx]
-            lo, hi = lst[1], lst[2]
-            if lo <= run <= hi:
-                return idx
-            else:
-                print("Run %d not found with key %s, lo=%d hi=%d" % (run,key,lo,hi))
-                return None
+            print("Run %d not found with key %s, lo=%d hi=%d" % (run,key,lo,hi))
+            return None
 
     def GetCalList(self,key,idx,runLimit=None):
         """ Generate a list of runs for a given calibration index. """
         if key not in self.master:
             print("Key %s not found in master list!" % key)
             return None
-        else:
-            runList = []
-            if idx not in self.master[key]:
-                return None
-            lst = self.master[key][idx][0]
-            for i in xrange(0,len(lst),2):
-                lo, hi = lst[i], lst[i+1]
-                runList += range(lo, hi+1)
-            if runLimit is not None:
-                del runList[10:]
-            return runList
+
+        runList = []
+        if idx not in self.master[key]:
+            return None
+        lst = self.master[key][idx][0]
+        for i in xrange(0,len(lst),2):
+            lo, hi = lst[i], lst[i+1]
+            runList += range(lo, hi+1)
+        if runLimit is not None:
+            del runList[10:]
+        return runList
+
+    def GetCalRunCoverage(self,key,idx):
+        """ Return the (runLo, runHi) coverage of a particular calIdx"""
+        if key not in self.master:
+            print("Key %s not found in master list!" % key)
+            return None
+        return self.master[key][idx][1], self.master[key][idx][2]
+
 
 
 # ==================================================================================
@@ -1032,29 +1040,6 @@ def delDBRecord(key):
         print("Removing key:",key)
         calDB.remove(pars.key==key)
 
-"""
-OBSOLETE:
-Calibration info is now stored in DataSetInfo.py::CalInfo, not the DB.
-Don't use the DB for information on cal runs/ranges.
-Too bad, this was a buncha work ...
-
-TODO: port these functions to use the CalInfo object
-
-def getDBRunCoverage(dsNum, runNum):
-    # Figure out which calIdx a run is in.
-
-    found, calIdx = False, -1
-    calTable = getDBCalTable(dsNum)
-    for key in calTable:
-        if runNum >= calTable[key][2] and runNum <= calTable[key][3]:
-            found, calIdx = True, key
-            break
-    if not found:
-        print("Couldn't find run coverage for run", runNum)
-    else:
-        print("Run %d is in calIdx %d" % (runNum, calIdx))
-        return calIdx
-"""
 
 def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json"):
     """ Adds entries to the DB. Checks for duplicate records.
@@ -1111,7 +1096,7 @@ def getDBRecord(key, verbose=False, calDB=None, pars=None):
 
 def getNCalIdxs(dsNum, module):
     """ Access the CalInfo object in DataSetInfo.py and tell me how many calIdx's are in a given dataset. """
-    calInfo = ds.CalInfo()
+    calInfo = CalInfo()
     calKeys = calInfo.GetKeys(dsNum)
     for key in calKeys:
         if "m%d" % module in key:
@@ -1155,11 +1140,6 @@ def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
 
     # for f in fList: print(f)
     return fList
-
-
-def getRunCoverage(dsNum, runNum, cal=False):
-    """ Figure out which calIdx a run is in. """
-    print "hi"
 
 
 def getOldCalFiles():

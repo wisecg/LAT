@@ -30,7 +30,8 @@ def calBLFit():
         baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
-    nCal = wl.getNCalIdxs(dsNum,module=modNum)
+    cInfo = ds.CalInfo()
+    nCal = ds.getNCalIdxs(dsNum,module=modNum)
     calDicts = {}
     for calIdx in range(nCal):
         with open("%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home,dsNum,calIdx,modNum), 'r') as fp:
@@ -67,13 +68,11 @@ def calBLFit():
             continue
 
         # get background baseline data matching the cal run
-        calRun = calRuns[0]
-
-
-
-
-        # runLo, runHi =
-
+        calKey = "ds%d_m%d" % (dsNum, modNum)
+        calIdx = cInfo.GetCalIdx(calKey, calRuns[0])
+        runLo, runHi = cInfo.GetCalRunCoverage(calKey, calIdx)
+        rList = [baseDict[ch][idx][2] for idx in range(len(baseDict[ch])) if runLo <= baseDict[ch][idx][2] <= runHi]
+        bList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch])) if runLo <= baseDict[ch][idx][2] <= runHi]
 
         # find mode
         calInt = [int(bl) for bl in calBL]
@@ -110,6 +109,9 @@ def calBLFit():
         # p1.axvline(xMode,color='red')
         # p1.axvline(adcLo,color='green')
         # p1.axvline(adcHi,color='green')
+        for idx,bkgVal in enumerate(bList):
+            lbl = "bkgIdx vals" if idx == 0 else None
+            p1.axvline(bkgVal,color='cyan',alpha=0.5, label=lbl)
 
         guessVals = crystalball(x1,*pGuess)
         p1.plot(x1,guessVals,color='orange',label='guess',alpha=0.7)
@@ -147,7 +149,7 @@ def baselinesVsTime():
         baseDict = json.load(fp)
     baseDict = {ch : baseDict[u'%d'%ch] for ch in goodList}
 
-    nCal = wl.getNCalIdxs(dsNum,module=modNum)
+    nCal = ds.getNCalIdxs(dsNum,module=modNum)
     calDicts = {}
     for calIdx in range(nCal):
         with open("%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home,dsNum,calIdx,modNum), 'r') as fp:
@@ -272,7 +274,7 @@ def genBLFiles():
     for dsNum,modNum in [(5,1),(5,2)]:
         calCut = "channel%2==0 && trapENFCal > 50 && Entry$ < 10000" # don't need that many events for each calIdx
         goodList = ds.GetGoodChanListNew(dsNum)
-        for idx in range(wl.getNCalIdxs(dsNum, modNum)):
+        for idx in range(ds.getNCalIdxs(dsNum, modNum)):
             parseLAT2(goodList, calCut, dsNum, idx, True, True, modNum)
 
 
@@ -415,7 +417,7 @@ def parseLAT1(goodList, theCut, dsNum, bkgIdx=None, saveMe=False):
     p1Start = time.time()
 
     # get a sequential list of file names
-    latDir, latList = wl.getLATList(dsNum, bkgIdx)
+    latDir, latList = ds.getLATList(dsNum, bkgIdx)
 
     # loop over each file in the list
     for fName in latList:
@@ -480,12 +482,12 @@ def parseLAT2(goodList, theCut, dsNum, bkgIdx=None, saveMe=False, cal=False, mod
     if cal:
         calIdx = bkgIdx
         latDir = home + "/project/cal-lat"
-        calList = wl.getCalFiles(dsNum, calIdx, modNum, verbose=False)
+        calList = ds.getCalFiles(dsNum, calIdx, modNum, verbose=False)
         latList = [f[f.find("latSkim"):] for f in calList ]
         if bkgIdx is None:
-            print("Scanning %d cal idx's..." % wl.getNCalIdxs(dsNum,module=1))
+            print("Scanning %d cal idx's..." % ds.getNCalIdxs(dsNum,module=1))
     else:
-        latDir, latList = wl.getLATList(dsNum, bkgIdx)
+        latDir, latList = ds.getLATList(dsNum, bkgIdx)
 
     # load the chain
     latChain = TChain("skimTree")
