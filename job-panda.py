@@ -26,6 +26,7 @@ calSkimDir = home+"/project/cal-skim"
 calWaveDir = home+"/project/cal-waves"
 calLatDir  = home+"/project/cal-lat"
 pandaDir   = home+"/project/panda-skim"
+specialDir = home+"/project/special"
 
 # qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
 qsubStr = "sbatch slurm-job.sh" # SLURM mode

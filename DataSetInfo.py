@@ -196,6 +196,63 @@ class CalInfo:
             13: [[23498,23509],23482,23958]
             }
 
+        # Special Runs: http://mjwiki.npl.washington.edu/bin/view/Majorana/SpecialMJDRuns
+        self.special = {}
+        self.special["extPulser"] = {
+            0: [4547, 4547],
+            1: [4549, 4572],
+            2: [4573, 4831],
+            3: [5525, 5534],
+            4: [5535, 5554],
+            5: [5555, 5850],
+            6: [5872, 5877],
+            7: [5940, 5963],
+            8: [5964, 5978],
+            9: [5979, 5992],
+            10: [6191, 6205],
+            11: [6206, 6219],
+            12: [6934, 6944],
+            13: [6964, 6970],
+            14: [6971, 6976],
+            15: [6977, 6982],
+            16: [7002, 7007],
+            17: [7008, 7013],
+            18: [7219, 7233],
+            19: [7234, 7246],
+            20: [7247, 7259],
+            21: [7260, 7272],
+            22: [13168, 13181]
+            }
+        self.special["longCal"] = {
+            0: [7275, 7612],
+            1: [11507, 11633],
+            2: [17183, 17302],
+            3: [60001207, 60001306],
+            4: [22001, 22265],
+            5: [22513, 22566],
+            6: [22568, 22635],
+            7: [25833, 26021]
+            }
+        self.special["forcedAcq"] = {
+            0: [1604, 1605],
+            1: [1869, 1872],
+            2: [1955, 1960],
+            3: [2682, 2687],
+            4: [4171, 4177],
+            5: [4178, 4182],
+            6: [4183, 4184],
+            7: [4185, 4198],
+            8: [4199, 4209],
+            9: [4210, 4225],
+            10: [4226, 4223]
+            }
+        self.special["delayedTrigger"] = {
+            0: [9449, 9450],
+            1: [9913, 9926],
+            2: [13071, 13074],
+            3: [60002368, 60002372]
+            }
+
         # Track all the 'hi' run coverage numbers for fast run range lookups
         self.covIdx = {}
         for key in self.master:
@@ -260,6 +317,22 @@ class CalInfo:
             return None
         return self.master[key][idx][1], self.master[key][idx][2]
 
+    def GetSpecialKeys(self):
+        return self.special.keys()
+
+    def GetSpecialNIdxs(self,key):
+        return len(self.special[key])
+
+    def GetSpecialRuns(self,key,idx=None):
+        if idx is not None:
+            runLo, runHi = self.special[key][idx][0], self.special[key][idx][1]
+            return [run for run in range(runLo, runHi+1)]
+
+        runList = []
+        for idx in range(len(self.special[key])):
+            runLo, runHi = self.special[key][idx][0], self.special[key][idx][1]
+            runList.extend([run for run in range(runLo, runHi+1)])
+        return runList
 
 
 # ==================================================================================
