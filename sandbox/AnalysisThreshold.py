@@ -1,8 +1,7 @@
-import os, math, ROOT
+import os, math, ROOT, imp
 import numpy as np
 from matplotlib import pyplot as plt
-import waveLibs as wl
-import DataSetInfo as ds
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import seaborn as sns
 sns.set(style='whitegrid', context='talk')
 

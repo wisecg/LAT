@@ -22,10 +22,6 @@ def main():
     calBLFit()
 
 
-def calRunIdxLookup():
-    cInfo = 
-
-
 def calBLFit():
 
     dsNum, modNum = 1, 1
@@ -73,10 +69,10 @@ def calBLFit():
         # get background baseline data matching the cal run
         calRun = calRuns[0]
 
-        
-        
-        
-        # runLo, runHi = 
+
+
+
+        # runLo, runHi =
 
 
         # find mode

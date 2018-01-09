@@ -7,13 +7,12 @@ Usage:
     ./cut-trend.py
 
 """
-import sys, os, glob
+import sys, os, glob, imp
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import waveLibs as wl
-import DataSetInfo as ds
 sns.set_style('whitegrid')
 sns.set_context('talk')
 
@@ -93,8 +92,8 @@ def main(argv):
     for par in parList:
         ax.cla()
         for subNum in cInfo.master["ds%d_m%d"%(dsNum,modNum)].keys():
-            # fsD = wl.getDBRecord("%s_ds%d_idx%d_m%d_Peak"%(par,dsNum,subNum,modNum))
-            fsD = wl.getDBRecord("%s_ds%d_idx%d_m%d"%(par,dsNum,subNum,modNum))
+            # fsD = ds.getDBRecord("%s_ds%d_idx%d_m%d_Peak"%(par,dsNum,subNum,modNum))
+            fsD = ds.getDBRecord("%s_ds%d_idx%d_m%d"%(par,dsNum,subNum,modNum))
             for idx2, ch in enumerate(chList):
                 # if parValList[idx2]:
                 parValList[ch].append(fsD[ch][2]) # 90% value

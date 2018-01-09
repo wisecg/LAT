@@ -174,7 +174,7 @@ def main(argv):
                 else:
                     cutDict = TuneCut(dsNum, subNum, tRange[0], tRange[1], tName, skimTree, chList, par, parName, theCut, fastMode)
 
-                if fDB: wl.setDBRecord({"key":key,"vals":cutDict}, forceUpdate=fFor)
+                if fDB: ds.setDBRecord({"key":key,"vals":cutDict}, forceUpdate=fFor)
                 if fCSV:
                     dummyDict = {"DS":[dsNum]*5, "SubDS":[subNum]*5, "Module":[modNum]*5, "Cut":[parName]*5, "Range":[tName]*5, "Percentage":[1, 5, 90, 95, 99]}
                     dummyDict2 = dict(dummyDict.items() + cutDict.items())
@@ -422,10 +422,10 @@ def ApplyChannelCuts(dsNum, cutType, dType):
                 runCovMax = cInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][2]
                 runCut = "run>=%d && run<=%d" % (runCovMin, runCovMax)
 
-                fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
-                rnSD = wl.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
-                rnCD = wl.getDBRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum, calIdx, modNum), False, calDB, pars)
-                wfD = wl.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
+                fsD = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnSD = ds.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnCD = ds.getDBRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum, calIdx, modNum), False, calDB, pars)
+                wfD = ds.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
 
                 for ch in chList:
 

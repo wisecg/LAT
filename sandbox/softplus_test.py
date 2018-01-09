@@ -1,15 +1,14 @@
 #!/usr/bin/env python
+import imp
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import ROOT
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
-import waveLibs as wl
 import seaborn as sns
 sns.set(style='whitegrid', context='talk')
-
 """
     Test of softplus function to fit riseNoise distribution
-
 """
 
 def softplus(x, a, b, c, d):
@@ -41,7 +40,7 @@ if __name__ == "__main__":
     # chList = [584, 592, 598, 608, 610, 614, 624, 626, 628, 632, 640, 648, 658, 660, 662, 672, 678, 680, 688, 690, 694]
     # chList = [626]
     # chList = [672]
-    rnD = wl.getDBRecord("riseNoise_ds1_idx1_m1_Continuum")
+    rnD = ds.getDBRecord("riseNoise_ds1_idx1_m1_Continuum")
 
     for ch in chList:
         nPass1 = skimTree.Draw("trapENFCalC:riseNoise",  theCut + "&& trapENFCal>5 && trapENFCal<50 && channel==%d"%(ch), "goff")

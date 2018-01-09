@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import ROOT, os
+import ROOT, os, imp
 import numpy as np
 from matplotlib import pyplot as plt
-import waveLibs as wl
-import DataSetInfo as ds
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
+wl = imp.load_source('waveLibs','../waveLibs.py')
 import Exposure as ex
 import math
 
@@ -40,7 +40,7 @@ def GetAnaylsisThreshold(dsNum=3):
                 bkgDict[bkgidx][ch].append(f1.Get(histName).GetBinContent(xbin))
 
     for bkgidx in bkgDict.keys():
-        tD = wl.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
+        tD = ds.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
         athreshDict[bkgidx] = {}
         for ch in bkgDict[bkgidx].keys():
             if ch not in tD.keys():
@@ -88,7 +88,7 @@ def GenerateCorrectedSpectra(dsNum = 1, dType = 'isNat'):
         UncorrTotalSpec = ROOT.TH1D('DS{}_{}_UnCorr'.format(dsNum, dType),'',bins,lower,upper)
         for bkgidx in range(nRanges[0], nRanges[1]+1):
             # Get Threshold dictionary
-            tD = wl.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
+            tD = ds.getDBRecord("thresh_ds{}_bkgidx{}".format(dsNum, bkgidx))
             specIDXDict[bkgidx] = {}
 
             # Get Analysis Threshold Dictionary and Exposure Dictionary here

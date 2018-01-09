@@ -2,7 +2,6 @@
 import sys, imp, itertools
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
-wl = imp.load_source('waveLibs','../waveLibs.py')
 import tinydb as db
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -193,7 +192,7 @@ def channelSelection():
 
         nBkg = ds.dsMap[dsNum]
         bkgRuns = ds.bkgRunsDS[dsNum]
-        nCal = wl.getNCalIdxs(dsNum, modNum)
+        nCal = ds.getNCalIdxs(dsNum, modNum)
         calInfo = ds.CalInfo()
         xThresh = np.arange(0, 5, 0.01)
         yThreshTot = np.zeros(len(xThresh))
@@ -201,7 +200,7 @@ def channelSelection():
         for bkgIdx in range(nBkg+1):
 
             # get the exposure and efficiency
-            thD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
+            thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
 
             chThreshList = (ch for ch in chList if ch in thD.keys()) # python generator expression
             for ch in chThreshList:
@@ -242,9 +241,9 @@ def channelSelection():
                 calRunLo = calInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][1]
                 calRunHi = calInfo.master["ds%d_m%d" % (dsNum, modNum)][calIdx][2]
 
-                fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
-                rnD = wl.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
-                wfD = wl.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
+                fsD = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+                rnD = ds.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
+                wfD = ds.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum), False, calDB, pars)
 
                 goodFS = True if fsD!=0 else False
                 goodRN = True if rnD!=0 else False

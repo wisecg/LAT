@@ -1,9 +1,9 @@
 #!/usr/bin/env python
+import imp
 import ROOT
 import numpy as np
 from matplotlib import pyplot as plt
-import waveLibs as wl
-import DataSetInfo as ds
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import math
 
 """
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     threshDict = {}
     dummyExposure = 1.
     for bkgidx in range(nRanges[0], nRanges[1]+1):
-        tD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
+        tD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgidx))
         # Get Analysis Threshold Dictionary here
         # Get Exposure Dictionary here
         for idx, ch in enumerate(chList):

@@ -714,46 +714,6 @@ def updateLAT2(dsNum, cal=False):
         sh("""%s './lat2.py -upd -d %d -c' """ % (qsubStr,dsNum))
 
 
-def runLAT2Cal(dsNum, calIdx=None, forceUpdate=False):
-    """ ./job-panda.py -cal (-ds [dsNum]) or (-sub [dsNum] [calIdx])  -force (optional)
-        Run LAT2 in cal mode.
-    """
-    import waveLibs as wl
-    if forceUpdate: print "Force updating DB entries."
-
-    # get calIdx's for this dataset from the DB
-    calTable = wl.getDBCalTable(dsNum)
-    calIdxs = calTable.keys()
-
-    # -ds
-    if calIdx==None:
-        for idx in calIdxs:
-            print "======================================"
-            rec = wl.getDBRecord( "ds%d_idx%d" % (dsNum, idx) )
-
-            if rec==None or forceUpdate:
-                if forceUpdate:
-                    # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, idx) )
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, idx))
-                else:
-                    # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, idx) )
-                    sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, idx))
-    # -sub
-    else:
-        if calIdx not in calIdxs:
-            print "calIdx %d doesn't exist for DS-%d.  Exiting ..."
-            return
-
-        rec = wl.getDBRecord( "ds%d_idx%d" % (dsNum, calIdx) )
-        if rec==None or forceUpdate:
-            if forceUpdate:
-                # sh("""./lat2.py -cal -b -p -s %d %d -force""" % (dsNum, calIdx) )
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d -force'""" % (dsNum, calIdx))
-            else:
-                # sh("""./lat2.py -cal -b -p -s %d %d""" % (dsNum, calIdx) )
-                sh("""qsub -l h_vmem=2G qsub-job.sh './lat2.py -cal -b -p -s %d %d'""" % (dsNum, calIdx))
-
-
 def skimLAT(inPath,outPath,thisCut):
     """ ./job-panda.py -skimLat [inDir] [outFile] [custom TCut]
         Chains together a given set of LAT files and makes an output file w/ a custom TCut.

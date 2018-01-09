@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+import imp
+ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import ROOT
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-import waveLibs as wl
-import DataSetInfo as ds
 import seaborn as sns
 sns.set(style='whitegrid', context='talk')
 
@@ -31,8 +31,8 @@ if __name__ == "__main__":
     theCut = "isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && gain == 0"
 
     chList = ds.GetGoodChanList(dsNum)
-    wfD = wl.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, subNum, modNum))
-    tD = wl.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, subNum))
+    wfD = ds.getDBRecord("wfstd_ds%d_idx%d_mod%d" % (dsNum, subNum, modNum))
+    tD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, subNum))
     ROOT.gStyle.SetOptStat(0)
     for ch in chList:
         nPass = skimTree.Draw("trapENFCal:wfstd",  theCut + "&& trapENFCal<250 && channel==%d"%(ch), "goff")

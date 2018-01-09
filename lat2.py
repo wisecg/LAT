@@ -96,7 +96,7 @@ def main(argv):
 
     if fCal:
         rec = calibrateRuns(dsNum,subNum,fPaths,fBat,fPlt,fRaw)
-        wl.setDBRecord(rec,fFor)
+        ds.setDBRecord(rec,fFor)
 
     if fUpd:
         updateFile(dsNum, fCalPath)
@@ -113,7 +113,8 @@ def calibrateRuns(dsNum,calIdx,fPaths,batMode,saveFig,plotRaw):
     latTree = TChain("skimTree")
 
     # chain together all available cal runs for this calIdx
-    calTable = wl.getDBCalTable(dsNum)
+    # calTable = ds.getDBCalTable(dsNum) # TODO: this function is obsolete, it should use the CalInfo object
+    calTable = None
     calRuns = [ calTable[calIdx][0], calTable[calIdx][1] ]
     inPath = "/projecta/projectdirs/majorana/users/bxyzhu/cal-lat/latSkimDS%d*" % dsNum
     fList = glob.glob(inPath)
@@ -354,13 +355,9 @@ class peakFit:
 def testDB():
     """ ./lat2.py -test
     Do database stuff. """
-    # wl.setDBCalTable()
-    # wl.getDBKeys()
-    # wl.getDBRecord("ds1_idx0")
-    # wl.getDBRecord("ds1_calIdx")
-    # wl.delDBRecord("ds1_idx0")
-    # wl.getDBCalTable(5)
-    # wl.getDBRunCoverage(1,9999)
+    # ds.getDBKeys()
+    # ds.getDBRecord("ds1_idx0")
+    # ds.delDBRecord("ds1_idx0")
 
     cal = ds.CalInfo()
 
@@ -588,7 +585,7 @@ def fitDBRiseNoise():
     dsNum, module = 1, 1
     if dsNum == 4: module = 2
 
-    nIdx = wl.getNCalIdxs(dsNum, module)
+    nIdx = ds.getNCalIdxs(dsNum, module)
 
     # for plots
     # { chan : { calIdx : [vals] } }

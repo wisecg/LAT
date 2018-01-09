@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import imp, glob
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
-wl = imp.load_source('waveLibs','../waveLibs.py')
 import tinydb as db
 from ROOT import TFile, TTree, TNamed, TChain
 from ROOT import gROOT
@@ -10,17 +9,6 @@ from ROOT import gROOT
 
     tinyDB items are nested dicts:
     {"key":key, "vals":vals}
-
-    Cal Tables (gives run coverages):
-        key: ds[DS]_calIdx.
-        vals: {[idx]:[cal lo, cal hi, cov lo, cov hi]}
-        Print one with:
-        wl.getDBCalTable(dsNum, verbose=True)
-
-    Cal Records (calib consts for each channel in each calIdx)
-        key: ds[DS]_idx[n]
-        vals: {[chan]:[trapENF, fitAmp, latAF, latAFC]}
-        - channel list comes from DataSetInfo.py
 
     Cut Records:
         key: [Name]_ds[i]_idx[j]_module[k]_[descriptor].
@@ -159,7 +147,7 @@ def wfStdDBEntry():
 
                 # actually update the DB
                 if updateDB:
-                    wl.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+                    ds.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
                     print "DB updated."
 
                 wfStdVals = {}
@@ -181,7 +169,7 @@ def wfStdDBEntry():
         for ch in sorted(wfStdVals):
             print ch, wfStdVals[ch]
         if updateDB:
-            wl.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
+            ds.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
             print "DB updated."
 
 
@@ -269,7 +257,7 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
     for subNum in range(idxMin,idxMax+1):
 
         runMin, runMax = cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][1], cInfo.master['ds%d_m%d'%(dsNum,modNum)][subNum][2]
-        fsD = wl.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
+        fsD = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum,subNum,modNum))
 
         for ch in chList:
 
@@ -320,20 +308,15 @@ def getCalFiles(dsNum, calIdx=None, verbose=False):
 
 def testWLFunctions():
 
-    # wl.setDBCalTable()
-    # wl.getDBKeys()
-    # wl.getDBRecord("ds1_idx0")
-    # wl.getDBRecord("ds1_calIdx")
-    # wl.getDBRecord("fitSlo_ds1_idx55_m1_170_210")
-    # wl.delDBRecord("ds1_idx0")
-    # wl.getDBCalTable(5)
-    # wl.getDBRunCoverage(1,9999)
+    # ds.getDBKeys()
+    # ds.getDBRecord("ds1_idx0")
+    # ds.getDBRecord("ds1_calIdx")
+    # ds.getDBRecord("fitSlo_ds1_idx55_m1_170_210")
+    # ds.delDBRecord("ds1_idx0")
 
     # cal = ds.CalInfo()
 
     # look at what's in our database
-    # calTab = wl.getDBCalTable(dsNum)
-    # print len(calTab)  # 62
 
     # get a cal index for a run
     # key, run = "ds1_m1",10770
