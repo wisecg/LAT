@@ -27,113 +27,77 @@ calWaveDir = home+"/project/cal-waves"
 calLatDir  = home+"/project/cal-lat"
 pandaDir   = home+"/project/panda-skim"
 specialDir = home+"/project/special"
-
 # qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
 qsubStr = "sbatch slurm-job.sh" # SLURM mode
 # qsubStr = "sbatch shifter.slr" # SLURM+Shifter mode
-
 cronFile = home + "/lat/cron.queue"
-
 
 # =============================================================
 def main(argv):
 
-    if len(argv)==0:
-        print "Read the main function, broh!"
-        return
+    # defaults
+    global useCronQueue
+    dsNum, subNum, runNum, argString, calList, useCronQueue = None, None, None, None, [], False
 
-    global useJobQueue
-    useJobQueue = False
-
-    # get some margs
-    dsNum, subNum, runNum, argString = None, None, None, None
-
-    f = dict.fromkeys(shlex.split('a b c d e f g h i j k l m n p q r s t'),False) # make a bunch of bools
+    # loop over user args
     for i,opt in enumerate(argv):
 
-        if opt == "-q": useJobQueue = True
+        # set queue mode
+        if opt == "-q": useCronQueue = True
 
-        if opt == "-ds": dsNum = int(argv[i+1])
+        # set ds, sub, cal
+        if opt == "-ds":  dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
         if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
+        if opt == "-cal": calList = getCalRunList(dsNum,subNum,runNum)
 
-        if opt == "-skim":      f['a'] = True
-        if opt == "-wave":      f['b'] = True
-        if opt == "-qsubSplit": f['d'] = True
-        if opt == "-writeCut":  f['e'] = True
-        if opt == "-split":     f['f'] = True
-        if opt == "-lat":       f['g'] = True
-        if opt == "-merge":     f['h'] = True
+        # these all potentially depend on a calibration list being used
+        if opt == "-skim":      runSkimmer(dsNum, subNum, runNum, calList=calList)
+        if opt == "-wave":      runWaveSkim(dsNum, subNum, runNum, calList=calList)
+        if opt == "-qsubSplit": qsubSplit(dsNum, subNum, runNum, calList=calList)
+        if opt == "-writeCut":  writeCut(dsNum, subNum, runNum, calList=calList)
+        if opt == "-lat":       runLAT(dsNum, subNum, runNum, calList=calList)
+        if opt == "-pandify":   pandifySkim(dsNum, subNum, runNum, calList=calList)
 
-        if opt == "-megaLAT":   f['i'] = True
-        if opt == "-megaSkim":  f['j'] = True
-        if opt == "-megaWave":  f['k'] = True
-        if opt == "-megaCut":   f['l'] = True
-        if opt == "-megaSplit": f['m'] = True
-        if opt == "-pandify":   f['p'] = True
+        # mega modes
+        if opt == "-megaLAT":   [runLAT(i) for i in range(0,5+1)]
+        if opt == "-megaSkim":  [runSkimmer(i) for i in range(0,5+1)]
+        if opt == "-megaWave":  [runWaveSkim(i) for i in range(0,5+1)]
+        if opt == "-megaSplit": [qsubSplit(i) for i in range(0,5+1)]
+        if opt == "-megaCut":   [writeCut(i) for i in range(0,5+1)]
 
-        if opt == "-cal":       f['c'] = True
-        if opt == "-lat2":      f['n'] = True
-        if opt == "-force":     f['q'] = True
-        if opt == "-up2":       f['r'] = True
-        if opt == "-c":         f['s'] = True
+        # misc
+        if opt == "-split":        splitTree(dsNum, subNum, runNum)
+        if opt == "-purge":        purgeLogs()
+        if opt == "-checkLogs":    checkLogErrors()
+        if opt == "-checkLogs2":   checkLogErrors2()
+        if opt == "-checkFiles":   checkFiles()
+        if opt == "-skimLAT":      skimLAT(argv[i+1],argv[i+2],argv[i+3])
+        if opt == "-getEff":       getEff()
+        if opt == "-threshCut":    threshCut()
+        if opt == "-tuneCuts":     tuneCuts(argv[i+1],dsNum)
+        if opt == "-lat3":         lat3ApplyCuts(int(argv[i+1]),argv[i+2])
+        if opt == "-cron":         cronJobs()
+        if opt == "-shifter":      shifterTest()
 
-        # one-offs
-        if opt == "-purge": purgeLogs()
-        if opt == "-makeScript": makeScript()
-        if opt == "-makeSlurm": makeSlurm()
-        if opt == "-makeShifter": makeShifter()
-        if opt == "-checkLogs": checkLogErrors()
-        if opt == "-checkLogs2": checkLogErrors2()
-        if opt == "-checkFiles": checkFiles()
-        if opt == "-skimLAT": skimLAT(argv[i+1],argv[i+2],argv[i+3])
-        if opt == "-getEff": getEff()
-        if opt == "-threshCut" : threshCut()
-        if opt == "-push" : pushOneRun()
-        if opt == "-tuneCuts": tuneCuts(argv[i+1],dsNum)
-        if opt == "-applyChannelCut" : applyChannelCut(int(argv[i+1]),int(argv[i+2]))
-        if opt == "-applyCuts": applyCuts(int(argv[i+1]))
-        if opt == "-cleanUpCuts": cleanUpCuts(int(argv[i+1]))
-        if opt == "-lat3": lat3ApplyCuts(int(argv[i+1]),argv[i+2])
-        if opt == "-cron": cronJobs()
-        if opt == "-shifter": shifterTest()
+        # process systematic study runs
+        if opt == "-sskim":  specialSkim()
+        if opt == "-swave":  specialWave()
+        if opt == "-ssplit": specialSplit()
+        if opt == "-slat":   specialLAT()
 
+        # generate job submission scripts (only run once)
+        if opt == "-makeScript":   makeScript()
+        if opt == "-makeSlurm":    makeSlurm()
+        if opt == "-makeShifter":  makeShifter()
 
-    # -- calibration stuff --
-    calList = []
-    if f['c']: calList = getCalRunList(dsNum,subNum,runNum)
-    if f['n']: runLAT2Cal(dsNum, subNum, f['q'])
-    if f['r']: updateLAT2(dsNum, f['s'])
-
-    # -- go running --
-    if f['a']: runSkimmer(dsNum, subNum, runNum, calList=calList)
-    if f['b']: runWaveSkim(dsNum, subNum, runNum, calList=calList)
-    if f['d']: qsubSplit(dsNum, subNum, runNum, calList=calList)
-    if f['e']: writeCut(dsNum, subNum, runNum, calList=calList)
-    if f['f']: splitTree(dsNum, subNum, runNum)
-    if f['g']: runLAT(dsNum, subNum, runNum, calList=calList)
-    if f['p']: pandifySkim(dsNum, subNum, runNum, calList=calList)
-
-    # -- mega modes --
-    if f['i']:
-        for i in range(0,5+1): runLAT(i)
-    if f['j']:
-        for i in range(0,5+1): runSkimmer(i)
-    if f['k']:
-        for i in range(0,5+1): runWaveSkim(i)
-    if f['m']:
-        for i in range(0,5+1): qsubSplit(i)
-    if f['l']:
-        for i in range(0,5+1): writeCut(i)
-
-    # print "Done! Job Panda loves you."
 # =============================================================
 
 def sh(cmd):
     """ Either call the shell or put the command in our cron queue.
-        Uses the global bool 'useJobQueue' and the global path 'cronFile'.
+        Uses the global bool 'useCronQueue' and the global path 'cronFile'.
     """
-    if not useJobQueue:
+    if not useCronQueue:
         sp.call(shlex.split(cmd))
         return
     with open(cronFile,"a+") as f:
@@ -312,6 +276,36 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
     calList = sorted(list(set(calList)))
 
     return calList
+
+# TODO: move these to the bottom of job-panda
+
+def specialSkim():
+    """ ./job-panda.py -sskim """
+
+    cal = ds.CalInfo()
+    # keys = cal.GetSpecialKeys()
+    keys = ["extPulser"]
+
+    # for key in keys:
+    #     print cal.GetSpecialNIdxs(key)
+    #     print cal.GetSpecialRuns(key)
+
+    run = 4547
+    sh(""" ./skim_mjd_data -f %d -l -t 0.7 %s/skim""" % (run,specialDir))
+
+    # sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, i, skimDir))
+
+def specialWave():
+    """ ./job-panda.py -swave """
+    print "hi"
+
+def specialSplit():
+    """ ./job-panda.py -ssplit """
+    print "hi"
+
+def specialLAT():
+    """ ./job-panda.py -slat """
+    print "hi"
 
 
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
@@ -704,17 +698,6 @@ def checkFiles():
             continue
 
 
-def updateLAT2(dsNum, cal=False):
-    """ ./job-panda.py -up2 -ds [dsNum] (-c) """
-
-    if not cal:
-        print "Submitting DS%d BKG" % (dsNum)
-        sh("""%s './lat2.py -upd -d %d' """ % (qsubStr,dsNum))
-    else:
-        print "Submitting DS%d CAL" % (dsNum)
-        sh("""%s './lat2.py -upd -d %d -c' """ % (qsubStr,dsNum))
-
-
 def skimLAT(inPath,outPath,thisCut):
     """ ./job-panda.py -skimLat [inDir] [outFile] [custom TCut]
         Chains together a given set of LAT files and makes an output file w/ a custom TCut.
@@ -748,22 +731,6 @@ def skimLAT(inPath,outPath,thisCut):
     print "Wrote",lilTree.GetEntries(),"entries to the cut tree."
 
     outFile.Close()
-
-
-def pushOneRun():
-    """ ./job-panda.py -push
-    IDEA:  can you make one node do everything necessary to LAT-process 1 run?
-    """
-    # dsNum = 5
-    # rlo, rhi = 21970, 21998
-    # for run in range(rlo,rhi+1):
-    #     jobStr = ""
-    #     # jobStr += "'./skim_mjd_data -n -l -t 0.8 -f %d %s'" % (run,skimDir)
-    #     # sh("""qsub -l h_vmem=2G qsub-job.sh './skim_mjd_data -n -l -t 0.8 -f %d %s' """ % (run,homePath+"/project/cal-skim/"))
-    #     inPath = homePath + "/project/cal-skim/"
-    #     outPath = homePath + "/project/cal-waveskim/"
-    #     jobStr += "'./wave-skim -f %d %d -p %s %s'" % (dsNum,run,inPath,outPath)
-    #     sh(""" qsub -l h_vmem=2G qsub-job.sh '%s'""" % (jobStr))
 
 
 def tuneCuts(argString, dsNum=None):

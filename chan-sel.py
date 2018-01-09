@@ -1,13 +1,20 @@
 #!/usr/bin/env python
-import sys, imp, itertools
+import sys, itertools
 sys.argv.append("-b")
-ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
+import DataSetInfo as ds
 import tinydb as db
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import scipy.special as sp
 """
+    TODO: Make this the master routine for all run and channel selection.
+    Give it the ability to scan over all datasets to get unique enabled channels, etc etc.
+
+    FUTURE: write a routine that identifies all active channels in a dataset
+    and makes a plot of active channels vs. run number.
+    So we're super sure that ds.GetGoodChanList is complete.
+
     Remember, ApplyChannelCuts generates a file for each channel in each bkgIdx.
 
     What did we cut out when we ran LAT3::ApplyChannelCuts ?
@@ -33,10 +40,6 @@ import scipy.special as sp
     threshold - uses bkgIdx
         keys: thresh_ds[i]_bkgidx[j]
         vals: {[chan]:[50 pct mean, sigma]}
-
-    FUTURE: write a routine that identifies all active channels in a dataset
-    and makes a plot of active channels vs. run number.
-    So we're super sure that ds.GetGoodChanList is complete.
 """
 
 def main():

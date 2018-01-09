@@ -261,9 +261,14 @@ class CalInfo:
                 tmp.append(self.master[key][idx][2])
             self.covIdx[key] = np.asarray(tmp)
 
-    def GetMasterList(self): return self.master
-    def GetCovArr(self,key): return self.covIdx[key]
-    def GetIdxs(self,key): return len(self.covIdx[key])
+    def GetMasterList(self):
+        return self.master
+
+    def GetCovArr(self,key):
+        return self.covIdx[key]
+
+    def GetIdxs(self,key):
+        return len(self.covIdx[key])
 
     def GetKeys(self,dsNum=None):
         keyList = sorted(self.master.keys())
