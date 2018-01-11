@@ -23,6 +23,13 @@ dsRanges = {
     6:[25672,100000]
     }
 
+def GetDSNum(run):
+    for ids in range(len(dsRanges)):
+        if dsRanges[ids][0] <= run <= dsRanges[ids][1]:
+            dsNum = ids
+    return dsNum
+
+
 # calibration master list, and some lookup functions
 class CalInfo:
     def __init__(self):

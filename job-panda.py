@@ -7,12 +7,7 @@ The functions are arranged mostly sequentially, i.e. this file
 documents the "procedure" necessary to produce LAT data,
 starting from running skim_mjd_data.
 
-Dependencies:
-- skim_mjd_data.cc & DataSetInfo.hh
-- wave-skim.cc
-- lat.py, waveModel.py, waveLibs.py
-
-=================== C. Wiseman, 2 June 2017 ===================
+====================== C. Wiseman, B. Zhu =====================
 """
 import sys, shlex, glob, os, re, time
 import subprocess as sp
@@ -277,35 +272,41 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
 
     return calList
 
-# TODO: move these to the bottom of job-panda
 
 def specialSkim():
     """ ./job-panda.py -sskim """
-
     cal = ds.CalInfo()
-    # keys = cal.GetSpecialKeys()
-    keys = ["extPulser"]
+    runList = cal.GetSpecialRuns("extPulser")
+    for run in runList:
+        sh("""%s './skim_mjd_data -f %d -l -t 0.7 %s/skim'""" % (qsubStr,run,specialDir))
 
-    # for key in keys:
-    #     print cal.GetSpecialNIdxs(key)
-    #     print cal.GetSpecialRuns(key)
-
-    run = 4547
-    sh(""" ./skim_mjd_data -f %d -l -t 0.7 %s/skim""" % (run,specialDir))
-
-    # sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, i, skimDir))
 
 def specialWave():
     """ ./job-panda.py -swave """
-    print "hi"
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    # sh("""./wave-skim -n -f %d %d -p %s/skim %s/waves""" % (0, runList[0], specialDir, specialDir) )
+    for run in runList:
+        sh("""%s './wave-skim -n -f %d %d -p %s/skim %s/waves'""" % (qsubStr, ds.GetDSNum(run), run, specialDir, specialDir) )
+
 
 def specialSplit():
-    """ ./job-panda.py -ssplit """
+    """ ./job-panda.py -ssplit
+    Doesn't seem to be necessary w/ the special runs, very few are over 50MB
+    """
     print "hi"
+
 
 def specialLAT():
     """ ./job-panda.py -slat """
-    print "hi"
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    for run in runList:
+        dsNum = ds.GetDSNum(run)
+        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        # sh("""./lat.py -b -f %d %d -p %s %s""" % (dsNum,run,inFile,outFile))
+        sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,run,inFile,outFile))
 
 
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
