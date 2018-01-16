@@ -8,6 +8,7 @@ wl = imp.load_source('waveLibs','../waveLibs.py')
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import tinydb as db
 from scipy.optimize import curve_fit
 home = os.path.expanduser('~')
 # print("Imports: %.2f" % (time.time()-gStart))
@@ -27,11 +28,13 @@ def calBLFit():
     vals: {[chan]:[blLo, blHi, fitMu, fitSig, N, beta, m, fitChi2, cts]}
     """
     intMode = False
-    updateDB = False
+    updateDB = True
+    calDB = db.TinyDB("../calDB.json")
+    pars = db.Query()
 
     # iterate over datasets
-    # for dsNum, modNum in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
-    for dsNum, modNum in [(5,1)]:
+    for dsNum, modNum in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
+    # for dsNum, modNum in [(0,1)]:
 
         print("Scanning DS-%d-M%d ..." % (dsNum, modNum))
 
@@ -89,7 +92,6 @@ def calBLFit():
 
                 # get background baseline data matching the cal run, trim off outliers (overflow hits)
                 calKey = "ds%d_m%d" % (dsNum, modNum)
-                calIdx = cInfo.GetCalIdx(calKey, calRuns[0])
                 runLo, runHi = cInfo.GetCalRunCoverage(calKey, calIdx)
                 rList = [baseDict[ch][idx][2] for idx in range(len(baseDict[ch])) if runLo <= baseDict[ch][idx][2] <= runHi]
                 bList = [baseDict[ch][idx][0] for idx in range(len(baseDict[ch])) if runLo <= baseDict[ch][idx][2] <= runHi]
@@ -132,12 +134,13 @@ def calBLFit():
 
                 # get ADC ranges
                 blLo, blHi = fitMu - 5, fitMu + 20
+                dLo, dHi = 0., 0.
                 if len(bList) > 0:
                     if min(bList) < blLo:
-                        print("Ch %d (lo %.0f) has a low-BL event: %.0f. Adjusting ..." % (ch, blLo, min(bList)))
+                        dLo = blLo - min(bList)
                         blLo = min(bList)
                     if max(bList) > blHi:
-                        print("Ch %d (hi %.0f) has a high-BL event: %.0f.  Adjusting ..." % (ch, blHi, max(bList)))
+                        dHi = max(bList) - blHi
                         blHi = max(bList)
 
                 # create DB entry for this channel (chop off unnecessary digits)
@@ -146,10 +149,10 @@ def calBLFit():
                     if isinstance(val, float):
                         results.append(float("%.2f" % val))
                     else:
-                        results.append(val)
+                        results.append(int(val))
                 baseDBDict[ch] = results
 
-                print("DS-%d-M%d calIdx %d  ch %d  cts %-5d  mu %-7.2f  sig %-7.2f  chi2 %-7.2f  LO %-7.0f  HI %.0f" % (dsNum,modNum,calIdx,ch,cts,fitMu,fitSig,fitChi2,blLo,blHi))
+                print("DS-%d-M%d calIdx %d  ch %d  cts %-5d  mu %-7.2f  sig %-5.2f  chi2 %-6.2f  LO %-4.0f d%-4.0f  HI %.0f d%-4.0f" % (dsNum,modNum,calIdx,ch,cts,fitMu,fitSig,fitChi2,blLo,dLo,blHi,dHi))
 
                 if not intMode: continue
 
@@ -185,7 +188,9 @@ def calBLFit():
             # Update the DB for this calIdx
             if updateDB:
                 dbKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
-                ds.setDBRecord({"key":dbKey, "vals":baseDBDict}, False, "../calDB.json")
+                for key in baseDBDict:
+                    print(key, baseDBDict[key])
+                ds.setDBRecord({"key":dbKey, "vals":baseDBDict}, False, "../calDB.json", calDB, pars)
 
 
 def crystalball(x,N,beta,m,mu,sig):
