@@ -19,7 +19,34 @@ def main():
     # genBLFiles()
     # bkgBaselines()
     # baselinesVsTime()
-    calBLFit()
+    # calBLFit()
+    cutPlot()
+
+
+def cutPlot():
+    """ Access the DB, pull BL values, shift/scale so we can see what the BL cut removes. """
+
+    calDB = db.TinyDB("../calDB.json")
+    pars = db.Query()
+
+    dsNum, modNum, calIdx = 1, 1, 1
+    blKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
+    blRec = ds.getDBRecord(blKey, True, calDB, pars)
+
+    # load the cal and bl files
+
+
+    # cal
+    home = os.path.expanduser('~')
+    latDir = home + "/project/cal-lat"
+    calList = ds.getCalFiles(dsNum, calIdx, modNum, verbose=False)
+    latList = [f[f.find("latSkim"):] for f in calList ]
+    if bkgIdx is None:
+        print("Scanning %d cal idx's..." % ds.getNCalIdxs(dsNum,module=1))
+
+    # bkg
+    latDir, latList = ds.getLATList(dsNum, bkgIdx)
+
 
 
 def calBLFit():
