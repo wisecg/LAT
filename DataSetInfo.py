@@ -1124,13 +1124,16 @@ def delDBRecord(key):
         calDB.remove(pars.key==key)
 
 
-def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json"):
+def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=None):
     """ Adds entries to the DB. Checks for duplicate records.
     The format of 'entry' should be a nested dict:
     myEntry = {"key":key, "vals":vals}
     """
-    calDB = db.TinyDB(dbFile)
-    pars = db.Query()
+    import tinydb as db
+    if calDB is None:
+        calDB = db.TinyDB(dbFile)
+        pars = db.Query()
+
     key, vals = entry["key"], entry["vals"]
     recList = calDB.search(pars.key==key)
     nRec = len(recList)
