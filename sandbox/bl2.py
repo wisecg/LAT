@@ -29,7 +29,7 @@ def cutPlot():
     calDB = db.TinyDB("../calDB.json")
     pars = db.Query()
 
-    dsNum, modNum, calIdx = 1, 1, 1
+    dsNum, modNum, calIdx, bkgIdx = 1, 1, 1, 1
     blKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
     blRec = ds.getDBRecord(blKey, True, calDB, pars)
 
