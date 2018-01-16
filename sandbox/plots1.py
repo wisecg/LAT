@@ -121,7 +121,7 @@ def fitMu():
     dsNum = 3
     # nIdx = wl.getNCalIdxs(dsNum, module=1)
     calIdx = 15
-    fileList = wl.getCalFiles(dsNum, calIdx)
+    fileList = ds.getCalFiles(dsNum, calIdx)
     lat = TChain("skimTree")
     for f in fileList: lat.Add(f)
     print "Found",lat.GetEntries(),"entries."

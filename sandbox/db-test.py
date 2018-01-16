@@ -178,7 +178,7 @@ def lat3Test():
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     # access cal idx's the way job-panda would have
-    # fileList = getCalFiles(1, verbose=False)
+    # fileList = ds.getCalFiles(1, verbose=False)
 
     # applyDBCuts()
 
@@ -271,39 +271,6 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
                     megaCut[ch] = "|| (run>=%d && run<=%d && fitSlo<%.2f)" % (runMin, runMax, fsVal)
 
     return megaCut
-
-
-def getCalFiles(dsNum, calIdx=None, verbose=False):
-    """ Get a list of all files for a particular dsNum+calIdx. """
-
-    calInfo = ds.CalInfo()
-    calKeys = calInfo.GetKeys(dsNum)
-
-    fList = []
-    for key in calKeys:
-        print key
-
-        # number of cal subsets
-        nIdx = calInfo.GetIdxs(key)
-
-        # get the runs in each calIdx
-        runList = []
-        if calIdx!=None:
-            runList = calInfo.GetCalList(key, calIdx, 10)
-            if verbose: print runList
-        else:
-            for idx in range(nIdx):
-                tmp = calInfo.GetCalList(key, idx, 10)
-                if verbose: print tmp
-                runList += tmp
-
-        # make a list of the actual file paths
-        for run in runList:
-            fPath = "%s/latSkimDS%d_run%d*.root" % (calDir, dsNum, run)
-            fList += glob.glob(fPath)
-
-    # for f in fList: print f
-    return fList
 
 
 def testWLFunctions():

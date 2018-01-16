@@ -31,7 +31,7 @@ def calBLFit():
 
     # iterate over datasets
     # for dsNum, modNum in [(0,1),(1,1),(2,1),(3,1),(4,2),(5,1),(5,2)]:
-    for dsNum, modNum in [(5,2)]:
+    for dsNum, modNum in [(5,1)]:
 
         print("Scanning DS-%d-M%d ..." % (dsNum, modNum))
 
@@ -44,9 +44,13 @@ def calBLFit():
         nCal = ds.getNCalIdxs(dsNum,module=modNum)
         calDicts = {}
         for calIdx in range(nCal):
-            with open("%s/project/baselines/parseBL_ds%d_cal%d_m%d.json" % (home,dsNum,calIdx,modNum), 'r') as fp:
-                calDict = json.load(fp)
-            calDicts[calIdx] = {ch: calDict[u'%d'%ch] for ch in goodList}
+            calFile = "%s/project/baselines/parseBL_ds%d_bkg.json" % (home, dsNum)
+            if not os.path.isfile(calFile):
+                calDicts[calIdx] = {}
+            else:
+                with open(calFile, 'r') as fp:
+                    calDict = json.load(fp)
+                calDicts[calIdx] = {ch: calDict[u'%d'%ch] for ch in goodList}
 
         fig = plt.figure(figsize=(9,5), facecolor='w')
         p1 = plt.subplot(111)
@@ -55,6 +59,9 @@ def calBLFit():
         for calIdx in range(nCal):
         # for calIdx in [1]:
             calDict = calDicts[calIdx]
+            if len(calDict)==0:
+                print("No record found for DS%d, M%d, calIdx %d.  Continuing ..." % (dsNum, modNum, calIdx))
+                continue
             print("DS-%d, calIdx %d" % (dsNum, calIdx))
 
             # this is what we fill the DB with

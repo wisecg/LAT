@@ -313,7 +313,7 @@ class CalInfo:
         if idx not in self.master[key]:
             return None
         lst = self.master[key][idx][0]
-        for i in xrange(0,len(lst),2):
+        for i in range(0,len(lst),2):
             lo, hi = lst[i], lst[i+1]
             runList += range(lo, hi+1)
         if runLimit is not None:
@@ -1187,13 +1187,18 @@ def getNCalIdxs(dsNum, module):
     return 0
 
 
-def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False):
+def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False, calDir=None):
     """ Get a list of all files for a particular dsNum+calIdx.
         This uses the CalInfo object in DataSetInfo.py, NOT the cal records in the DB.
         This will match the cut record entries in the DB.
     """
-    calInfo = ds.CalInfo()
+    import os, glob
+
+    calInfo = CalInfo()
     calKeys = calInfo.GetKeys(dsNum)
+    if calDir is None:
+        home   = os.path.expanduser('~')
+        calDir = home + "/project/cal-lat"
 
     fList = []
     for key in calKeys:
