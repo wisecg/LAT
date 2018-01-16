@@ -185,7 +185,9 @@ def calBLFit():
             # Update the DB for this calIdx
             if updateDB:
                 dbKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
-                ds.setDBRecord({"key":dbKey, "vals":baseDBDict}, False, "../calDB.json")
+                for key in baseDBDict:
+                    print(key, baseDBDict[key])
+                # ds.setDBRecord({"key":dbKey, "vals":baseDBDict}, False, "../calDB.json")
 
 
 def crystalball(x,N,beta,m,mu,sig):

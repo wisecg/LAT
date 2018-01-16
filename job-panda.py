@@ -189,8 +189,10 @@ def makeShifter():
     #!/bin/bash
     #SBATCH --workdir=/global/homes/w/wisecg/lat
     #SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
-    #SBATCH -p shared --image=custom:pdsf-chos-sl64:v4
-    shifter --volume=/global/project:/project /bin/bash shifter-job.sh ${@}
+    # shifter image can either be specified here or in EnvSetup ($SHIFTER_IMAGE)
+    #--SBATCH -p shared --image=wisecg/mjsw:v1
+    shifter /bin/bash shifter-job.sh ${@}
+    # shifter --volume=/global/project:/project /bin/bash shifter-job.sh ${@}
     """
     script = dedent(shifter_file_text).split("\n",1)[1]
     outFile.write(script)
