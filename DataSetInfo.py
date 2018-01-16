@@ -1,7 +1,5 @@
 # DataSetInfo.py
 # C. Wiseman, B. Zhu
-# v1. 20 June 2017
-# v2. 12 Sept 2017
 import numpy as np
 
 # ==================================================================================
@@ -916,7 +914,7 @@ def GetGoodChanList(dsNum, dType = None):
     # make a list of the channels corresponding to the bad IDs.
     badChans = []
     for badID in badIDs:
-        for ch, detID in DetID[dsNum].iteritems():
+        for ch, detID in DetID[dsNum].items():
             if badID == detID: badChans.append(ch)
     # print(sorted(badChans))
 
@@ -942,7 +940,7 @@ def GetGoodChanListNew(dsNum, dType=None):
     # make a list of the channels corresponding to the bad IDs.
     badChans = []
     for badID in badIDs:
-        for ch, detID in DetID[dsNum].iteritems():
+        for ch, detID in DetID[dsNum].items():
             if badID == detID: badChans.append(ch)
 
     # high-gain channels, without pulser monitors, without bad+veto channels.
@@ -970,7 +968,7 @@ def GetThreshDicts(dsNum, threshCut=0.9):
     for idx in range(1, dsMap[dsNum]+1):
         threshDict = wl.getDBRecord("thresh_ds%d_bkgidx%d"%(dsNum, idx))
         runRange = np.transpose(np.array([bkgRunsDS[dsNum][idx][::2], bkgRunsDS[dsNum][idx][1::2]]))
-        for ch, vals in threshDict.iteritems():
+        for ch, vals in threshDict.items():
             if vals[0] <= threshCut:
                 if ch in goodRuns.keys():
                     goodRuns[ch].extend(runRange)
@@ -1098,7 +1096,7 @@ def getDBKeys(removeDups=False):
     keys = []
     for item in calDB:
         d = dict(item)
-        for keyType, key in d.iteritems():
+        for keyType, key in d.items():
             if type(key)==unicode:
                 print(key)
                 keys.append(key)
