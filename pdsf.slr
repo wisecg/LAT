@@ -3,10 +3,5 @@
 #SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
 #SBATCH --image=wisecg/mjsw:v2
 #SBATCH -p shared
-# if [ "$NERSC_HOST" == "pdsf" ]; then
-  # special instructions would go here
-# fi
-if [ "$NERSC_HOST" == "cori" ]; then
-  #SBATCH --qos debug -t 29:00 -C haswell
-fi
+#SBATCH --qos debug -t 29:00 -C haswell
 shifter /bin/bash shifter-job.sh ${@}

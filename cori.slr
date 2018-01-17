@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --workdir=/global/homes/w/wisecg/lat
+#SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
+#SBATCH --image=wisecg/mjsw:v2
+#-SBATCH -p shared
+#SBATCH -p debug -t 29:00 -C haswell
+
+# http://www.nersc.gov/users/computational-systems/cori/running-jobs/batch-jobs/
+
+# Jan: If you are thinking about 1000 - 10,000 concurrent tasks then we have
+# tools for that - do not submit 10,000 1-core slurm jobs to -p shared.
+
+shifter /bin/bash shifter-job.sh ${@}

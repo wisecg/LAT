@@ -33,7 +33,7 @@ def cutPlot():
     pars = db.Query()
     calDir = home + "/project/cal-lat"
 
-    dsNum, modNum, bkgIdx = 5, 1, 80
+    dsNum, modNum, bkgIdx = 3, 1, 1
     goodList = ds.GetGoodChanListNew(dsNum)
 
     latBkgDir, latList = ds.getLATList(dsNum, bkgIdx)
@@ -61,6 +61,8 @@ def cutPlot():
         blKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
         blRecord = ds.getDBRecord(blKey, True, calDB, pars)
 
+        # TODO: split it up by module?
+
         bkgLo, bkgHi = calInfo.GetCalRunCoverage("ds%d_m%d" % (dsNum, modNum), calIdx)
         bkgCh_tmp = [bkgCh[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
         bkgBL_tmp = [bkgBL[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
@@ -70,7 +72,9 @@ def cutPlot():
         for idx in range(len(bkgBL_tmp)):
             if bkgCh_tmp[idx] not in goodList: continue
             fitMu = blRecord[bkgCh_tmp[idx]][2]
-            bkgShift.append(bkgBL_tmp[idx] - fitMu) # could also scale by sigma
+            fitSig = blRecord[bkgCh_tmp[idx]][3]
+            # bkgShift.append(bkgBL_tmp[idx] - fitMu)
+            bkgShift.append((bkgBL_tmp[idx] - fitMu)/fitSig) # scale by sigma
             bkgEShift.append(bkgE_tmp[idx])
 
         calList = ds.getCalFiles(dsNum, calIdx, modNum, verbose=False)
@@ -86,32 +90,34 @@ def cutPlot():
         for idx in range(len(calBL)):
             if calCh[idx] not in goodList: continue
             fitMu = blRecord[calCh[idx]][2]
-            calShift.append(calBL[idx] - fitMu)
+            fitSig = blRecord[calCh[idx]][3]
+            # calShift.append(calBL[idx] - fitMu)
+            calShift.append((calBL[idx]-fitMu)/fitSig) # scale by sigma
+
 
     # -- do plot stuff --
 
     fig = plt.figure(figsize=(9,6),facecolor='w')
-    p1 = plt.subplot(111)
 
     # bkg
     xLo, xHi, bpa = min(bkgShift), max(bkgShift), 1.
     nBins = int((xHi-xLo)/bpa)
     h1, x1 = np.histogram(np.asarray(bkgShift), bins=nBins, range=(xLo, xHi))
     x1 = x1[:-1]
-    p1.semilogy(x1,h1,ls="steps",color='blue',label='bkg')
+    plt.semilogy(x1,h1,ls="steps",color='blue',label='bkg')
 
     # cal
     xLo, xHi, bpa = min(calShift), max(calShift), 1.
     nBins = int((xHi-xLo)/bpa)
     h2, x2 = np.histogram(np.asarray(calShift), bins=nBins, range=(xLo, xHi))
     x2 = x2[:-1]
-    p1.semilogy(x2,h2,ls="steps",color='red',label='cal')
+    plt.semilogy(x2,h2,ls="steps",color='red',label='cal')
 
     # cut
-    p1.axvline(-5,color='green',label='cut')
-    p1.axvline(20,color='green')
+    plt.axvline(-5,color='green',label='cut')
+    plt.axvline(20,color='green')
 
-    p1.legend(loc='best')
+    plt.legend(loc='best')
     plt.savefig("../plots/blTest.pdf")
 
 
@@ -125,7 +131,7 @@ def cutPlot():
     plt.hist2d(bkgEShift, bkgShift, bins=[nBinsE,nBinsA], range=[[minE,maxE],[minA,maxA]], norm=LogNorm())
     plt.colorbar()
     plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("fitBL (ADC)", horizontalalignment='right', y=1.0)
+    plt.ylabel("fitBL(ADC)/sigma", horizontalalignment='right', y=1.0)
     plt.savefig("../plots/blVsE.pdf")
 
 

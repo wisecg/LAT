@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Micah's slurm/shifter script
+
 #--- activate on Cori
 #SBATCH --nodes=4 --ntasks=4
 #SBATCH --partition=debug --time=00:30:00
@@ -36,9 +38,8 @@ srun -N 4 -n 4 -c 64 shifter  --volume=/global/project:/project /bin/bash ${job_
 echo "returned from cgroup ----"
 echo end-A
 
-# Jan's conditional stuff -- ultimately can make ONE env/EnvBatch.sh  and ONE shifter.slr to cover all PDSF/Cori cases.
+# Jan's conditional stuff -- conditions are only allowed AFTER the SBATCH commands (sadly).
 #!/bin/bash
-
 #SBATCH -t 25:00   --ntasks=1 --account majorana
 
 # Pick one of the following lines to toggle: chos or shifter or Cori
