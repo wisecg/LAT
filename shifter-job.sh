@@ -4,19 +4,17 @@ date
 echo "Node(s): "$SLURM_JOB_NODELIST
 echo "Job ID:  "$SLURM_JOB_ID
 if [ -n "$SHIFTER_RUNTIME" ]; then
-  echo "Shifter active"
-  echo $CC
-  echo $CXX
-  which python
-  which root
+  echo "Shifter image active."
+  echo "pwd: "`pwd`
+  echo "gcc: "$CC
+  echo "g++:"$CXX
+  echo "Python:"`python --version`
+  echo "ROOT:"`root-config --version`
 fi
 
 # This runs whatever commands we pass to it.
-# echo "${@}"
-# ${@}
-
-# echo "attempting to run lat3:"
-# ./lat3.py -cut 2 fs
+echo "${@}"
+${@}
 
 echo "Job Complete:"
 date

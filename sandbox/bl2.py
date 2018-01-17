@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
 import sys, os, imp, time, json
 gStart = time.time()
 sys.argv.append("-b")
-ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
-wl = imp.load_source('waveLibs','../waveLibs.py')
+latDir = os.environ['LATDIR']
+ds = imp.load_source('DataSetInfo',latDir+'/DataSetInfo.py')
+wl = imp.load_source('waveLibs',latDir+'/waveLibs.py')
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
@@ -25,27 +25,108 @@ def main():
 
 def cutPlot():
     """ Access the DB, pull BL values, shift/scale so we can see what the BL cut removes. """
+    from ROOT import TChain
 
-    calDB = db.TinyDB("../calDB.json")
+    calInfo = ds.CalInfo()
+    os.chdir(home+"/lat/sandbox")
+    calDB = db.TinyDB(latDir+"/calDB.json")
     pars = db.Query()
+    calDir = home + "/project/cal-lat"
 
-    dsNum, modNum, calIdx, bkgIdx = 1, 1, 1, 1
-    blKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
-    blRec = ds.getDBRecord(blKey, True, calDB, pars)
+    dsNum, modNum, bkgIdx = 5, 1, 80
+    goodList = ds.GetGoodChanListNew(dsNum)
 
-    # load the cal and bl files
+    latBkgDir, latList = ds.getLATList(dsNum, bkgIdx)
+    bkgChain = TChain("skimTree")
+    for f in latList: bkgChain.Add("%s/%s" % (latBkgDir, f))
+    nPass = bkgChain.Draw("fitBL:channel:run:trapENFCal","","GOFF")
+    bkgBL = bkgChain.GetV1()
+    bkgCh = bkgChain.GetV2()
+    bkgRun = bkgChain.GetV3()
+    bkgE = bkgChain.GetV4()
+    bkgCh = [int(bkgCh[idx]) for idx in range(nPass) if abs(bkgBL[idx]) < 9000]
+    bkgRun = [int(bkgRun[idx]) for idx in range(nPass) if abs(bkgBL[idx]) < 9000]
+    bkgENF = [float("%.2f" % bkgE[idx]) for idx in range(nPass) if abs(bkgBL[idx]) < 9000]
+    bkgBL = [float("%.2f" % bkgBL[idx]) for idx in range(nPass) if abs(bkgBL[idx]) < 9000 ]
+    nPass = len(bkgCh)
 
+    runLo, runHi = ds.bkgRunsDS[dsNum][bkgIdx][0], ds.bkgRunsDS[dsNum][bkgIdx][-1]
+    idxMin = calInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runLo)
+    idxMax = calInfo.GetCalIdx("ds%d_m%d"%(dsNum, modNum), runHi)
 
-    # cal
-    home = os.path.expanduser('~')
-    latDir = home + "/project/cal-lat"
-    calList = ds.getCalFiles(dsNum, calIdx, modNum, verbose=False)
-    latList = [f[f.find("latSkim"):] for f in calList ]
-    if bkgIdx is None:
-        print("Scanning %d cal idx's..." % ds.getNCalIdxs(dsNum,module=1))
+    # this is what i'm gonna plot
+    bkgShift, calShift, bkgEShift = [], [], []
+
+    for calIdx in range(idxMin,idxMax+1):
+        blKey = "bl_ds%d_idx%d_mod%d" % (dsNum, calIdx, modNum)
+        blRecord = ds.getDBRecord(blKey, True, calDB, pars)
+
+        bkgLo, bkgHi = calInfo.GetCalRunCoverage("ds%d_m%d" % (dsNum, modNum), calIdx)
+        bkgCh_tmp = [bkgCh[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
+        bkgBL_tmp = [bkgBL[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
+        bkgE_tmp = [bkgE[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
+        bkgRun_tmp = [bkgRun[idx] for idx in range(nPass) if bkgLo <= bkgRun[idx] <= bkgHi]
+
+        for idx in range(len(bkgBL_tmp)):
+            if bkgCh_tmp[idx] not in goodList: continue
+            fitMu = blRecord[bkgCh_tmp[idx]][2]
+            bkgShift.append(bkgBL_tmp[idx] - fitMu) # could also scale by sigma
+            bkgEShift.append(bkgE_tmp[idx])
+
+        calList = ds.getCalFiles(dsNum, calIdx, modNum, verbose=False)
+        latList = [f[f.find("latSkim"):] for f in calList ]
+        calChain = TChain("skimTree")
+        for f in latList: calChain.Add("%s/%s" % (calDir,f))
+        nPass = calChain.Draw("fitBL:channel","","GOFF")
+        calBL = calChain.GetV1()
+        calCh = calChain.GetV2()
+        calCh = [int(calCh[idx]) for idx in range(nPass) if abs(calBL[idx]) < 9000]
+        calBL = [float("%.2f" % calBL[idx]) for idx in range(nPass) if abs(calBL[idx]) < 9000 ]
+
+        for idx in range(len(calBL)):
+            if calCh[idx] not in goodList: continue
+            fitMu = blRecord[calCh[idx]][2]
+            calShift.append(calBL[idx] - fitMu)
+
+    # -- do plot stuff --
+
+    fig = plt.figure(figsize=(9,6),facecolor='w')
+    p1 = plt.subplot(111)
 
     # bkg
-    latDir, latList = ds.getLATList(dsNum, bkgIdx)
+    xLo, xHi, bpa = min(bkgShift), max(bkgShift), 1.
+    nBins = int((xHi-xLo)/bpa)
+    h1, x1 = np.histogram(np.asarray(bkgShift), bins=nBins, range=(xLo, xHi))
+    x1 = x1[:-1]
+    p1.semilogy(x1,h1,ls="steps",color='blue',label='bkg')
+
+    # cal
+    xLo, xHi, bpa = min(calShift), max(calShift), 1.
+    nBins = int((xHi-xLo)/bpa)
+    h2, x2 = np.histogram(np.asarray(calShift), bins=nBins, range=(xLo, xHi))
+    x2 = x2[:-1]
+    p1.semilogy(x2,h2,ls="steps",color='red',label='cal')
+
+    # cut
+    p1.axvline(-5,color='green',label='cut')
+    p1.axvline(20,color='green')
+
+    p1.legend(loc='best')
+    plt.savefig("../plots/blTest.pdf")
+
+
+    # 2d
+    from matplotlib.colors import LogNorm
+    fig2 = plt.figure(figsize=(10,5),facecolor='w')
+    bpe, bpa = 0.2, 1.
+    minE, maxE = 0., 10.
+    minA, maxA = min(bkgShift), max(bkgShift)
+    nBinsE, nBinsA = int((maxE-minE)/bpe), int((maxA-minA)/bpa)
+    plt.hist2d(bkgEShift, bkgShift, bins=[nBinsE,nBinsA], range=[[minE,maxE],[minA,maxA]], norm=LogNorm())
+    plt.colorbar()
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
+    plt.ylabel("fitBL (ADC)", horizontalalignment='right', y=1.0)
+    plt.savefig("../plots/blVsE.pdf")
 
 
 

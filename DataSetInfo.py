@@ -855,14 +855,30 @@ bkgRunsDS[6] = {
     }
 
 def GetBkgIdx(dsNum, runNum):
-    """ Not completely accurate way of finding the background idx """
-    #TODO: Add way of finding missing runs in a subDS (does it even matter?)
-    bkgidx = [key for key in bkgRunsDS[dsNum] if runNum <= bkgRunsDS[dsNum][key][-1] and runNum >= bkgRunsDS[dsNum][key][0]]
-    try:
-        return bkgidx[0]
-    except:
-        print("Run %d not found in Dataset, returning -1"%(runNum))
-        return -1
+    """ Finds the bkgIdx of a given run.  Must be in the dataset!
+    Huh, this is kinda not that useful, since we can't put in a calibration (arbitrary) run number.
+    """
+    for bkgIdx in bkgRunsDS[dsNum]:
+        runCov = bkgRunsDS[dsNum][bkgIdx]
+
+        runList = []
+        for idx in range(0,len(runCov),2):
+            runList.extend(list(range(runCov[idx],runCov[idx+1]+1)))
+
+        if runNum in runList:
+            return bkgIdx
+
+    return -1
+
+# def GetBkgIdx(dsNum, runNum):
+#     """ Not completely accurate way of finding the background idx """
+#     #TODO: Add way of finding missing runs in a subDS (does it even matter?)
+#     bkgidx = [key for key in bkgRunsDS[dsNum] if runNum <= bkgRunsDS[dsNum][key][-1] and runNum >= bkgRunsDS[dsNum][key][0]]
+#     try:
+#         return bkgidx[0]
+#     except:
+#         print("Run %d not found in Dataset, returning -1"%(runNum))
+#         return -1
 
 
 # ==================================================================================
@@ -1268,13 +1284,14 @@ def getLATList(dsNum, bkgIdx=None, latDir=None):
     """ Return a list of LAT files.
     Build a file list sequentially (a simple glob is unsorted)
     """
+    import os, glob
     home = os.path.expanduser('~')
     if latDir == None:
         latDir = home + "/project/bg-lat"
 
     fList = []
 
-    bkgIdxList = (idx for idx in range(ds.dsMap[dsNum]+1))
+    bkgIdxList = (idx for idx in range(dsMap[dsNum]+1))
     if bkgIdx != None:
         bkgIdxList = [bkgIdx]
 
