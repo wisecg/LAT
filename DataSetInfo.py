@@ -1,7 +1,7 @@
 # DataSetInfo.py
 # C. Wiseman, B. Zhu
 import numpy as np
-
+import tinydb as db
 # ==================================================================================
 #                                RUN INFORMATION
 # Taken from DataSetInfo.hh from the GAT version on Sep 12th 2017.
