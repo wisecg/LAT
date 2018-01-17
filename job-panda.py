@@ -66,7 +66,6 @@ def main(argv):
 
         # misc
         if opt == "-split":        splitTree(dsNum, subNum, runNum)
-        if opt == "-purge":        purgeLogs()
         if opt == "-checkLogs":    checkLogErrors()
         if opt == "-checkLogs2":   checkLogErrors2()
         if opt == "-checkFiles":   checkFiles()
@@ -98,11 +97,6 @@ def sh(cmd):
     with open(cronFile,"a+") as f:
         print("Adding to cronfile (%s): %s" % (cronFile, cmd))
         f.write(cmd + "\n")
-
-
-def purgeLogs():
-    print("Purging logs ...")
-    for fl in glob.glob("./logs/*"): os.remove(fl)
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

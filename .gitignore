@@ -11,8 +11,6 @@ validate_skim
 specFit
 logs/*
 plots/*
-qsub-job.sh
-slurm-job.sh
 data/mucal
 cron.log
 cron.queue

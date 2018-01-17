@@ -47,12 +47,13 @@ int main(int argc, char** argv)
         << "       [-f [dsNum] [runNum] : specify DS and run num]\n"
         << "       [-p [inPath] [outPath]: file locations]\n"
         << "       [-c : use calibration TCut]\n"
+        << "       [-x : don't apply a data cleaning TCut]\n"
         << "       [-n : do the Radford 2-pass NLC correction]\n";
    return 1;
  }
  string inPath=".", outPath=".";
  int dsNum=-1, subNum=0, run=0;
- bool sw=0, tcs=0, fil=0, cal=0, nlc=0;
+ bool sw=0, tcs=0, fil=0, cal=0, nlc=0, noCut=0;
  vector<string> opt(argv, argv+argc);
  for (size_t i = 0; i < opt.size(); i++) {
    if (opt[i] == "-s") { sw=0; tcs=1; }
@@ -60,6 +61,7 @@ int main(int argc, char** argv)
    if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
    if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
    if (opt[i] == "-c") { cal=1; }
+   if (opt[i] == "-x") { noCut=1; }
    if (opt[i] == "-n") {
      cout << "Performing Pass-2 Nonlinearity Correction ...\n";
      nlc=1;
@@ -79,8 +81,13 @@ int main(int argc, char** argv)
  // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
  // Special DEBUG cut
- // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0 && Entry$ < 100";
- // cout << "WARNING: Special DEBUG cut in use.\n";
+ // NOTE: external pulser runs don't have any muVeto data, so come up empty
+ if (cal) theCut = "trapENFCal > 0.7 && trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto";
+ cout << "WARNING: Special DEBUG cut in use.\n";
+
+ if (noCut) theCut = "";
+
+ cout << "The cut is: " << theCut << endl;
 
  // Set file I/O
  string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
@@ -107,22 +114,35 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
  TChain *skimTree = new TChain("skimTree");
  skimTree->Add(inFile.c_str());
  cout << "Found " << skimTree->GetEntries() << " input skim entries.\n";
- size_t n = skimTree->Draw(">>elist",theCut.c_str(), "entrylist");
- cout << "Draw successful.  Found " << n << " events passing cuts.\n";
- if (n == 0) {
-   cout << "No events found passing cuts.  Exiting ...\n";
-   return;
+
+ if (theCut != "") {
+   size_t n = skimTree->Draw(">>elist",theCut.c_str(), "entrylist");
+   cout << "Draw successful.  Found " << n << " events passing cuts.\n";
+   if (n == 0) {
+     cout << "No events found passing cuts.  Exiting ...\n";
+     return;
+   }
+   TEntryList *elist = (TEntryList*)gDirectory->Get("elist");
+   skimTree->SetEntryList(elist);
+   TFile *output = new TFile(outFile.c_str(),"RECREATE");
+   cout << "Attempting tree copy ... \n";
+   TTree *cutTree = skimTree->CopyTree("");
+   cout << "Tree copy successful.\n";
+   cutTree->Write("",TObject::kOverwrite);
+   TNamed thisCut("theCut",theCut);	// save the cut used into the file.
+   thisCut.Write();
+   cout << Form("Using this cut:  \n%s  \nWrote %lli entries to the cut tree.\n",theCut.c_str(),cutTree->GetEntries());
+   output->Close();
  }
- TEntryList *elist = (TEntryList*)gDirectory->Get("elist");
- skimTree->SetEntryList(elist);
- TFile *output = new TFile(outFile.c_str(),"RECREATE");
- cout << "Attempting tree copy ... \n";
- TTree *cutTree = skimTree->CopyTree("");
- cout << "Tree copy successful.\n";
- cutTree->Write("",TObject::kOverwrite);
- TNamed thisCut("theCut",theCut);	// save the cut used into the file.
- thisCut.Write();
- cout << Form("Using this cut:  \n%s  \nWrote %lli entries to the cut tree.\n",theCut.c_str(),cutTree->GetEntries());
+ else {
+   TFile *output = new TFile(outFile.c_str(),"RECREATE");
+   TTree *cutTree = skimTree->CopyTree("");
+   cutTree->Write("",TObject::kOverwrite);
+   cout << Form("No cuts applied.  Wrote %lli entries to the cut tree.\n",cutTree->GetEntries());
+   output->Close();
+ }
+ TFile *output = new TFile(outFile.c_str(),"UPDATE");
+ TTree *cutTree = (TTree*)output->Get("skimTree");
 
  // Add waveforms to the cut tree, keeping only one run in memory at a time
  int run=0, iEvent=0;

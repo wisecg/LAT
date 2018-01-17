@@ -23,6 +23,12 @@ def main():
     cutPlot()
 
 
+def findRetriggers():
+
+    # WTF, cutPlot didn't show a retrigger population.
+    # Try to grab a gatified file with retriggers and look at the cut.
+
+
 def cutPlot():
     """ Access the DB, pull BL values, shift/scale so we can see what the BL cut removes. """
     from ROOT import TChain

@@ -51,7 +51,8 @@ int main(int argc, const char** argv)
          << "   [-m] (minimal skim file - use for calibrations etc.) \n"
          << "   [-l] (low energy skim file - additional parameters) \n"
          << "   [-n] (LG event skipping - set this to turn ON.) \n"
-         << "   [-t] [number] (custom energy threshold - default is 2 keV) \n";
+         << "   [-t] [number] (custom energy threshold - default is 2 keV) \n"
+         << "   [-x] (don't skip anything!)\n";
     return 1;
   }
   // ==========================================================================
@@ -60,7 +61,7 @@ int main(int argc, const char** argv)
   TChain *gatChain=NULL, *vetoChain=NULL;
   string outputPath = "";
   int dsNum = -1, subRun = -1;
-  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, noSkip=1;
+  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, noSkip=1, dontSkipAnything=1;
   double energyThresh = 5; // keV
   vector<string> opt(argv + 1, argv + argc);
   for (size_t i = 0; i < opt.size(); i++)
@@ -68,6 +69,7 @@ int main(int argc, const char** argv)
     if (opt[i] == "-m") { smallOutput=1;    cout << "Minimal skim file selected. \n"; }
     if (opt[i] == "-l") { lowEnergy=1;      cout << "Augmented low-energy selected. \n"; }
     if (opt[i] == "-n") { noSkip=0;         cout << "No LG-skip option deactivated. \n"; }
+    if (opt[i] == "-x") { dontSkipAnything=1; cout << "No skipping of any kind ...  \n"; }
     if (opt[i] == "-t") {
       energyThresh = stod(opt[i+1]);
       opt.erase(opt.begin()+i+1);
@@ -575,7 +577,7 @@ int main(int argc, const char** argv)
   			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
   			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
   		}
-      continue;
+      if (!dontSkipAnything) continue;
     }
 
     // Clear all hit-level vector variables
@@ -649,6 +651,7 @@ int main(int argc, const char** argv)
     sumEH=0, sumEL=0, sumEHClean=0, sumELClean=0, sumEHL=0;
 
     // Event timing and vetos
+    muVeto = 0; // default
     if (!simulatedInput)
     {
       if (nMu!=0)
@@ -755,20 +758,24 @@ int main(int argc, const char** argv)
       double hitENF = (*trapENFIn)[i];
       double hitEMax = (*trapECalIn)[i];
       int hitCh = (*channelIn)[i];
-      if (!smallOutput && hitCh%2 == 0 && (hitENFCal < energyThresh || hitEMax < energyThresh)) continue;
-      if (!smallOutput && hitCh%2 == 1 && (hitENFCal < 10. || hitEMax < 10.)) continue;
-      if (smallOutput && hitCh%2 == 0 && (hitENFCal <  200. || hitEMax < 200.)) continue;
-      if (smallOutput && hitCh%2 == 1 && (hitENFCal < 200. || hitEMax < 200.)) continue;
+      if (!dontSkipAnything) {
+        if (!smallOutput && hitCh%2 == 0 && (hitENFCal < energyThresh || hitEMax < energyThresh)) continue;
+        if (!smallOutput && hitCh%2 == 1 && (hitENFCal < 10. || hitEMax < 10.)) continue;
+        if (smallOutput && hitCh%2 == 0 && (hitENFCal <  200. || hitEMax < 200.)) continue;
+        if (smallOutput && hitCh%2 == 1 && (hitENFCal < 200. || hitEMax < 200.)) continue;
+      }
 
       // Skip hits from totally "bad" detectors (not biased, etc)
       // for veto-only detectors, skip if trapENFCal or abs(trapENF) is < 10 keV
       int hitDetID = (*detIDIn)[i];
-      if(!simulatedInput && detIDIsBad[hitDetID]) continue;
-      if(!simulatedInput && detIDIsVetoOnly[hitDetID] && (abs(hitENF) < 10. || hitENFCal < 10.)) continue;
+      if (!dontSkipAnything) {
+        if(!simulatedInput && detIDIsBad[hitDetID]) continue;
+        if(!simulatedInput && detIDIsVetoOnly[hitDetID] && (abs(hitENF) < 10. || hitENFCal < 10.)) continue;
+      }
 
       // Skip any hits from a nonsense cryostat
       int hitCryo = (*cryoIn)[i];
-      if (hitCryo == 0) {
+      if (hitCryo == 0 && !dontSkipAnything) {
         if (find(c0Chan.begin(), c0Chan.end(), hitCh) == c0Chan.end())
           c0Chan.push_back(hitCh);
         continue;

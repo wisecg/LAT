@@ -3,5 +3,5 @@
 #SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
 #SBATCH --image=wisecg/mjsw:v2
 #SBATCH -p shared
-#SBATCH --qos debug -t 29:00 -C haswell
+#-SBATCH --qos debug -t 29:00 -C haswell
 shifter /bin/bash shifter-job.sh ${@}
