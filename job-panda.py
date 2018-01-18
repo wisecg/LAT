@@ -13,8 +13,6 @@ import sys, shlex, glob, os, re, time
 import subprocess as sp
 import DataSetInfo as ds
 
-
-
 home    = os.path.expanduser('~')
 skimDir    = home+"/project/bg-skim"
 waveDir    = home+"/project/bg-waves" # split files are in waveDir/split
@@ -24,9 +22,9 @@ calWaveDir = home+"/project/cal-waves"
 calLatDir  = home+"/project/cal-lat"
 pandaDir   = home+"/project/panda-skim"
 specialDir = home+"/project/special"
-# qsubStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
-# qsubStr = "sbatch slurm-job.sh" # SLURM mode
-qsubStr = "sbatch shifter.slr" # SLURM+Shifter mode
+# jobStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
+# jobStr = "sbatch slurm-job.sh" # SLURM mode
+jobStr = "sbatch pdsf.slr" # SLURM+Shifter mode
 latDir = os.environ['LATDIR']
 cronFile = latDir+"/cron.queue"
 
@@ -145,42 +143,6 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
     return calList
 
 
-def specialSkim():
-    """ ./job-panda.py -sskim """
-    cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
-    for run in runList:
-        sh("""%s './skim_mjd_data -f %d -l -t 0.7 %s/skim'""" % (qsubStr,run,specialDir))
-
-
-def specialWave():
-    """ ./job-panda.py -swave """
-    cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
-    # sh("""./wave-skim -n -f %d %d -p %s/skim %s/waves""" % (0, runList[0], specialDir, specialDir) )
-    for run in runList:
-        sh("""%s './wave-skim -n -f %d %d -p %s/skim %s/waves'""" % (qsubStr, ds.GetDSNum(run), run, specialDir, specialDir) )
-
-
-def specialSplit():
-    """ ./job-panda.py -ssplit
-    Doesn't seem to be necessary w/ the special runs, very few are over 50MB
-    """
-    print("hi")
-
-
-def specialLAT():
-    """ ./job-panda.py -slat """
-    cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
-    for run in runList:
-        dsNum = ds.GetDSNum(run)
-        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        # sh("""./lat.py -b -f %d %d -p %s %s""" % (dsNum,run,inFile,outFile))
-        sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,run,inFile,outFile))
-
-
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit skim_mjd_data jobs.
@@ -190,17 +152,17 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
         # -ds
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
-                sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, i, skimDir))
+                sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (jobStr, dsNum, i, skimDir))
         # -sub
         elif runNum==None:
-            sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (qsubStr, dsNum, subNum, skimDir))
+            sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s'""" % (jobStr, dsNum, subNum, skimDir))
         # -run
         elif subNum==None:
-            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, runNum, skimDir))
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (jobStr, runNum, skimDir))
     # cal
     else:
         for run in calList:
-            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (qsubStr, run, calSkimDir))
+            sh("""%s './skim_mjd_data -f %d -n -l -t 0.7 %s'""" % (jobStr, run, calSkimDir))
 
 
 def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
@@ -212,20 +174,20 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
         # -ds
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
-                sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (qsubStr, dsNum, i, skimDir, waveDir) )
+                sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (jobStr, dsNum, i, skimDir, waveDir) )
         # -sub
         elif runNum==None:
-            sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (qsubStr, dsNum, subNum, skimDir, waveDir) )
+            sh("""%s './wave-skim -n -r %d %d -p %s %s'""" % (jobStr, dsNum, subNum, skimDir, waveDir) )
         # -run
         elif subNum==None:
-            sh("""%s './wave-skim -n -f %d %d -p %s %s""" % (qsubStr, dsNum, runNum, skimDir, waveDir) )
+            sh("""%s './wave-skim -n -f %d %d -p %s %s""" % (jobStr, dsNum, runNum, skimDir, waveDir) )
     # cal
     else:
         for run in calList:
             for key in ds.dsRanges:
                 if ds.dsRanges[key][0] <= run <= ds.dsRanges[key][1]:
                     dsNum=key
-            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (qsubStr, dsNum, run, calSkimDir, calWaveDir) )
+            sh("""%s './wave-skim -n -c -f %d %d -p %s %s'""" % (jobStr, dsNum, run, calSkimDir, calWaveDir) )
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
@@ -311,7 +273,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
                 if (os.path.getsize(inPath)/1e6 < 45):
                     copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, i))
                 else:
-                    sh("""%s './job-panda.py -split -sub %d %d'""" % (qsubStr, dsNum, i))
+                    sh("""%s './job-panda.py -split -sub %d %d'""" % (jobStr, dsNum, i))
         # -sub
         elif runNum==None:
             inPath = "%s/waveSkimDS%d_%d.root" % (waveDir,dsNum,subNum)
@@ -321,7 +283,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             if (os.path.getsize(inPath)/1e6 < 45):
                 copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, subNum))
             else:
-                sh("""%s './job-panda.py -split -sub %d %d'""" % (qsubStr, dsNum, subNum))
+                sh("""%s './job-panda.py -split -sub %d %d'""" % (jobStr, dsNum, subNum))
         # -run
         elif subNum==None:
             inPath = "%s/waveSkimDS%d_run%d.root" % (waveDir,dsNum,runNum)
@@ -331,7 +293,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             if (os.path.getsize(inPath)/1e6 < 45):
                 copyfile(inPath, "%s/split/splitSkimDS%d_%d.root" % (waveDir, dsNum, runNum))
             else:
-                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, runNum))
+                sh("""%s './job-panda.py -split -run %d %d'""" % (jobStr, dsNum, runNum))
     # cal
     else:
         for run in calList:
@@ -345,7 +307,7 @@ def qsubSplit(dsNum, subNum=None, runNum=None, calList=[]):
             if (os.path.getsize(inPath)/1e6 < 45):
                 copyfile(inPath, "%s/split/splitSkimDS%d_run%d.root" % (calWaveDir, dsNum, run))
             else:
-                sh("""%s './job-panda.py -split -run %d %d'""" % (qsubStr, dsNum, run))
+                sh("""%s './job-panda.py -split -run %d %d'""" % (jobStr, dsNum, run))
 
 
 def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
@@ -414,19 +376,19 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                 files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,i),i)
                 for idx, inFile in sorted(files.items()):
                     outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,i,idx)
-                    sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (qsubStr,dsNum,i,inFile,outFile))
+                    sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (jobStr,dsNum,i,inFile,outFile))
         # -sub
         elif runNum==None:
             files = getFileList("%s/split/splitSkimDS%d_%d*" % (waveDir,dsNum,subNum),subNum)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_%d_%d.root" % (latDir,dsNum,subNum,idx)
-                sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (qsubStr,dsNum,subNum,inFile,outFile))
+                sh("""%s './lat.py -b -r %d %d -p %s %s'""" % (jobStr,dsNum,subNum,inFile,outFile))
         # -run
         elif subNum==None:
             files = getFileList("%s/split/splitSkimDS%d_run%d*" % (waveDir,dsNum,runNum),runNum)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (latDir,dsNum,runNum,idx)
-                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,runNum,inFile,outFile))
+                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (jobStr,dsNum,runNum,inFile,outFile))
     # cal
     else:
         for run in calList:
@@ -436,7 +398,7 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
             files = getFileList("%s/split/splitSkimDS%d_run%d*" % (calWaveDir,dsNum,run),run)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (calLatDir,dsNum,run,idx)
-                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (qsubStr,dsNum,run,inFile,outFile))
+                sh("""%s './lat.py -b -f %d %d -p %s %s'""" % (jobStr,dsNum,run,inFile,outFile))
 
 
 def mergeLAT():
@@ -626,16 +588,16 @@ def tuneCuts(argString, dsNum=None):
             for mod in [1,2]:
                 try:
                     for j in range(calInfo.GetIdxs("ds%d_m%d"%(i, mod))):
-                        print("%s './lat3.py -db -tune %s -s %d %d %d %s" % (qsubStr, calLatDir, i, j, mod, argString))
-                        sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (qsubStr, calLatDir, i, j, mod, argString))
+                        print("%s './lat3.py -db -tune %s -s %d %d %d %s" % (jobStr, calLatDir, i, j, mod, argString))
+                        sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (jobStr, calLatDir, i, j, mod, argString))
                 except: continue
     # -ds
     else:
         for mod in [1,2]:
             try:
                 for j in range(calInfo.GetIdxs("ds%d_m%d"%(dsNum, mod))):
-                    print("%s './lat3.py -db -tune %s -s %d %d %d %s" % (qsubStr, calLatDir, dsNum, j, mod, argString))
-                    sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (qsubStr, calLatDir, dsNum, j, mod, argString))
+                    print("%s './lat3.py -db -tune %s -s %d %d %d %s" % (jobStr, calLatDir, dsNum, j, mod, argString))
+                    sh("""%s './lat3.py -db -tune %s -s %d %d %d %s '""" % (jobStr, calLatDir, dsNum, j, mod, argString))
             except: continue
 
 
@@ -644,9 +606,9 @@ def lat3ApplyCuts(dsNum, cutType):
 
     if dsNum==-1:
         for ds in range(6):
-            sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, ds, cutType))
+            sh("""%s './lat3.py -cut %d %s'""" % (jobStr, ds, cutType))
     else:
-        sh("""%s './lat3.py -cut %d %s'""" % (qsubStr, dsNum, cutType))
+        sh("""%s './lat3.py -cut %d %s'""" % (jobStr, dsNum, cutType))
 
 
 def getEff():
@@ -800,17 +762,17 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
         # -ds
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
-                sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, waveDir, pandaDir))
+                sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, i, waveDir, pandaDir))
         # -sub
         elif runNum==None:
-            sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (qsubStr, dsNum, subNum, waveDir, pandaDir))
+            sh("""%s './ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, subNum, waveDir, pandaDir))
         # -run
         elif subNum==None:
-            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, runNum, waveDir, pandaDir))
+            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, runNum, waveDir, pandaDir))
     # cal
     else:
         for i in calList:
-            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (qsubStr, dsNum, i, calWaveDir, pandaDir))
+            sh("""%s './ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, i, calWaveDir, pandaDir))
 
 
 def cronJobs():
@@ -855,6 +817,50 @@ def shifterTest():
     """ ./job-panda.py -shifter """
     print("Shifter:",time.strftime('%X %x %Z'),"cwd:",os.getcwd())
     sh("""sbatch shifter.slr 'python sandbox/bl2.py'""")
+
+
+def specialSkim():
+    """ ./job-panda.py -sskim """
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    # run = runList[0]
+    # sh("""%s './skim_mjd_data -x -l -f %d %s/skim'""" % (jobStr,run,specialDir))
+    for run in runList:
+        sh("""%s './skim_mjd_data -x -l -f %d %s/skim'""" % (jobStr,run,specialDir))
+
+
+def specialWave():
+    """ ./job-panda.py -swave """
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    # sh("""./wave-skim -x -n -f %d %d -p %s/skim %s/waves""" % (0, runList[0], specialDir, specialDir) )
+    for run in runList:
+        sh("""%s './wave-skim -x -n -f %d %d -p %s/skim %s/waves'""" % (jobStr, ds.GetDSNum(run), run, specialDir, specialDir) )
+
+
+def specialSplit():
+    """ ./job-panda.py -ssplit
+    Doesn't seem to be necessary w/ the special runs, very few are over 50MB
+    """
+    print("hi")
+
+
+def specialLAT():
+    """ ./job-panda.py -slat """
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+
+    # run = runList[0]
+    # dsNum = ds.GetDSNum(run)
+    # inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+    # outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+    # sh("""./lat.py -x -b -f %d %d -p %s %s""" % (dsNum,run,inFile,outFile))
+
+    for run in runList:
+        dsNum = ds.GetDSNum(run)
+        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        sh("""%s './lat.py -x -b -f %d %d -p %s %s'""" % (jobStr,dsNum,run,inFile,outFile))
 
 
 def quickTest():

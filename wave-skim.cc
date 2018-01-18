@@ -5,6 +5,7 @@
 //         v.2 3/06/2017
 //         v.3 5/18/2017 (thanks to Ian w/ waveform stack)
 //         v.4 7/25/2017 - added multisampling support
+//         v.5 1/18/2018 - added 'no TCut' mode
 
 #include <iostream>
 #include <fstream>
@@ -35,7 +36,7 @@ void LoadNLCParameters(int ddID, int run, const MGVDigitizerData* dd, bool useTw
 // stuff for NLC.  made 'em global because fk it.
 map<int, MGWFNonLinearityCorrectionMap*> NLCMaps;
 map<int, MGWFNonLinearityCorrectionMap*> NLCMaps2;
-string NLCMapDir = "/project/projectdirs/majorana/data/production/NLCDB";
+string NLCMapDir = "/global/project/projectdirs/majorana/data/production/NLCDB";
 
 int main(int argc, char** argv)
 {

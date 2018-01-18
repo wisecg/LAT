@@ -183,7 +183,7 @@ def baselineParameters(signalRaw):
     slope = 0
     baselineMean = 0
     baselineAveSq = 0
-    for x in xrange(0,500):
+    for x in range(0,500):
         wfX = signalRaw[x]
         baselineMean += wfX
         baselineAveSq += wfX*wfX
@@ -277,7 +277,7 @@ def wfDerivative(signalRaw,sp=10.):
     where sp is the sampling period of the waveform.
     """
     signalDeriv = np.zeros(len(signalRaw))
-    for i in xrange(len(signalRaw)-1):
+    for i in range(len(signalRaw)-1):
         signalDeriv[i] = (signalRaw[i+1] - signalRaw[i])/sp
     return signalDeriv
 

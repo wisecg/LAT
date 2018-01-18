@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 ============== lat.py: (L)ANL (A)nalysis (T)oolkit ==============
 
@@ -25,6 +25,7 @@ Usage:
 
 v1: 27 May 2017
 v2: 04 Aug 2017 - improvements to wf fitting, handle multisampling, etc.
+v3: 18 Jan 2018 - update to python3
 
 ================ C. Wiseman (USC), B. Zhu (LANL) ================
 """
@@ -41,13 +42,14 @@ import waveLibs as wl
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
-    print "======================================="
-    print "LAT started:",time.strftime('%X %x %Z')
+    print("=======================================")
+    print("Hey Clint, LAT started:",time.strftime('%X %x %Z'))
     startT = time.clock()
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
     global batMode
     # let's get some (m)args
     intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode, cutMode = False, False, False, False, False, False, False, False
+    dontUseTCuts = False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
     pathToInput, pathToOutput, manualInput, manualOutput, customPar = ".", ".", "", "", ""
 
@@ -55,35 +57,38 @@ def main(argv):
     for i,opt in enumerate(argv):
         if opt == "-r":
             rangeMode, dsNum, subNum = True, int(argv[i+1]), int(argv[i+2])
-            print "Scanning DS-%d sub-range %d" % (dsNum, subNum)
+            print("Scanning DS-%d sub-range %d" % (dsNum, subNum))
         if opt == "-p":
             pathMode, manualInput, manualOutput = True, argv[i+1], argv[i+2]
-            print "Manually set input/output files:\nInput: %s\nOutput: %s" % (manualInput, manualOutput)
+            print("Manually set input/output files:\nInput: %s\nOutput: %s" % (manualInput, manualOutput))
         if opt == "-d":
             pathToInput, pathToOutput = argv[i+1], argv[i+2]
-            print "Custom paths: Input %s,  Output %s" % (pathToInput,pathToOutput)
+            print("Custom paths: Input %s,  Output %s" % (pathToInput,pathToOutput))
         if opt == "-f":
             fileMode, dsNum, runNum = True, int(argv[i+1]), int(argv[i+2])
-            print "Scanning DS-%d, run %d" % (dsNum, runNum)
+            print("Scanning DS-%d, run %d" % (dsNum, runNum))
         if opt == "-g":
             gatMode, runNum = True, int(argv[i+1])
-            print "GATDataSet mode.  Scanning run %d" % (runNum)
+            print("GATDataSet mode.  Scanning run %d" % (runNum))
         if opt == "-s":
             singleMode, pathToInput = True, argv[i+1]
-            print "Single file mode.  Scanning {}".format(pathToInput)
+            print("Single file mode.  Scanning {}".format(pathToInput))
         if opt == "-i":
             intMode, plotNum = True, int(argv[i+1])
-            print "Interactive mode selected. Use \"p\" for previous and \"q\" to exit."
+            print("Interactive mode selected. Use \"p\" for previous and \"q\" to exit.")
+        if opt == "-x":
+            dontUseTCuts = True
+            print("DC TCuts deactivated.  Retaining all events ...")
         if opt == "-c":
             cutMode, customPar = True, str(argv[i+1])
-            print "Using custom cut parameter: {}".format(customPar)
+            print("Using custom cut parameter: {}".format(customPar))
         if opt == "-b":
             batMode = True
             import matplotlib
             # if os.environ.get('DISPLAY','') == '':
                 # print('No display found. Using non-interactive Agg backend')
             matplotlib.use('Agg')
-            print "Batch mode selected.  A new file will be created."
+            print("Batch mode selected.  A new file will be created.")
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import matplotlib.ticker as mtick
@@ -114,7 +119,8 @@ def main(argv):
     if rangeMode or fileMode or pathMode:
         inFile = TFile(inPath)
         gatTree = inFile.Get("skimTree")
-        theCut = inFile.Get("theCut").GetTitle()
+        print(gatTree.GetEntries())
+        theCut = "" if dontUseTCuts else inFile.Get("theCut").GetTitle()
     elif gatMode:
         inFile = TFile(gatPath)
         bltFile = TFile(bltPath)
@@ -126,23 +132,26 @@ def main(argv):
         gatTree = inFile.Get("skimTree")
     if cutMode:
         theCut += customPar
-        print "WARNING: Custom cut in use!"
+        print("WARNING: Custom cut in use!")
+
+    theCut = "trapENFCal > 0"
+    print("Gonna use this cut:",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
     elist = gDirectory.Get("elist")
     gatTree.SetEntryList(elist)
     nList = elist.GetN()
-    print "Using cut:\n",theCut
-    print "Found",gatTree.GetEntries(),"input entries."
-    print "Found",nList,"entries passing cuts."
+    print("Using cut:\n",theCut)
+    print("Found",gatTree.GetEntries(),"input entries.")
+    print("Found",nList,"entries passing cuts.")
 
     # Output: In batch mode (-b) only, create an output file+tree & append new branches.
     if batMode and not intMode:
         outFile = TFile(outPath, "RECREATE")
-        print "Attempting tree copy to",outPath
+        print("Attempting tree copy to",outPath)
         out = gatTree.CopyTree("")
         out.Write()
-        print "Wrote",out.GetEntries(),"entries."
+        print("Wrote",out.GetEntries(),"entries.")
         cutUsed = TNamed("theCut",theCut)
         cutUsed.Write()
 
@@ -162,7 +171,7 @@ def main(argv):
     t0_SLE, t0_ALE, lat, latF = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
-    tE50, latE50, wfstd = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    tE50, latE50, wfStd = std.vector("double")(), std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
@@ -181,7 +190,7 @@ def main(argv):
     b31, b32, b33, b34 = out.Branch("t0_SLE",t0_SLE), out.Branch("t0_ALE",t0_ALE), out.Branch("lat",lat), out.Branch("latF",latF)
     b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
     b38 = out.Branch("nMS",nMS)
-    b39, b40, b41 = out.Branch("tE50", tE50), out.Branch("latE50", latE50), out.Branch("wfstd", wfstd)
+    b39, b40, b41 = out.Branch("tE50", tE50), out.Branch("latE50", latE50), out.Branch("wfStd", wfStd)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -200,7 +209,7 @@ def main(argv):
         "riseNoise":[riseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
-        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfstd":[wfstd,b41]
+        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfStd":[wfStd,b41]
     }
 
 
@@ -233,7 +242,7 @@ def main(argv):
 
 
     # Load a fast signal template - used w/ the freq-domain matched filter
-    # print "Generating signal template ..."
+    # print("Generating signal template ...")
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
     # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo) # Damn you to hell, PDSF
     templateFile = np.load("./data/lat_template.npz")
@@ -247,12 +256,12 @@ def main(argv):
 
 
     # Loop over events
-    print "Starting event loop ..."
+    print("Starting event loop ...")
     iList = -1
     while True:
         iList += 1
         if intMode==True and iList != 0:
-            value = raw_input()
+            value = input()
             if value=='q': break        # quit
             if value=='p': iList -= 2   # go to previous
             if (value.isdigit()):
@@ -280,8 +289,8 @@ def main(argv):
         # Loop over hits passing cuts
         numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
         chans = gatTree.GetV1()
-        chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-        hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
+        chanList = list(set(int(chans[n]) for n in range(numPass)))
+        hitList = (iH for iH in range(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
         for iH in hitList:
 
             # ------------------------------------------------------------------------
@@ -302,11 +311,11 @@ def main(argv):
                 wf = gatTree.MGTWaveforms.at(iH)
                 iEvent = gatTree.iEvent
 
-            # print "%d:  run %d  chan %d  trapENFCal %.2f" % (iList, run, chan, dataENFCal)
+            # print("%d:  run %d  chan %d  trapENFCal %.2f" % (iList, run, chan, dataENFCal))
 
             # be absolutely sure you're matching the right waveform to this hit
             if wf.GetID() != chan:
-                print "ERROR -- Vector matching failed.  iList %d  run %d  iEvent %d" % (iList,run,iEvent)
+                print("ERROR -- Vector matching failed.  iList %d  run %d  iEvent %d" % (iList,run,iEvent))
                 return
 
             # Let's start the show - grab a waveform.
@@ -413,7 +422,7 @@ def main(argv):
             fitSpeed = time.clock() - start
 
             if not result["success"]:
-                # print "fit 'fail': ", result["message"]
+                # print("fit 'fail': ", result["message"])
                 errorCode[0] = 1
 
             # save parameters
@@ -522,7 +531,7 @@ def main(argv):
             matchMax[iH], matchWidth[iH], matchTime[iH] = -888, -888, -888
             smoothMF, windMF = np.zeros(len(dataTS)), np.zeros(len(dataTS))
             if len(match)!=len(data):
-                print "array mismatch: len match %i  len data %i " % (len(match),len(data))
+                print("array mismatch: len match %i  len data %i " % (len(match),len(data)))
                 # errorCode[1] = 1
             else:
                 # compute match filter parameters
@@ -542,7 +551,7 @@ def main(argv):
                 popt1,_ = op.curve_fit(wl.tailModelPol, tailTS, tail)
                 pol0[iH], pol1[iH], pol2[iH], pol3[iH] = popt1[0], popt1[1], popt1[2], popt1[3]
             except:
-                # print "curve_fit tailModelPol failed, run %i  event %i  channel %i" % (run, iList, chan)
+                # print("curve_fit tailModelPol failed, run %i  event %i  channel %i" % (run, iList, chan))
                 errorCode[2] = 1
                 pass
 
@@ -633,12 +642,12 @@ def main(argv):
                 idx = int(maxtab[iMax][0])
                 val = maxtab[iMax][1]
                 msList.append(dataTS[idx])
-                # print "%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh)
+                # print("%d  idx %d  TS %d  val %.2f  thresh %.2f" % (iList, idx, dataTS[idx], val, msThresh))
             nMS[iH] = len(maxtab)
 
             # =========================================================
-            # wfstd parameter
-            wfstd[iH] = np.std(data[5:-5])
+            # wfStd parameter
+            wfStd[iH] = np.std(data[5:-5])
 
             # ------------------------------------------------------------------------
             # End waveform processing.
@@ -647,7 +656,7 @@ def main(argv):
             fails[iH] = 0
             for i,j in enumerate(errorCode):
                 if j==1: fails[iH] += int(j)<<i
-            # print "fails:",fails[iH]
+            # print("fails:",fails[iH])
 
             # Make plots!
             if batMode: continue
@@ -799,17 +808,17 @@ def main(argv):
                 brDict[key][1].Fill()
             if iList%5000 == 0 and iList!=0:
                 out.Write("",TObject.kOverwrite)
-                print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
+                print("%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z')))
 
     # End loop over events
     if batMode and not intMode:
         out.Write("",TObject.kOverwrite)
-        print "Wrote",out.GetBranch("channel").GetEntries(),"entries in the copied tree,"
-        print "and wrote",b1.GetEntries(),"entries in the new branches."
+        print("Wrote",out.GetBranch("channel").GetEntries(),"entries in the copied tree,")
+        print("and wrote",b1.GetEntries(),"entries in the new branches.")
 
     stopT = time.clock()
-    print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
-    print float(nList)/((stopT-startT)/60.),"entries per minute."
+    print("Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60)
+    print(float(nList)/((stopT-startT)/60.),"entries per minute.")
 
 
 def evalGaus(x,mu,sig):
@@ -824,7 +833,7 @@ def evalXGaus(x,mu,sig,tau):
     if all(tmp < limit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
     else:
-        #print "Exceeded limit ..."
+        #print("Exceeded limit ...")
         # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)

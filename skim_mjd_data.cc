@@ -34,6 +34,7 @@ using namespace CLHEP;
 // NOTE: This is IDENTICAL to the skimmer code used for the 0nbb analysis,
 // with these small exceptions:
 // - "GetChannelSelectionPath" points at the OFFICIAL channel selection files.
+// - -x activates "Don't skip anything" mode, used for special runs.
 
 // TODO: The "noSkip" option is enabled by default.
 //       Once we trust the saturated WF tag, this should be changed back.

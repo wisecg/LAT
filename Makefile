@@ -6,7 +6,7 @@ APPS = skim_mjd_data wave-skim ds_livetime auto-thresh validate_skim
 # Stuff needed by BasicMakefile
 SHLIB =
 ARCHIVE =
-TAMDIR ?= $(ROOTSYS)
+# TAMDIR ?= $(ROOTSYS)
 SOURCESSCRATCH = $(wildcard *.cc)
 
 # Add RooFit stuff
@@ -16,7 +16,7 @@ SOURCESSCRATCH = $(wildcard *.cc)
 
 INCLUDEFLAGS += $(CLHEP_INCLUDE_FLAGS) -I$(MGDODIR)/Base -I$(MGDODIR)/Root -I$(MGDODIR)/Transforms
 
-INCLUDEFLAGS += -I$(MGDODIR)/Majorana -I$(MGDODIR)/MJDB $(ROOT_INCLUDE_FLAGS) -I$(TAMDIR)/inc -I$(TAMDIR)/include -I$(MGDODIR)/Tabree
+INCLUDEFLAGS += -I$(MGDODIR)/Majorana -I$(MGDODIR)/MJDB $(ROOT_INCLUDE_FLAGS)  -I$(MGDODIR)/Tabree -I$(TAMDIR)/inc -I$(TAMDIR)/include
 
 INCLUDEFLAGS += -I$(GATDIR)/BaseClasses -I$(GATDIR)/MGTEventProcessing -I$(GATDIR)/MGOutputMCRunProcessing -I$(GATDIR)/Analysis -I$(GATDIR)/MJDAnalysis -I$(GATDIR)/DCProcs
 
