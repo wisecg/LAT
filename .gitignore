@@ -15,3 +15,4 @@ data/mucal
 cron.log
 cron.queue
 data/parse*
+jobLists/*

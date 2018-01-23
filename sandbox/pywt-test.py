@@ -1,12 +1,15 @@
-#!/usr/bin/env python
-import sys, time, os
+#!/usr/bin/env python3
+import sys, os, imp, pywt
+sys.argv.append("-b")
+wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 from ROOT import TChain,TFile,TTree,TEntryList,gDirectory,gROOT,std,TNamed,TObject
 import numpy as np
-import waveLibs as wl
 import matplotlib.pyplot as plt
 from scipy import signal as sg
 
 def main(argv):
+
+    print("Hi Clint")
 
     # User args
     intMode, batMode = True, False
@@ -15,26 +18,21 @@ def main(argv):
             intMode, batMode = False, True
 
     # Set file I/O and cuts
-    # inFile = "~/project/wavelet-skim/waveletSkimDS4_0.root"
-    # inputFile = TFile(inFile)
-    # waveTree = inputFile.Get("skimTree")
-    waveTree = TChain("skimTree")
-    waveTree.Add("~/project/wavelet-skim/hadd/waveletSkimDS3.root")
-    print "Found",waveTree.GetEntries(),"input entries."
+    inFile = "~/project/special/waves/waveSkimDS0_run4549.root"
+    inputFile = TFile(inFile)
+    waveTree = inputFile.Get("skimTree")
+    # waveTree = TChain("skimTree")
+    # waveTree.Add("~/project/wavelet-skim/hadd/waveletSkimDS3.root")
+    print("Found",waveTree.GetEntries(),"input entries.")
 
-    # theCut = inputFile.Get("theCut").GetTitle()
-    # theCut = "trapENFCal > 0.8 && gain==0 && mH==1 && isGood && !muVeto && !wfDCBits && !isLNFill1 && !isLNFill2 && trapETailMin < 0 && channel!=596 && channel!=676 && channel!=676 && channel!=612 && channel!=1104 && channel!=1200 && channel!=1334 && channel!=1336"
-    # theCut += " && trapENFCal > 1.2 && trapENFCal < 4"
-
-    theCut = "trapENFCal > 0.8 && gain==0 && mH==1 && isGood && !muVeto && !wfDCBits && !isLNFill1 && !isLNFill2 && trapETailMin < 0 && channel!=596 && channel!=676 && channel!=676 && channel!=612 && channel!=1104 && channel!=1200 && channel!=1334 && channel!=1336 && tOffset < 10 && waveS5/TMath::Power(trapENFCal,1/4) < 1200 && (waveS3-waveS2)/trapENFCal > 100 && (waveS3-waveS2)/trapENFCal < 300 && !(channel==692 && (run==16974 || run==16975 || run==16976 || run==16977 || run==16978 || run==16979)) && trapENFCal > 2000"
-
-    print "Using the cut:\n",theCut
+    theCut = "trapENFCal > 0.8"
+    print("Using the cut:\n",theCut)
 
     waveTree.Draw(">>elist", theCut, "GOFF entrylist")
     elist = gDirectory.Get("elist")
     waveTree.SetEntryList(elist)
     nList = elist.GetN()
-    print "Found",nList,"entries passing cuts."
+    print("Found",nList,"entries passing cuts.")
 
     # Begin loop over events
     iList = -1
@@ -58,8 +56,8 @@ def main(argv):
         # Loop over hits passing cuts
         numPass = waveTree.Draw("channel",theCut,"GOFF",1,iList)
         chans = waveTree.GetV1()
-        chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-        hitList = (iH for iH in xrange(nChans) if waveTree.channel.at(iH) in chanList)  # a 'generator expression'
+        chanList = list(set(int(chans[n]) for n in range(numPass)))
+        hitList = (iH for iH in range(nChans) if waveTree.channel.at(iH) in chanList)  # a 'generator expression'
         for iH in hitList:
             run = waveTree.run
             iEvent = waveTree.iEvent
@@ -68,41 +66,35 @@ def main(argv):
             wf = waveTree.MGTWaveforms.at(iH)
 
             if wf.GetID() != chan:
-                print "Warning!!  Vector matching failed!  iList %d  run %d  iEvent %d" % (iList,run,iEvent)
+                print("Warning!!  Vector matching failed!  iList %d  run %d  iEvent %d" % (iList,run,iEvent))
                 break
 
-            signal = wl.processWaveform(wf,opt='full',N=2, Wn=0.01) # N=2, Wn=0.01 is doing well
-            waveBLSub = signal.GetWaveBLSub()
-            waveFilt = signal.GetWaveFilt()
-            waveTS = signal.GetTS()
-            # waveletYOrig, waveletYTrans = signal.GetWavelet()
-            _,waveletYTrans = wl.waveletTransform(waveBLSub,level=2)
+            # Let's start the show - grab a waveform.
+            # Remove first 4 samples when we have multisampling
+            # Remove last 2 samples to get rid of the ADC spike at the end of all wf's.
+            truncLo, truncHi = 0, 2
+            signal = wl.processWaveform(wf,truncLo,truncHi)
+            data = signal.GetWaveRaw()
+            data_blSub = signal.GetWaveBLSub()
+            dataTS = signal.GetTS()
+            # tOffset[iH] = signal.GetOffset()
+            dataBL,dataNoise = signal.GetBaseNoise()
 
-            # waveFTX, waveFTY, waveFTPow = signal.GetFourier()
-            # waveTrap = signal.GetTrapezoid()
-            # waveTrapF = signal.GetFiltTrapezoid()
-            # waveTrapX = np.linspace(0, len(waveTrap), num=len(waveTrap))
-            # _,waveletFilt = wl.waveletTransform(waveFilt,level=3)  # testing other levels on the filtered WF
+            # wavelet packet transform
+            wp = pywt.WaveletPacket(data_blSub, 'db2', 'symmetric', maxlevel=4)
+            nodes = wp.get_level(4, order='freq')
+            wpCoeff = np.array([n.data for n in nodes],'d')
+            wpCoeff = abs(wpCoeff)
 
-            # Wavelet cut parameters (only valid for numLevels=4)
-            s0 = np.sum(waveletYTrans[0:1,1:-1])
-            s1 = np.sum(waveletYTrans[0:1,1:33])
-            s2 = np.sum(waveletYTrans[0:1,33:65])
-            s3 = np.sum(waveletYTrans[0:1,65:97])
-            s4 = np.sum(waveletYTrans[0:1,97:-1])
-            s5 = np.sum(waveletYTrans[2:7,1:-1])
-            wpar4 = np.amax(waveletYTrans[0:1,1:-1])
+            # wavelet parameters
+            # First get length of wavelet on the time axis, the scale axis will
+            # always be the same due to the number of levels in the wavelet
+            wpLength = len(wpCoeff[1,:])
+            waveS1 = np.sum(wpCoeff[0:1,1:wpLength//4+1]) # python3 : floor division (//) returns an int
 
-            # Smoothed derivative params
-            waveFiltDeriv = wl.wfDerivative(waveFilt)
-            butterMaxVal = np.amax(waveFiltDeriv)
-            butterMaxTS = np.argmax(waveFiltDeriv[100:-10])*10 + signal.GetOffset() + 1000
-            sigOffset = signal.GetOffset()
-            print "max %.3f  ts %.0f ns  offset %.0f ns" % (butterMaxVal, butterMaxTS, sigOffset)
+            print("%d  run %d  iEvt %d  iH %d  chan %d  ene %.2f  waveS1 %.2f" % (iList,run,iEvent,iH,chan,energy,waveS1))
 
-            if (batMode==False):
-                print "i %d  run %d  iEvent(i) %d  iH(j+1) %d/%d  chan %d  energy %.2f  bt %.0f  b2 %.0f" % (iList,run,iEvent,iH+1,nChans,chan,energy,waveTree.butterTime.at(iH),butterMaxTS)
-
+            if batMode: continue
 
             # Make a figure (only setting data in the loop is faster)
             plt.close("all")

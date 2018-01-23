@@ -42,12 +42,12 @@ import waveLibs as wl
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 
 def main(argv):
+
     print("=======================================")
-    print("Hey Clint, LAT started:",time.strftime('%X %x %Z'))
+    print("LAT started:",time.strftime('%X %x %Z'))
     startT = time.clock()
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
     global batMode
-    # let's get some (m)args
     intMode, batMode, rangeMode, fileMode, gatMode, singleMode, pathMode, cutMode = False, False, False, False, False, False, False, False
     dontUseTCuts = False
     dsNum, subNum, runNum, plotNum = -1, -1, -1, 1
@@ -131,11 +131,9 @@ def main(argv):
         inFile = TFile(pathToInput)
         gatTree = inFile.Get("skimTree")
     if cutMode:
-        theCut += customPar
-        print("WARNING: Custom cut in use!")
-
-    theCut = "trapENFCal > 0"
-    print("Gonna use this cut:",theCut)
+        # theCut += customPar
+        theCut = "Entry$<500"
+        print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
     elist = gDirectory.Get("elist")
@@ -212,31 +210,28 @@ def main(argv):
         "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfStd":[wfStd,b41]
     }
 
-
     # Make a figure (-i option: select different plots)
     fig = plt.figure(figsize=(12,7), facecolor='w')
-    p = []
-    for i in range(1,8): p.append(plt.subplot())
     if plotNum==0 or plotNum==7 or plotNum==8:
-        p[0] = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
+        p0 = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
     elif plotNum==1 or plotNum==2:
-        p[0] = plt.subplot(211)  # 1-wavelet, 2-time points, bandpass filters, tail slope
-        p[1] = plt.subplot(212)
+        p0 = plt.subplot(211)  # 1-wavelet, 2-time points, bandpass filters, tail slope
+        p1 = plt.subplot(212)
     elif plotNum==3:
-        p[0] = plt.subplot2grid((2,5), (0,0), colspan=3)  # oppie / freq-domain matched filter
-        p[1] = plt.subplot2grid((2,5), (0,3), colspan=2)
-        p[2] = plt.subplot2grid((2,5), (1,0), colspan=3)
+        p0 = plt.subplot2grid((2,5), (0,0), colspan=3)  # oppie / freq-domain matched filter
+        p1 = plt.subplot2grid((2,5), (0,3), colspan=2)
+        p2 = plt.subplot2grid((2,5), (1,0), colspan=3)
     elif plotNum==4:
-        p[0] = plt.subplot(111)  # time-domain matched filter
+        p0 = plt.subplot(111)  # time-domain matched filter
     elif plotNum==5:
-        p[0] = plt.subplot(111)  # bandpass / bandTime
+        p0 = plt.subplot(111)  # bandpass / bandTime
     elif plotNum==6:
-        p[0] = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
-        p[1] = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
-        p[2] = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
-        p[3] = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
-        p[4] = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
-        p[5] = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
+        p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
+        p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
+        p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
+        p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
+        p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
+        p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
         p[6] = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
     if not batMode: plt.show(block=False)
 
@@ -337,24 +332,25 @@ def main(argv):
             wpCoeff = abs(wpCoeff)
 
             # wavelet parameters
-            # First get length of wavelet on the time axis, the scale axis will always be the same due to the number of levels in the wavelet
+            # First get length of wavelet on the time axis, the scale axis will always be the same
+            # due to the number of levels in the wavelet
             wpLength = len(wpCoeff[1,:])
-            waveS1[iH] = np.sum(wpCoeff[0:1,1:wpLength/4+1])
-            waveS2[iH] = np.sum(wpCoeff[0:1,wpLength/4+1:wpLength/2+1])
-            waveS3[iH] = np.sum(wpCoeff[0:1,wpLength/2+1:3*wpLength/4+1])
-            waveS4[iH] = np.sum(wpCoeff[0:1,3*wpLength/4+1:-1])
+            waveS1[iH] = np.sum(wpCoeff[0:1,1:wpLength//4+1]) # python3 : floor division (//) returns an int
+            waveS2[iH] = np.sum(wpCoeff[0:1,wpLength//4+1:wpLength//2+1])
+            waveS3[iH] = np.sum(wpCoeff[0:1,wpLength//2+1:3*wpLength//4+1])
+            waveS4[iH] = np.sum(wpCoeff[0:1,3*wpLength//4+1:-1])
             waveS5[iH] = np.sum(wpCoeff[2:-1,1:-1])
-            S6 = np.sum(wpCoeff[2:9,1:wpLength/4+1])
-            S7 = np.sum(wpCoeff[2:9,wpLength/4+1:wpLength/2+1])
-            S8 = np.sum(wpCoeff[2:9,wpLength/2+1:3*wpLength/4+1])
-            S9 = np.sum(wpCoeff[2:9,3*wpLength/4+1:-1])
-            S10 = np.sum(wpCoeff[9:,1:wpLength/4+1])
-            S11 = np.sum(wpCoeff[9:,wpLength/4+1:wpLength/2+1])
-            S12 = np.sum(wpCoeff[9:,wpLength/2+1:3*wpLength/4+1])
-            S13 = np.sum(wpCoeff[9:,3*wpLength/4+1:-1])
+            S6 = np.sum(wpCoeff[2:9,1:wpLength//4+1])
+            S7 = np.sum(wpCoeff[2:9,wpLength//4+1:wpLength//2+1])
+            S8 = np.sum(wpCoeff[2:9,wpLength//2+1:3*wpLength//4+1])
+            S9 = np.sum(wpCoeff[2:9,3*wpLength//4+1:-1])
+            S10 = np.sum(wpCoeff[9:,1:wpLength//4+1])
+            S11 = np.sum(wpCoeff[9:,wpLength//4+1:wpLength//2+1])
+            S12 = np.sum(wpCoeff[9:,wpLength//2+1:3*wpLength//4+1])
+            S13 = np.sum(wpCoeff[9:,3*wpLength//4+1:-1])
             sumList = [S6, S7, S8, S9, S10, S11, S12, S13]
             bcMax[iH] = np.max(sumList)
-            bcMin[iH] = np.min(sumList)
+            bcMin[iH] = 1. if np.min(sumList) < 1 else np.min(sumList)
 
             # reconstruct waveform w/ only lowest frequency.
             new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
@@ -463,7 +459,9 @@ def main(argv):
             if wpHiRise > numXRows: wpHiRise = numXRows
 
             # sum all HF wavelet components for this edge.
-            riseNoise[iH] = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / (bcMin[iH])
+            riseNoise[iH] = np.sum(wpCoeff[2:-1,wpLoRise:wpHiRise]) / bcMin[iH]
+
+            # print("%d %d %d %d e %-5.2f  bmax %-6.2f  bmin %-6.2f  mu %-5.2f  a %-5.2f  s %-5.2f  bl %-5.2f  rn %.2f" % (run,iList,iH,chan,dataENFCal,bcMax[iH],bcMin[iH],fitMu[iH],fitAmp[iH],fitSlo[iH],fitBL[iH],riseNoise[iH]))
 
             # =========================================================
 
@@ -507,39 +505,34 @@ def main(argv):
             match = match[::-1] - bl # time flip and subtract off bl
 
             # line up the max of the 'match' (flipped wf) with the max of the best-fit wf
+            # this kills the 1-1 matching between matchTS and dataTS (each TS has some offset)
             matchMaxTime = matchTS[np.argmax(match)]
             matchTS = matchTS + (fitMaxTime - matchMaxTime)
 
-            # resize match wf and the window function to have same # samples as dataTS.
+            # resize match, matchTS to have same # samples as data, dataTS.
+            # this is the only case we really care about
+            # ("too early" and "too late" also happen, but the shift is larger than the trigger walk, making it unphysical)
             if matchTS[0] <= dataTS[0] and matchTS[-1] >= dataTS[-1]:
-                idx = np.where((matchTS >= dataTS[0]) & (matchTS <= dataTS[-1]-5))
+                idx = np.where((matchTS >= dataTS[0]) & (matchTS <= dataTS[-1]))
                 match, matchTS = match[idx], matchTS[idx]
+                sizeDiff = len(dataTS)-len(matchTS)
+                if sizeDiff < 0:
+                    match, matchTS = match[:sizeDiff], matchTS[:sizeDiff]
+                elif sizeDiff > 0:
+                    match = np.hstack((match, np.zeros(sizeDiff)))
+                    matchTS = np.hstack((matchTS, dataTS[-1*sizeDiff:]))
+                if len(match) != len(data):
+                    print("FIXME: match filter array manip is still broken.")
 
-            elif matchTS[-1] < dataTS[-1]: # too early
-                idx = np.where(matchTS >= dataTS[0])
-                tmpData = match[idx]
-                match = np.pad(tmpData, (0,len(data)-len(tmpData)), 'edge')
-                matchTS, windowTS = dataTS, dataTS
-
-            elif matchTS[0] > dataTS[0]: # too late
-                idx = np.where(matchTS <= dataTS[-1])
-                tmpData = match[idx]
-                match = np.pad(tmpData, (len(data)-len(tmpData),0), 'edge')
-                matchTS, windowTS = dataTS, dataTS
-
-            # make sure match is same length as data, then compute convolution and parameters
+            # compute match filter parameters
             matchMax[iH], matchWidth[iH], matchTime[iH] = -888, -888, -888
-            smoothMF, windMF = np.zeros(len(dataTS)), np.zeros(len(dataTS))
-            if len(match)!=len(data):
-                print("array mismatch: len match %i  len data %i " % (len(match),len(data)))
-                # errorCode[1] = 1
-            else:
-                # compute match filter parameters
+            if len(match)==len(data):
                 smoothMF = gaussian_filter(match * data_blSub, sigma=5.)
                 matchMax[iH] = np.amax(smoothMF)
                 matchTime[iH] = matchTS[ np.argmax(smoothMF) ]
                 idx = np.where(smoothMF > matchMax[iH]/2.)
-                if len(matchTS[idx]>1): matchWidth[iH] = matchTS[idx][-1] - matchTS[idx][0]
+                if len(matchTS[idx]>1):
+                    matchWidth[iH] = matchTS[idx][-1] - matchTS[idx][0]
 
 
             # Fit tail slope to polynomial.  Guard against fit fails
@@ -661,142 +654,142 @@ def main(argv):
             # Make plots!
             if batMode: continue
             if plotNum==0: # raw data
-                p[0].cla()
-                p[0].plot(dataTS,data,'b')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
+                p0.cla()
+                p0.plot(dataTS,data,'b')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
 
             if plotNum==1: # wavelet plot
-                p[0].cla()
-                p[0].margins(x=0)
-                p[0].plot(dataTS,data_blSub,color='blue',label='data')
-                p[0].plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
-                p[0].axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
-                p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
-                p[0].legend(loc='best')
+                p0.cla()
+                p0.margins(x=0)
+                p0.plot(dataTS,data_blSub,color='blue',label='data')
+                p0.plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
+                p0.axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
+                p0.plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
+                p0.legend(loc='best')
 
-                p[1].cla()
-                p[1].imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
-                p[1].axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
-                p[1].axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
-                p[1].set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
+                p1.cla()
+                p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
+                p1.axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
+                p1.axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
+                p1.set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
 
             if plotNum==2: # time points, bandpass filters, tail slope
-                p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data')
-                p[0].axvline(den10[iH],color='black',label='lpTP')
-                p[0].axvline(den50[iH],color='black')
-                p[0].axvline(den90[iH],color='black')
-                p[0].plot(dataTS,fit,color='magenta',label='bestfit')
-                if errorCode[2]!=1: p[0].plot(tailTS, wl.tailModelPol(tailTS, *popt1), color='orange',linewidth=2, label='tailPol')
-                p[0].legend(loc='best')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
+                p0.cla()
+                p0.plot(dataTS,data,color='blue',label='data')
+                p0.axvline(den10[iH],color='black',label='lpTP')
+                p0.axvline(den50[iH],color='black')
+                p0.axvline(den90[iH],color='black')
+                p0.plot(dataTS,fit,color='magenta',label='bestfit')
+                if errorCode[2]!=1: p0.plot(tailTS, wl.tailModelPol(tailTS, *popt1), color='orange',linewidth=2, label='tailPol')
+                p0.legend(loc='best')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
-                p[1].cla()
-                p[1].plot(dataTS,data_lPass,color='blue',label='lowpass')
-                p[1].plot(dataTS,data_filtDeriv,color='green',label='filtDeriv')
-                p[1].plot(dataTS,data_filt,color='black',label='filtfilt')
-                p[1].plot(dataTS,data_bPass,color='red',label='bpass')
-                p[1].axvline(bandTime[iH],color='orange',label='bandTime')
-                p[1].legend(loc='best')
+                p1.cla()
+                p1.plot(dataTS,data_lPass,color='blue',label='lowpass')
+                p1.plot(dataTS,data_filtDeriv,color='green',label='filtDeriv')
+                p1.plot(dataTS,data_filt,color='black',label='filtfilt')
+                p1.plot(dataTS,data_bPass,color='red',label='bpass')
+                p1.axvline(bandTime[iH],color='orange',label='bandTime')
+                p1.legend(loc='best')
 
             if plotNum==3: # freq-domain matched filter
-                p[0].cla()
-                p[0].plot(dataTS,data,'b')
-                p[0].plot(dataTS,temp,'r')
-                p[0].plot(dataTS,fit,color='cyan')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
+                p0.cla()
+                p0.plot(dataTS,data,'b')
+                p0.plot(dataTS,temp,'r')
+                p0.plot(dataTS,fit,color='cyan')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
                 data_asd, data_xFreq = plt.psd(data, Fs=1e8, NFFT=2048, pad_to=2048, visible=False)
                 temp_asd, temp_xFreq = plt.psd(temp, Fs=1e8, NFFT=2048, pad_to=2048, visible=False)
 
-                p[1].cla()
-                p[1].loglog(data_xFreq, np.sqrt(data_asd), 'b')
-                p[1].loglog(noise_xFreq, np.sqrt(noise_asd), 'g')
-                p[1].loglog(temp_xFreq, np.sqrt(temp_asd), 'r')
-                p[1].set_xlabel('Frequency (Hz)')
-                p[1].set_ylabel('ASD')
-                p[1].grid('on')
+                p1.cla()
+                p1.loglog(data_xFreq, np.sqrt(data_asd), 'b')
+                p1.loglog(noise_xFreq, np.sqrt(noise_asd), 'g')
+                p1.loglog(temp_xFreq, np.sqrt(temp_asd), 'r')
+                p1.set_xlabel('Frequency (Hz)')
+                p1.set_ylabel('ASD')
+                p1.grid('on')
 
-                p[2].cla()
-                p[2].plot(dataTS, SNR)
-                p[2].set_title('oppie %.1f' % (oppie[iH]))
-                p[2].set_xlabel('Offset time (s)')
-                p[2].set_ylabel('SNR')
+                p2.cla()
+                p2.plot(dataTS, SNR)
+                p2.set_title('oppie %.1f' % (oppie[iH]))
+                p2.set_xlabel('Offset time (s)')
+                p2.set_ylabel('SNR')
 
             if plotNum==4: # time domain match filter plot
-                p[0].cla()
-                p[0].plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
-                p[0].plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=3)
-                p[0].axvline(matchTime[iH],color='orange',label='matchTime',linewidth=2)
-                p[0].plot(matchTS,smoothMF,color='magenta',label='smoothMF',linewidth=3)
-                p[0].plot(matchTS,match,color='cyan',label='match',linewidth=3)
-                p[0].set_xlabel('Time (s)')
-                p[0].set_ylabel('Voltage (arb)')
-                p[0].legend(loc='best')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENFCal,matchMax[iH],matchTime[iH],matchWidth[iH]))
+                p0.cla()
+                p0.plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
+                p0.plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=3)
+                p0.axvline(matchTime[iH],color='orange',label='matchTime',linewidth=2)
+                p0.plot(matchTS,smoothMF,color='magenta',label='smoothMF',linewidth=3)
+                p0.plot(matchTS,match,color='cyan',label='match',linewidth=3)
+                p0.set_xlabel('Time (s)')
+                p0.set_ylabel('Voltage (arb)')
+                p0.legend(loc='best')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  matchMax %.2f  matchTime %.2f  matchWidth %.2f" % (run,iEvent,chan,dataENFCal,matchMax[iH],matchTime[iH],matchWidth[iH]))
 
             if plotNum==5: # bandTime plot
-                p[0].cla()
-                p[0].plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
-                p[0].plot(dataTS,data_lPass,color='magenta',label='lowpass',linewidth=4)
-                p[0].plot(dataTS,data_bPass,color='red',label='bpass',linewidth=4)
-                p[0].axvline(bandTime[iH],color='orange',label='bandTime',linewidth=4)
-                p[0].legend(loc='best')
-                p[0].set_xlabel('Time (ns)')
-                p[0].set_ylabel('ADC (arb)')
-                p[0].set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
+                p0.cla()
+                p0.plot(dataTS,data_blSub,color='blue',label='data',alpha=0.7)
+                p0.plot(dataTS,data_lPass,color='magenta',label='lowpass',linewidth=4)
+                p0.plot(dataTS,data_bPass,color='red',label='bpass',linewidth=4)
+                p0.axvline(bandTime[iH],color='orange',label='bandTime',linewidth=4)
+                p0.legend(loc='best')
+                p0.set_xlabel('Time (ns)')
+                p0.set_ylabel('ADC (arb)')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iEvent,chan,dataENFCal))
 
             if plotNum==6: # waveform fit plot
-                p[0].cla()
-                p[0].plot(dataTS,data,color='blue',label='data')
-                # p[0].plot(dataTS,data_wlDenoised,color='cyan',label='wlDenoised',alpha=0.5)
-                p[0].plot(dataTS,temp,color='orange',label='xgauss guess')
-                p[0].plot(dataTS,fit,color='red',label='xgauss fit')
-                p[0].set_title("Run %d  evt %d  chan %d  trapENFCal %.1f  trapENM %.1f  deltaBL %.1f\n  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,chan,dataENFCal,dataENM,dataBL-bl,amp,mu,sig,tau,fitChi2[iH],fitSpeed))
-                p[0].legend(loc='best')
-                p[1].cla()
-                p[1].plot(dataTS,data-fit,color='blue',label='residual')
-                p[1].legend(loc='best')
-                p[2].cla()
-                p[2].plot(ampTr[1:],label='amp',color='red')
-                p[2].legend(loc='best')
-                p[3].cla()
-                p[3].plot(muTr[1:],label='mu',color='green')
-                p[3].legend(loc='best')
-                p[4].cla()
-                p[4].plot(sigTr[1:],label='sig',color='blue')
-                p[4].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-                p[4].legend(loc='best')
-                p[5].cla()
-                p[5].plot(tauTr[1:],label='tau',color='black')
-                p[5].legend(loc='best')
+                p0.cla()
+                p0.plot(dataTS,data,color='blue',label='data')
+                # p0.plot(dataTS,data_wlDenoised,color='cyan',label='wlDenoised',alpha=0.5)
+                p0.plot(dataTS,temp,color='orange',label='xgauss guess')
+                p0.plot(dataTS,fit,color='red',label='xgauss fit')
+                p0.set_title("Run %d  evt %d  chan %d  trapENFCal %.1f  trapENM %.1f  deltaBL %.1f\n  amp %.2f  mu %.2f  sig %.2f  tau %.2f  chi2 %.2f  spd %.3f" % (run,iList,chan,dataENFCal,dataENM,dataBL-bl,amp,mu,sig,tau,fitChi2[iH],fitSpeed))
+                p0.legend(loc='best')
+                p1.cla()
+                p1.plot(dataTS,data-fit,color='blue',label='residual')
+                p1.legend(loc='best')
+                p2.cla()
+                p2.plot(ampTr[1:],label='amp',color='red')
+                p2.legend(loc='best')
+                p3.cla()
+                p3.plot(muTr[1:],label='mu',color='green')
+                p3.legend(loc='best')
+                p4.cla()
+                p4.plot(sigTr[1:],label='sig',color='blue')
+                p4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+                p4.legend(loc='best')
+                p5.cla()
+                p5.plot(tauTr[1:],label='tau',color='black')
+                p5.legend(loc='best')
                 p[6].cla()
                 p[6].plot(blTr[1:],label='bl',color='magenta')
                 p[6].legend(loc='best')
 
             if plotNum==7: # new traps plot
-                p[0].cla()
-                p[0].plot(dataTS, data_blSub, color='blue', label='data')
-                p[0].plot(sTrapTS, sTrap, color='red', label='sTrap')
-                p[0].axvline(t0_SLE[iH], color='red')
-                p[0].plot(aTrapTS, aTrap, color='orange', label='aTrap')
-                p[0].axvline(t0_ALE[iH], color='orange')
-                p[0].plot(eTrapTS, eTrap, color='green', label='eTrap')
-                p[0].axhline(lat[iH],color='green')
-                p[0].plot(pTrapTS, pTrap, color='magenta', label='pTrap')
-                p[0].axhline(latAFC[iH], color='magenta')
-                p[0].axhline(latE50[iH], color='cyan')
-                p[0].set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f  latE50 %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH], latE50[iH]))
-                p[0].legend(loc='best')
+                p0.cla()
+                p0.plot(dataTS, data_blSub, color='blue', label='data')
+                p0.plot(sTrapTS, sTrap, color='red', label='sTrap')
+                p0.axvline(t0_SLE[iH], color='red')
+                p0.plot(aTrapTS, aTrap, color='orange', label='aTrap')
+                p0.axvline(t0_ALE[iH], color='orange')
+                p0.plot(eTrapTS, eTrap, color='green', label='eTrap')
+                p0.axhline(lat[iH],color='green')
+                p0.plot(pTrapTS, pTrap, color='magenta', label='pTrap')
+                p0.axhline(latAFC[iH], color='magenta')
+                p0.axhline(latE50[iH], color='cyan')
+                p0.set_title("trapENFCal %.2f  trapENM %.2f || latEM %.2f  latEF %.2f  latEAF %.2f  latEFC %.2f  latEAFC %.2f  latE50 %.2f" % (dataENFCal,dataENM,lat[iH],latF[iH],latAF[iH],latFC[iH],latAFC[iH], latE50[iH]))
+                p0.legend(loc='best')
 
             if plotNum==8: # multisite tag plot
-                p[0].cla()
-                p[0].plot(dataTS, data_blSub, color='blue', label='data')
-                p[0].plot(dataTS, data_filtDeriv, color='red', label='filtDeriv')
-                for mse in msList: p[0].axvline(mse, color='green')
-                p[0].axhline(msThresh,color='red')
-                p[0].legend()
+                p0.cla()
+                p0.plot(dataTS, data_blSub, color='blue', label='data')
+                p0.plot(dataTS, data_filtDeriv, color='red', label='filtDeriv')
+                for mse in msList: p0.axvline(mse, color='green')
+                p0.axhline(msThresh,color='red')
+                p0.legend()
 
             plt.tight_layout()
             plt.pause(0.000001)

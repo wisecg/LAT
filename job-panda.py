@@ -26,7 +26,7 @@ specialDir = home+"/project/special"
 # jobStr = "sbatch slurm-job.sh" # SLURM mode
 jobStr = "sbatch pdsf.slr" # SLURM+Shifter mode
 latDir = os.environ['LATDIR']
-cronFile = latDir+"/cron.queue"
+jobQueue = latDir+"/cron.queue"
 
 # =============================================================
 def main(argv):
@@ -87,13 +87,13 @@ def main(argv):
 
 def sh(cmd):
     """ Either call the shell or put the command in our cron queue.
-        Uses the global bool 'useCronQueue' and the global path 'cronFile'.
+        Uses the global bool 'useCronQueue' and the global path 'jobQueue'.
     """
     if not useCronQueue:
         sp.call(shlex.split(cmd))
         return
-    with open(cronFile,"a+") as f:
-        print("Adding to cronfile (%s): %s" % (cronFile, cmd))
+    with open(jobQueue,"a+") as f:
+        print("Adding to cronfile (%s): %s" % (jobQueue, cmd))
         f.write(cmd + "\n")
 
 
@@ -777,7 +777,7 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
 
 def cronJobs():
     """ ./job-panda.py -cron
-    Uses the global string 'cronFile'.
+    Uses the global string 'jobQueue'.
     Crontab should contain the following lines (crontab -e):
     SHELL=/bin/bash
     MAILTO="" # can put in some address here if you LOVE emails
@@ -788,7 +788,7 @@ def cronJobs():
 
     nMaxRun, nMaxPend = 15, 200
 
-    with open(cronFile) as f:
+    with open(jobQueue) as f:
         jobList = [line.rstrip('\n') for line in f]
     nList = len(jobList)
 
@@ -803,7 +803,7 @@ def cronJobs():
 
     print("   nRun %d  (max %d)  nPend %d (max %d)  nList %d  nSubmit %d" % (nRun,nMaxRun,nPend,nMaxPend,nList,nSubmit))
 
-    with open(cronFile, 'w') as f:
+    with open(jobQueue, 'w') as f:
         for idx, job in enumerate(jobList):
             if idx < nSubmit:
                 print("Submitted:",job)
@@ -822,7 +822,9 @@ def shifterTest():
 def specialSkim():
     """ ./job-panda.py -sskim """
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("delayedTrigger")
+    runList = cal.GetSpecialRuns("delayedTrigger",3)
     # run = runList[0]
     # sh("""%s './skim_mjd_data -x -l -f %d %s/skim'""" % (jobStr,run,specialDir))
     for run in runList:
@@ -832,16 +834,15 @@ def specialSkim():
 def specialWave():
     """ ./job-panda.py -swave """
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("extPulser")
+    runList = cal.GetSpecialRuns("delayedTrigger")
     # sh("""./wave-skim -x -n -f %d %d -p %s/skim %s/waves""" % (0, runList[0], specialDir, specialDir) )
     for run in runList:
         sh("""%s './wave-skim -x -n -f %d %d -p %s/skim %s/waves'""" % (jobStr, ds.GetDSNum(run), run, specialDir, specialDir) )
 
 
 def specialSplit():
-    """ ./job-panda.py -ssplit
-    Doesn't seem to be necessary w/ the special runs, very few are over 50MB
-    """
+    """ ./job-panda.py -ssplit """
     print("hi")
 
 
@@ -861,6 +862,31 @@ def specialLAT():
         inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
         outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
         sh("""%s './lat.py -x -b -f %d %d -p %s %s'""" % (jobStr,dsNum,run,inFile,outFile))
+
+
+def pumpSpecialLAT():
+
+    # write batches of 10 job lists
+    iList = 0
+    fList = open('./jobLists/jobList-{:02}.txt'.format(iList), 'w+')
+    for idx,run in enumerate(runList):
+        if idx%10==0 and idx > 0:
+            fList.close()
+            iList += 1
+            fList = open('./jobLists/jobList-{:02}.txt'.format(iList), 'w+')
+        dsNum = ds.GetDSNum(run)
+        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
+        logFile = "%s/logs/jobPump-%d.txt" % (latDir,run)
+        fList.write("""./lat.py -x -b -f %d %d -p %s %s >& %s \n""" % (dsNum,run,inFile,outFile,logFile))
+    fList.close()
+
+    # submit the job lists w/ job-pump
+    for idx,f in enumerate(sorted(glob.glob("./jobLists/jobList*.txt"))):
+        jobPumpJob = """sbatch pdsf.slr './job-pump.sh %s python3'""" % (f)
+        print(jobPumpJob)
+        sh(jobPumpJob)
+        # if idx > 3: break
 
 
 def quickTest():

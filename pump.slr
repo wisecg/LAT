@@ -4,4 +4,4 @@
 #SBATCH --image=wisecg/mjsw:v2
 #SBATCH --mem=6000
 #SBATCH -p shared
-shifter /bin/bash shifter-job.sh ${@}
+${@}

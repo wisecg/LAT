@@ -8,7 +8,6 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy import signal as sg
 import scipy.special as sp
 # from pysiggen import Detector
-import DataSetInfo as ds
 """
 A collection of 'useful' crap.
 C. Wiseman, B. Zhu
