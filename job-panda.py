@@ -22,7 +22,6 @@ calWaveDir = home+"/project/cal-waves"
 calLatDir  = home+"/project/cal-lat"
 pandaDir   = home+"/project/panda-skim"
 specialDir = home+"/project/special"
-# jobStr = "qsub -l h_vmem=2G qsub-job.sh" # SGE mode
 # jobStr = "sbatch slurm-job.sh" # SLURM mode
 jobStr = "sbatch pdsf.slr" # SLURM+Shifter mode
 latDir = os.environ['LATDIR']
@@ -80,6 +79,8 @@ def main(argv):
         if opt == "-sskim":  specialSkim()
         if opt == "-swave":  specialWave()
         if opt == "-ssplit": specialSplit()
+        if opt == "-splitf": splitFile(argv[i+1],argv[i+2])
+        if opt == "-sdel":   specialDelete()
         if opt == "-slat":   specialLAT()
 
 
@@ -92,10 +93,11 @@ def sh(cmd):
     if not useCronQueue:
         sp.call(shlex.split(cmd))
         return
-    with open(jobQueue,"a+") as f:
-        print("Adding to cronfile (%s): %s" % (jobQueue, cmd))
-        f.write(cmd + "\n")
 
+    with open(jobQueue, 'a+') as f:
+        if cmd not in open(jobQueue).read():
+            print("lat/cron.queue: %s" % (cmd))
+            f.write(cmd + "\n")
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
     """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx] -run [runNum])
@@ -842,57 +844,117 @@ def specialWave():
 
 
 def specialSplit():
-    """ ./job-panda.py -ssplit """
-    print("hi")
+    """ ./job-panda.py -ssplit
+    External pulser runs have no data cleaning cut.
+    Has a memory leak (can't close both TFiles, damn you, ROOT); submit each run as a batch job.
+    """
+    from ROOT import TFile, TTree, TObject
+
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    for run in runList:
+        print(run)
+        if run <= 4592: continue
+
+        inPath = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)
+        outPath = "%s/split/splitSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)
+
+        outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (specialDir, ds.GetDSNum(run), run))
+        for filename in outFiles:
+            try:
+                os.remove(filename)
+            except OSError:
+                pass
+
+        sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath, outPath))
+
+
+def splitFile(inPath,outPath):
+    """ ./job-panda.py -splitf [inPath] [outPath]
+    Used by specialSplit. """
+    from ROOT import TFile, TTree, TObject
+    inFile = TFile(inPath)
+    bigTree = inFile.Get("skimTree")
+    outFile = TFile(outPath, "RECREATE")
+    lilTree = TTree()
+    lilTree.SetMaxTreeSize(30000000) # 30MB
+    lilTree = bigTree.CopyTree("")
+    lilTree.Write("",TObject.kOverwrite)
+
+
+def specialDelete():
+    """./job-panda.py -sdel"""
+
+    # remove all files from ext pulser range
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser",1)
+    for run in runList:
+        outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (specialDir, ds.GetDSNum(run), run))
+        outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (specialDir, ds.GetDSNum(run), run)])
+        outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)])
+        for filename in outFiles:
+            print(filename)
+            try:
+                os.remove(filename)
+            except OSError:
+                pass
+            if not os.path.isfile(filename):
+                print("File weren't found!",filename)
 
 
 def specialLAT():
-    """ ./job-panda.py -slat """
+    """ ./job-panda.py [-q (use cron queue)] -slat"""
     cal = ds.CalInfo()
     runList = cal.GetSpecialRuns("extPulser")
 
+    # deal with unsplit files
     # run = runList[0]
     # dsNum = ds.GetDSNum(run)
     # inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
     # outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
     # sh("""./lat.py -x -b -f %d %d -p %s %s""" % (dsNum,run,inFile,outFile))
 
+    # deal with split files
     for run in runList:
+
         dsNum = ds.GetDSNum(run)
-        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        sh("""%s './lat.py -x -b -f %d %d -p %s %s'""" % (jobStr,dsNum,run,inFile,outFile))
+        inFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (specialDir, dsNum, run))
+        for idx in range(len(inFiles)):
+            if idx==0:
+                inFile = "%s/split/splitSkimDS%d_run%d.root" % (specialDir, dsNum, run)
+            else:
+                inFile = "%s/split/splitSkimDS%d_run%d_%d.root" % (specialDir, dsNum, run, idx)
+            if not os.path.isfile(inFile) :
+                print("File doesn't exist:",inFile)
+                return
+            outFile = "%s/lat/latSkimDS%d_run%d_%d.root" % (specialDir, dsNum, run, idx)
 
+            if useCronQueue:
+                # this is what you would want for a normal cron queue
+                # sh("""./lat.py -x -b -f %d %d -p %s %s""" % (dsNum, run, inFile, outFile))
 
-def pumpSpecialLAT():
-
-    # write batches of 10 job lists
-    iList = 0
-    fList = open('./jobLists/jobList-{:02}.txt'.format(iList), 'w+')
-    for idx,run in enumerate(runList):
-        if idx%10==0 and idx > 0:
-            fList.close()
-            iList += 1
-            fList = open('./jobLists/jobList-{:02}.txt'.format(iList), 'w+')
-        dsNum = ds.GetDSNum(run)
-        inFile = "%s/waves/waveSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir,dsNum,run)
-        logFile = "%s/logs/jobPump-%d.txt" % (latDir,run)
-        fList.write("""./lat.py -x -b -f %d %d -p %s %s >& %s \n""" % (dsNum,run,inFile,outFile,logFile))
-    fList.close()
-
-    # submit the job lists w/ job-pump
-    for idx,f in enumerate(sorted(glob.glob("./jobLists/jobList*.txt"))):
-        jobPumpJob = """sbatch pdsf.slr './job-pump.sh %s python3'""" % (f)
-        print(jobPumpJob)
-        sh(jobPumpJob)
-        # if idx > 3: break
+                # this is what i need for a 1-node job pump
+                sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/extPulser-%d.txt""" % (dsNum, run, inFile, outFile, run))
+            else:
+                sh("""%s './lat.py -x -b -f %d %d -p %s %s' """ % (jobStr, dsNum, run, inFile, outFile))
 
 
 def quickTest():
-    from ROOT import MGTWaveform, GATDataSet, TChain
-    print("Yerp, it worked.")
+    """./job-panda.py -test """
+    # from ROOT import MGTWaveform, GATDataSet, TChain
+    # import datetime, time
+    # print("Sleeping 10 sec ...")
+    # time.sleep(10)
+    # now = datetime.datetime.now()
+    # print("Done. Date: ",str(now))
+
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("extPulser")
+    print(runList)
+
+
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+

@@ -12,18 +12,25 @@ set -u ;         # exit if you try to use an uninitialized variable
 set -e ;         # exit if any statement returns a non-true return value
 set -o errexit ; # exit if any statement returns a non-true return value
 
-# Pump Settings
 jobList=$1        # input from command line
 execName=$2
-maxJobLoad=5      # how many instances of the user's job should run concurrently.
-peakWLoad=10      # number of jobs running must be below this before a new job is launched
-lowFreeRAM=1.0    # free RAM must be above this before a new job is launched (default is 3 GB)
-totJobLimit=20    # maximum number of jobs to attempt
-jobDelay=10       # seconds between job launches (default: 2)
-checkDelay=30     # seconds between checks (default: 20)
 
-jobRAM=`awk "BEGIN {print "$SLURM_MEM_PER_NODE/1000"}"` # max RAM to take up for this job
-usedRAM=0
+# "Nice" Pump Settings
+# maxJobLoad=5      # how many instances of the user's job should run concurrently.
+# peakWLoad=10      # number of jobs running must be below this before a new job is launched
+# lowFreeRAM=1.0    # free RAM must be above this before a new job is launched (default is 3 GB)
+# totJobLimit=20    # maximum number of jobs to attempt
+# jobDelay=10       # seconds between job launches (default: 2)
+# checkDelay=30     # seconds between checks (default: 20)
+
+# "Mega" Pump Settings (pdsf-pump.slr)
+maxJobLoad=30
+peakWLoad=30
+lowFreeRAM=5.0
+totJobLimit=9999
+jobDelay=10
+checkDelay=60
+
 
 function countJobs {
   nRunA=`/usr/bin/pgrep $1 |wc -l `
@@ -42,11 +49,6 @@ function getFreeRAM {
 
   fi
   # echo "Current free RAM (GB): $freeRAM (limit: $lowFreeRAM)"
-}
-
-function getUsedRAM {
-  usedRAM=`ps auxU wisecg | awk '{memory +=$4}; END {print memory}'`
-  # echo "Used RAM: $usedRAM  SLURM limit: $jobRAM"
 }
 
 function getLoad {
@@ -84,7 +86,6 @@ echo -e "Starting job pump ...
    Total Jobs Limit:    $totJobLimit
    Peak Load Limit:     $peakWLoad
    Free RAM Limit (GB): $lowFreeRAM
-   Used RAM Limit (GB): $jobRAM
    New Job Delay (sec): $jobDelay
    Monitor Delay (sec): $checkDelay
    Running in:         "`pwd`"\n"
@@ -115,7 +116,6 @@ while read line ; do
     countJobs $execName
     getLoad
     getFreeRAM
-    getUsedRAM
 
     echo "Check #$k. nQueue: $nQueue, just slept $myDelay seconds.  Date: "`date`
     k=$[ $k +1 ]
@@ -142,11 +142,6 @@ while read line ; do
       echo -e "Free RAM is too low: $freeRAM ... sleeping $myDelay seconds.\n"
       continue
   	fi
-    if (( $(echo "$usedRAM > $jobRAM" | bc -l) )); then
-      myDelay=$checkDelay
-      echo -e "RAM used ($usedRAM) exceeds job allocation ($jobRAM) ... sleeping $myDelay seconds.\n"
-      continue
-  	fi
     break # no reason to slack any more, go ahead and start a new job.
   done
 
@@ -166,7 +161,7 @@ while read line ; do
     myDelay=$(echo $jobDelay + 60/$delay | bc)
   fi
 
-  echo "Workload: $wLoad (lim $peakWLoad)  Free RAM: $freeRAM (lim $lowFreeRAM)  Used RAM: $usedRAM (lim $jobRAM)  nRunning: $nRun (lim $maxJobLoad)  delay: $delay"
+  echo "Workload: $wLoad (lim $peakWLoad)  Free RAM: $freeRAM (lim $lowFreeRAM)  nRunning: $nRun (lim $maxJobLoad)  delay: $delay"
   echo "Now sleeping for $myDelay seconds ..."
   echo " "
 
