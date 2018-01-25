@@ -204,12 +204,12 @@ class CalInfo:
         # Special Runs: http://mjwiki.npl.washington.edu/bin/view/Majorana/SpecialMJDRuns
         self.special = {}
         self.special["extPulser"] = {
-            # 0: [4547, 4547],
-            # 1: [4549, 4572], # whole BG range, full of regular pulsers, etc
-            # 2: [4573, 4831], # whole BG range, full of regular pulsers, etc
+            0: [4547, 4547], # ignore
+            1: [4549, 4572], # ignore, whole BG range, full of regular pulsers, etc
+            2: [4573, 4831], # ignore, whole BG range, full of regular pulsers, etc
             3: [5525, 5534],
             4: [5535, 5554],
-            # 5: [5555, 5850], # whole BG range, full of regular pulsers, etc
+            5: [5555, 5850], # ignore, whole BG range, full of regular pulsers, etc
             6: [5872, 5877],
             7: [5940, 5963],
             8: [5964, 5978],

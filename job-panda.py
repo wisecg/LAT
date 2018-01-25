@@ -886,20 +886,35 @@ def specialDelete():
     """./job-panda.py -sdel"""
 
     # remove all files from ext pulser range
+    # cal = ds.CalInfo()
+    # runList = cal.GetSpecialRuns("extPulser",1)
+    # for run in runList:
+    #     outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (specialDir, ds.GetDSNum(run), run))
+    #     outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (specialDir, ds.GetDSNum(run), run)])
+    #     outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)])
+    #     for filename in outFiles:
+    #         print(filename)
+    #         try:
+    #             os.remove(filename)
+    #         except OSError:
+    #             pass
+    #         if not os.path.isfile(filename):
+    #             print("File weren't found!",filename)
+
+
+    # remove lat files without the _X.root
+    import datetime
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser",1)
+    runList = cal.GetSpecialRuns("extPulser")
     for run in runList:
-        outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (specialDir, ds.GetDSNum(run), run))
-        outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (specialDir, ds.GetDSNum(run), run)])
-        outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)])
-        for filename in outFiles:
-            print(filename)
-            try:
-                os.remove(filename)
-            except OSError:
-                pass
-            if not os.path.isfile(filename):
-                print("File weren't found!",filename)
+        outFile = "%s/lat/latSkimDS%d_run%d.root" % (specialDir, ds.GetDSNum(run), run)
+        try:
+            modDate = os.path.getmtime(outFile)
+            modDate = datetime.datetime.fromtimestamp(int(modDate)).strftime('%Y-%m-%d %H:%M:%S')
+            print(outFile, modDate)
+            os.remove(outFile)
+        except OSError:
+            pass
 
 
 def specialLAT():
