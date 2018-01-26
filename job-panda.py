@@ -15,7 +15,7 @@ import DataSetInfo as ds
 
 # jobStr = "sbatch slurm-job.sh" # SLURM mode
 jobStr = "sbatch pdsf.slr" # SLURM+Shifter mode
-jobQueue = latDir+"/job.queue"
+jobQueue = ds.latSWDir+"/job.queue"
 
 # =============================================================
 def main(argv):
@@ -53,8 +53,6 @@ def main(argv):
 
         # misc
         if opt == "-split":        splitTree(dsNum, subNum, runNum)
-        if opt == "-checkLogs":    checkLogErrors()
-        if opt == "-checkLogs2":   checkLogErrors2()
         if opt == "-skimLAT":      skimLAT(argv[i+1],argv[i+2],argv[i+3])
         if opt == "-tuneCuts":     tuneCuts(argv[i+1],dsNum)
         if opt == "-lat3":         applyCuts(int(argv[i+1]),argv[i+2])
@@ -399,56 +397,26 @@ def mergeLAT():
     print("hey")
 
 
-def checkLogErrors():
-    """ ./job-panda.py -checkLogs
-        This isn't really complete. but you get the idea.  Error checking via bash inside python is kind of a PITA.
-        Maybe it would be better to just have python look at the files directly.
+def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
+    """ ./job-panda.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+        Run ROOTtoPandas jobs.
     """
-
-    # Shell commands
-    c1 = "ls -F ./logs/ | grep -v / | wc -l" # count total files
-    c2 = "grep -rIl \"Done! Job Panda\" ./logs/ | wc -l" # count completed files
-    c3 = "grep -rL \"Done! Job Panda\" ./logs/"  # negative file matching, can also count # fails.  gives a file list
-    c4 = "grep -rIl \"Segmentation\" ./logs/" # segfaults
-    c5 = "grep -rIl \"bad_alloc\" ./logs/" # memory errors
-
-    # using sp to deal with a pipe is kind of annoying
-    p1 = sp.Popen('ls -F ./logs/'.split(), stdout=sp.PIPE)
-    p2 = sp.Popen('grep -v /'.split(), stdin=p1.stdout, stdout=sp.PIPE)
-    p3 = sp.Popen('wc -l'.split(), stdin=p2.stdout,stdout=sp.PIPE)
-    output = p3.communicate()[0]
-    num = int(output.strip('\n'))
-    print(num)
-
-    # make a dummy bash script that runs all the shell commands.  who knows if this is smart or not
-    outFile = open('logCheck.sh','w+')
-    dummyScript = "#!/bin/bash \n %s \n %s \n %s \n %s \n %s \n" % (c1,c2,c3,c4,c5)
-    outFile.write(dummyScript)
-    outFile.close()
-    sh('chmod a+x logCheck.sh')
-    sh('./logCheck.sh')
-    os.remove('logCheck.sh')
-
-
-def checkLogErrors2():
-    """ Usage: ./job-panda -checkLogs2
-        Globs together log files and then searches for "Error", returning the failed ROOT files.
-    """
-    print("Checking log errors ...")
-
-    ErrList = []
-    for fl in glob.glob("./logs/*"):
-        fErr = open(fl,'r').read()
-        if 'Error' in open(fl, 'r').read():
-            print(ErrList.append(fl))
-
-    for errFile in ErrList:
-        fErr = open(errFile,'r')
-        for lineErr in fErr:
-            if '/lat.py -b' in lineErr:
-                print('Error from: ', lineErr)
-            if 'Error' in lineErr:
-                print(lineErr)
+    # bg
+    if not calList:
+        # -ds
+        if subNum==None and runNum==None:
+            for i in range(ds.dsMap[dsNum]+1):
+                sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, i, ds.waveDir, ds.pandaDir))
+        # -sub
+        elif runNum==None:
+            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, subNum, ds.waveDir, ds.pandaDir))
+        # -run
+        elif subNum==None:
+            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, runNum, ds.waveDir, ds.pandaDir))
+    # cal
+    else:
+        for i in calList:
+            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, i, ds.calWaveDir, ds.pandaDir))
 
 
 def tuneCuts(argString, dsNum=None):
@@ -492,29 +460,6 @@ def applyCuts(dsNum, cutType):
             sh("""%s './lat3.py -cut %d %s'""" % (jobStr, ds, cutType))
     else:
         sh("""%s './lat3.py -cut %d %s'""" % (jobStr, dsNum, cutType))
-
-
-
-def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
-        Run ROOTtoPandas jobs.
-    """
-    # bg
-    if not calList:
-        # -ds
-        if subNum==None and runNum==None:
-            for i in range(ds.dsMap[dsNum]+1):
-                sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, i, ds.waveDir, ds.pandaDir))
-        # -sub
-        elif runNum==None:
-            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -ws %d %d -p -d %s %s'""" % (jobStr, dsNum, subNum, ds.waveDir, ds.pandaDir))
-        # -run
-        elif subNum==None:
-            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, runNum, ds.waveDir, ds.pandaDir))
-    # cal
-    else:
-        for i in calList:
-            sh("""%s 'python3 ./sandbox/ROOTtoPandas.py -f %d %d -p -d %s %s'""" % (jobStr, dsNum, i, ds.calWaveDir, ds.pandaDir))
 
 
 def cronJobs():
@@ -562,28 +507,16 @@ def shifterTest():
 
 
 def specialSkim():
-    """ ./job-panda.py [-q (use cron queue)] -sskim """
+    """ ./job-panda.py [-q (use job queue)] -sskim """
     cal = ds.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("delayedTrigger")
     runList = cal.GetSpecialRuns("longCal",5)
-    # run = runList[0]
-    # sh("""%s './skim_mjd_data -x -l -f %d %s/skim'""" % (jobStr,run,ds.specialDir))
     for run in runList:
-
         if useJobQueue:
-            # this is what you would want for a normal cron queue
-            # sh("""./lat.py -x -b -f %d %d -p %s %s""" % (dsNum, run, inFile, outFile))
-
-            # this is what i need for a 1-node job pump
-            # sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/extPulser-%d.txt""" % (dsNum, run, inFile, outFile, run))
-            sh("""./skim_mjd_data %d %d -n -l -t 0.7 %s""" % (jobStr, dsNum, i, skimDir))
-
-
-
-        print(run)
-        # sh("""%s './skim_mjd_data -x -l -f %d %s/skim'""" % (jobStr,run,ds.specialDir))
-
+            sh("""./skim_mjd_data %d %d -n -l -t 0.7 %s/skim >& ./logs/specialSkim-DS%d-%d.txt""" % (ds.GetDSNum(run),run,ds.specialDir,ds.GetDSNum(run),run))
+        else:
+            sh("""%s './skim_mjd_data %d %d -n -l -t 0.7 %s/skim'""" % (ds.GetDSNum(run),run,ds.specialDir))
 
 
 def specialWave():
@@ -670,7 +603,7 @@ def specialDelete():
 
 
 def specialLAT():
-    """ ./job-panda.py [-q (use cron queue)] -slat"""
+    """ ./job-panda.py [-q (use job queue)] -slat"""
     cal = ds.CalInfo()
     runList = cal.GetSpecialRuns("extPulser")
 
