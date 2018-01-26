@@ -13,5 +13,6 @@ logs/*
 plots/*
 data/mucal
 cron.log
-cron.queue
+job.queue
 data/parse*
+jobLists/*
