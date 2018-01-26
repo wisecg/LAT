@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
     if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
     if (opt[i] == "-c") { cal=1; }
-    if (opt[i] -- "-l") { longCal=1; }
+    if (opt[i] == "-l") { longCal=1; }
     if (opt[i] == "-x") { noCut=1; }
     if (opt[i] == "-n") {
      cout << "Performing Pass-2 Nonlinearity Correction ...\n";
@@ -70,17 +70,17 @@ int main(int argc, char** argv)
     }
   }
 
-  // 0nBB DS0-5 PRL standard bkg data cut:
+  // 0nBB DS0-5 PRL standard bkg data cut (for reference)
   // string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && isGood && !wfDCBits && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && !muVeto && mHL==1 && avse>-1 && dcr99<0 && isEnr"
 
   // Low-E DS0-5 standard bkg data cut:
-  string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && !muVeto && mH==1 && trapENFCal > 0.7"
+  string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && !muVeto && mH==1 && gain==0 && trapENFCal > 0.7";
 
   // DS0-5 calibration data cut
-  if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && (mH==1 || mH==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
+  if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && (mH==1 || mH==2) && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
 
   // Long calibration run cut
-  if (longCal) theCut = "trapENFCal > 0.7 && isGood";
+  if (longCal) theCut = "trapENFCal > 0.7 && isGood && gain==0 && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
 
   // No cut (for special runs)
   if (noCut) theCut = "";
