@@ -1,7 +1,25 @@
 # DataSetInfo.py
 # C. Wiseman, B. Zhu
+import os
 import numpy as np
 import tinydb as db
+
+# useful directories
+latSWDir    = os.environ['LATDIR']
+dataDir     = "/global/projecta/projectdirs/majorana/users/wisecg"
+bkgDir      = dataDir+"/bkg"     # subfolders: skim waves split lat
+calDir      = dataDir+"/cal"     # subfolders: skim waves split lat
+specialDir  = dataDir+"/special" # subfolders: skim waves split lat
+skimDir     = bkgDir+"/skim"
+waveDir     = bkgDir+"/waves"
+splitDir    = bkgDir+"/split"
+latDir      = bkgDir+"/lat"
+calSkimDir  = calDir+"/skim"
+calWaveDir  = calDir+"/waves"
+calSplitDir = calDir+"/split"
+calLatDir   = calDir+"/lat"
+pandaDir    = dataDir+"/pandas"
+
 # ==================================================================================
 #                                RUN INFORMATION
 # Taken from DataSetInfo.hh from the GAT version on Sep 12th 2017.
@@ -204,13 +222,13 @@ class CalInfo:
         # Special Runs: http://mjwiki.npl.washington.edu/bin/view/Majorana/SpecialMJDRuns
         self.special = {}
         self.special["extPulser"] = {
-            0: [4547, 4547], # ignore
-            1: [4549, 4572], # ignore, whole BG range, full of regular pulsers, etc
-            2: [4573, 4831], # ignore, whole BG range, full of regular pulsers, etc
-            3: [5525, 5534],
-            4: [5535, 5554],
-            5: [5555, 5850], # ignore, whole BG range, full of regular pulsers, etc
-            6: [5872, 5877],
+            # 0: [4547, 4547], # ignore
+            # 1: [4549, 4572], # ignore, whole BG range, full of regular pulsers, etc
+            # 2: [4573, 4831], # ignore, whole BG range, full of regular pulsers, etc
+            # 3: [5525, 5534], # ignore, "setup system"
+            # 4: [5535, 5554], # ignore, "numerous problems"
+            # 5: [5555, 5850], # ignore, whole BG range, full of regular pulsers, etc
+            # 6: [5872, 5877], # ignore, short runs
             7: [5940, 5963],
             8: [5964, 5978],
             9: [5979, 5992],

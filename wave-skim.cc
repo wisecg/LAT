@@ -40,8 +40,8 @@ string NLCMapDir = "/global/project/projectdirs/majorana/data/production/NLCDB";
 
 int main(int argc, char** argv)
 {
- // Get some (m)args
- if (argc < 2){
+  // Get some (m)args
+  if (argc < 2){
    cout << "Usage: ./wave-skim [options]\n"
         << "       [-s : run TCutSkimmer]\n"
         << "       [-r [dsNum] [subNum] : specify DS and sub-DS]\n"
@@ -51,58 +51,58 @@ int main(int argc, char** argv)
         << "       [-x : don't apply a data cleaning TCut]\n"
         << "       [-n : do the Radford 2-pass NLC correction]\n";
    return 1;
- }
- string inPath=".", outPath=".";
- int dsNum=-1, subNum=0, run=0;
- bool sw=0, tcs=0, fil=0, cal=0, nlc=0, noCut=0;
- vector<string> opt(argv, argv+argc);
- for (size_t i = 0; i < opt.size(); i++) {
-   if (opt[i] == "-s") { sw=0; tcs=1; }
-   if (opt[i] == "-f") { sw=1; fil=1; dsNum = stoi(opt[i+1]); run = stoi(opt[i+2]); }
-   if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
-   if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
-   if (opt[i] == "-c") { cal=1; }
-   if (opt[i] == "-x") { noCut=1; }
-   if (opt[i] == "-n") {
+  }
+  string inPath=".", outPath=".";
+  int dsNum=-1, subNum=0, run=0;
+  bool sw=0, tcs=0, fil=0, cal=0, longCal=0, nlc=0, noCut=0;
+  vector<string> opt(argv, argv+argc);
+  for (size_t i = 0; i < opt.size(); i++) {
+    if (opt[i] == "-s") { sw=0; tcs=1; }
+    if (opt[i] == "-f") { sw=1; fil=1; dsNum = stoi(opt[i+1]); run = stoi(opt[i+2]); }
+    if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
+    if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
+    if (opt[i] == "-c") { cal=1; }
+    if (opt[i] -- "-l") { longCal=1; }
+    if (opt[i] == "-x") { noCut=1; }
+    if (opt[i] == "-n") {
      cout << "Performing Pass-2 Nonlinearity Correction ...\n";
      nlc=1;
-   }
- }
+    }
+  }
 
- // DS0-5 standard cut
- string theCut = "trapENFCal > 0.7 && mHL==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+  // 0nBB DS0-5 PRL standard bkg data cut:
+  // string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && isGood && !wfDCBits && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && !muVeto && mHL==1 && avse>-1 && dcr99<0 && isEnr"
 
- // test/debug cut
- // theCut = "trapENFCal > 2 && mHL==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+  // Low-E DS0-5 standard bkg data cut:
+  string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && !muVeto && mH==1 && trapENFCal > 0.7"
 
- // calibration file cut
- if (cal) theCut = "trapENFCal>0.7 && trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+  // DS0-5 calibration data cut
+  if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && (mH==1 || mH==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
 
- // Special E=0 cut
- // if (cal) theCut = "trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
+  // Long calibration run cut
+  if (longCal) theCut = "trapENFCal > 0.7 && isGood";
 
- // Special DEBUG cut
- // NOTE: external pulser runs don't have any muVeto data, so come up empty
- if (cal) theCut = "trapENFCal > 0.7 && trapENFCal<250 && (mHL==1 || mHL==2) && isGood && !muVeto";
- cout << "WARNING: Special DEBUG cut in use.\n";
+  // No cut (for special runs)
+  if (noCut) theCut = "";
 
- if (noCut) theCut = "";
+  // Debug cut
+  // theCut = "trapENFCal > 2 && mH==1 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0&&P!=0&&D!=0";
 
- cout << "The cut is: " << theCut << endl;
+  cout << "The cut is: " << theCut << endl;
 
- // Set file I/O
- string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
- string outFile = Form("%s/waveSkimDS%i_%i.root",outPath.c_str(),dsNum,subNum);
- if (fil) {
-   inFile = Form("%s/skimDS%i_run%i_low.root",inPath.c_str(),dsNum,run);
-   outFile = Form("%s/waveSkimDS%i_run%i.root",outPath.c_str(),dsNum,run);
- }
+  // Set file I/O
+  string inFile = Form("%s/skimDS%i_%i_low.root",inPath.c_str(),dsNum,subNum);
+  string outFile = Form("%s/waveSkimDS%i_%i.root",outPath.c_str(),dsNum,subNum);
+  if (fil) {
+    inFile = Form("%s/skimDS%i_run%i_low.root",inPath.c_str(),dsNum,run);
+    outFile = Form("%s/waveSkimDS%i_run%i.root",outPath.c_str(),dsNum,run);
+  }
 
- // Go running
- // diagnostic();
- cout << "Scanning DS-" << dsNum << endl;
- if (tcs) TCutSkimmer(theCut, dsNum);
- if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile, nlc);
+  // Go running
+  // diagnostic();
+  cout << "Scanning DS-" << dsNum << endl;
+  if (tcs) TCutSkimmer(theCut, dsNum);
+  if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile, nlc);
 }
 
 
@@ -111,7 +111,6 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
  // Take an input skim file, copy it with a waveform branch appended.
  // NOTE: The copied vectors are NOT resized to contain only entries passing cuts.
  // This is to preserve 1-1 matching with the other vectors in the copied file.
-
  TChain *skimTree = new TChain("skimTree");
  skimTree->Add(inFile.c_str());
  cout << "Found " << skimTree->GetEntries() << " input skim entries.\n";
