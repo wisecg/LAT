@@ -63,7 +63,7 @@ function printNodeHealth {
   elif [ "`uname`" = "Linux" ]; then
     echo "free -g"
     free -g
-    top bn1 | head -n 7
+    top bn1 | head -n 12
     top bn1 | grep $execName | grep $USER | nl
   fi
 }

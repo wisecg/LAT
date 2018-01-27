@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 ========================= job-panda.py ========================
-A cute and adorable way to do various low-energy processing tasks.
+A cute and adorable way to do various processing tasks.
 
 The functions are arranged mostly sequentially, i.e. this file
 documents the "procedure" necessary to produce LAT data,
@@ -93,12 +93,13 @@ def runBatch():
     http://www.nersc.gov/users/computational-systems/cori/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
     """
-
     host = os.environ["NERSC_HOST"] # might not need this, or could make 'batchOpts' go by host ...
 
     # This is a little more flexible than a buncha .slr files
+
+    nCores = {"pdsf":30, "cori":60, "edison":44}
     batchOpts = {
-        "pdsf-chos": [
+        "pdsf-shared-chos": [
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/chos-%%j.txt" % (ds.latSWDir),
             "-p shared-chos",
@@ -113,60 +114,67 @@ def runBatch():
             "-t 24:00:00",
         ],
         "pdsf-pump": [
-            60,
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/pdsf-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
-            # "-p debug",
             "-p shared",
-            "-n60",
+            "-n%d" % nCores["pdsf"],
             "-t 24:00:00",
-            # "-t 00:10:00",
         ],
-        "cori-pump": [
-            60,
-            "--account=majorana",
+        "cori": [
+            # "--account=majorana",
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/cori-%%j.txt" % (ds.latSWDir),
+            "--image=wisecg/mjsw:v2",
             "-C haswell",
             "-N 1",
-            # "-qos debug",
-            "-qos regular"
-            # "--cpus-per-task=64"
-            "-t 24:00:00"
+            "--qos=debug",
+            # "-qos regular",
+            # "--cpus-per-task=64",
+            # "-t 24:00:00",
+            "-t 00:10:00"
         ],
-        "edison-pump": [
-            40,
+        "edison": [
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/edison-%%j.txt" % (ds.latSWDir),
-            "-t 24:00:00",
-            "-p debug",
-            "-p shared"
+            "--image=wisecg/mjsw:v2",
+            "-t 10:00:00",
+            # "-t 00:10:00",
+            # "--qos=debug"
+            "--qos=shared"
         ]
     }
 
-    sbatch = "sbatch "
-    for arg in batchOpts["pdsf-chos"]:
-        sbatch += " %s " % arg
-
     # execute!
 
-    # this works with "pdsf-chos"
+    # EX. 1 - single job -- pdsf-shared-chos
+    # sbatch = "sbatch "+' '.join(batchOpts["pdsf-shared-chos"])
     # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (ds.specialDir)
     # sh("%s slurm-job.sh %s" % (sbatch, cmd))
 
-    cmd = """./skim_mjd_data -f 22513 -l -t 0.7 %s/skim >& ./logs/specialSkim-DS5-22513.txt""" % (ds.specialDir)
-    bigStr = "%s slurm-job.sh '%s'" % (sbatch,cmd)
-    print(bigStr)
-    # sh(bigStr)
+    # EX. 2 - run 'make clean && make' in a new env (pdsf-shared, cori, edison)
+    # sh("make clean")
+    # sbatch = "sbatch "+' '.join(batchOpts["edison"])
+    # cmd = "make"
+    # sh("%s slurm.slr %s" % (sbatch,cmd))
 
-    # execute!
-    # sh("sbatch [args] shifter /bin/bash %s" % (cmd))
+    # EX. 3 - single job -- pdsf-shared / edison / cori
+    # sbatch = "sbatch "+' '.join(batchOpts["pdsf-shared"])
+    # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (ds.specialDir)
+    # sh("%s slurm.slr %s" % (sbatch,cmd))
 
-    # job pump
-    # nCores=60  # must match nCores requested by SBATCH!
-    # peakLoad=`"1.1*$nCores" | bc`   # nCores + 10%
-    # shifter /bin/bash job-pump.sh ${@} $nCores $peakLoad
+    # EX. 4 - run a job pump -- pdsf-shared / edison / cri
+    # nC = nCores["cori"]
+    # peakLoad = int(nC * 1.1)
+    # sbatch = "sbatch "+' '.join(batchOpts["cori"])
+    # sh("%s slurm.slr './job-pump.sh jobLists/test.list skim_mjd_data %d %d'" % (sbatch,nC,peakLoad))
+
+    # EX. 5 - skim long cal on edison
+    nC = nCores["edison"]
+    peakLoad = int(nC * 1.1)
+    sbatch = "sbatch "+' '.join(batchOpts["edison"])
+    sh("%s slurm.slr './job-pump.sh jobLists/skimLongCal.list skim_mjd_data %d %d'" % (sbatch,nC,peakLoad))
+
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

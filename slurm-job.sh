@@ -16,11 +16,7 @@ fi
 
 # This runs whatever commands job-panda.py passes to it.
 echo "${@}"
-echo "--------"
 ${@}
-
-# ./skim_mjd_data -f 22513 -l -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/special/skim >& ./logs/specialSkim-DS5-22513.txt
-
 
 echo "Job Complete:"
 date

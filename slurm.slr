@@ -1,0 +1,3 @@
+#!/bin/bash
+# dummy slurm/shifter file called by job-panda
+shifter /bin/bash slurm-job.sh ${@}

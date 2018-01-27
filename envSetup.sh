@@ -39,6 +39,7 @@ function sourceEnvClint {
   export PS1="\[\033[38;5;14m\]\A\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;10m\]\u@\h\[$(tput sgr0)\]\[\033[38;5;15m\]:\[$(tput bold)\]\[$(tput sgr0)\]\[\033[38;5;9m\]\W\[$(tput sgr0)\]\[$(tput sgr0)\]\[\033[38;5;15m\]\\$ \[$(tput sgr0)\]"
   alias rootmj="root -b -l"
   alias atom="rmate"
+  alias ls="ls --color"
 }
 
 function loadModulesMJD {
@@ -92,12 +93,14 @@ fi
 
 # we're on cori
 if [ "$NERSC_HOST" = "cori" ] && [ -z "$SLURM_JOBID" ]; then
+  module load python/3.5-anaconda
   sourceEnvClint
   sourceEnvMJD
 fi
 
 # we're on edison
 if [ "$NERSC_HOST" = "edison" ] && [ -z "$SLURM_JOBID" ]; then
+  module load python/3.5-anaconda
   sourceEnvClint
   sourceEnvMJD
 fi
