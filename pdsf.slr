@@ -1,7 +1,0 @@
-#!/bin/bash
-#SBATCH --workdir=/global/homes/w/wisecg/lat
-#SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
-#SBATCH --image=wisecg/mjsw:v2
-#SBATCH --mem=6000
-#SBATCH -p shared
-shifter /bin/bash shifter-job.sh ${@}

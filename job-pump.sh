@@ -3,7 +3,7 @@
 # Designed to run many single-core jobs on a multi-core batch node.
 # I only rewrote it so I could figure out what it was doing!
 #
-# USAGE: ./job-pump.sh [jobs.list] [prog. name]
+# USAGE: ./job-pump.sh [jobs.list] [program name, as seen by 'top']
 # NOTE: lines in jobs.list can be ignored with the # character.
 #
 # Clint Wiseman, USC, Jan. 2018.
@@ -12,24 +12,15 @@ set -u ;         # exit if you try to use an uninitialized variable
 set -e ;         # exit if any statement returns a non-true return value
 set -o errexit ; # exit if any statement returns a non-true return value
 
-jobList=$1        # input from command line
-execName=$2
-
-# "Nice" Pump Settings
-# maxJobLoad=5      # how many instances of the user's job should run concurrently.
-# peakWLoad=10      # number of jobs running must be below this before a new job is launched
-# lowFreeRAM=1.0    # free RAM must be above this before a new job is launched (default is 3 GB)
-# totJobLimit=20    # maximum number of jobs to attempt
-# jobDelay=10       # seconds between job launches (default: 2)
-# checkDelay=30     # seconds between checks (default: 20)
-
-# "Mega" Pump Settings (pdsf-pump.slr)
-maxJobLoad=30
-peakWLoad=30
-lowFreeRAM=5.0
-totJobLimit=9999
-jobDelay=10
-checkDelay=60
+# Pump Settings (takes 4 inputs from command line)
+jobList=$1          # list of commands to execute
+execName=$2         # program name as it appears in 'top'
+maxJobLoad=$3       # equal to the nCores requested (#SBATCH -nXX)
+peakWLoad=$4        # should be = (1.1 * nCores)
+lowFreeRAM=5.0      # minimum free RAM allowed on the node
+totJobLimit=9999999 # maximum number of jobs to attempt
+jobDelay=10         # seconds between job launches (default: 2)
+checkDelay=60       # seconds between checks (default: 20)
 
 
 function countJobs {

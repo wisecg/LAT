@@ -1,8 +1,0 @@
-#!/bin/bash
-#SBATCH --workdir=/global/homes/w/wisecg/lat
-#SBATCH --output=/global/homes/w/wisecg/lat/logs/cori-%j.txt
-#SBATCH --image=wisecg/mjsw:v2
-#-SBATCH -p shared
-#SBATCH -p debug -t 29:00 -C haswell
-
-shifter /bin/bash shifter-job.sh ${@}

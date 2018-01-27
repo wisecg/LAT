@@ -1,9 +1,0 @@
-#!/bin/bash
-#SBATCH --workdir=/global/homes/w/wisecg/lat
-#SBATCH --output=/global/homes/w/wisecg/lat/logs/shifter-%j.txt
-#SBATCH --image=wisecg/mjsw:v2
-#SBATCH -p shared -n30
-
-# NOTE: this is a test to try to run job-pump.sh and monopolize a single node on PDSF (half-monopolize, 30 cores)
-
-shifter /bin/bash job-pump.sh jobLists/extPulser.list python3
