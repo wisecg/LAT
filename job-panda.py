@@ -74,7 +74,7 @@ def main(argv):
 # =============================================================
 
 def sh(cmd):
-    """ Either call the shell or put the command in our cron queue.
+    """ Either call the shell or put the command in our job queue.
         Uses the global bool 'useJobQueue' and the global path 'jobQueue'.
     """
     if not useJobQueue:
@@ -138,10 +138,10 @@ def runBatch():
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/edison-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-t 10:00:00",
+            "-t 03:00:00",
             # "-t 00:10:00",
             # "--qos=debug"
-            "--qos=shared"
+            "--qos=regular"
         ]
     }
 
@@ -173,8 +173,9 @@ def runBatch():
     nC = nCores["edison"]
     peakLoad = int(nC * 1.1)
     sbatch = "sbatch "+' '.join(batchOpts["edison"])
-    sh("%s slurm.slr './job-pump.sh jobLists/skimLongCal.list skim_mjd_data %d %d'" % (sbatch,nC,peakLoad))
-
+    # sh("%s slurm.slr './job-pump.sh jobLists/skimLongCal.list skim_mjd_data %d %d'" % (sbatch,nC,peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/waveLongCal.list wave-skim %d %d'" % (sbatch,nC,peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/splitLongCal.list python3 %d %d'" % (sbatch,nC,peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -611,27 +612,28 @@ def specialSkim():
 
 
 def specialWave():
-    """ ./job-panda.py -swave """
+    """ ./job-panda.py [-q (use queue)] -swave """
     cal = ds.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
-    runList = cal.GetSpecialRuns("delayedTrigger")
-    # sh("""./wave-skim -x -n -f %d %d -p %s/skim %s/waves""" % (0, runList[0], ds.specialDir, ds.specialDir) )
+    runList = cal.GetSpecialRuns("longCal",5)
     for run in runList:
-        sh("""%s './wave-skim -x -n -f %d %d -p %s/skim %s/waves'""" % (jobStr, ds.GetDSNum(run), run, ds.specialDir, ds.specialDir) )
+        if useJobQueue:
+            sh("""./wave-skim -l -n -f %d %d -p %s/skim %s/waves >& ./logs/wave-ds%d-%d.txt""" % (ds.GetDSNum(run),run,ds.specialDir,ds.specialDir,ds.GetDSNum(run),run))
+        else:
+            sh("""%s './wave-skim -x -n -f %d %d -p %s/skim %s/waves'""" % (jobStr, ds.GetDSNum(run), run, ds.specialDir, ds.specialDir) )
 
 
 def specialSplit():
-    """ ./job-panda.py -ssplit
+    """ ./job-panda.py [-q] -ssplit
     External pulser runs have no data cleaning cut.
     Has a memory leak (can't close both TFiles, damn you, ROOT); submit each run as a batch job.
     """
-    from ROOT import TFile, TTree, TObject
-
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("extPulser")
+    runList = cal.GetSpecialRuns("longCal",5)
     for run in runList:
-        print(run)
-        if run <= 4592: continue
+        # print(run)
+        # if run <= 4592: continue
 
         inPath = "%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
         outPath = "%s/split/splitSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
@@ -643,7 +645,10 @@ def specialSplit():
             except OSError:
                 pass
 
-        sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath, outPath))
+        if useJobQueue:
+            sh("""./job-panda.py -splitf %s %s""" % (inPath,outPath))
+        else:
+            sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath, outPath))
 
 
 def splitFile(inPath,outPath):
@@ -697,6 +702,7 @@ def specialLAT():
     """ ./job-panda.py [-q (use job queue)] -slat"""
     cal = ds.CalInfo()
     runList = cal.GetSpecialRuns("extPulser")
+    runList = cal.GetSpecialRuns("longCal",5)
 
     # deal with unsplit files
     # run = runList[0]
@@ -725,7 +731,8 @@ def specialLAT():
                 # sh("""./lat.py -x -b -f %d %d -p %s %s""" % (dsNum, run, inFile, outFile))
 
                 # this is what i need for a 1-node job pump
-                sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/extPulser-%d.txt""" % (dsNum, run, inFile, outFile, run))
+                # sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/extPulser-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
+                sh("""./lat.py -b -f %d %d -p %s %s >& ./logs/longCal-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
             else:
                 sh("""%s './lat.py -x -b -f %d %d -p %s %s' """ % (jobStr, dsNum, run, inFile, outFile))
 

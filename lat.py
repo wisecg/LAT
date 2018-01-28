@@ -155,7 +155,6 @@ def main(argv):
 
     waveS1, waveS2 = std.vector("double")(), std.vector("double")()
     waveS3, waveS4, waveS5 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-    # tOffset = std.vector("double")()
     bcMax, bcMin = std.vector("double")(), std.vector("double")()
     bandMax, bandTime = std.vector("double")(), std.vector("double")()
     den10, den50, den90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
@@ -170,11 +169,11 @@ def main(argv):
     latAF, latFC, latAFC = std.vector("double")(), std.vector("double")(), std.vector("double")()
     nMS = std.vector("int")()
     tE50, latE50, wfStd = std.vector("double")(), std.vector("double")(), std.vector("double")()
+    wfAvgBL, wfRMSBL = std.vector("double")(), std.vector("double")()
 
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
     b3, b4, b5 = out.Branch("waveS3",waveS3), out.Branch("waveS4",waveS4), out.Branch("waveS5",waveS5)
-    # b6 = out.Branch("tOffset",tOffset)
     b7, b8 = out.Branch("bcMax",bcMax), out.Branch("bcMin",bcMin)
     b9, b10 = out.Branch("bandMax",bandMax), out.Branch("bandTime",bandTime)
     b11, b12, b13 = out.Branch("den10",den10), out.Branch("den50",den50), out.Branch("den90",den90)
@@ -189,12 +188,12 @@ def main(argv):
     b35, b36, b37 = out.Branch("latAF",latAF), out.Branch("latFC",latFC), out.Branch("latAFC",latAFC)
     b38 = out.Branch("nMS",nMS)
     b39, b40, b41 = out.Branch("tE50", tE50), out.Branch("latE50", latE50), out.Branch("wfStd", wfStd)
+    b42, b43 = out.Branch("wfAvgBL", wfAvgBL), out.Branch("wfRMSBL", wfRMSBL)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
         "waveS1":[waveS1, b1], "waveS2":[waveS2, b2],
         "waveS3":[waveS3, b3], "waveS4":[waveS4, b4], "waveS5":[waveS5, b5],
-        # "tOffset":[tOffset, b6],
         "bcMax":[bcMax, b7], "bcMin":[bcMin, b8],
         "bandMax":[bandMax, b9], "bandTime":[bandTime, b10],
         "den10":[den10, b11], "den50":[den50, b12], "den90":[den90, b13],
@@ -207,7 +206,8 @@ def main(argv):
         "riseNoise":[riseNoise,b30],
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
-        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfStd":[wfStd,b41]
+        "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfStd":[wfStd,b41],
+        "wfAvgBL":[wfAvgBL,b42], "wfRMSBL":[wfRMSBL,b43]
     }
 
     # Make a figure (-i option: select different plots)
@@ -322,7 +322,6 @@ def main(argv):
             data = signal.GetWaveRaw()
             data_blSub = signal.GetWaveBLSub()
             dataTS = signal.GetTS()
-            # tOffset[iH] = signal.GetOffset()
             dataBL,dataNoise = signal.GetBaseNoise()
 
             # wavelet packet transform
@@ -565,9 +564,8 @@ def main(argv):
             sTrapTS = np.arange(0, len(sTrap)*10., 10)
 
             # asymmetric trapezoid - used to find the t0 only
-            aTrap = wl.asymTrapFilter(data_blSub, 200, 100, 40, True)
+            aTrap = wl.asymTrapFilter(data_blSub, 4, 10, 200, True) # (0.04us, 0.1us, 2.0us)
             aTrapTS = np.arange(0, len(aTrap)*10., 10)
-
 
             # find leading edges (t0 times)
 
@@ -639,8 +637,11 @@ def main(argv):
             nMS[iH] = len(maxtab)
 
             # =========================================================
-            # wfStd parameter
+            # wfStd analysis
+            wfAvgBL[iH] = dataBL
+            wfRMSBL[iH] = dataNoise
             wfStd[iH] = np.std(data[5:-5])
+
 
             # ------------------------------------------------------------------------
             # End waveform processing.

@@ -53,7 +53,7 @@ function getLoad {
 }
 
 function printNodeHealth {
-  echo "Checking health of node"`hostname -f`" on "`date`
+  echo "Checking health of node "`hostname -f`" on "`date`
 
   if [ "`uname`" == "Darwin" ]; then
     top -l 1 -s 0 | grep PhysMem
