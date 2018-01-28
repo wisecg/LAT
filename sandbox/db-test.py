@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import imp, glob
 ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
 import tinydb as db
@@ -36,8 +36,9 @@ from ROOT import gROOT
 
 def main():
 
-    wfStdParse()
+    # wfStdParse()
     # wfStdDBEntry()
+    testWLFunctions()
 
 
 def wfStdParse():
@@ -51,15 +52,15 @@ def wfStdParse():
     # recList = calDB.search(pars.key.matches("wfstd_ds5_*"))
     recList = calDB.search(pars.key.matches("thresh"))
 
-    print len(recList)
+    print(len(recList))
     for idx in range(len(recList)):
 
         key = recList[idx]['key']
         vals = recList[idx]['vals']
 
-        print key
+        print(key)
         for ch in vals:
-            print ch, vals[ch]
+            print(ch, vals[ch])
         return
 
         for ch in vals: # simple iteration over chans
@@ -67,13 +68,13 @@ def wfStdParse():
             a,b,c,d,e,base,n,m = vals[ch][3],vals[ch][4],vals[ch][5],vals[ch][6],vals[ch][7],vals[ch][8],vals[ch][9],vals[ch][10]
 
             # check what string format these numbers need in a TCut.
-            print "%s -- %.4e  %.4e  %.4e  %.2e  %.2e  %.4f" % (ch,a,b,c,d,e,base,m,n)
+            print("%s -- %.4e  %.4e  %.4e  %.2e  %.2e  %.4f" % (ch,a,b,c,d,e,base,m,n))
             return
 
-            # if len(vals[ch])!=12: print ch, len(vals[ch]), vals[ch]
+            # if len(vals[ch])!=12: print(ch, len(vals[ch]), vals[ch])
             # if vals[ch][9] > 0 or vals[ch][10] > 0:
-                # print key
-                # print ch, vals[ch][9], vals[ch][10]
+                # print(key)
+                # print(ch, vals[ch][9], vals[ch][10])
             # return
 
     # wipe the DB of bad entries.  careful ...
@@ -131,24 +132,24 @@ def wfStdDBEntry():
             if calIdxLo == calIdxHi:
                 calIdx = calIdxHi
             else:
-                print "error: hey, cal indexes don't match!"
+                print("error: hey, cal indexes don't match!")
                 return
 
             if idx==0: prevCalIdx = calIdx
-            print runLo, runHi, CPD, chan, calIdx, prevCalIdx, chi2
+            print(runLo, runHi, CPD, chan, calIdx, prevCalIdx, chi2)
 
 
             # Update the DB at each new calIdx, and clear wfStdVals for the next one
             if calIdx != prevCalIdx:
                 dbKey = "wfstd_ds%d_idx%d_mod%s" % (dsNum, prevCalIdx, prevTmp[2][0])
-                print "OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"..."
+                print("OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"...")
                 for ch in sorted(wfStdVals):
-                    print ch, wfStdVals[ch]
+                    print(ch, wfStdVals[ch])
 
                 # actually update the DB
                 if updateDB:
                     ds.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
-                    print "DB updated."
+                    print("DB updated.")
 
                 wfStdVals = {}
 
@@ -156,7 +157,7 @@ def wfStdDBEntry():
             if chan not in wfStdVals.keys():
                 wfStdVals[chan] = [useMe, expo, aThresh, a, b, c, d, e, base, n, m, chi2]
             else:
-                print "Channel",chan,"already in wfStdVals for calIdx",calIdx
+                print("Channel",chan,"already in wfStdVals for calIdx",calIdx)
                 return
 
             # remember this calIdx and module number
@@ -165,12 +166,12 @@ def wfStdDBEntry():
 
         # do the last one
         dbKey = "wfstd_ds%d_idx%d_mod%s" % (dsNum, prevCalIdx, tmp[2][0])
-        print "OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"..."
+        print("OK, ready to update the DB for calIdx",prevCalIdx,", using key",dbKey,"...")
         for ch in sorted(wfStdVals):
-            print ch, wfStdVals[ch]
+            print(ch, wfStdVals[ch])
         if updateDB:
             ds.setDBRecord({"key":dbKey, "vals":wfStdVals}, False, "../calDB.json")
-            print "DB updated."
+            print("DB updated.")
 
 
 def lat3Test():
@@ -199,7 +200,7 @@ def lat3Test():
             fList = glob.glob(fRegex)
             file0 = fList[0]
 
-            print "DS-%d Sub-%d M%d N: %d" % (dsNum, subNum, modNum, len(fList))
+            print("DS-%d Sub-%d M%d N: %d" % (dsNum, subNum, modNum, len(fList)))
 
             applyDBCuts(dsNum, subNum, modNum, fRegex, file0)
 
@@ -217,13 +218,13 @@ def applyDBCuts(dsNum, subNum, modNum, fRegex, file0):
     chList = ds.GetGoodChanList(dsNum)
 
     megaCut = MakeCutList(cInfo, skimTree, theCut, dsNum, modNum, chList)
-    for key in megaCut: print key, megaCut[key]
+    for key in megaCut: print(key, megaCut[key])
 
     # for idx, ch in enumerate(chList):
     #     chanCut = theCut+'&&'+megaCut[ch][2:]
     #     outFile = "/global/homes/w/wisecg/project/cuts/fs/fitSlo-DS%d-%d-ch%d.root" % (dsNum, subNum, ch)
-    #     print "Writing to:",outFile
-    #     print "Cut used:",chanCut
+    #     print("Writing to:",outFile)
+    #     print("Cut used:",chanCut)
 
         # outFile = TFile(outFile,"RECREATE")
         # outTree = TTree()
@@ -240,7 +241,7 @@ def MakeCutList(cInfo, skimTree, basicCut, dsNum, modNum, chList=[], mode='db'):
     # nPass = skimTree.Draw("run", basicCut, "goff")
     # nRun = skimTree.GetV1()
     # runList = list(set(int(nRun[n]) for n in xrange(nPass)))
-    # print "Processing Runs", runList
+    # print("Processing Runs", runList)
 
     # find calIdx boundaries for these runs
     run = 0
@@ -287,39 +288,84 @@ def testWLFunctions():
 
     # get a cal index for a run
     # key, run = "ds1_m1",10770
-    # print cal.GetCalIdx(key,run)
+    # print(cal.GetCalIdx(key,run))
 
     # generate a list of cal runs for a given index
     # key, idx = "ds3_m1",4
-    # print cal.GetCalList(key,idx,runLimit=10)
+    # print(cal.GetCalList(key,idx,runLimit=10))
 
     # generate cal runs for a given dataset
     # key = "ds2_m1"
     # for idx in range(cal.GetIdxs(key)):
-        # print cal.GetCalList(key,idx,runLimit=10)
+        # print(cal.GetCalList(key,idx,runLimit=10))
 
     # generate all possible cal runs
     # for key in cal.GetKeys():
-        # print key
+        # print(key)
         # for idx in range(cal.GetIdxs(key)):
-            # print cal.GetCalList(key,idx,runLimit=10)
+            # print(cal.GetCalList(key,idx,runLimit=10))
 
     # example of iterating over the DB
+    # calDB = db.TinyDB('../calDB.json')
+    # for item in calDB:
+    #     d = dict(item)
+    #     key = d["key"]
+    #     vals = d["vals"]
+    #     tmp = key.split("_")
+    #     tmp = [str(t) for t in tmp]
+    #
+    #     if tmp[0]=="fitSlo" and tmp[1]=="ds%d" % dsNum:
+    #         print(tmp)
+    #         # print(vals)
+    #         # return
+    #
+    #     # nRec += 1
+    #     # if nRec > 10: break
+
+    # use a regexp to print a buncha records
+    # calDB = db.TinyDB('../calDB.json')
+    # pars = db.Query()
+    # recList = calDB.search(pars.key.matches("riseNoise"))
+    # for idx in range(len(recList)):
+    #     key = recList[idx]['key']
+    #     vals = recList[idx]['vals']
+    #     print(key)
+
+    # look up a particular value
+    # run 22564 channel 648
+    #
+    # riseNoise - uses calIdx
+    #     keys: riseNoise_ds[i]_idx[j]_m[k]_SoftPlus
+    #     vals: {[chan]:[1%, 5%, 90%, 95%, 99%]}
+
+    import numpy as np
+
+    run, ch, dsNum, modNum = 22564, 648, 5, 1
+    calInfo = ds.CalInfo()
+    calIdx = calInfo.GetCalIdx("ds5_m1",run)
+    print("Found calIdx",calIdx)
     calDB = db.TinyDB('../calDB.json')
-    for item in calDB:
-        d = dict(item)
-        key = d["key"]
-        vals = d["vals"]
-        tmp = key.split("_")
-        tmp = [str(t) for t in tmp]
+    pars = db.Query()
+    rnSD = ds.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum,calIdx,modNum),False,calDB,pars)
+    rnCD = ds.getDBRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum,calIdx,modNum),False,calDB,pars)
 
-        if tmp[0]=="fitSlo" and tmp[1]=="ds%d" % dsNum:
-            print tmp
-            # print vals
-            # return
+    # from LAT3: riseNoise: check the softplus curvature is positive
+    if rnSD[ch][3] > 0:
+        rnCut = "riseNoise<(%.3f+%.5f*TMath::Log(1+TMath::Exp((trapENFCal-(%.3f))/%.3f)))" % (max(rnSD[ch][0],rnCD[ch][4]), rnSD[ch][1], rnSD[ch][2], rnSD[ch][3])
+    print(rnSD[ch][0],rnCD[ch][4])
 
-        # nRec += 1
-        # if nRec > 10: break
+    print(rnCut)
+
+    ene = 19.47
+    rnCut = min(rnSD[ch][0],rnCD[ch][4]) + rnSD[ch][1] * np.log(1 + np.exp((ene - rnSD[ch][2])/rnSD[ch][3]))
+    print(rnCut)
+
+
+
+
+
+
+
 
 
 if __name__=="__main__":
