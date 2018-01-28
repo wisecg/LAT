@@ -119,8 +119,7 @@ def main(argv):
     if rangeMode or fileMode or pathMode:
         inFile = TFile(inPath)
         gatTree = inFile.Get("skimTree")
-        print(gatTree.GetEntries())
-        theCut = "" if dontUseTCuts else inFile.Get("theCut").GetTitle()
+        print(gatTree.GetEntries(),"entries in input tree.")
     elif gatMode:
         inFile = TFile(gatPath)
         bltFile = TFile(bltPath)
@@ -130,9 +129,16 @@ def main(argv):
     if singleMode:
         inFile = TFile(pathToInput)
         gatTree = inFile.Get("skimTree")
+
+    # apply cut to tree
+    if (rangeMode or fileMode or pathMode) and not dontUseTCuts:
+        try:
+            theCut = inFile.Get("theCut").GetTitle()
+        except ReferenceError:
+            theCut = ""
     if cutMode:
         # theCut += customPar
-        theCut = "Entry$<500"
+        theCut = "trapENFCal < 50 && gain==0 && channel==648"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -233,6 +239,10 @@ def main(argv):
         p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
         p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
         p[6] = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
+    elif plotNum==9:
+        p0 = plt.subplot2grid((5,1), (0,0)) # 9- wpt on wf fit residual
+        p1 = plt.subplot2grid((5,1), (1,0), rowspan=2)
+        p2 = plt.subplot2grid((5,1), (3,0), rowspan=2)
     if not batMode: plt.show(block=False)
 
 
@@ -642,7 +652,6 @@ def main(argv):
             wfRMSBL[iH] = dataNoise
             wfStd[iH] = np.std(data[5:-5])
 
-
             # ------------------------------------------------------------------------
             # End waveform processing.
 
@@ -791,6 +800,44 @@ def main(argv):
                 for mse in msList: p0.axvline(mse, color='green')
                 p0.axhline(msThresh,color='red')
                 p0.legend()
+
+            if plotNum==9: # wavelet vs wf fit residual plot
+
+                # wavelet packet transform on wf fit residual
+                fitResid = data-fit
+                wpRes = pywt.WaveletPacket(fitResid, 'db2', 'symmetric', maxlevel=4)
+                nodesRes = wpRes.get_level(4, order='freq')
+                wpCoeffRes = np.array([n.data for n in nodesRes], 'd')
+                wpCoeffRes = abs(wpCoeffRes)
+                R6 = np.sum(wpCoeffRes[2:9,1:wpLength//4+1])
+                R7 = np.sum(wpCoeffRes[2:9,wpLength//4+1:wpLength//2+1])
+                R8 = np.sum(wpCoeffRes[2:9,wpLength//2+1:3*wpLength//4+1])
+                R9 = np.sum(wpCoeffRes[2:9,3*wpLength//4+1:-1])
+                R10 = np.sum(wpCoeffRes[9:,1:wpLength//4+1])
+                R11 = np.sum(wpCoeffRes[9:,wpLength//4+1:wpLength//2+1])
+                R12 = np.sum(wpCoeffRes[9:,wpLength//2+1:3*wpLength//4+1])
+                R13 = np.sum(wpCoeffRes[9:,3*wpLength//4+1:-1])
+                RsumList = [R6, R7, R8, R9, R10, R11, R12, R13]
+                bcMinRes = 1. if np.min(RsumList) < 1 else np.min(RsumList)
+                riseNoiseRes = np.sum(wpCoeffRes[2:-1,wpLoRise:wpHiRise]) / bcMinRes
+                rnCut = 1.1762 + 0.00116 * np.log(1 + np.exp((dataENFCal-7.312)/0.341))
+
+                p0.cla()
+                p0.margins(x=0)
+                p0.plot(dataTS,data_blSub,color='blue',label='data')
+                # p0.plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
+                # p0.axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
+                p0.plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
+                # p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
+                # p0.legend(loc='best')
+                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f  approxFitE %.2f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime,fitAmp[iH]*0.4))
+
+                p1.cla()
+                p1.plot(dataTS,fitResid,color='blue')
+
+                p2.cla()
+                p2.set_title("riseNoise %.2f  rnCut %.2f  riseNoiseRes %.2f  bcMinRes %.2f  bcMin %.2f  max %.2f" % (riseNoise[iH],rnCut,riseNoiseRes,bcMinRes,bcMin[iH],wpCoeffRes.max()))
+                p2.imshow(wpCoeffRes, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
 
             plt.tight_layout()
             plt.pause(0.000001)

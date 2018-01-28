@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+f#!/usr/bin/env python3
 """
 ========================= job-panda.py ========================
 A cute and adorable way to do various processing tasks.
@@ -92,6 +92,9 @@ def runBatch():
     http://www.nersc.gov/users/computational-systems/pdsf/using-slurm-pdsf-batch-sbatch/
     http://www.nersc.gov/users/computational-systems/cori/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
+    http://www.nersc.gov/users/computational-systems/cori/running-jobs/queues-and-policies/
+    http://www.nersc.gov/users/computational-systems/edison/running-jobs/queues-and-policies/
+    http://www.nersc.gov/users/accounts/user-accounts/how-usage-is-charged/
     """
     host = os.environ["NERSC_HOST"] # might not need this, or could make 'batchOpts' go by host ...
 
@@ -122,14 +125,13 @@ def runBatch():
             "-t 24:00:00",
         ],
         "cori": [
-            # "--account=majorana",
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/cori-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
             "-C haswell",
             "-N 1",
             "--qos=debug",
-            # "-qos regular",
+            # "--qos=regular",
             # "--cpus-per-task=64",
             # "-t 24:00:00",
             "-t 00:10:00"
