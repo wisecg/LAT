@@ -664,6 +664,36 @@ def splitFile(inPath,outPath):
     lilTree.Write("",TObject.kOverwrite)
 
 
+def specialWrite():
+    """ ./job-panda.py -swrite
+    Write TCuts from waveSkim files into splitSkim files.
+    """
+    from ROOT import TFile, TNamed
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("longCal",5)
+
+    for run in runList:
+        wavePath = "%s/waves/waveSkimDS%d_run_%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
+        waveFile = TFile(wavePath)
+        theCut = waveFile.Get("theCut").GetTitle()
+
+        splitFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root") % (ds.specialDIr, ds.GetDSNum(run), run)
+        for idx in range(len(splitFiles)):
+            if idx==0:
+                splitPath = "%s/split/splitSkimDS%d_run%d.root" % (ds.specialDir, dsNum, run)
+            else:
+                splitPath = "%s/split/splitSkimDS%d_run%d_%d.root" % (ds.specialDir, dsNum, run, idx)
+            if not os.path.isfile(splitPath) :
+                print("File doesn't exist:",splitPath)
+                return
+
+            splitFile = TFile(splitPath,"UPDATE")
+            thisCut = TNamed("theCut",theCut)
+            thisCut.Write("",TObject.kOverwrite)
+
+
+
+
 def specialDelete():
     """./job-panda.py -sdel"""
 
