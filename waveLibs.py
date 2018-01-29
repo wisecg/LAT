@@ -19,6 +19,7 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
+
 def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
     from ROOT import TH1D
     nameStr, titleStr = "", ""
@@ -45,6 +46,78 @@ def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Titl
     if xTitle!="": h2.GetXaxis().SetTitle(xTitle)
     if yTitle!="": h2.GetYaxis().SetTitle(yTitle)
     return h2
+
+
+def GetVX(tree, tNames, theCut=""):
+    """ Sick of using GetV1234(), let's try to write a versatile tree parser.
+    - This isn't quite as fast as Draw, but it can draw more branches and still do entry lists.
+    - If this gets too complicated I'll have to figure out how to use root_numpy.
+    - NOTE: If the tree uses vectors, only HITS PASSING CUTS will be returned for each event.
+      This is tricky because if you cut ONLY on a non-vector branch (say mH), then Iteration$ is always 0 (WRONG).
+      It's not my fault!  The Draw() that creates the entry list is messed up.
+      HACKY FIX: add "channel > 0". It should always be true.  Who knows how tree->Scan does it right.
+    """
+    from ROOT import TChain
+
+    # this is what we'll return: {branchName:[numpy array of vals]}
+    tVals = {br:[] for br in tNames}
+
+    # create an entry list of hits passing cuts
+    evtList = False
+
+    if theCut != "":
+        evtList = True
+        theCut += " && channel > 0"
+        nPass = tree.Draw("Entry$:Iteration$",theCut,"GOFF")
+        evtList = tree.GetV1()
+        itrList = tree.GetV2()
+        evtList = [int(evtList[idx]) for idx in range(nPass)]
+        itrList = [int(itrList[idx]) for idx in range(nPass)]
+        # for idx in range(len(evtList)):
+            # print(evtList[idx],itrList[idx])
+
+        # match the iteration numbers to the entry
+        evtSet = sorted(set(evtList))
+        evtDict = {evt:[] for evt in evtSet}
+        for idx in range(len(itrList)):
+            evtDict[evtList[idx]].append(itrList[idx])
+        treeItr = evtSet
+    else:
+        treeItr = range(tree.GetEntriesFast())
+
+    # activate only branches we want, and detect vector types
+    sizeVec = None
+    brTypes = {br:0 for br in tNames}
+    tree.SetBranchStatus('*',0)
+    for name in tNames:
+        if name=="Entry$" or name=="Iteration$": continue
+        tree.SetBranchStatus(name,1)
+        if "vector" in tree.GetBranch(name).GetClassName():
+            brTypes[name] = "vec"
+            sizeVec = name
+
+    # loop over the tree
+    for iEvt in treeItr:
+        tree.GetEvent(iEvt)
+        nHit = 1 if sizeVec is None else getattr(tree,sizeVec).size()
+        branchItr = evtDict[iEvt] if evtList else range(nHit)
+        for name in tVals:
+            for iH in branchItr:
+                if brTypes[name] == "vec":
+                    tVals[name].append(getattr(tree,name)[iH])
+                    continue
+                elif name == "Entry$":
+                    tVals[name].append(iEvt)
+                    continue
+                elif name == "Iteration$":
+                    tVals[name].append(iH)
+                    continue
+                else:
+                    tVals[name].append(getattr(tree,name))
+
+    # convert lists to numpy arrays and return
+    tVals = {br:np.asarray(tVals[br]) for br in tNames}
+    return tVals
 
 
 def Get1DBins(hist,xmin,xmax):

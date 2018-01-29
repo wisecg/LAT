@@ -1,4 +1,4 @@
-f#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 ========================= job-panda.py ========================
 A cute and adorable way to do various processing tasks.
@@ -66,6 +66,7 @@ def main(argv):
         if opt == "-swave":  specialWave()
         if opt == "-ssplit": specialSplit()
         if opt == "-splitf": splitFile(argv[i+1],argv[i+2])
+        if opt == "-swrite": specialWrite()
         if opt == "-sdel":   specialDelete()
         if opt == "-slat":   specialLAT()
         if opt == "-scheck": specialCheck()
@@ -100,7 +101,7 @@ def runBatch():
 
     # This is a little more flexible than a buncha .slr files
 
-    nCores = {"pdsf":30, "cori":60, "edison":44}
+    nCores = {"pdsf":30, "cori":60, "edison":48}
     batchOpts = {
         "pdsf-shared-chos": [
             "--workdir=%s" % (ds.latSWDir),
@@ -140,7 +141,7 @@ def runBatch():
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/edison-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-t 03:00:00",
+            "-t 10:00:00",
             # "-t 00:10:00",
             # "--qos=debug"
             "--qos=regular"
@@ -177,7 +178,10 @@ def runBatch():
     sbatch = "sbatch "+' '.join(batchOpts["edison"])
     # sh("%s slurm.slr './job-pump.sh jobLists/skimLongCal.list skim_mjd_data %d %d'" % (sbatch,nC,peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/waveLongCal.list wave-skim %d %d'" % (sbatch,nC,peakLoad))
-    sh("%s slurm.slr './job-pump.sh jobLists/splitLongCal.list python3 %d %d'" % (sbatch,nC,peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/splitLongCal.list python3 %d %d'" % (sbatch,nC,peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/test.list python3 %d %d'" % (sbatch,nC,peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal.list python3 %d %d'" % (sbatch,nC,peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/latLongCal_cleanup.list python3 %d %d'" % (sbatch,nC,peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -670,16 +674,18 @@ def specialWrite():
     """ ./job-panda.py -swrite
     Write TCuts from waveSkim files into splitSkim files.
     """
-    from ROOT import TFile, TNamed
+    from ROOT import TFile, TNamed, TObject
     cal = ds.CalInfo()
     runList = cal.GetSpecialRuns("longCal",5)
 
     for run in runList:
-        wavePath = "%s/waves/waveSkimDS%d_run_%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
+        dsNum = ds.GetDSNum(run)
+        wavePath = "%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, dsNum, run)
         waveFile = TFile(wavePath)
         theCut = waveFile.Get("theCut").GetTitle()
+        print(wavePath)
 
-        splitFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root") % (ds.specialDIr, ds.GetDSNum(run), run)
+        splitFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (ds.specialDir, dsNum, run))
         for idx in range(len(splitFiles)):
             if idx==0:
                 splitPath = "%s/split/splitSkimDS%d_run%d.root" % (ds.specialDir, dsNum, run)
@@ -692,8 +698,7 @@ def specialWrite():
             splitFile = TFile(splitPath,"UPDATE")
             thisCut = TNamed("theCut",theCut)
             thisCut.Write("",TObject.kOverwrite)
-
-
+        print(splitFiles[-1])
 
 
 def specialDelete():
@@ -733,7 +738,7 @@ def specialDelete():
 def specialLAT():
     """ ./job-panda.py [-q (use job queue)] -slat"""
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("extPulser")
     runList = cal.GetSpecialRuns("longCal",5)
 
     # deal with unsplit files

@@ -2,17 +2,70 @@
 import sys, os, imp, glob
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
+wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
 
     # checkSyncChannel()
-    plotHits()
+    # plotHits()
+    runByRun()
+
+def runByRun():
+    """ Directly confirm settings of ext pulser scripts. """
+    import time
+    from ROOT import TChain
+
+    calInfo = ds.CalInfo()
+
+    runList = calInfo.GetSpecialRuns("extPulser",7)
+    for run in runList:
+        if run != 5942:
+            continue
+
+        fileList = []
+        subFiles = glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run))
+        for idx in range(len(subFiles)):
+            thisFile = "%s/lat/latSkimDS%d_run%d_%d.root" % (ds.specialDir, ds.GetDSNum(run), run, idx)
+            if not os.path.isfile(thisFile):
+                print("File doesn't exist: ",thisFile)
+            else:
+                fileList.append(thisFile)
+        latChain = TChain("skimTree")
+        for f in fileList: latChain.Add(f)
+
+        syncChan = 677
+        extPChan = 674
+        # theCut = "channel==%d || channel==%d" % (syncChan,extPChan)
+        # theCut = "mH==2 && Entry$ < 50"
+        # theCut = "mH==2 && Entry$ < 50 && !muVeto"
+        # theCut = "Entry$ < 100"
+        # theCut = "Entry$ < 50 && trapENFCal > 1"
+        # theCut = "mH==4 && (channel==640 || channel==646)"
+        theCut = "Entry$ < 100"
+
+        start = time.time()
+        tNames = ["Entry$","run","channel","mH","trapENFCal","den90","den10","fitSlo","localTime_s","tOffset"]
+        tVals = wl.GetVX(latChain,tNames,theCut)
+        print("took",time.time()-start)
+
+        for idx in range(tVals["run"].size):
+            ent    = tVals["Entry$"][idx]
+            run    = tVals["run"][idx]
+            chan   = tVals["channel"][idx]
+            mH     = tVals["mH"][idx]
+            enf    = tVals["trapENFCal"][idx]
+            d90    = tVals["den90"][idx]
+            d10    = tVals["den10"][idx]
+            fitSlo = tVals["fitSlo"][idx]
+            gt     = tVals["localTime_s"][idx]
+            print("%d  e%d  m%d  t%.10f  %-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,gt,chan,enf,d90-d10,fitSlo))
+
+
 
 
 def plotHits():
-    """Go over each ext pulser range and corroborate w/ elog. """
     from ROOT import TChain, TFile, GATDataSet, MJTChannelMap, MJTChannelSettings
 
     calInfo = ds.CalInfo()
