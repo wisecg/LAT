@@ -120,6 +120,27 @@ def GetVX(tree, tNames, theCut=""):
     return tVals
 
 
+def getDetPos(run):
+    """ Load position info for all enabled channels in a run. """
+    from ROOT import GATDataSet
+    gds = GATDataSet(run)
+    chMap = gds.GetChannelMap()
+    chSet = gds.GetChannelSettings()
+    enabledIDs = chSet.GetEnabledIDList()
+    enabledIDs = [enabledIDs[idx] for idx in range(enabledIDs.size())]
+    detPos = {}
+    for ch in enabledIDs:
+        hglg = "H" if ch%2==0 else "L"
+        pos = "%sD%d-%s" % (chMap.GetString(ch,"kStringName"), chMap.GetInt(ch,"kDetectorPosition"),hglg)
+        detPos[ch] = pos
+    return detPos
+
+
+def getChan(crate,card,gain):
+    """ In hex, 0x(crate+1)(card)(gain). """
+    return(((crate+1)*2 << 8) + (card << 4) + gain)
+
+
 def Get1DBins(hist,xmin,xmax):
     bx1 = hist.FindBin(xmin)
     bx2 = hist.FindBin(xmax)

@@ -40,7 +40,7 @@ string NLCMapDir = "/global/project/projectdirs/majorana/data/production/NLCDB";
 
 int main(int argc, char** argv)
 {
-  // Get some (m)args
+  // hey let's get some (m)args
   if (argc < 2){
    cout << "Usage: ./wave-skim [options]\n"
         << "       [-s : run TCutSkimmer]\n"

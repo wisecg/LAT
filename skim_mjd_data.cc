@@ -53,7 +53,8 @@ int main(int argc, const char** argv)
          << "   [-l] (low energy skim file - additional parameters) \n"
          << "   [-n] (LG event skipping - set this to turn ON.) \n"
          << "   [-t] [number] (custom energy threshold - default is 2 keV) \n"
-         << "   [-x] (don't skip anything!)\n";
+         << "   [-x] (don't skip anything!)\n"
+         << "   [-g] (skip all low-gain hits)\n";
     return 1;
   }
   // ==========================================================================
@@ -62,15 +63,16 @@ int main(int argc, const char** argv)
   TChain *gatChain=NULL, *vetoChain=NULL;
   string outputPath = "";
   int dsNum = -1, subRun = -1;
-  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, noSkip=1, dontSkipAnything=1;
+  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, noSkip=1, dontSkipAnything=0, skipLG=0;
   double energyThresh = 5; // keV
   vector<string> opt(argv + 1, argv + argc);
   for (size_t i = 0; i < opt.size(); i++)
   {
-    if (opt[i] == "-m") { smallOutput=1;    cout << "Minimal skim file selected. \n"; }
-    if (opt[i] == "-l") { lowEnergy=1;      cout << "Augmented low-energy selected. \n"; }
-    if (opt[i] == "-n") { noSkip=0;         cout << "No LG-skip option deactivated. \n"; }
+    if (opt[i] == "-m") { smallOutput=1;      cout << "Minimal skim file selected. \n"; }
+    if (opt[i] == "-l") { lowEnergy=1;        cout << "Augmented low-energy selected. \n"; }
+    if (opt[i] == "-n") { noSkip=0;           cout << "No LG-skip option deactivated. \n"; }
     if (opt[i] == "-x") { dontSkipAnything=1; cout << "No skipping of any kind ...  \n"; }
+    if (opt[i] == "-g") { skipLG=1;           cout << "Skipping all low-gain hits ...\n"; }
     if (opt[i] == "-t") {
       energyThresh = stod(opt[i+1]);
       opt.erase(opt.begin()+i+1);
@@ -745,8 +747,12 @@ int main(int argc, const char** argv)
       }
     }
     else {
-      for (size_t i = 0; i < (*channelIn).size(); i++)
+      for (size_t i = 0; i < (*channelIn).size(); i++) {
+        int chan = (*channelIn)[i];
+        if (skipLG && chan%2==1) continue;
         hits.push_back(i);
+      }
+
     }
 
     // Finally, loop over hits, applying additional skips

@@ -6,22 +6,56 @@ wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def main():
 
     # checkSyncChannel()
     # plotHits()
     runByRun()
 
+
+def TuneCut(dsNum, subNum, tMin, tMax, tName, cal, chList, par, parName, theCut, fastMode):
+    c = TCanvas("%s"%(parName),"%s"%(parName),1600,600)
+    c.Divide(3,1,0.00001,0.00001)
+    cutDict = {}
+    for ch in chList:
+        cutDict[ch] = [0,0,0,0,0]
+        eb, elo, ehi = (tMax-tMin),tMin,tMax
+        d1Cut = theCut + " && trapENFCal > %d && trapENFCal < %d && channel==%d" % (elo,ehi,ch)
+        d2Cut = theCut + " && channel==%d" % ch
+        nPass = cal.Draw("trapENFCal:%s"%(par), d1Cut, "goff")
+        nEnergy = cal.GetV1()
+        nCut = cal.GetV2()
+        nCutList = list(float(nCut[n]) for n in xrange(nPass))
+        nEnergyList = list(float(nEnergy[n]) for n in xrange(nPass))
+
+        # Error and warning messages
+        if len(nCutList) == 0 or len(nEnergyList) == 0:
+            print "Error: Channel %d has no entries, cut cannot be set properly, setting to [0,0,0,0,0,0,0]"%(ch)
+            cutDict[ch] = [0,0,0,0,0]
+            continue
+        if len(nCutList) <= 1000 or len(nEnergyList) <= 1000:
+            print "Warning: Channel %d has less than 1000 entries, cut values may not be accurate"%(ch)
+
+        vb, v5, v95 = 100000, np.percentile(nCutList, 5), np.percentile(nCutList,95)
+        vlo, vhi = v5-5*abs(v5), v95+5*abs(v95)
+        nCutListReduced = [x for x in nCutList if x > v5 and x < v95]
+        outPlot = "./plots/tuneCuts/%s_ds%d_idx%d_%s_ch%d.png" % (parName,dsNum,subNum,tName,ch)
+        cut99,cut95,cut01,cut05,cut90 = MakeCutPlot(c,cal,par,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode)
+        cutDict[ch] = [cut01,cut05,cut90,cut95,cut99]
+    return cutDict
+
+
 def runByRun():
     """ Directly confirm settings of ext pulser scripts. """
     import time
-    from ROOT import TChain
+    from ROOT import TChain, GATDataSet
 
     calInfo = ds.CalInfo()
 
-    runList = calInfo.GetSpecialRuns("extPulser",7)
+    runList = calInfo.GetSpecialRuns("extPulser",20)
     for run in runList:
-        if run != 5942:
+        if run != 7247:
             continue
 
         fileList = []
@@ -35,15 +69,17 @@ def runByRun():
         latChain = TChain("skimTree")
         for f in fileList: latChain.Add(f)
 
-        syncChan = 677
-        extPChan = 674
+        detPos = wl.getDetPos(run)
+        syncChan = wl.getChan(0,10,0) # 672
+        extPChan = 688
+
         # theCut = "channel==%d || channel==%d" % (syncChan,extPChan)
         # theCut = "mH==2 && Entry$ < 50"
         # theCut = "mH==2 && Entry$ < 50 && !muVeto"
-        # theCut = "Entry$ < 100"
+        theCut = "Entry$ < 100"
         # theCut = "Entry$ < 50 && trapENFCal > 1"
         # theCut = "mH==4 && (channel==640 || channel==646)"
-        theCut = "Entry$ < 100"
+        # theCut = "Entry$ < 100 && (channel==%d || channel==%d) && trapENFCal > 2" % (extPChan,syncChan)
 
         start = time.time()
         tNames = ["Entry$","run","channel","mH","trapENFCal","den90","den10","fitSlo","localTime_s","tOffset"]
@@ -60,8 +96,9 @@ def runByRun():
             d10    = tVals["den10"][idx]
             fitSlo = tVals["fitSlo"][idx]
             gt     = tVals["localTime_s"][idx]
-            print("%d  e%d  m%d  t%.10f  %-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,gt,chan,enf,d90-d10,fitSlo))
-
+            tOff   = tVals["tOffset"][idx]*1e-9
+            hitTime = gt+tOff
+            print("%d  e%d  m%d  t%.8f  %-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,hitTime,chan,enf,d90-d10,fitSlo))
 
 
 
