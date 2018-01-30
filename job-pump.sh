@@ -19,7 +19,7 @@ maxJobLoad=$3       # equal to the nCores requested (#SBATCH -nXX)
 peakWLoad=$4        # should be = (1.1 * nCores)
 lowFreeRAM=5.0      # minimum free RAM allowed on the node
 totJobLimit=9999999 # maximum number of jobs to attempt
-jobDelay=10         # seconds between job launches (default: 2)
+jobDelay=2          # seconds between job launches (default: 2)
 checkDelay=60       # seconds between checks (default: 20)
 
 

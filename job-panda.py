@@ -13,7 +13,7 @@ import sys, shlex, glob, os, re, time
 import subprocess as sp
 import DataSetInfo as ds
 
-
+nc = {"pdsf":[30,33], "cori":[60,66], "edison":[48,52]}
 jobQueue = ds.latSWDir+"/job.queue"
 
 # =============================================================
@@ -97,8 +97,6 @@ def getSBatch(opt):
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/pdsf/using-slurm-pdsf-batch-sbatch/
     """
-    global nc
-    nc = {"pdsf":[30,33], "cori":[60,66], "edison":[48,52]}
     batchOpts = {
         "chos": [
             "--workdir=%s" % (ds.latSWDir),
@@ -177,13 +175,15 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal_cleanup.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
 
+    nCores, peakLoad = nc["pdsf"][0], nc["pdsf"][1]
+
     # EX. 6 - bkg file sequence
-    # nCores, peakLoad = nC["pdsf"][0], nC["pdsf"][1]
     # sh("%s slurm.slr './job-pump.sh jobLists/skimBkg.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
     # EX. 7 - cal file sequence
-    nCores, peakLoad = nC["pdsf"][0], nC["pdsf"][1]
-    sh("%s slurm.slr './job-pump.sh jobLists/skimCal.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/skimCal.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/waveCal.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
 
 
@@ -258,7 +258,7 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     # cal
     else:
         for run in calList:
-            job = "./skim_mjd_data -f %d -l -g -t 0.7 %s" % (run, ds.calDir)
+            job = "./skim_mjd_data -f %d -l -g -t 0.7 %s" % (run, ds.calSkimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-run%d.txt" % (job, ds.GetDSNum(run),run))
             else: sh("%s '%s'" % (jobStr, job))
 
