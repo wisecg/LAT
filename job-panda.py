@@ -179,12 +179,12 @@ def runBatch():
 
     # EX. 6 - bkg file sequence
     # sh("%s slurm.slr './job-pump.sh jobLists/skimBkg.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
     # EX. 7 - cal file sequence
     # sh("%s slurm.slr './job-pump.sh jobLists/skimCal.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    sh("%s slurm.slr './job-pump.sh jobLists/waveCal.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-
+    # sh("%s slurm.slr './job-pump.sh jobLists/waveCal.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/test.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

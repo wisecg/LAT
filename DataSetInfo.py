@@ -1315,10 +1315,9 @@ def getLATList(dsNum, bkgIdx=None, latDir=None):
 
     for bkgIdx in bkgIdxList:
         tmp = glob.glob("%s/latSkimDS%d_%d_*.root" % (latDir, dsNum, bkgIdx))
-        nFiles = len(tmp)
-        for subIdx in range(nFiles):
-            fFullPath = "%s/latSkimDS%d_%d_%d.root" % (latDir, dsNum, bkgIdx, subIdx)
+        for subIdx in range(len(tmp)):
             fName = "latSkimDS%d_%d_%d.root" % (dsNum, bkgIdx, subIdx)
+            fFullPath = "%s/%s" % (latDir, fName)
             if os.path.isfile(fFullPath) == True:
                 fList.append(fName)
             else:
@@ -1326,3 +1325,23 @@ def getLATList(dsNum, bkgIdx=None, latDir=None):
                 return
 
     return latDir, fList
+
+
+def getLATRunList(runList, fDir):
+    """ Return a list of LAT files from a run number list.
+    Build a file list sequentially (a simple glob is unsorted).
+    """
+    import os, glob
+    fList = []
+    for run in runList:
+        dsNum = GetDSNum(run)
+        tmp = glob.glob("%s/latSkimDS%d_run%d_*.root" % (fDir, dsNum, run))
+        for subRun in range(len(tmp)):
+            fName = "latSkimDS%d_run%d_%d.root" % (dsNum, run, subRun)
+            fFullPath = "%s/%s" % (fDir, fName)
+            if os.path.isfile(fFullPath) == True:
+                fList.append(fName)
+            else:
+                print("File doesn't exist, exiting ...", fFullPath)
+                return
+    return fList
