@@ -48,23 +48,33 @@ def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Titl
     return h2
 
 
-def GetVX(tree, tNames, theCut=""):
+def GetVX(tree, bNames, theCut=""):
     """ Sick of using GetV1234(), let's try to write a versatile tree parser.
     - This isn't quite as fast as Draw, but it can draw more branches and still do entry lists.
     - If this gets too complicated I'll have to figure out how to use root_numpy.
     - NOTE: If the tree uses vectors, only HITS PASSING CUTS will be returned for each event.
-      This is tricky because if you cut ONLY on a non-vector branch (say mH), then Iteration$ is always 0 (WRONG).
+      EXCEPT, if you cut ONLY on a non-vector branch (say mH), then Iteration$ is always 0 (WRONG).
       It's not my fault!  The Draw() that creates the entry list is messed up.
       HACKY FIX: add "channel > 0". It should always be true.  Who knows how tree->Scan does it right.
     """
     from ROOT import TChain
 
+    # make sure branches exist
+    missingBranches = False
+    branchList = tree.GetListOfBranches()
+    for br in bNames:
+        if br == "Entry$" or br=="Iteration$": continue
+        if br not in branchList:
+            print("ERROR, couldn't find branch:",br)
+            missingBranches = True
+    if missingBranches:
+        return None
+
     # this is what we'll return: {branchName:[numpy array of vals]}
-    tVals = {br:[] for br in tNames}
+    tVals = {br:[] for br in bNames}
 
     # create an entry list of hits passing cuts
     evtList = False
-
     if theCut != "":
         evtList = True
         theCut += " && channel > 0"
@@ -87,9 +97,9 @@ def GetVX(tree, tNames, theCut=""):
 
     # activate only branches we want, and detect vector types
     sizeVec = None
-    brTypes = {br:0 for br in tNames}
+    brTypes = {br:0 for br in bNames}
     tree.SetBranchStatus('*',0)
-    for name in tNames:
+    for name in bNames:
         if name=="Entry$" or name=="Iteration$": continue
         tree.SetBranchStatus(name,1)
         if "vector" in tree.GetBranch(name).GetClassName():
@@ -116,7 +126,7 @@ def GetVX(tree, tNames, theCut=""):
                     tVals[name].append(getattr(tree,name))
 
     # convert lists to numpy arrays and return
-    tVals = {br:np.asarray(tVals[br]) for br in tNames}
+    tVals = {br:np.asarray(tVals[br]) for br in bNames}
     return tVals
 
 

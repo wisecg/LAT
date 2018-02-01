@@ -6,67 +6,13 @@ wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
+import tinydb as db
 
 def main():
-
-    # runByRun()
     # runTuneCut()
-    getThreshold()
-
-
-def runByRun():
-    """ Directly confirm settings of ext pulser scripts. """
-    import time
-    from ROOT import TChain, GATDataSet
-
-    calInfo = ds.CalInfo()
-
-    runList = calInfo.GetSpecialRuns("extPulser",19)
-    for run in runList:
-        if run != 7234:
-            continue
-
-        fileList = []
-        subFiles = glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run))
-        for idx in range(len(subFiles)):
-            thisFile = "%s/lat/latSkimDS%d_run%d_%d.root" % (ds.specialDir, ds.GetDSNum(run), run, idx)
-            if not os.path.isfile(thisFile):
-                print("File doesn't exist: ",thisFile)
-            else:
-                fileList.append(thisFile)
-        latChain = TChain("skimTree")
-        for f in fileList: latChain.Add(f)
-
-        detPos = wl.getDetPos(run)
-        syncChan = wl.getChan(0,10,0) # 672
-        extPChan = 688
-
-        # theCut = "channel==%d || channel==%d" % (syncChan,extPChan)
-        # theCut = "mH==2 && Entry$ < 50"
-        # theCut = "mH==2 && Entry$ < 50 && !muVeto"
-        theCut = "Entry$ < 100"
-        # theCut = "Entry$ < 50 && trapENFCal > 1"
-        # theCut = "mH==4 && (channel==640 || channel==646)"
-        # theCut = "Entry$ < 100 && (channel==%d || channel==%d) && trapENFCal > 2" % (extPChan,syncChan)
-
-        start = time.time()
-        tNames = ["Entry$","run","channel","mH","trapENFCal","den90","den10","fitSlo","localTime_s","tOffset"]
-        tVals = wl.GetVX(latChain,tNames,theCut)
-        print("took",time.time()-start)
-
-        for idx in range(tVals["run"].size):
-            ent    = tVals["Entry$"][idx]
-            run    = tVals["run"][idx]
-            chan   = tVals["channel"][idx]
-            mH     = tVals["mH"][idx]
-            enf    = tVals["trapENFCal"][idx]
-            d90    = tVals["den90"][idx]
-            d10    = tVals["den10"][idx]
-            fitSlo = tVals["fitSlo"][idx]
-            gt     = tVals["localTime_s"][idx]
-            tOff   = tVals["tOffset"][idx]*1e-9
-            hitTime = gt+tOff
-            print("%d  e%d  m%d  t%.8f  c%-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,hitTime,chan,enf,d90-d10,fitSlo))
+    # runByRun()
+    # getEfficiency1()
+    getEfficiency2()
 
 
 def runTuneCut():
@@ -210,28 +156,312 @@ def MakeCutPlot(c,cal,var,eb,elo,ehi,vb,vlo,vhi,d2Cut,d1Cut,outPlot,fastMode):
     return cut99,cut95,cut01,cut05,cut90
 
 
-def getThreshold():
-    """ get a threshold value for a particular run/channel.
-    threshold - uses bkgIdx
-        keys: thresh_ds[i]_bkgidx[j]
-        vals: {[chan]:[50 pct mean, sigma]}
-    """
-    run, chan = 7244, 624
+def runByRun():
+    """ Directly confirm settings of ext pulser scripts. """
+    import time
+    from ROOT import TFile, TChain, GATDataSet, gROOT
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
-    # calDB = db.TinyDB('../calDB.json')
-    # pars = db.Query()
+    extPDict = {7:674, 8:624, 9:688, 10:662, 11:608, 12:674, 14:608, 15:624, 16:688, 17:662, 18:674, 19:624, 20:688, 21:662, 22:690}
+    syncChan = wl.getChan(0,10,0) # 672
 
-    # this isn't gonna work for ext pulser runs, they're not in a bkgIdx ...
-    # thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
-    # chThreshList = (ch for ch in chList if ch in thD.keys())
-    # for ch in chThreshList:
-    #     mu, sig = thD[ch][0], thD[ch][1]
-    #     if mu > 5 or mu==0:
-    #         print "Threshold for ch%d bkgidx%d zero or too high, skipping" % (ch, bkgIdx)
-    #         continue
-    #     yThresh = 0.5 * (1 + sp.erf( (xThresh - mu) / (2**(.5) * abs(sig))))
-    #     yThresh *= expDict[ch][bkgIdx]
-    #     yThreshTot += yThresh
+    syncRateNominal = 20 # Hz
+
+    calInfo = ds.CalInfo()
+
+    fig = plt.figure(figsize=(10,6),facecolor='w')
+
+    # pIdxs = [12,14,15,16,17] # test 2 - rise time
+    pIdxs = [18,19,20,21] # test 3 - attenuation
+    for pIdx in pIdxs:
+        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+        print("Range",pIdx)
+
+        extChan = extPDict[pIdx]
+        xArr, yArr = [], [] # we're gonna plot these
+
+        # runList = [7234]
+        for run in runList:
+            if run in [6936,6937,6940,6942,6944, 6974, 6977]: continue # test 2
+            if run in [7224] or run > 7266: continue # test 3
+
+            fileList = []
+            subFiles = glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run))
+            for idx in range(len(subFiles)):
+                thisFile = "%s/lat/latSkimDS%d_run%d_%d.root" % (ds.specialDir, ds.GetDSNum(run), run, idx)
+                if not os.path.isfile(thisFile):
+                    print("File doesn't exist: ",thisFile)
+                else:
+                    fileList.append(thisFile)
+            latChain = TChain("skimTree")
+            for f in fileList: latChain.Add(f)
+
+            tNames = ["Entry$","run","channel","mH","trapENFCal","den90","den10","fitSlo","localTime_s","tOffset","fitAmp"]
+            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan,extChan)
+            tVals = wl.GetVX(latChain,tNames,theCut)
+
+            # don't delete this
+            # for idx in range(tVals["run"].size):
+            #     ent    = tVals["Entry$"][idx]
+            #     run    = tVals["run"][idx]
+            #     chan   = tVals["channel"][idx]
+            #     mH     = tVals["mH"][idx]
+            #     enf    = tVals["trapENFCal"][idx]
+            #     d90    = tVals["den90"][idx]
+            #     d10    = tVals["den10"][idx]
+            #     fitSlo = tVals["fitSlo"][idx]
+            #     gt     = tVals["localTime_s"][idx]
+            #     tOff   = tVals["tOffset"][idx]*1e-9
+            #     hitTime = gt+tOff
+            #     print("%d  e%d  m%d  t%.8f  c%-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,hitTime,chan,enf,d90-d10,fitSlo))
+
+            # make sure we only have hits from syncChan and extChan
+            # for entry in set(tVals["Entry$"]):
+            #     idxs = [idx for idx in range(len(tVals["Entry$"])) if tVals["Entry$"][idx]==entry]
+            #     chans = [tVals["channel"][idx] for idx in idxs]
+            #     if not set([extChan,syncChan]).issubset(set(chans)):
+            #         print("NOPE:",chans)
+
+            gds = GATDataSet(int(run))
+            runTime = gds.GetRunTime()/1e9
+            if len(tVals["Entry$"])==0:
+                print("Run %d, %.2f sec. Found no cts." % (run,runTime))
+                continue
+
+            syncRate = len(set(tVals["Entry$"]))/runTime
+            expectedCts = runTime * syncRateNominal
+            extPCts = len([ch for ch in tVals["channel"] if ch==extChan])
+            syncCts = len([ch for ch in tVals["channel"] if ch==syncChan])
+            extPRate = extPCts/runTime
+            syncRate = syncCts/runTime
+
+            syncAmp = [tVals["fitAmp"][i] for i in range(len(tVals["fitAmp"])) if tVals["channel"][i]==syncChan]
+            syncAmp = np.asarray(syncAmp)
+            muS, sigS = 0, 0
+            if len(syncAmp)>0:
+                muS, sigS = np.mean(syncAmp), np.std(syncAmp)
+
+            extENF = [tVals["trapENFCal"][i] for i in range(len(tVals["trapENFCal"])) if tVals["channel"][i]==extChan]
+            extENF = np.asarray(extENF)
+            muE, sigE = 0, 0
+            if len(extENF)>0:
+                muE, sigE = np.mean(extENF), np.std(extENF)
+
+            print("Run %d, %.2f sec.  #Expect %d  #Sync %d  (%.2f Hz)  #extP %d (%.2f Hz)  muE %.2f  sigE %.2f  muS %.2f  sigS %.2f" % (run,runTime,expectedCts,syncCts,syncRate,extPCts,extPRate,muE,sigE,muS,sigS))
+
+            # fill the plot arrays
+            xArr.extend([tVals["trapENFCal"][i] for i in range(len(tVals["trapENFCal"])) if tVals["channel"][i]==extChan])
+            yArr.extend([tVals["fitSlo"][i] for i in range(len(tVals["fitSlo"])) if tVals["channel"][i]==extChan])
+
+        # make a plot for this range
+        fig.clear()
+        xLo, xHi, yLo, yHi = 0, 10, -20, 300 # test 3
+        # xLo, xHi, yLo, yHi = 50, 100, -20, 200 # test 2
+        bpY, bpX = 2, 0.1
+        nBinsY, nBinsX = int((yHi-yLo)/bpY), int((xHi-xLo)/bpX)
+        try:
+            plt.hist2d(xArr, yArr, bins=[nBinsX,nBinsY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm())
+            plt.colorbar()
+            plt.xlabel("trapENFCal (keV)",horizontalalignment='right',x=1.0)
+            plt.ylabel("fitSlo",horizontalalignment='right',y=1.0)
+            plt.title("Range %d, Channel %d" % (pIdx, extChan))
+            plt.tight_layout()
+            plt.savefig("../plots/extPulser_idx%d.pdf" % pIdx)
+        except ValueError:
+            pass
+
+
+def getEfficiency1():
+    """ Plot the efficiency vs. energy """
+    from ROOT import TChain, gROOT
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    # 20: [7247, 7259], (run) P42661C P1D3 688
+    pIdx, extChan, syncChan = 20, 688, 672
+    calInfo = ds.CalInfo()
+    runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+
+    # get fitSlo value from the DB for this channel.
+    # calIdx's
+    # 33: [[6904,6925],6904,7274],
+    # 34: [[7275,7279,7281,7295],7275,7614]
+    dsNum, modNum, calIdx = 0, 1, 33
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+    fsD = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+    fsCut = fsD[extChan][2] # 90% value (used in LAT3)
+
+    xArr, yArr = [], []
+    for run in runList:
+        fileList = []
+        subFiles = glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run))
+        for idx in range(len(subFiles)):
+            thisFile = "%s/lat/latSkimDS%d_run%d_%d.root" % (ds.specialDir, ds.GetDSNum(run), run, idx)
+            if not os.path.isfile(thisFile):
+                print("File doesn't exist: ",thisFile)
+            else:
+                fileList.append(thisFile)
+
+        latChain = TChain("skimTree")
+        for f in fileList: latChain.Add(f)
+        tNames = ["Entry$","run","channel","mH","trapENFCal","fitSlo"]
+        theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan,extChan)
+        tVals = wl.GetVX(latChain,tNames,theCut)
+        nPass = len(tVals["Entry$"])
+        if nPass == 0: continue
+
+        xArr.extend([tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan])
+        yArr.extend([tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan])
+
+    # calculate efficiency
+    xLo, xHi, bpX = 0, 10, 0.2
+    xAcc = np.arange(xLo, xHi, bpX)
+    xArr, yArr = np.asarray(xArr), np.asarray(yArr)
+    yEff = []
+    errBars = []
+    for i in range(int((xHi-xLo)/bpX),0,-1):
+        eHi, eLo = i*bpX, (i-1)*bpX
+        idx = np.where((xArr > eLo) & (xArr < eHi))
+        ySlice = yArr[idx]
+        idx2 = np.where(ySlice < fsCut)
+        nTot, nPass = len(ySlice), len(ySlice[idx2])
+
+        if len(yEff)==0 and nTot==0:
+            eff = 100
+        elif nTot == 0:
+            eff = yEff[-1]
+        else:
+            eff = 100 * nPass/nTot
+            # err = sm.stats.proportion.proportion_confint(nPass, nTot, alpha=0.05, method='beta')
+        print("%d  %.1f-%.1f keV  %.2f%%" % (i, eLo, eHi, eff))
+        yEff.append(eff)
+    yEff.reverse()
+
+
+    # make a plot
+    fig = plt.figure(figsize=(10,6),facecolor='w')
+    p1 = plt.subplot(111)
+
+    xLo, xHi, bpX = 0, 10, 0.2
+    yLo, yHi, bpY = -20, 1000, 2.
+    nBinsY, nBinsX = int((yHi-yLo)/bpY), int((xHi-xLo)/bpX)
+    h = p1.hist2d(xArr, yArr, bins=[nBinsX,nBinsY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm())
+
+    p1.axhline(fsCut, color='black', linewidth=3)
+    p1.set_xlabel("trapENFCal (keV)",horizontalalignment='right',x=1.0)
+    p1.set_ylabel("fitSlo",horizontalalignment='right',y=1.0)
+    p1.set_title("Range %d, Channel %d.  fitSlo cut > %.2f" % (pIdx, extChan, fsCut))
+    # plt.colorbar(h[3], ax=p1)
+
+    p2 = p1.twinx()
+    p2.plot(xAcc, yEff, ls='steps-post',color='red',linewidth=2.)
+
+    p2.set_ylim(0,110)
+    p2.set_ylabel('% Efficiency', color='r', horizontalalignment='right',y=1.0)
+    p2.tick_params('y', colors='r')
+
+    plt.tight_layout()
+    plt.savefig("../plots/efficiency_idx%d.pdf" % pIdx)
+
+
+def getEfficiency2():
+    """ Treat files individually instead of chaining them. """
+    from ROOT import TChain, gROOT
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    # want to fill these for each run
+    avgE = {} # atten vs. E (linearity)
+    effic = {} # efficiency vs E
+
+    # pIdx 20 settings, taken from ORCA logs (run database)
+    pIdx, extChan, syncChan = 20, 688, 672
+    riseTime = 146 # ns
+    attens = {7247:14, 7248:18, 7249:22, 7250:26, 7251:30, 7252:34, 7253:38, 7254:42, 7255:46, 7256:50, 7257:54, 7258:58, 7259:62}
+
+    # get fitSlo value from the DB for this channel.
+    # 33: [[6904,6925],6904,7274],
+    # 34: [[7275,7279,7281,7295],7275,7614]
+    dsNum, modNum, calIdx = 0, 1, 33
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+    fsD = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+    fsCut = fsD[extChan][2] # 90% value (used in LAT3)
+
+    fig = plt.figure(figsize=(8,8),facecolor='w')
+    p1 = plt.subplot(111)
+
+    calInfo = ds.CalInfo()
+    runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+    for run in runList:
+
+        fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+        latChain = TChain("skimTree")
+        for f in fileList: latChain.Add("%s/lat/%s" % (ds.specialDir,f))
+        tNames = ["Entry$","channel","trapENFCal","fitSlo"]
+        theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan)
+        tVals = wl.GetVX(latChain,tNames,theCut)
+        nPass = len(tVals["Entry$"])
+        if nPass == 0: continue
+        enfArr = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+        sloArr = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+        enfArr, sloArr = np.asarray(enfArr), np.asarray(sloArr)
+
+        muE, stdE = np.mean(enfArr), np.std(enfArr)
+        muF, stdF = np.mean(sloArr), np.std(sloArr)
+        nTot = len(sloArr)
+        nAcc = len([fs for fs in sloArr if fs < fsCut])
+        eff = 100. * (nAcc/nTot)
+
+        print("Run %d  Att %d  muE %-5.2f  stdE %-5.2f  muF %-5.2f  stdF %-5.2f  nTot %-5d  nAcc %-5d  eff %.8f" % (run,attens[run],muE,stdE,muF,stdF,nTot,nAcc,eff))
+
+        avgE[run] = muE
+        effic[run] = eff
+
+        p1.cla()
+        xLo, xHi, bpX = muE - stdE*3, muE + stdE*3, 0.2
+        yLo, yHi, bpY = -10, 300, 0.1
+        nBinsY, nBinsX = int((yHi-yLo)/bpY), int((xHi-xLo)/bpX)
+        p1.hist2d(enfArr, sloArr, bins=[nBinsX,nBinsY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm())
+        p1.axhline(fsCut, color='black', linewidth=3)
+        p1.set_xlabel("trapENFCal (keV)",horizontalalignment='right',x=1.0)
+        p1.set_ylabel("fitSlo",horizontalalignment='right',y=1.0)
+        p1.set_title("run %d  ch %d  fsCut %.2f  eff %.2f" % (run,extChan,fsCut,eff))
+        plt.tight_layout()
+        plt.savefig("../plots/efficiency_idx%d_run%d.pdf" % (pIdx, run))
+
+    # make arrays for plotting
+    yAtt, yEff, xEne = [], [], []
+    for run in sorted(attens):
+        if run in avgE.keys() and run in effic.keys():
+            yAtt.append(attens[run])
+            yEff.append(effic[run])
+            xEne.append(avgE[run])
+            print(run,attens[run],avgE[run],effic[run])
+
+    # fit energy vs attenuation
+    m, b = np.polyfit(xEne, yAtt, 1)
+    fit = np.polyfit(xEne, yAtt, 1)
+    fit_fn = np.poly1d(fit) # f(x) for the fit
+
+    # make plot
+    fig.clear()
+    p1 = plt.subplot(211)
+    p1.plot(xEne, yAtt, ".")
+    # p1.plot(xEne, fit_fn(xEne), '--k')
+    p1.set_title("Att. vs Energy, m %.2f  b %.2f" % (m,b))
+    p1.set_xlabel("Energy (keV)")
+    p1.set_ylabel("Atten (db)")
+
+    p2 = plt.subplot(212)
+    p2.plot(xEne, yEff, ".")
+    p2.set_title("Efficiency vs Energy")
+    p2.set_xlabel("Energy (keV)")
+    p2.set_ylabel("Efficiency")
+    p2.set_ylim(0,110 )
+
+    plt.tight_layout()
+    plt.savefig("../plots/attVsE.pdf")
+
 
 
 if __name__=="__main__":
