@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
 import tinydb as db
-
+calInfo = ds.CalInfo()
 
 def main():
     riseTime()
@@ -17,76 +17,87 @@ def main():
     # compareRunTypes()
 
 
-calInfo = ds.CalInfo()
-extPulserInfo = {
-        # Test 1 - attenuation, --donotbuild was used
-        "7a": [[5942, 5945], [10,14,18,22], 200, 674], # att, rt, chan
-        7:  [[5947, 5960], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 674],
-        8:  [[5964, 5977], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 624],
-        9:  [[5979, 5992], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 688],
-        10: [[6191, 6204], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 662],
-        11: [[6206, 6219], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 608],
-        # Test 2 - rise time
-        12: [[6934, 6944], [140,145,150,155,160,165,170,175,180,185,190], 18, 674], # rt, att, chan
-        13: [[6964, 6970], [4354,1257,1296,654,1278,1278,1278],0,[674,624,688,662,608,608,608]], # adc,att,chan
-        14: [[6971, 6976], [140,145,150,155,160,165,170,175,180,185,190], 18, 614],
-        15: [[6977, 6982], [140,145,150,155,160,165,170,175,180,185,190], 18, 624],
-        16: [[7002, 7007], [140,145,150,155,160,165,170,175,180,185,190], 18, 688],
-        17: [[7008, 7013], [140,145,150,155,160,165,170,175,180,185,190], 18, 662],
-        # Test 3 - attenuation
-        18: [[7219, 7233], [14,18,22,26,30,999,30,34,38,42,46,50,54,58,62], 155, 674], # att, rt, chan
-        19: [[7234, 7246], [14,18,22,26,30,34,38,42,46,50,54,58,62], 164, 624],
-        20: [[7247, 7259], [14,18,22,26,30,34,38,42,46,50,54,58,62], 146, 688],
-        21: [[7260, 7272], [14,18,22,26,30,34,38,42,46,50,54,58,62], 138, 662],
-        22: [[13168, 13181], [14,18,22,26,30,34,38,42,46,50,54,58,62], 999, 690]
-    }
-def skipRuns(runList):
-    return [run for run in runList if run not in [6936,6937,6940,6942,6944,6974,6977,7224] and run < 7266]
 
 
 def riseTime():
     """ fitSlo vs. rise time """
     from ROOT import TChain
 
-    pIdx = 14
-    extChan = extPulserInfo[pIdx][-1]
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
     syncChan = wl.getChan(0,10,0) # 672
-    runList = skipRuns(calInfo.GetSpecialRuns("extPulser",pIdx))
 
-    for run in runList:
+    pIdx = 13
+    runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+    noFiles = [6936,6937,6940,6942,6944,6965,6968,6969,6974,6977,7224,7267,7268,13168]
+
+    attList = extPulserInfo[pIdx][0]
+    extChan = extPulserInfo[pIdx][-1]
+
+    fig = plt.figure(figsize=(10,5),facecolor='w')
+    cmap = plt.cm.get_cmap('hsv',len(runList)+1)
+    xLo, xHi = 65, 80
+
+    enfArr, sloArr, rtArr = [], [], []
+    for i, run in enumerate(runList):
+        if run in noFiles:
+            continue
+
         fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+        if len(fileList)==0:
+            print("pIdx %d, run %d.  No files found." % (pIdx, run))
+            continue
+
         latChain = TChain("skimTree")
         for f in fileList:
-            print("Adding",f)
             latChain.Add("%s/lat/%s" % (ds.specialDir,f))
 
         tNames = ["Entry$","mH","channel","trapENFCal","fitSlo","den90","den10"]
         theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
-        # theCut = "Entry$ < 100 && trapENFCal > 10 && gain==0"
         tVals = wl.GetVX(latChain,tNames,theCut)
         nPass = len(tVals["Entry$"])
         if nPass == 0: continue
 
-        # for i in range(nPass):
-        #     ent = tVals["Entry$"][i]
-        #     mH = tVals["mH"][i]
-        #     chan = tVals["channel"][i]
-        #     ene = tVals["trapENFCal"][i]
-        #     slo = tVals["fitSlo"][i]
-        #     d90 = tVals["den90"][i]
-        #     d10 = tVals["den10"][i]
-        #     print("%d  %d  %d  e%-10.2f  s%-8.2f  %-8.2f" % (ent,chan,mH,ene,slo,d90-d10))
+        enfTmp = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+        sloTmp = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+        rtTmp  = [tVals["den90"][i] - tVals["den10"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
 
-        enfArr = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
-        sloArr = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
-        rtArr =  [tVals["den90"][i] - tVals["den10"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
-        nSync = len(enfArr)
+        attRun = extPulserInfo[pIdx][0][i]
+        attVal = attList[i]
+        print("Run %d, atten %d" % (run,attVal))
 
-        for idx in range(len(enfArr)):
-            print("%.2f  %.2f  %.2f" % (enfArr[idx],sloArr[idx],rtArr[idx]))
+        enfTmp, sloTmp, rtTmp = np.asarray(enfTmp), np.asarray(sloTmp), np.asarray(rtTmp)
 
-        # enfArr, sloArr = np.asarray(enfArr), np.asarray(sloArr)
+        idx = np.where((enfTmp > xLo) & (enfTmp < xHi))
 
+        plt.plot(sloTmp[idx], rtTmp[idx], ".", markersize=1, c=cmap(i), label="rt %d" % attVal)
+
+        # enfArr.extend(enfTmp)
+        # sloArr.extend(sloTmp)
+        # rtArr.extend(rtTmp)
+
+    # enfArr, sloArr, rtArr = np.asarray(enfArr), np.asarray(sloArr), np.asarray(rtArr)
+    # print("enf",min(enfArr),max(enfArr),"slo",min(sloArr),max(sloArr),"rt",min(rtArr),max(rtArr))
+
+    # xArr, yArr = enfArr, sloArr
+    # xLo, xHi, bpX, yLo, yHi, bpY = 65, 80, 0.2, 50, 100, 0.1
+
+    # xArr, yArr = enfArr, rtArr
+    # xLo, xHi, bpX, yLo, yHi, bpY = 65, 80, 0.2, 320, 380, 0.1
+
+    # xArr, yArr = sloArr, rtArr
+    # xLo, xHi, bpX, yLo, yHi, bpY = 50, 100, 0.2, 335, 375, 0.2
+
+    # nBY, nBX = int((yHi-yLo)/bpY), int((xHi-xLo)/bpY)
+    # plt.hist2d(xArr, yArr, bins=[nBX,nBY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm())
+    # plt.colorbar()
+
+    plt.xlim(50, 100)
+    plt.title("pIdx %d, channel %d" % (pIdx, extChan))
+    plt.xlabel("fitSlo",horizontalalignment='right',x=1.0)
+    plt.ylabel("riseTime (ns)",horizontalalignment='right',y=1.0)
+    plt.legend(loc="best")
+    plt.savefig("../plots/rtStudy_idx%d.pdf" % (pIdx))
+    # plt.show()
 
 
 def avgSlo():
@@ -102,6 +113,7 @@ def getEffMultiChan():
         Requires that Test 1 be matched w/ the sync channel properly.
         Maybe try manually grouping the events within 4us of each other?
     """
+
 
 def compareRunTypes():
     """ Plot fitSlo for extPulser, bkg, and cal runs for one channel. """

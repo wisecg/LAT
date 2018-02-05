@@ -59,6 +59,11 @@ def GetVX(tree, bNames, theCut=""):
     """
     from ROOT import TChain
 
+    # make sure tree has entries
+    if tree.GetEntries()==0:
+        print("No entries found.")
+        return None
+
     # make sure branches exist
     missingBranches = False
     branchList = tree.GetListOfBranches()

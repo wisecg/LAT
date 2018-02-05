@@ -720,21 +720,35 @@ def specialWrite():
 def specialDelete():
     """./job-panda.py -sdel"""
 
-    # remove all files from ext pulser range
-    cal = ds.CalInfo()
-    for idx in [6]:
-        runList = cal.GetSpecialRuns("extPulser",idx)
-        for run in runList:
-            outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (ds.specialDir, ds.GetDSNum(run), run))
-            outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (ds.specialDir, ds.GetDSNum(run), run)])
-            outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)])
-            outFiles.extend(glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run)))
-            for filename in outFiles:
+    # remove all files for specific run numbers
+    removeList = [5940, 5941, 5946, 5961, 5962, 5963, 5978, 6205]
+    for run in removeList:
+        outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (ds.specialDir, ds.GetDSNum(run), run))
+        outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (ds.specialDir, ds.GetDSNum(run), run)])
+        outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)])
+        outFiles.extend(glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run)))
+        for filename in outFiles:
+            try:
+                os.remove(filename)
                 print(filename)
-                try:
-                    os.remove(filename)
-                except OSError:
-                    pass
+            except OSError:
+                pass
+
+    # remove all files from ext pulser range
+    # cal = ds.CalInfo()
+    # for idx in [6]:
+    #     runList = cal.GetSpecialRuns("extPulser",idx)
+    #     for run in runList:
+    #         outFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (ds.specialDir, ds.GetDSNum(run), run))
+    #         outFiles.extend(["%s/skim/skimDS%d_run%d_low.root" % (ds.specialDir, ds.GetDSNum(run), run)])
+    #         outFiles.extend(["%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)])
+    #         outFiles.extend(glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run)))
+    #         for filename in outFiles:
+    #             print(filename)
+    #             try:
+    #                 os.remove(filename)
+    #             except OSError:
+    #                 pass
 
     # remove lat files without the _X.root
     # import datetime

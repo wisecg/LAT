@@ -9,28 +9,55 @@ import numpy as np
 import tinydb as db
 
 extPulserInfo = {
+        # TODO: relabel special runs list and DataSetInfo to match this list
         # Test 1 - attenuation, --donotbuild was used
-        "7a": [[5942, 5945], [10,14,18,22], 200, 674]], # att, rt, chan
-        7:  [[5947, 5960], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 674],
-        8:  [[5964, 5977], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 624],
-        9:  [[5979, 5992], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 688],
-        10: [[6191, 6204], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 662],
-        11: [[6206, 6219], [10,14,18,22,26,30,34,38,42,46,50,50,54,58,62], 190, 608],
+        6:  [[5942, 5945], [10,14,18,22], 200, 674], # att, rt, chan
+        7:  [[5947, 5960], [10,14,18,22,26,30,34,38,42,46,50,54,58,62], 190, 674],
+        8:  [[5964, 5977], [10,14,18,22,26,30,34,38,42,46,50,54,58,62], 190, 624],
+        9:  [[5979, 5992], [10,14,18,22,26,30,34,38,42,46,50,54,58,62], 190, 688],
+        10: [[6191, 6204], [10,14,18,22,26,30,34,38,42,46,50,54,58,62], 190, 662],
+        11: [[6206, 6219], [10,14,18,22,26,30,34,38,42,46,50,54,58,62], 190, 608],
         # Test 2 - rise time
         12: [[6934, 6944], [140,145,150,155,160,165,170,175,180,185,190], 18, 674], # rt, att, chan
         13: [[6964, 6970], [4354,1257,1296,654,1278,1278,1278],0,[674,624,688,662,608,608,608]], # adc,att,chan
-        14: [[6971, 6976], [140,145,150,155,160,165,170,175,180,185,190], 18, 608],
-        15: [[6977, 6982], [140,145,150,155,160,165,170,175,180,185,190], 18, 624],
-        16: [[7002, 7007], [140,145,150,155,160,165,170,175,180,185,190], 18, 688],
-        17: [[7008, 7013], [140,145,150,155,160,165,170,175,180,185,190], 18, 662],
+        14: [[6971, 6976], [140,150,160,170,180,190], 18, 614],
+        15: [[6977, 6982], [140,150,160,170,180,190], 18, 624],
+        16: [[7002, 7007], [140,150,160,170,180,190], 18, 688],
+        17: [[7008, 7013], [140,150,160,170,180,190], 18, 662],
         # Test 3 - attenuation
         18: [[7219, 7233], [14,18,22,26,30,999,30,34,38,42,46,50,54,58,62], 155, 674], # att, rt, chan
         19: [[7234, 7246], [14,18,22,26,30,34,38,42,46,50,54,58,62], 164, 624],
         20: [[7247, 7259], [14,18,22,26,30,34,38,42,46,50,54,58,62], 146, 688],
         21: [[7260, 7272], [14,18,22,26,30,34,38,42,46,50,54,58,62], 138, 662],
         22: [[13168, 13181], [14,18,22,26,30,34,38,42,46,50,54,58,62], 999, 690]
-    # if run==7224 skip
     }
+
+originalList = {
+    # 0: [4547, 4547], # ignore
+    # 1: [4549, 4572], # ignore, whole BG range, full of regular pulsers, etc
+    # 2: [4573, 4831], # ignore, whole BG range, full of regular pulsers, etc
+    # 3: [5525, 5534], # ignore, "setup system"
+    # 4: [5535, 5554], # ignore, "numerous problems"
+    # 5: [5555, 5850], # ignore, whole BG range, full of regular pulsers, etc
+    # 6: [5872, 5877], # ignore, short runs
+    7: [5940, 5963],
+    8: [5964, 5978],
+    9: [5979, 5992],
+    10: [6191, 6205],
+    11: [6206, 6219],
+    12: [6934, 6944],
+    13: [6964, 6970],
+    14: [6971, 6976],
+    15: [6977, 6982],
+    16: [7002, 7007],
+    17: [7008, 7013],
+    18: [7219, 7233],
+    19: [7234, 7246],
+    20: [7247, 7259],
+    21: [7260, 7272],
+    22: [13168, 13181]
+    }
+
 
 def main():
 
@@ -38,12 +65,86 @@ def main():
     # runByRun()
     # fitSloEfficiency1()
     # fitSloEfficiency2()
-
-    riseTimeStudy()
+    # riseTimeStudy()
     # combineData()
-
     # riseNoiseEfficiency()
     # TEEfficiency()
+    # checkBadRuns()
+    # createBadRunList()
+    checkFiles()
+
+
+def checkFiles():
+
+    calInfo = ds.CalInfo()
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+
+    for pIdx in range(7,23+1):
+        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+        attList = extPulserInfo[pIdx][0]
+        extChan = extPulserInfo[pIdx][-1]
+
+        for i, run in enumerate(runList):
+            fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+
+            if len(fileList)==0:
+                attRun = extPulserInfo[pIdx][0][i]
+                print("No files:",run,"Att:",attRun)
+
+    # result:
+    noFiles = [6936,6937,6940,6942,6944,6965,6968,6969,6974,6977,7224,7267,7268,13168]
+
+def createBadRunList():
+
+    origRunList = []
+    for key in originalList:
+        runLo, runHi = originalList[key][0], originalList[key][1]
+        origRunList.extend([run for run in range(runLo, runHi+1)])
+
+    newRunList = []
+    for key in extPulserInfo:
+        runLo, runHi = extPulserInfo[key][0][0], extPulserInfo[key][0][1]
+        newRunList.extend([run for run in range(runLo, runHi+1)])
+
+    print(len(origRunList), len(newRunList))
+
+    for run in origRunList:
+        if run not in newRunList:
+            print(run)
+
+
+def checkBadRuns():
+    from ROOT import TChain
+
+    cal = ds.CalInfo()
+    for pIdx in range(14,22+1):
+
+        extChan = extPulserInfo[pIdx][-1]
+        syncChan = wl.getChan(0,10,0) # 672
+
+        runList = cal.GetSpecialRuns("extPulser",pIdx)
+        fList = ds.getLATRunList(runList, ds.specialDir+"/lat")
+
+        for f in fList:
+            print(f)
+            latChain = TChain("skimTree")
+            latChain.Add("%s/%s" % (ds.specialDir+"/lat", f))
+
+            tNames = ["Entry$","mH","channel","trapENFCal","fitSlo","den90","den10"]
+            theCut = "(channel==%d || channel==%d) && trapENFCal > 1" % (syncChan, extChan)
+            tVals = wl.GetVX(latChain,tNames)
+            nPass = len(tVals["Entry$"])
+            if nPass == 0: continue
+
+            for idx in range(nPass):
+                chan = tVals["channel"][idx]
+                enf = tVals["trapENFCal"][idx]
+                rt = tVals["den90"][idx]-tVals["den10"][idx]
+
+            print(pIdx,latChain.GetEntries(),nPass)
+
+
+    skipList = []
 
 
 def runTuneCut():
