@@ -74,6 +74,22 @@ def main():
     checkFiles()
 
 
+def hist2dExample():
+    xArr, yArr = sloArr, rtArr
+    xLo, xHi, bpX, yLo, yHi, bpY = 50, 100, 0.2, 335, 375, 0.2
+    nBY, nBX = int((yHi-yLo)/bpY), int((xHi-xLo)/bpY)
+    plt.hist2d(xArr, yArr, bins=[nBX,nBY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm())
+    plt.colorbar()
+    plt.xlim(50, 100)
+    plt.title("pIdx %d, channel %d" % (pIdx, extChan))
+    plt.xlabel("fitSlo",horizontalalignment='right',x=1.0)
+    plt.ylabel("riseTime (ns)",horizontalalignment='right',y=1.0)
+    plt.legend(loc="best")
+    plt.savefig("../plots/rtStudy_idx%d.pdf" % (pIdx))
+    # plt.show()
+
+
+
 def checkFiles():
 
     calInfo = ds.CalInfo()
