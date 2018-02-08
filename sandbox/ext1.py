@@ -3,6 +3,8 @@ import sys, os, imp, glob
 sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+import matplotlib
+matplotlib.use('pdf')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
@@ -62,7 +64,7 @@ originalList = {
 def main():
 
     # runTuneCut()
-    # runByRun()
+    runByRun()
     # fitSloEfficiency1()
     # fitSloEfficiency2()
     # riseTimeStudy()
@@ -71,7 +73,7 @@ def main():
     # TEEfficiency()
     # checkBadRuns()
     # createBadRunList()
-    checkFiles()
+    # checkFiles()
 
 
 def hist2dExample():
@@ -87,7 +89,6 @@ def hist2dExample():
     plt.legend(loc="best")
     plt.savefig("../plots/rtStudy_idx%d.pdf" % (pIdx))
     # plt.show()
-
 
 
 def checkFiles():
@@ -109,6 +110,7 @@ def checkFiles():
 
     # result:
     noFiles = [6936,6937,6940,6942,6944,6965,6968,6969,6974,6977,7224,7267,7268,13168]
+
 
 def createBadRunList():
 
@@ -320,7 +322,8 @@ def runByRun():
     fig = plt.figure(figsize=(10,6),facecolor='w')
 
     # pIdxs = [12,14,15,16,17] # test 2 - rise time
-    pIdxs = [18,19,20,21] # test 3 - attenuation
+    # pIdxs = [18,19,20,21] # test 3 - attenuation
+    pIdxs = [22]
     for pIdx in pIdxs:
         runList = calInfo.GetSpecialRuns("extPulser",pIdx)
         print("Range",pIdx)
@@ -330,8 +333,8 @@ def runByRun():
 
         # runList = [7234]
         for run in runList:
-            if run in [6936,6937,6940,6942,6944, 6974, 6977]: continue # test 2
-            if run in [7224] or run > 7266: continue # test 3
+            # if run in [6936,6937,6940,6942,6944, 6974, 6977]: continue # test 2
+            # if run in [7224] or run > 7266: continue # test 3
 
             fileList = []
             subFiles = glob.glob("%s/lat/latSkimDS%d_run%d_*.root" % (ds.specialDir, ds.GetDSNum(run), run))
@@ -345,23 +348,27 @@ def runByRun():
             for f in fileList: latChain.Add(f)
 
             tNames = ["Entry$","run","channel","mH","trapENFCal","den90","den10","fitSlo","localTime_s","tOffset","fitAmp"]
-            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan,extChan)
+            # theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan,extChan)
+            # theCut += " && Entry$ < 100"
+            theCut = "Entry$ < 200 && gain==0"
             tVals = wl.GetVX(latChain,tNames,theCut)
 
             # don't delete this
-            # for idx in range(tVals["run"].size):
-            #     ent    = tVals["Entry$"][idx]
-            #     run    = tVals["run"][idx]
-            #     chan   = tVals["channel"][idx]
-            #     mH     = tVals["mH"][idx]
-            #     enf    = tVals["trapENFCal"][idx]
-            #     d90    = tVals["den90"][idx]
-            #     d10    = tVals["den10"][idx]
-            #     fitSlo = tVals["fitSlo"][idx]
-            #     gt     = tVals["localTime_s"][idx]
-            #     tOff   = tVals["tOffset"][idx]*1e-9
-            #     hitTime = gt+tOff
-            #     print("%d  e%d  m%d  t%.8f  c%-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,hitTime,chan,enf,d90-d10,fitSlo))
+            for idx in range(tVals["run"].size):
+                ent    = tVals["Entry$"][idx]
+                run    = tVals["run"][idx]
+                chan   = tVals["channel"][idx]
+                mH     = tVals["mH"][idx]
+                enf    = tVals["trapENFCal"][idx]
+                d90    = tVals["den90"][idx]
+                d10    = tVals["den10"][idx]
+                fitSlo = tVals["fitSlo"][idx]
+                gt     = tVals["localTime_s"][idx]
+                tOff   = tVals["tOffset"][idx]*1e-9
+                hitTime = gt+tOff
+                print("%d  e%d  m%d  t%.8f  c%-4d  %-9.2f  %-8.2f  %.2f" % (run,ent,mH,hitTime,chan,enf,d90-d10,fitSlo))
+
+            continue
 
             # make sure we only have hits from syncChan and extChan
             # for entry in set(tVals["Entry$"]):
@@ -400,6 +407,8 @@ def runByRun():
             # fill the plot arrays
             xArr.extend([tVals["trapENFCal"][i] for i in range(len(tVals["trapENFCal"])) if tVals["channel"][i]==extChan])
             yArr.extend([tVals["fitSlo"][i] for i in range(len(tVals["fitSlo"])) if tVals["channel"][i]==extChan])
+
+        return
 
         # make a plot for this range
         fig.clear()

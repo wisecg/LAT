@@ -237,13 +237,13 @@ class CalInfo:
             12: [6206, 6219],
             13: [6934, 6944],
             14: [6964, 6970],
-            15: [6971, 6976],
+            15: [6971, 6976], # shows 6% gain change (bad)
             16: [6977, 6982],
             17: [7002, 7007],
             18: [7008, 7013],
             19: [7219, 7233],
             20: [7234, 7246],
-            21: [7247, 7259],
+            21: [7247, 7259], # lowest energy is only 7.8 keV
             22: [7260, 7272],
             23: [13168, 13181]
             }
@@ -258,7 +258,7 @@ class CalInfo:
             # Test 2 - rise time
             13: [[140,145,150,155,160,165,170,175,180,185,190], 18, 674], # rt, att, chan
             14: [[4354,1257,1296,654,1278,1278,1278],0,[674,624,688,662,608,608,608]], # adc,att,chan
-            15: [[140,150,160,170,180,190], 18, 614],
+            15: [[140,150,160,170,180,190], 18, 614], # shows 6% gain change (bad)
             16: [[140,150,160,170,180,190], 18, 624],
             17: [[140,150,160,170,180,190], 18, 688],
             18: [[140,150,160,170,180,190], 18, 662],
@@ -375,14 +375,18 @@ class CalInfo:
         return len(self.special[key])
 
     def GetSpecialRuns(self,key,idx=None):
+
+        noFiles = [6936,6937,6940,6942,6944,6965,6968,6969,6974,6977,7224,7267,7268,7269,7270,7271,7272,13168]
+
         if idx is not None:
             runLo, runHi = self.special[key][idx][0], self.special[key][idx][1]
-            return [run for run in range(runLo, runHi+1)]
+            runList = [run for run in range(runLo, runHi+1) if run not in noFiles]
+            return runList
 
         runList = []
         for idx in self.special[key].keys():
             runLo, runHi = self.special[key][idx][0], self.special[key][idx][1]
-            runList.extend([run for run in range(runLo, runHi+1)])
+            runList.extend([run for run in range(runLo, runHi+1) if run not in noFiles])
         return runList
 
     def GetSpecialList(self):
