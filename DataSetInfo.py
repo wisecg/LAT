@@ -1257,7 +1257,7 @@ def getNCalIdxs(dsNum, module):
 
 def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False, calDir=None):
     """ Get a list of all files for a particular dsNum+calIdx.
-        This uses the CalInfo object in DataSetInfo.py, NOT the cal records in the DB.
+        This uses the CalInfo object in DataSetInfo.py.
         This will match the cut record entries in the DB.
     """
     import os, glob

@@ -73,6 +73,7 @@ def main(argv):
         if opt == "-sdel":   specialDelete()
         if opt == "-slat":   specialLAT()
         if opt == "-scheck": specialCheck()
+        if opt == "-sbuild": specialBuild()
 
 
 # =============================================================
@@ -820,6 +821,44 @@ def specialCheck():
             print(tr.GetEntries())
             tr.GetEntry(0)
             tf.Close()
+
+
+def specialBuild():
+    """ ./job-panda.py -sbuild
+    Set 1 of the external pulser runs were built with --donotbuild.
+    Let's manually build them.
+
+    Example:
+    - Make sure MkCookie has been run recently
+    majorcaroot --nomultisampling --setspecialchanmap /global/homes/m/mjd/production/P3JDYspecchanmap.txt --donotbuild 2015-9-3-P3JDY_Run5942
+    process_mjd_cal OR_*.root
+    pulsertag 5942
+    auto-thresh 5942
+    process_mjd_gat OR_*.root
+    """
+    cal = ds.CalInfo()
+    rawDir = "/global/project/projectdirs/majorana/data/mjd/surfmjd/data/raw/P3JDY/Data"
+    buildDir = ds.dataDir + "/mjddatadir"
+    os.chdir(buildDir)
+
+    runList = []
+    for pIdx in [7,8,9,10,11,12]:
+        runList.extend(cal.GetSpecialRuns("extPulser",pIdx))
+
+    for run in runList:
+
+        os.chdir(buildDir + "/raw")
+        rawFile = glob.glob("%s/*%d*" % (rawDir, run))[0]
+        rawName = rawFile.rsplit('/',1)[1]
+        rawName = rawName.rsplit('.')[0]
+        # sp.call("""zcat %s > %s""" % (rawFile, rawName), shell=True)
+
+        os.chdir(buildDir + "/built")
+        sp.call("""majorcaroot --nomultisampling --setspecialchanmap /global/homes/m/mjdproduction/P3JDYspecchanmap.txt ../raw/%s""" % (rawName), shell=True)
+
+        # ... i kinda lost steam here.  Set 1 runs are not worth this much hassle.
+
+        return
 
 
 def quickTest():

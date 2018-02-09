@@ -14,9 +14,10 @@ calInfo = ds.CalInfo()
 
 def main():
     # riseTime()
-    getEff()
-    # getEffMultiChan()
+    # getEff()
     # compareRunTypes()
+    manualBuild()
+    # getEffMultiChan()
 
 
 def riseTime():
@@ -270,15 +271,165 @@ def threshFunc(x,mu,sig):
     # return expit((x-mu)/sig)
 
 
+def compareRunTypes():
+    """ Plot fitSlo for extPulser, bkg, and cal runs for one channel. """
+    from ROOT import TChain, GATDataSet, TFile
+
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
+
+    # for pIdx in [19,20,21]:
+    for pIdx in [19]:
+
+        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+        attList = extPulserInfo[pIdx][0]
+        extChan = extPulserInfo[pIdx][-1]
+
+        eLo, eHi = 1., 100
+        fsLo, fsHi = 0, 300
+
+        # ext pulser
+        extEne, extSlo = [], []
+        for i, run in enumerate(runList):
+            fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+            extChain = TChain("skimTree")
+            for f in fileList:
+                extChain.Add("%s/lat/%s" % (ds.specialDir,f))
+            tNames = ["Entry$","mH","channel","trapENFCal","fitSlo"]
+            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
+            theCut += " && trapENFCal > %.2f && trapENFCal < %.2f && fitSlo > %.2f && fitSlo < %.2f" % (eLo, eHi, fsLo, fsHi)
+            tVals = wl.GetVX(extChain,tNames,theCut)
+            nPass = len(tVals["Entry$"])
+            enfArr = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+            sloArr = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+            if len(enfArr)==0:
+                print("Run %d, No hits in channel %d found.  Continuing ..." % (run,extChan))
+                continue
+            extEne.extend(enfArr)
+            extSlo.extend(sloArr)
+        extEne, extSlo = np.asarray(extEne), np.asarray(extSlo)
+
+        # cal
+        dsNum, calIdx = 0, 33
+        fileList = ds.getCalFiles(dsNum, calIdx, 1, False)
+        calChain = TChain("skimTree")
+        for f in fileList: calChain.Add(f)
+        cutFile = TFile(f)
+        theCut = cutFile.Get("theCut").GetTitle()
+        theCut += " && channel==%d && trapENFCal > %.2f && trapENFCal < %.2f && fitSlo > %.2f && fitSlo < %.2f" % (extChan,eLo,eHi,fsLo,fsHi)
+        tNames = ["channel","trapENFCal","fitSlo"]
+        tVals = wl.GetVX(calChain,tNames,theCut)
+        nPass = len(tVals["channel"])
+        calEne = np.asarray([tVals["trapENFCal"][i] for i in range(nPass)])
+        calSlo = np.asarray([tVals["fitSlo"][i] for i in range(nPass)])
+
+        # TODO: don't do a bkg chain, try looping over files
+        # bkg - ds1, 0.7 keV threshold (because ds0 files are enormous)
+        dsNum = 1
+        # thisChan = extChan # keep DS0 setting - will take FOREVER to draw
+        thisChan = 648 # P2D2 in DS1
+        bkgChain = TChain("skimTree")
+        for bkgIdx in range(ds.dsMap[dsNum]):
+        # for bkgIdx in range(10):
+            fileList = glob.glob("%s/bg-lat/latSkimDS%d_%d_*.root" % (ds.dataDir,dsNum,bkgIdx))
+            for f in fileList:
+                bkgChain.Add(f)
+        cutFile = TFile(f)
+        theCut = cutFile.Get("theCut").GetTitle()
+        theCut += " && channel==%d && trapENFCal > %.2f && trapENFCal < %.2f && fitSlo > %.2f && fitSlo < %.2f" % (thisChan,eLo,eHi,fsLo,fsHi)
+        tNames = ["channel","trapENFCal","fitSlo"]
+        tVals = wl.GetVX(bkgChain,tNames,theCut)
+        nPass = len(tVals["channel"])
+        bkgEne = np.asarray([tVals["trapENFCal"][i] for i in range(nPass)])
+        bkgSlo = np.asarray([tVals["fitSlo"][i] for i in range(nPass)])
+
+        fig = plt.figure(figsize=(9,6),facecolor='w')
+
+        plt.plot(calEne, calSlo, ',', c='blue', markersize=0.5, label="cal", alpha=0.5)
+        plt.plot(extEne, extSlo, '.', c='black', markersize=0.5, label="extPulser")
+        plt.plot(bkgEne, bkgSlo, '.', c='red', markersize=2, label="ds-1 bkg")
+
+        plt.xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
+        plt.ylabel("fitSlo", horizontalalignment='right',y=1.0)
+        plt.legend(loc='best')
+        plt.savefig("../plots/comparison_idx%d.pdf" % pIdx)
+
+
+def manualBuild():
+    from ROOT import TFile, TTree
+
+    f = TFile("/global/homes/w/wisecg/project/mjddatadir/built/mjd_run5942.root")
+    t = f.Get("mjdTree")
+
+    for idx in range(t.GetEntries()):
+        t.GetEntry(idx)
+
+        sct = t.timeinfo.startClockTime/1e9
+        ct = t.timeinfo.clockTime/1e9
+
+        nHit = t.channel.size()
+        for iHit in range(nHit):
+            toff = t.tOffset.at(iHit)/1e9
+            chan = t.channel.at(iHit)
+
+            print("%d  %d  %d  %.9f  %.2e" % (idx, iHit, chan, ct-sct, toff))
+
+
+        # if idx > 100:
+        #     print("    ")
+        #     break
+
+
+
+
 def getEffMultiChan():
     """ Efficiency vs. energy, comparing two different rise times.
         Requires that Test 1 be matched w/ the sync channel properly.
-        Maybe try manually grouping the events within 4us of each other?
+        Try manually building the events within 4us of each other.
+        NOTE: The timestamps of card 11 (channels 688-697) have an incorrect starting value.
+            So try to deal with that shit separately.
+            Can probably use the sync channel.
     """
+    from ROOT import TChain
 
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
 
-def compareRunTypes():
-    """ Plot fitSlo for extPulser, bkg, and cal runs for one channel. """
+    # for pIdx in [7,8,9,10,11,12]:
+    # for pIdx in [10]:
+    for pIdx in [11]:
+        print("PIDX", pIdx)
+
+        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+        attList = extPulserInfo[pIdx][0]
+        extChan = extPulserInfo[pIdx][-1]
+
+        eneVals, sloVals = [], []
+        for i, run in enumerate(runList):
+            print(run, extChan)
+
+            latChain = TChain("skimTree")
+            fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+            for f in fileList: latChain.Add("%s/lat/%s" % (ds.specialDir,f))
+
+            iEvt = 0
+            for idx in range(latChain.GetEntries()):
+                latChain.GetEvent(idx)
+                if latChain.channel.size() > 1:
+                    print("Error, run %d idx %d, channel size is %d." % (run,idx,latChain.channel.size()))
+                    return
+                chan = latChain.channel.at(0)
+                ene = latChain.trapENFCal.at(0)
+
+                sct = latChain.startClockTime_s
+                ct = latChain.clockTime_s
+
+                # if chan==syncChan or chan==extChan:
+                print(idx,chan,ct-sct)
+
+                if idx > 100:
+                    print("    ")
+                    break
 
 
 def wfFitter():

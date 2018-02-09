@@ -48,7 +48,7 @@ def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Titl
     return h2
 
 
-def GetVX(tree, bNames, theCut=""):
+def GetVX(tree, bNames, theCut="", showVec=True):
     """ Sick of using GetV1234(), let's try to write a versatile tree parser.
     - This isn't quite as fast as Draw, but it can draw more branches and still do entry lists.
     - If this gets too complicated I'll have to figure out how to use root_numpy.
@@ -82,7 +82,8 @@ def GetVX(tree, bNames, theCut=""):
     evtList = False
     if theCut != "":
         evtList = True
-        theCut += " && channel > 0"
+        if showVec:
+            theCut += " && channel > 0"
         nPass = tree.Draw("Entry$:Iteration$",theCut,"GOFF")
         evtList = tree.GetV1()
         itrList = tree.GetV2()
