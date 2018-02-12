@@ -40,6 +40,9 @@ function sourceEnvClint {
   alias rootmj="root -b -l"
   alias atom="rmate"
   alias ls="ls --color"
+  alias fixrpf="kill `ps -u wisecg | grep sshd | awk '{print $1}'`"
+  alias intr="salloc -t 10:00:00 -p shared"
+  alias shiftermj="shifter --image wisecg/mjsw:v2 bash"
 }
 
 function loadModulesMJD {

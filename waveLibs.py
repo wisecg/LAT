@@ -48,6 +48,48 @@ def H2D(tree,xbins,xlo,xhi,ybins,ylo,yhi,drawStr,cutStr,xTitle="",yTitle="",Titl
     return h2
 
 
+class processWaveform:
+    """ Auto-processes waveforms into python-friendly formats.
+
+    NOTE: DS2 (multisampling) waveform bug (cf. wave-skim.cc):
+       -> All samples from regular and aux waveforms work correctly with GetVectorData in PyROOT.
+       -> Combining them into an MJTMSWaveform and then casting to MGTWaveform causes the first
+          4 samples to be set to zero with GetVectorData in PyROOT.  (They are actually nonzero.)
+       -> This problem doesn't exist on the C++ side. There's got to be something wrong with the python wrapper.
+       -> The easiest workaround is just to set remLo=4 for MS data.
+    """
+    def __init__(self, wave, remLo=0, remHi=2):
+        from ROOT import MGTWaveform
+        # initialize
+        # self.waveMGT = wave
+        self.offset = wave.GetTOffset()
+        self.period = wave.GetSamplingPeriod()
+        self.length = wave.GetLength()
+        vec = wave.GetVectorData()
+        npArr = np.fromiter(vec, dtype=np.double, count=self.length)
+        ts = np.arange(self.offset, self.offset + self.length * self.period, self.period) # superfast!
+
+        # resize the waveform
+        removeSamples = []
+        if remLo > 0: removeSamples += [i for i in range(0,remLo+1)]
+        if remHi > 0: removeSamples += [npArr.size - i for i in range(1,remHi+1)]
+        self.ts = np.delete(ts,removeSamples)
+        self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
+
+        # compute baseline and noise
+        self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
+        self.waveBLSub = np.copy(self.waveRaw) - self.baseAvg
+
+    # constants
+    def GetOffset(self): return self.offset
+    def GetBaseNoise(self): return self.baseAvg, self.noiseAvg
+
+    # arrays
+    def GetTS(self): return self.ts
+    def GetWaveRaw(self): return self.waveRaw
+    def GetWaveBLSub(self): return self.waveBLSub
+
+
 def GetVX(tree, bNames, theCut="", showVec=True):
     """ Sick of using GetV1234(), let's try to write a versatile tree parser.
     - This isn't quite as fast as Draw, but it can draw more branches and still do entry lists.
@@ -57,7 +99,7 @@ def GetVX(tree, bNames, theCut="", showVec=True):
       It's not my fault!  The Draw() that creates the entry list is messed up.
       HACKY FIX: add "channel > 0". It should always be true.  Who knows how tree->Scan does it right.
     """
-    from ROOT import TChain
+    from ROOT import TChain, MGTWaveform
 
     # make sure tree has entries
     if tree.GetEntries()==0:
@@ -100,6 +142,7 @@ def GetVX(tree, bNames, theCut="", showVec=True):
         treeItr = evtSet
     else:
         treeItr = range(tree.GetEntriesFast())
+        # treeItr = range(7) # debug, obvs
 
     # activate only branches we want, and detect vector types
     sizeVec = None
@@ -120,7 +163,12 @@ def GetVX(tree, bNames, theCut="", showVec=True):
         for name in tVals:
             for iH in branchItr:
                 if brTypes[name] == "vec":
-                    tVals[name].append(getattr(tree,name)[iH])
+                    if name=="MGTWaveforms": # mgtwaveforms are weird, they don't persist in memory
+                        wf = getattr(tree,name)[iH]
+                        sig = processWaveform(wf)
+                        tVals[name].append(sig)
+                    else:
+                        tVals[name].append(getattr(tree,name)[iH])
                     continue
                 elif name == "Entry$":
                     tVals[name].append(iEvt)
@@ -131,7 +179,12 @@ def GetVX(tree, bNames, theCut="", showVec=True):
                 else:
                     tVals[name].append(getattr(tree,name))
 
-    # convert lists to numpy arrays and return
+    # convert lists to np arrays (except waveforms) and return
+    # tValsNP = {}
+    # for br in bNames:
+    #     tValsNP[br] = tVals[br] if br=="MGTWaveforms" else np.asarray(tVals[br])
+    # return tValsNP
+
     tVals = {br:np.asarray(tVals[br]) for br in bNames}
     return tVals
 
@@ -606,46 +659,6 @@ def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
     return trap
 
 
-class processWaveform:
-    """ Auto-processes waveforms into python-friendly formats.
-
-    NOTE: DS2 (multisampling) waveform bug (cf. wave-skim.cc):
-       -> All samples from regular and aux waveforms work correctly with GetVectorData in PyROOT.
-       -> Combining them into an MJTMSWaveform and then casting to MGTWaveform causes the first
-          4 samples to be set to zero with GetVectorData in PyROOT.  (They are actually nonzero.)
-       -> This problem doesn't exist on the C++ side. There's got to be something wrong with the python wrapper.
-       -> The easiest workaround is just to set remLo=4 for MS data.
-    """
-    def __init__(self, wave, remLo=0, remHi=2):
-        from ROOT import MGTWaveform
-        # initialize
-        self.waveMGT = wave
-        self.offset = wave.GetTOffset()
-        self.period = wave.GetSamplingPeriod()
-        self.length = wave.GetLength()
-        vec = wave.GetVectorData()
-        npArr = np.fromiter(vec, dtype=np.double, count=self.length)
-        ts = np.arange(self.offset, self.offset + self.length * self.period, self.period) # superfast!
-
-        # resize the waveform
-        removeSamples = []
-        if remLo > 0: removeSamples += [i for i in range(0,remLo+1)]
-        if remHi > 0: removeSamples += [npArr.size - i for i in range(1,remHi+1)]
-        self.ts = np.delete(ts,removeSamples)
-        self.waveRaw = np.delete(npArr,removeSamples)   # force the size of the arrays to match
-
-        # compute baseline and noise
-        self.noiseAvg,_,self.baseAvg = baselineParameters(self.waveRaw)
-        self.waveBLSub = np.copy(self.waveRaw) - self.baseAvg
-
-    # constants
-    def GetOffset(self): return self.offset
-    def GetBaseNoise(self): return self.baseAvg, self.noiseAvg
-
-    # arrays
-    def GetTS(self): return self.ts
-    def GetWaveRaw(self): return self.waveRaw
-    def GetWaveBLSub(self): return self.waveBLSub
 
 """
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
