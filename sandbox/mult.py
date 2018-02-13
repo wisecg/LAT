@@ -4,8 +4,8 @@ import numpy as np
 import subprocess as sp
 import tinydb as db
 from scipy.optimize import curve_fit
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('pdf')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 sys.argv.append("-b")
@@ -25,7 +25,7 @@ def main():
     # plotEfficiency()
     # selectWaveforms()
     # eventMovie()
-    getSim()
+    plotSimSpec()
 
 
 def getSumEne(tree, theCut):
@@ -670,162 +670,83 @@ def eventMovie():
     anim.save(outFile, fps=20, extra_args=['-vcodec', 'libx264'])
 
 
-class simUtils:
-    """ Adapted from ~mjdsim/analysisScriptsV2/analysisUtilities.py
-    Geez, both the sims group and the low-e group have a python master utils file ...
-    """
-    M1_detectors = ['1010101', '1010102', '1010103', '1010104',
-    '1010201', '1010202', '1010203', '1010204',
-    '1010301', '1010302', '1010303', '1010304',
-    '1010401', '1010402', '1010403', '1010404', '1010405',
-    '1010501', '1010502', '1010503', '1010504',
-    '1010601', '1010602', '1010603', '1010604',
-    '1010701', '1010702', '1010703', '1010704']
-    M2_detectors = ['1020101', '1020102', '1020103', '1020104',
-    '1020201', '1020202', '1020203', '1020204', '1020205',
-    '1020301', '1020302', '1020303',
-    '1020401', '1020402', '1020403', '1020404', '1020405',
-    '1020501', '1020502', '1020503', '1020504',
-    '1020601', '1020602', '1020603', '1020604',
-    '1020701', '1020702', '1020703', '1020704']
-    detectors = M1_detectors + M2_detectors
+def plotSimSpec():
+    """ Using code from sims people, create a simulated spectrum. """
+    from ROOT import TChain
 
+    config = "DS5"
+    utils = ds.simUtils(config)
+    module = "M1"
+    basePath = "/global/projecta/projectdirs/majorana/sim/MJDG41003GAT/"
+    sourceType = "linesource"
+    partClass = "%sCalSource" % module
+    segment = "A224_Z88"
+    simPath = "%s/MJDemonstrator/%s/%s/%s" % (basePath,sourceType,partClass,segment)
+    specPath = "../plots/"
 
-    def __init__(self, p_id=None):
-        self.detectors = self.detectors
+    simList = sorted(glob.glob("%s/processed_*.root" % simPath))
+    simChain = TChain("simTree")
+    for f in simList[:2]: simChain.Add(f)
 
+    auxList = sorted(glob.glob("%s/aux_processed_*.root" % simPath))
+    auxChain = TChain("auxTree_%s" % config)
+    for f in auxList[:2]: auxChain.Add(f)
 
-def getSim():
-    from ROOT import TFile, TTree
-    utils = simUtils
-    # return
-    # simPath = "/global/projecta/projectdirs/majorana/sim/MJDG41003Sims/MJDemonstrator/linesource/M1CalSource/A224_Z88"
-    # auxPath = "/global/projecta/projectdirs/majorana/sim/MJDG41003GAT/MJDemonstrator/linesource/M1CalSource/A224_Z88"
-    # simList = sorted(glob.glob("%s/*.root" % simPath))
-    # totSize = 0
-    # for f in simList:
-    #     fSize = os.path.getsize(f) >> 20 # MB
-    #     totSize += fSize
-    #     fName = f.rsplit('/',1)[1]
-    #     fNum = fName.rsplit('-')[1]
-    #     fNum = fNum.rsplit('.')[0]
-    #     # print(fNum)
-    # print("Total: %d MB" % totSize)
-    # smallList = simList[:2]
-    # for f in smallList:
-    #     print(f)
-    #     # simFile = TFile(f)
-    #     return
-    #
-    #  basepath = "/global/projecta/projectdirs/majorana/sim/MJDG41003GAT/"
-    #  config = "DS5"
-    #  sourcetype = "linesource"
-    #  partclass = "M1CalSource"
-    #  segment = "A224_Z88"
-    #  utils = simUtils(config)
-    #  simpath = "%s/MJDemonstrator/%s/%s/%s/" % (basepath,sourcetype,partclass,segment)
-    #  specpath = "../plots/"
-    #
-    #  # gROOT.SetBatch()
-    #
-    #  #Set up TChain. In the past it was called MGTree but now it is called simTree
-    #  ch = TChain('simTree', 'simTree')
-    #  files = glob.glob(simpath+'processed_*.root')
-    #  files.sort() # glob does not return a sorted list
-    #  for f in files:
-    #  ch.Add(f)
-    #
-    #  return
-    #
-    # #Set up auxchain. There should be a matching aux_processed_ file for each processed_ file
-    # auxch = TChain('auxTree_'+config,'auxTree_'+config)
-    # auxfiles = glob.glob(simpath+'aux_processed_*.root')
-    # auxfiles.sort() #glob does not return a sorted list, but aux trees MUST match output trees
-    # for f in auxfiles:
-    # 	auxch.Add(f)
-    # if(len(files)!=len(auxfiles)):
-    # 	print "Mismatch between aux trees and sim trees!"
-    # 	return
-    #
-    # ch.AddFriend(auxch)
-    #
-    # #Make the detector list. We only want to create spectra for detectors enabled in this config.
-    # detectorList = []
-    # if module == 'M1':
-    # 	for iDet in range(len(utils.GetM1DetectorList())):
-    # 		if(utils.M1_active_dets[config][iDet]==1):
-    # 			detectorList.append(utils.GetM1DetectorList()[iDet])
-    # elif module == 'M2':
-    # 	for iDet in range(len(utils.GetM2DetectorList())):
-    # 		if(utils.M2_active_dets[config][iDet]==1):
-    # 			detectorList.append(utils.GetM2DetectorList()[iDet])
-    # else:
-    # 	print 'Bad Module ID: %s' %module
-    # 	return
-    #
-    # for detector in detectorList:
-    # 	try:
-    # 		listnum = utils.detectors.index(detector)
-    # 	except:
-    # 		print 'Error: Improper detector number.'
-    # 		return
-    #
-    # #We need to count the number of primaries so that we divide by the correct factor when computing the efficiency
-    # nPrimaries = 0
-    # currentEntry = 0
-    # for iTree in xrange(ch.GetNtrees()):
-    # 	ch.LoadTree(currentEntry)
-    # 	currentTree = ch.GetTree()
-    # 	currentEntry += currentTree.GetEntries()
-    # 	nEntries = currentTree.Draw('fNEvents','','goff')
-    # 	if nEntries > 0:
-    # 		nPrimaries += currentTree.GetV1()[0]
-    # 	#Sometimes in runs with extremely low efficiency (e.g. 210Pb)
-    # 	#there are no events in the post-processed file. In that case,
-    # 	#get the number of events from the filename.
-    # 	else:
-    # 		filename = ch.GetFile().GetName()
-    # 		nPrimaries += float(filename.split('_')[-2])
-    #
-    # 	gROOT.SetStyle('Plain')
-    # 	gStyle.SetOptStat(kFALSE)
-    # 	h1 = TH1D('h1', 'No Cuts', 10000, 0, 10000)
-    # 	h2 = TH1D('h2', 'Granularity', 10000, 0, 10000)
-    # 	h3 = TH1D('h3', 'Gran+PSA', 10000, 0, 10000)
-    #
-    # #Set up three histograms: 1. All events, 2. Apply granularity cut,
-    # # 3. Additionally apply multisite cut
-    # c1 = TCanvas('c1','A canvas', 800, 600)
-    # c1.SetLogy()
-    # for detector in detectorList:
-    # 	cut = 'isGoodDet_'+config+'*(fWaveformID=='+detector+')/'+str(nPrimaries)
-    # 	ch.Draw('fEnergy*1000.0 >> h1', cut, 'goff')
-    # 	cut += '*(mH_'+config+'==1)'
-    # 	ch.Draw('fEnergy*1000.0 >> h2', cut,'goff')
-    # 	cut += '*(fDtHeuristic<%s)' %utils.GetDetdTCutoff(detector)
-    # 	ch.Draw('fEnergy*1000.0 >> h3', cut,'goff')
-    #
-    # 	outfilename = specpath+partclass+'_'+segment+'_'+detector
-    #
-    # 	h1.SetTitle(partclass+':'+segment+':'+detector)
-    # 	h1.GetXaxis().SetTitle('Hit Energy [keV]')
-    # 	h1.GetYaxis().SetTitle('counts / decay / keV')
-    # 	h1.Draw()
-    # 	h2.SetLineColor(kBlue)
-    # 	h2.Draw('SAME')
-    # 	h3.SetLineColor(kRed)
-    # 	h3.Draw('SAME')
-    #
-    # 	leg = TLegend(0.52,0.7,0.9,0.9)
-    # 	leg.AddEntry(h1,h1.GetTitle(),"lep")
-    # 	leg.AddEntry(h2,h2.GetTitle(),"lep")
-    # 	leg.AddEntry(h3,h3.GetTitle(),"lep")
-    # 	leg.Draw()
-    #
-    # 	c1.Print(outfilename+'.C')
-    # 	c1.Print(outfilename+'.root')
-    # 	c1.Print(outfilename+'.pdf')
-    # 	c1.Clear()
+    simChain.AddFriend(auxChain)
+
+    # Count the number of primaries to get the correct factor for finding the efficiency.
+    nPrimaries = sum([int(fName.split('_')[-2]) for fName in simList[:2]])
+
+    # Get detectors active in this module & dataset
+    detList = []
+    for iD, det in enumerate(utils.GetDetectorList(module)):
+        if utils.activeDets[module][config][iD] == 1:
+            detList.append(det)
+
+    # Set up 3 histograms: All events, granularity cut, multisite cut
+    xLo, xHi, bpx = 0, 3000, 1.
+    nb = int((xHi-xLo)/bpx)
+    xRaw = np.zeros(nb)
+    xGran = np.zeros(nb)
+    xPSA = np.zeros(nb)
+
+    fig = plt.figure(figsize=(9,6))
+
+    for iD, det in enumerate(detList):
+
+        theCut = "isGoodDet_%s*(fWaveformID==%s)/%d" % (config,det,nPrimaries)
+        nRaw = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(nRaw)])
+        y, x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        xRaw = np.add(xRaw, y)
+
+        theCut += "*(mH_%s==1)" % config
+        nGran = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(nGran)])
+        y, x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        xGran = np.add(xGran, y)
+
+        theCut += "*(fDtHeuristic < %s)" % utils.GetDTCutoff(module, det)
+        nPSA = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(nPSA)])
+        y, x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        xPSA = np.add(xPSA, y)
+
+        print("%s  raw %d  gran %d  psa %d" % (det, nRaw, nGran, nPSA))
+
+        if iD > 5:
+            break
+
+    plt.semilogy(x[:-1], xRaw, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='raw')
+    plt.semilogy(x[:-1], xGran, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='+mH==1')
+    plt.semilogy(x[:-1], xPSA, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='+PSA')
+    plt.legend(loc='best')
+    plt.xlabel("fEnergy (keV)", horizontalalignment='right', x=1.0)
+    plt.ylabel("Counts (arb)", horizontalalignment='right', y=1.0)
+    plt.savefig("../plots/mult-sim-test.png")
 
 
 if __name__=="__main__":
