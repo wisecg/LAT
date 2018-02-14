@@ -4,8 +4,8 @@ import numpy as np
 import subprocess as sp
 import tinydb as db
 from scipy.optimize import curve_fit
-# import matplotlib
-# matplotlib.use('pdf')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 sys.argv.append("-b")
@@ -21,11 +21,16 @@ def main():
     # plotPeakSpec()
     # selectEvents()
     # plotSelected()
+    # selectWideEvents()
+    # plotWideEvents()
     # plotParams()
     # plotEfficiency()
     # selectWaveforms()
     # eventMovie()
-    plotSimSpec()
+    # plotSimTest()
+    # generateSimSpec()
+    # compareDataSimSpec()
+    poissonSpec()
 
 
 def getSumEne(tree, theCut):
@@ -242,7 +247,6 @@ def plotPeakSpec():
 
 
 def selectEvents():
-
     from ROOT import TFile, TTree
 
     # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
@@ -402,6 +406,113 @@ def plotSelected():
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m3-low.png")
+
+
+def selectWideEvents():
+    from ROOT import TFile, TTree
+
+    # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
+    runList = calInfo.GetSpecialRuns("longCal",5)
+    # runList = runList[:10] # truncate
+    fileList = []
+    for run in runList:
+        fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
+    nFiles = len(fileList)
+
+    sumLo2, sumHi2 = 200, 500
+    eLo2, fsLo2, chLo2 = [], [], []
+
+    sumLo3, sumHi3 = 200, 500
+    eLo3, fsLo3, chLo3 = [], [], []
+
+    for iFile, f in enumerate(fileList):
+        print("%d/%d %s" % (iFile,nFiles,f))
+        tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        tree = tf.Get("skimTree")
+
+        theCut = "mH==2 && gain==0 && sumEH > %f && sumEH < %f && isGood" % (sumLo2, sumHi2)
+        tNames = ["Entry$","mH","channel","trapENFCal","sumEH","gain","isGood","fitSlo","riseNoise"]
+        tVals = wl.GetVX(tree, tNames, theCut)
+        eList = sorted(set(tVals["Entry$"])) # we can do this because the hit lists aren't huge
+        for iEnt in eList:
+            idx = np.where(tVals["Entry$"]==iEnt)
+            if len(idx[0]) != 2:
+                continue # sometimes stragglers get through
+            hitE = tVals["trapENFCal"][idx]
+            chan = tVals["channel"][idx]
+            fitSlo = tVals["fitSlo"][idx]
+            riseNoise = tVals["riseNoise"][idx]
+            iLo = np.argmin(hitE)
+            eLo2.append(hitE[iLo])
+            fsLo2.append(fitSlo[iLo])
+            chLo2.append(chan[iLo])
+
+        theCut = "mH==3 && gain==0 && sumEH > %f && sumEH < %f && isGood" % (sumLo3, sumHi3)
+        tVals = wl.GetVX(tree, tNames, theCut)
+        eList = sorted(set(tVals["Entry$"]))
+        for iEnt in eList:
+            idx = np.where(tVals["Entry$"]==iEnt)
+            if len(idx[0]) != 3: continue
+            hitE = tVals["trapENFCal"][idx]
+            chan = tVals["channel"][idx]
+            fitSlo = tVals["fitSlo"][idx]
+            riseNoise = tVals["riseNoise"][idx]
+
+            iLo = np.argmin(hitE)
+            iHi = np.argmax(hitE)
+            iMid = list(set([0,1,2]) - set([iLo,iHi]))[0]
+
+            iLo = np.argmin(hitE)
+            eLo3.append(hitE[iLo])
+            fsLo3.append(fitSlo[iLo])
+            chLo3.append(chan[iLo])
+
+    eLo2, fsLo2, chLo2 = np.asarray(eLo2), np.asarray(fsLo2), np.asarray(chLo2)
+    eLo3, fsLo3, chLo3 = np.asarray(eLo3), np.asarray(fsLo3), np.asarray(chLo3)
+    np.savez("../plots/longCal_wide.npz", eLo2, fsLo2, chLo2, eLo3, fsLo3, chLo3)
+
+
+def plotWideEvents():
+    f = np.load("../plots/longCal_wide.npz")
+
+    eLo2, fsLo2, chLo2 = f['arr_0'], f['arr_1'], f['arr_2']
+    eLo3, fsLo3, chLo3 = f['arr_3'], f['arr_4'], f['arr_5']
+
+    fig = plt.figure(figsize=(9,6))
+
+    xLo, xHi, bpx = 0, 50, 0.3
+    nb = int((xHi-xLo)/bpx)
+
+    y, x = np.histogram(eLo2, bins=nb, range=(xLo,xHi))
+    plt.plot(x[:-1], y, color='r', ls='steps', label='m2')
+
+    y, x = np.histogram(eLo3, bins=nb, range=(xLo,xHi))
+    plt.plot(x[:-1], y, color='b', ls='steps', label='m3')
+
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig("../plots/wide-mult.png")
+
+
+    plt.cla()
+    plt.plot(eLo2, fsLo2, '.', c='black', markersize=0.5, label="wide-lo-m2", alpha=0.5)
+    plt.ylim(0,300)
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
+    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig("../plots/mult-wide-m2.png")
+
+
+    plt.cla()
+    plt.plot(eLo3, fsLo3, '.', c='black', markersize=0.5, label="wide-lo-m3", alpha=0.5)
+    plt.ylim(0,300)
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
+    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig("../plots/mult-wide-m3.png")
+
 
 
 def plotParams():
@@ -670,7 +781,7 @@ def eventMovie():
     anim.save(outFile, fps=20, extra_args=['-vcodec', 'libx264'])
 
 
-def plotSimSpec():
+def plotSimTest():
     """ Using code from sims people, create a simulated spectrum. """
     from ROOT import TChain
 
@@ -747,6 +858,173 @@ def plotSimSpec():
     plt.xlabel("fEnergy (keV)", horizontalalignment='right', x=1.0)
     plt.ylabel("Counts (arb)", horizontalalignment='right', y=1.0)
     plt.savefig("../plots/mult-sim-test.png")
+
+
+def generateSimSpec():
+    # FIXME!  HIT energy is being plotted instead of SUM.
+
+    from ROOT import TChain
+
+    config, module = "DS5", "M1"
+    basePath = "/global/projecta/projectdirs/majorana/sim/MJDG41003GAT/"
+    sourceType, partClass, segment = "linesource", "%sCalSource" % module, "A224_Z88"
+    simPath = "%s/MJDemonstrator/%s/%s/%s" % (basePath,sourceType,partClass,segment)
+
+    simInfo = ds.SimInfo(config)
+    detList = simInfo.GetActiveDets(config, module)
+
+    nLimit = 20
+    simList = sorted(glob.glob("%s/processed_*.root" % simPath))
+    simChain = TChain("simTree")
+    for f in simList[:nLimit]: simChain.Add(f) # limit for now
+
+    nPrimaries = sum([int(fName.split('_')[-2]) for fName in simList[:nLimit]])
+
+    auxList = sorted(glob.glob("%s/aux_processed_*.root" % simPath))
+    auxChain = TChain("auxTree_%s" % config)
+    for f in auxList[:nLimit]: auxChain.Add(f)
+    simChain.AddFriend(auxChain)
+
+    xLo, xHi, bpx = 0, 4000, 2.
+    nb = int((xHi-xLo)/bpx)
+    sm1, sm2, sm3, sm4 = np.zeros(nb), np.zeros(nb), np.zeros(nb), np.zeros(nb)
+
+    # fill sim histograms
+    for iD, det in enumerate(detList):
+
+        theCut = "isGoodDet_%s * (fWaveformID==%s) * (mH_%s==1) / %d" % (config, det, config, nPrimaries)
+        np1 = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(np1)])
+        y,x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        sm1 = np.add(sm1, y)
+
+        theCut = "isGoodDet_%s * (fWaveformID==%s) * (mH_%s==2) / %d" % (config, det, config, nPrimaries)
+        np2 = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(np2)])
+        y,x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        sm2 = np.add(sm2, y)
+
+        theCut = "isGoodDet_%s * (fWaveformID==%s) * (mH_%s==3) / %d" % (config, det, config, nPrimaries)
+        np3 = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(np3)])
+        y,x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        sm3 = np.add(sm3, y)
+
+        theCut = "isGoodDet_%s * (fWaveformID==%s) * (mH_%s==4) / %d" % (config, det, config, nPrimaries)
+        np4 = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(np4)])
+        y,x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        sm4 = np.add(sm4, y)
+
+        print(det,np1,np2,np3,np4)
+
+    np.savez("../plots/longCal-sim-mH.npz",x, sm1, sm2, sm3, sm4)
+
+
+def compareDataSimSpec():
+    # both files were generated with this binning:
+    # xLo, xHi, bpx = 0, 4000, 2.
+
+    f1 = np.load("../plots/longCal-sim-mH.npz")
+    x, sm1, sm2, sm3, sm4 = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3'], f1['arr_4']
+
+    f2 = np.load("../plots/longCalSumSpec.npz")
+    x, dm1, dm2, dm3, dm4 = f2['arr_0'], f2['arr_1'], f2['arr_2'], f2['arr_3'], f2['arr_4']
+
+    x = x[:-1]
+
+    # scale the sims by the 2615 peak
+    idx = np.where((x > 2610) & (x < 2620))
+    sim2615 = np.amax(sm1[idx])
+    data2615 = np.amax(dm1[idx])
+    dsr = data2615/sim2615
+
+    fig = plt.figure(figsize=(10,7))
+    p0 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p1 = plt.subplot2grid((3,1), (2,0), sharex=p0)
+
+    p0.semilogy(x, dm1, ls='steps', color='r', label='data m=1')
+    p0.semilogy(x, sm1*dsr, ls='steps', color='b', alpha=0.6, label='sim m=1')
+    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_ylabel("Counts (arb)")
+    p0.legend()
+    p1.plot(x, sm1-dm1)
+    p1.set_ylabel("Residual (sim-data)")
+    plt.tight_layout()
+    plt.savefig("../plots/mult-sim-m1.png")
+
+    p0.cla()
+    p1.cla()
+    p0.semilogy(x, dm2, ls='steps', color='r', label='data m=2')
+    p0.semilogy(x, sm2*dsr, ls='steps', color='b', alpha=0.6, label='sim m=2')
+    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_ylabel("Counts (arb)")
+    p0.legend()
+    p1.plot(x, sm2-dm2)
+    p1.set_ylabel("Residual (sim-data)")
+    plt.tight_layout()
+    plt.savefig("../plots/mult-sim-m2.png")
+
+    p0.cla()
+    p1.cla()
+    p0.semilogy(x, dm3, ls='steps', color='r', label='data m=3')
+    p0.semilogy(x, sm3*dsr, ls='steps', color='b', alpha=0.6, label='sim m=3')
+    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_ylabel("Counts (arb)")
+    p0.legend()
+    p1.plot(x, sm3-dm3)
+    p1.set_ylabel("Residual (sim-data)")
+    plt.tight_layout()
+    plt.savefig("../plots/mult-sim-m3.png")
+
+    p0.cla()
+    p1.cla()
+    p0.semilogy(x, dm4, ls='steps', color='r', label='data m=4')
+    p0.semilogy(x, sm4*dsr, ls='steps', color='b', alpha=0.6, label='sim m=4')
+    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_ylabel("Counts (arb)")
+    p0.legend()
+    p1.plot(x, sm4-dm4)
+    p1.set_ylabel("Residual (sim-data)")
+    plt.tight_layout()
+    plt.savefig("../plots/mult-sim-m4.png")
+
+
+def poissonSpec():
+    from ROOT import TFile, TTree
+
+    # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
+    runList = calInfo.GetSpecialRuns("longCal",5)
+    fileList = []
+    for run in runList:
+        fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
+    nFiles = len(fileList)
+
+    dsNum = 5
+    goodList = ds.GetGoodChanListNew(dsNum)
+
+    for iFile, f in enumerate(fileList):
+
+        print("%d/%d %s" % (iFile,nFiles,f))
+
+        tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        latTree = tf.Get("skimTree")
+
+        latTree.GetEntry(0)
+        sct = latTree.startClockTime_s
+
+        print(sct)
+        return
+
+        # nPass = latTree.Draw("")
+
+        # sumArr = getSumEne(latTree, "mH==1 && gain==0 && isGood")
+        # y, x = np.histogram(sumArr, bins=nbx, range=(xLo,xHi))
+        # sum1 = np.add(sum1, y)
 
 
 if __name__=="__main__":

@@ -46,8 +46,8 @@ def GetDSNum(run):
     return dsNum
 
 
-# calibration master list, and some lookup functions
 class CalInfo:
+    """ calibration master list, and some lookup functions """
     def __init__(self):
         self.master = {}
         self.master["ds0_m1"] = {
@@ -393,7 +393,7 @@ class CalInfo:
         return self.special
 
 
-class simUtils:
+class SimInfo:
     """ Adapted from ~mjdsim/analysisScriptsV2/analysisUtilities.py
     I switched some formatting around because OCD.
     """
@@ -444,6 +444,13 @@ class simUtils:
 
     def GetDetectorList(self, module=None):
         return (self.detectors if module is None else self.dets[module])
+
+    def GetActiveDets(self, config, module):
+        detList = []
+        for iD, det in enumerate(self.GetDetectorList(module)):
+            if self.activeDets[module][config][iD] == 1:
+                detList.append(det)
+        return detList
 
     def GetDTCutoff(self, module, detector):
         iD = self.dets[module].index(detector)
