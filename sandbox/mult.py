@@ -30,7 +30,12 @@ def main():
     # plotSimTest()
     # generateSimSpec()
     # compareDataSimSpec()
-    poissonSpec()
+    # getLowSimSpec()
+    # plotLowSimSpec()
+    # getMultip()
+    # plotMultip()
+    # getChannelRates()
+    getPhysProbability()
 
 
 def getSumEne(tree, theCut):
@@ -115,10 +120,10 @@ def plotSpectrum():
     x, sum1, sum2, sum3, sum4 = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3'], f['arr_4']
 
     fig = plt.figure(figsize=(9,6), facecolor='w')
-    plt.semilogy(x[:-1], sum1, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='mH=1')
-    plt.semilogy(x[:-1], sum2, linewidth=0.8, alpha=0.8, ls='steps', color='b', label='mH=2')
-    plt.semilogy(x[:-1], sum3, linewidth=0.9, alpha=0.6, ls='steps', color='m', label='mH=3')
-    plt.semilogy(x[:-1], sum4, linewidth=1.0, alpha=0.4, ls='steps', color='c', label='mH=4')
+    plt.semilogy(x[1:], sum1, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='mH=1')
+    plt.semilogy(x[1:], sum2, linewidth=0.8, alpha=0.8, ls='steps', color='b', label='mH=2')
+    plt.semilogy(x[1:], sum3, linewidth=0.9, alpha=0.6, ls='steps', color='m', label='mH=3')
+    plt.semilogy(x[1:], sum4, linewidth=1.0, alpha=0.4, ls='steps', color='c', label='mH=4')
 
     plt.xlabel("SumE (keV)", horizontalalignment='right', x=1.)
     plt.ylabel("Counts", horizontalalignment='right', y=1.)
@@ -191,7 +196,7 @@ def plotPeakSpec():
     """
     f = np.load("../plots/longCalPeaks.npz")
     x1, x2, pk238, pk583 = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
-    x1, x2 = x1[:-1], x2[:-1]
+    x1, x2 = x1[1:], x2[1:]
 
     fig = plt.figure(figsize=(9,6), facecolor='w')
 
@@ -340,10 +345,10 @@ def plotSelected():
     nb = int((xHi-xLo)/bpx)
 
     y, x = np.histogram(lo238, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
     y, x = np.histogram(hi238, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='hi hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='hi hits')
 
     plt.axvline(critE238, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % critE238)
 
@@ -360,7 +365,7 @@ def plotSelected():
     nb = int((xHi-xLo)/bpx)
 
     y, x = np.histogram(lo238, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
     plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
     plt.ylabel("Counts", horizontalalignment='right', y=1.0)
@@ -375,13 +380,13 @@ def plotSelected():
     nb = int((xHi-xLo)/bpx)
 
     y, x = np.histogram(lo583, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
     y, x = np.histogram(mid583+hi583, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='mid+hi hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='mid+hi hits')
 
     y, x = np.histogram(hi583, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='hi hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='hi hits')
 
     plt.axvline(critE583, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % critE583)
     plt.axvline(177.64, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % 177.64)
@@ -399,7 +404,7 @@ def plotSelected():
     nb = int((xHi-xLo)/bpx)
 
     y, x = np.histogram(lo583, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
+    plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
     plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
     plt.ylabel("Counts", horizontalalignment='right', y=1.0)
@@ -484,10 +489,10 @@ def plotWideEvents():
     nb = int((xHi-xLo)/bpx)
 
     y, x = np.histogram(eLo2, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, color='r', ls='steps', label='m2')
+    plt.plot(x[1:], y, color='r', ls='steps', label='m2')
 
     y, x = np.histogram(eLo3, bins=nb, range=(xLo,xHi))
-    plt.plot(x[:-1], y, color='b', ls='steps', label='m3')
+    plt.plot(x[1:], y, color='b', ls='steps', label='m3')
 
     plt.legend(loc='best')
     plt.tight_layout()
@@ -512,7 +517,6 @@ def plotWideEvents():
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-wide-m3.png")
-
 
 
 def plotParams():
@@ -650,10 +654,10 @@ def plotEfficiency():
     nbx = int((xHi-xLo)/bpx)
 
     yAll, x = np.histogram(eAll, bins=nbx, range=(xLo,xHi))
-    p1.plot(x[:-1], yAll, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='all mH==2')
+    p1.plot(x[1:], yAll, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='all mH==2')
 
     yPass, x = np.histogram(ePass, bins=nbx, range=(xLo,xHi))
-    p1.plot(x[:-1], yPass, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='hits passing')
+    p1.plot(x[1:], yPass, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='hits passing')
 
     p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
     p1.set_ylabel("Counts", horizontalalignment='right', y=1.)
@@ -661,7 +665,7 @@ def plotEfficiency():
 
     p2 = p1.twinx()
 
-    p2.plot(x[:-1], 100.*yPass/yAll, '.r', markersize=5, label='efficiency')
+    p2.plot(x[1:], 100.*yPass/yAll, '.r', markersize=5, label='efficiency')
 
     p2.set_ylim(0,110)
     p2.set_ylabel('% Efficiency', color='r', horizontalalignment='right', y=1.0)
@@ -851,9 +855,9 @@ def plotSimTest():
         if iD > 5:
             break
 
-    plt.semilogy(x[:-1], xRaw, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='raw')
-    plt.semilogy(x[:-1], xGran, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='+mH==1')
-    plt.semilogy(x[:-1], xPSA, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='+PSA')
+    plt.semilogy(x[1:], xRaw, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='raw')
+    plt.semilogy(x[1:], xGran, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='+mH==1')
+    plt.semilogy(x[1:], xPSA, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='+PSA')
     plt.legend(loc='best')
     plt.xlabel("fEnergy (keV)", horizontalalignment='right', x=1.0)
     plt.ylabel("Counts (arb)", horizontalalignment='right', y=1.0)
@@ -935,7 +939,7 @@ def compareDataSimSpec():
     f2 = np.load("../plots/longCalSumSpec.npz")
     x, dm1, dm2, dm3, dm4 = f2['arr_0'], f2['arr_1'], f2['arr_2'], f2['arr_3'], f2['arr_4']
 
-    x = x[:-1]
+    x = x[1:]
 
     # scale the sims by the 2615 peak
     idx = np.where((x > 2610) & (x < 2620))
@@ -994,37 +998,194 @@ def compareDataSimSpec():
     plt.savefig("../plots/mult-sim-m4.png")
 
 
-def poissonSpec():
-    from ROOT import TFile, TTree
+def getLowSimSpec():
+
+    from ROOT import TChain
+
+    config, module = "DS5", "M1"
+    basePath = "/global/projecta/projectdirs/majorana/sim/MJDG41003GAT/"
+    sourceType, partClass, segment = "linesource", "%sCalSource" % module, "A224_Z88"
+    simPath = "%s/MJDemonstrator/%s/%s/%s" % (basePath,sourceType,partClass,segment)
+
+    simInfo = ds.SimInfo(config)
+    detList = simInfo.GetActiveDets(config, module)
+
+    nLimit = 2
+    simList = sorted(glob.glob("%s/processed_*.root" % simPath))
+    simChain = TChain("simTree")
+    for f in simList[:nLimit]: simChain.Add(f) # limit for now
+
+    nPrimaries = sum([int(fName.split('_')[-2]) for fName in simList[:nLimit]])
+
+    auxList = sorted(glob.glob("%s/aux_processed_*.root" % simPath))
+    auxChain = TChain("auxTree_%s" % config)
+    for f in auxList[:nLimit]: auxChain.Add(f)
+    simChain.AddFriend(auxChain)
+
+    xLo, xHi, bpx = 0, 50, 0.2
+    nb = int((xHi-xLo)/bpx)
+    sm1 = np.zeros(nb)
+
+    # fill sim histograms
+    for iD, det in enumerate(detList):
+        print(det)
+
+        theCut = "isGoodDet_%s * (fWaveformID==%s) * (mH_%s==1) / %d" % (config, det, config, nPrimaries)
+        np1 = simChain.Draw("fEnergy*1000.0", theCut, "GOFF")
+        xArr = simChain.GetV1()
+        xArr = np.asarray([xArr[i] for i in range(np1)])
+        y,x = np.histogram(xArr, bins=nb, range=(xLo, xHi))
+        sm1 = np.add(sm1, y)
+
+    np.savez("../plots/sim-lowe-spec.npz",x,sm1)
+
+
+def plotLowSimSpec():
+
+    f = np.load("../plots/sim-lowe-spec.npz")
+    x, sm1 = f['arr_0'], f['arr_1']
+
+    fig = plt.figure(figsize=(9,6))
+
+    plt.plot(x[1:], sm1, ls='steps', color='red', label='sim spec, mH==1, all dets')
+    plt.xlabel("Energy (keV)", horizontalalignment='right', x=1.)
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig("../plots/sim-lowEspec.png")
+
+
+def getMultip():
+
+    from ROOT import TFile, TTree, GATDataSet
 
     # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
     runList = calInfo.GetSpecialRuns("longCal",5)
+    runList = runList[:15] # this gets 10k mH=4 events
     fileList = []
     for run in runList:
         fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
     nFiles = len(fileList)
 
-    dsNum = 5
-    goodList = ds.GetGoodChanListNew(dsNum)
+    runTime = 0
+    for run in runList:
+        gds = GATDataSet()
+        gatPath = gds.GetPathToRun(run, GATDataSet.kGatified)
+        tf = TFile(gatPath)
+        gatTree = tf.Get("mjdTree")
+        gatTree.GetEntry(0)
+        runTime += gatTree.timeinfo.stopTime - gatTree.timeinfo.startTime
+        tf.Close()
+        print(run, runTime)
+
+    xLo, xHi, bpx = 0, 39, 1
+    nbx = int((xHi-xLo)/bpx)
+    mult = np.zeros(nbx)
 
     for iFile, f in enumerate(fileList):
-
-        print("%d/%d %s" % (iFile,nFiles,f))
 
         tf = TFile("%s/lat/%s" % (ds.specialDir,f))
         latTree = tf.Get("skimTree")
 
-        latTree.GetEntry(0)
-        sct = latTree.startClockTime_s
+        tNames = ["Entry$","mH","channel","trapENFCal","gain","isGood"]
+        theCut = ""
+        nPass = latTree.Draw("mH",theCut,"GOFF")
+        mH = latTree.GetV1()
+        mH = [mH[i] for i in range(nPass)]
+        if len(mH) != latTree.GetEntries():
+            # make sure # in draw matches # entries (don't double count hits)
+            print("ERROR.  len(mH) %d  tree entries %d" % (len(mH), latTree.GetEntries()))
+            return
 
-        print(sct)
-        return
+        y, x = np.histogram(mH, bins=nbx, range=(xLo, xHi))
+        mult = np.add(mult, y)
 
-        # nPass = latTree.Draw("")
+        m4 = 100 * mult[4] / 10000.
+        print("%d/%d %s  m4: %d  %.2f%%" % (iFile,nFiles,f,mult[4],m4))
 
-        # sumArr = getSumEne(latTree, "mH==1 && gain==0 && isGood")
-        # y, x = np.histogram(sumArr, bins=nbx, range=(xLo,xHi))
-        # sum1 = np.add(sum1, y)
+        tf.Close()
+
+    np.savez("../plots/longCal-mH.npz",x,mult,runTime)
+
+
+def plotMultip():
+    f = np.load("../plots/longCal-mH.npz")
+    x, mult, runTime = f['arr_0'], f['arr_1'], f['arr_2']
+
+    rates = mult/runTime
+
+    for i in range(1,6):
+        cts = mult[i]
+        rate = cts/runTime
+        err = np.sqrt(cts)/runTime
+        pctErr = 100/np.sqrt(cts)
+        print("mH=%d  cts %-8d  rate %.2f pm %-8.5f  (%.5f%%)" % (i, cts, rate, err, pctErr))
+
+    fig = plt.figure(figsize=(9,6))
+    plt.semilogy(x[:-1], rates, ls='steps', color='black')
+    plt.xlabel("mH", horizontalalignment='right', x=1.0)
+    pltTitle = "mH. runTime %.0f sec.  mH=4 rate: %.2f pm %.4f Hz" % (runTime, rates[4], np.sqrt(mult[4])/runTime)
+    # print(pltTitle)
+    plt.title(pltTitle)
+
+    plt.xlim(0,10)
+    ax = fig.gca()
+    ax.set_xticks(np.arange(0, 10, 1))
+    plt.rc('grid', linestyle="dashed")
+    plt.grid()
+
+    plt.savefig("../plots/longCal-mH.png")
+
+
+def getChannelRates():
+    print("hiyyyyy")
+
+
+def getPhysProbability():
+
+    rMult = [0, 344.73, 69.60, 12.14, 1.96, 0.58] # mult. rates
+
+    # from plotChanNoiseRate2
+    chRates = {
+        584: (0.02504, 0.65272), 592: (0.04016, 1.12538), 598: (0.04214, 7.43857), 608: (0.04133, 0.89446),
+        610: (0.05058, 1.16650), 614: (0.02029, 1.03391), 624: (0.02900, 0.93005), 626: (0.03535, 0.96318),
+        628: (0.04316, 1.48850), 632: (0.02492, 0.57832), 640: (0.03153, 0.73312), 648: (0.03063, 0.57880),
+        658: (0.01900, 0.52327), 660: (0.02465, 0.46342), 662: (0.02693, 0.60194), 672: (0.01873, 0.50940),
+        674: (0.02377, 0.62129), 678: (0.02555, 0.58299), 680: (0.01812, 0.55507), 688: (0.04286, 1.03254),
+        690: (0.01906, 0.62837), 692: (0.02236, 0.77410), 694: (0.03285, 0.83018),
+        1106: (0.00210, 0.26005), 1120: (0.01229, 0.46665), 1124: (0.00514, 0.24493), 1128: (0.00198, 0.23542),
+        1170: (0.01055, 0.43628), 1172: (0.00535, 0.45415), 1174: (0.00204, 0.12108), 1176: (0.00595, 0.20878),
+        1204: (0.00472, 0.21207), 1208: (0.01247, 0.37574), 1232: (0.00201, 0.08488), 1236: (0.00234, 0.07277),
+        1298: (0.00078, 0.09937), 1302: (0.01199, 0.32350), 1330: (0.01064, 0.40703), 1332: (0, 0)
+        }
+    rNoise = sum([chRates[key][1] for key in chRates])
+    print("raw noise rate:  %.3f" % rNoise) # 28.709
+
+
+    # calculate probability of pure physics event vs. physics + noise
+    for n in range(1, 6):
+        print("N ==",n)
+
+        dt = 4e-6 if n <= 2 else 4e-6 * (n-1)
+
+        pPhys = poisson.pmf(1, rMult[n] * dt) # remember it's the probability of getting ONE mH==n event
+
+        pNoise = poisson.pmf(n, rNoise * dt) # this is prob. of getting n noise events
+
+        pairs = [ (j, n-j) for j in range(1, n) ]
+        pMix = 0
+        for k, l in pairs:
+            phys = poisson.pmf(1, rMult[k] * dt) # one mH==k event in dt
+            noise = poisson.pmf(l, rNoise * dt) # l noise events in dt
+            pMix += phys*noise
+            print("(%d,%d)   phys %.4e  noise %.4e  prod %.4e  mix %.4e" % (k, l, phys, noise, phys*noise, pMix))
+
+        print("Result: phys %.4e  noise %.4e   mix %.4e" % (pPhys, pNoise, pMix))
+
+        pTot = pPhys + pNoise + pMix
+        fPhys, fNoise, fMix = 100*pPhys/pTot, 100*pNoise/pTot, 100*pMix/pTot
+        print("------> phys %.4f%%    noise %.4f%%   mix %.4f%%" % (fPhys, fNoise, fMix))
+
+        print(" ")
 
 
 if __name__=="__main__":

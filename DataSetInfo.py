@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # DataSetInfo.py
 # C. Wiseman, B. Zhu
 import os

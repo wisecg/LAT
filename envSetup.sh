@@ -9,7 +9,8 @@ function sourceEnvMJD {
   export HOMEDIR=/global/homes/w/wisecg
   export PATH=${HOMEDIR}:${PATH} # rmate
 	export SWDIR=/global/project/projectdirs/majorana/software/sl64
-	export MJSWDIR=${SWDIR}/mjsw/mjsw201712Prod
+
+  export MJSWDIR=${SWDIR}/mjsw/mjsw201712Prod
   export MJHOME=/global/project/projectdirs/majorana
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
   export MJDDATADIR=/global/project/projectdirs/majorana/data/mjd
@@ -23,15 +24,18 @@ function sourceEnvMJD {
 	export PATH=$CLHEP_BASE_DIR/bin:${PATH}
 	export LD_LIBRARY_PATH=${CLHEP_LIB_DIR}:${LD_LIBRARY_PATH}
 
-  export MGDODIR=${MJSWDIR}/MGDO
-  export PATH=${MGDODIR}/bin:${PATH}
+  # export MGDODIR=${MJSWDIR}/MGDO
+  # export GATDIR=${MJSWDIR}/GAT
+  export MGDODIR=${HOMEDIR}/mgsw/MGDO
+  export GATDIR=${HOMEDIR}/mgsw/GAT
+
   export TAMDIR=${MGDODIR}/tam
   export ORDIR=${MJSWDIR}/OrcaRoot
   export MJORDIR=${MJSWDIR}/MJOR
-  export GATDIR=${MJSWDIR}/GAT
-  export PATH=$MJSWDIR/bin:$ORDIR/Applications:${MJORDIR}:${GATDIR}/Apps:${GATDIR}/Scripts:${SIGGENDIR}:${PATH}
+  export PATH=${MJSWDIR}/bin:${ORDIR}/Applications:${MJORDIR}:${GATDIR}/Apps:${GATDIR}/Scripts:${SIGGENDIR}:${MGDODIR}/bin:${PATH}
   export LD_LIBRARY_PATH=$MJSWDIR/lib:${ORDIR}/lib:${MGDODIR}/install/lib:${GATDIR}/lib:${LD_LIBRARY_PATH}:${MAGEDIR}/analysis
-  export ROOT_INCLUDE_PATH=${CLHEP_INCLUDE_DIR}:$MGDODIR/Base:$MGDODIR/Gerda:$MGDODIR/GerdaTransforms:$MGDODIR/Majorana:$MGDODIR/MJDB:$MGDODIR/Root:$MGDODIR/Tabree:$MGDODIR/Tools:$MGDODIR/Transforms:$TAMDIR:$TAMDIR/inc:$GATDIR/BaseClasses:$GATDIR/MGTEventProcessing:$GATDIR/MGOutputMCRunProcessing:$GATDIR/SiggenWrapper
+  export ROOT_INCLUDE_PATH=${CLHEP_INCLUDE_DIR}:${MGDODIR}/Base:${MGDODIR}/Gerda:${MGDODIR}/GerdaTransforms:${MGDODIR}/Majorana:${MGDODIR}/MJDB:${MGDODIR}/Root:${MGDODIR}/Tabree:${MGDODIR}/Tools:${MGDODIR}/Transforms:${TAMDIR}:${TAMDIR}/inc:${GATDIR}/BaseClasses:${GATDIR}/MGTEventProcessing:${GATDIR}/MGOutputMCRunProcessing:${GATDIR}/SiggenWrapper
+
   export LATDIR=${HOMEDIR}/lat
 }
 
@@ -46,8 +50,9 @@ function sourceEnvClint {
   alias shiftermj="shifter --image wisecg/mjsw:v2 bash"
 }
 
-function fixrpf {
-  myarr=$(ps -u wisecg | grep sshd | awk '{print $1}'); kill $myarr
+function rpf {
+  myarr=$(ps -u wisecg | grep sshd | awk '{print $1}')
+  kill $myarr
 }
 
 function loadModulesMJD {
