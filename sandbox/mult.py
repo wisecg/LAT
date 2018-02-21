@@ -35,7 +35,9 @@ def main():
     # getMultip()
     # plotMultip()
     # getChannelRates()
-    getPhysProbability()
+    # getPhysProbability()
+    get2615Peak()
+    # plot2615Peak()
 
 
 def getSumEne(tree, theCut):
@@ -1121,26 +1123,58 @@ def plotMultip():
         print("mH=%d  cts %-8d  rate %.2f pm %-8.5f  (%.5f%%)" % (i, cts, rate, err, pctErr))
 
     fig = plt.figure(figsize=(9,6))
-    plt.semilogy(x[:-1], rates, ls='steps', color='black')
-    plt.xlabel("mH", horizontalalignment='right', x=1.0)
-    pltTitle = "mH. runTime %.0f sec.  mH=4 rate: %.2f pm %.4f Hz" % (runTime, rates[4], np.sqrt(mult[4])/runTime)
-    # print(pltTitle)
-    plt.title(pltTitle)
+    # plt.semilogy(x[:-1], rates, ls='steps', color='black')
 
-    plt.xlim(0,10)
-    ax = fig.gca()
-    ax.set_xticks(np.arange(0, 10, 1))
-    plt.rc('grid', linestyle="dashed")
-    plt.grid()
+    plt.bar(x[:-1], rates)
+
+    ax = plt.gca()
+    ax.set_yscale('log')
+    plt.xticks(x[:12])
+    plt.xlim(0,12)
+    plt.ylim(0.01)
+
+    plt.xlabel("mH", horizontalalignment='right', x=1.0)
+    plt.ylabel("Rate (Hz)")
+
+    plt.title("mH. runTime %.0f sec.  mH=4 rate: %.2f pm %.4f Hz" % (runTime, rates[4], np.sqrt(mult[4])/runTime))
 
     plt.savefig("../plots/longCal-mH.png")
 
 
 def getChannelRates():
-    print("hiyyyyy")
+    # from plotChanNoiseRate2
+    chRates = {
+        584: (0.02504, 0.65272), 592: (0.04016, 1.12538), 598: (0.04214, 7.43857), 608: (0.04133, 0.89446),
+        610: (0.05058, 1.16650), 614: (0.02029, 1.03391), 624: (0.02900, 0.93005), 626: (0.03535, 0.96318),
+        628: (0.04316, 1.48850), 632: (0.02492, 0.57832), 640: (0.03153, 0.73312), 648: (0.03063, 0.57880),
+        658: (0.01900, 0.52327), 660: (0.02465, 0.46342), 662: (0.02693, 0.60194), 672: (0.01873, 0.50940),
+        674: (0.02377, 0.62129), 678: (0.02555, 0.58299), 680: (0.01812, 0.55507), 688: (0.04286, 1.03254),
+        690: (0.01906, 0.62837), 692: (0.02236, 0.77410), 694: (0.03285, 0.83018),
+        1106: (0.00210, 0.26005), 1120: (0.01229, 0.46665), 1124: (0.00514, 0.24493), 1128: (0.00198, 0.23542),
+        1170: (0.01055, 0.43628), 1172: (0.00535, 0.45415), 1174: (0.00204, 0.12108), 1176: (0.00595, 0.20878),
+        1204: (0.00472, 0.21207), 1208: (0.01247, 0.37574), 1232: (0.00201, 0.08488), 1236: (0.00234, 0.07277),
+        1298: (0.00078, 0.09937), 1302: (0.01199, 0.32350), 1330: (0.01064, 0.40703), 1332: (0, 0)
+        }
+    rNoise = sum([chRates[key][1] + chRates[key][0] for key in chRates]) # un-subtract rate from 40-50 kev
+
+    xLabels = sorted(chRates.keys())
+    y = [chRates[ch][0] + chRates[ch][1] for ch in xLabels]
+    x = np.arange(0, len(chRates), 1)
+
+    noiseAvg = np.mean(y)
+    noiseTot = np.sum(y)
+
+    fig = plt.figure(figsize=(9,6))
+    plt.bar(x, y)
+    plt.xticks(x, xLabels, rotation=85.)
+    plt.axhline(noiseAvg, color='green', label='Avg. Noise Rate: %.3f Hz' % noiseAvg)
+    plt.plot(np.nan, np.nan, color='w', label='Total Noise Rate: %.3f Hz' % noiseTot)
+    plt.legend(loc='best')
+    plt.savefig("../plots/mult-channel.png")
 
 
 def getPhysProbability():
+    from scipy.stats import poisson
 
     rMult = [0, 344.73, 69.60, 12.14, 1.96, 0.58] # mult. rates
 
@@ -1157,9 +1191,10 @@ def getPhysProbability():
         1204: (0.00472, 0.21207), 1208: (0.01247, 0.37574), 1232: (0.00201, 0.08488), 1236: (0.00234, 0.07277),
         1298: (0.00078, 0.09937), 1302: (0.01199, 0.32350), 1330: (0.01064, 0.40703), 1332: (0, 0)
         }
-    rNoise = sum([chRates[key][1] for key in chRates])
+    rNoise = sum([chRates[key][1] + chRates[key][0] for key in chRates]) # un-subtract rate from 40-50 kev
     print("raw noise rate:  %.3f" % rNoise) # 28.709
 
+    pNHits = [0]
 
     # calculate probability of pure physics event vs. physics + noise
     for n in range(1, 6):
@@ -1186,6 +1221,95 @@ def getPhysProbability():
         print("------> phys %.4f%%    noise %.4f%%   mix %.4f%%" % (fPhys, fNoise, fMix))
 
         print(" ")
+
+        pNHits.append(pNoise)
+
+    pNTot = sum(pNHits)
+    print("expected mH fraction, all noise evts (< 10 kev)")
+    for i in range(1,6):
+        print("mH==%d, %.2e" % (i, pNHits[i]/pNTot))
+
+
+def get2615Peak():
+    from ROOT import TFile, TTree
+
+    # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
+    runList = calInfo.GetSpecialRuns("longCal",5)
+    runList = runList[:3] # truncate
+    fileList = []
+    for run in runList:
+        fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
+    nFiles = len(fileList)
+
+    chList = ds.GetGoodChanListNew(5)
+
+    xLo, xHi, xpb = 2605.0, 2625.0, 0.2
+    nb = int((xHi-xLo)/xpb)
+    h2615 = []
+
+    for iFile, f in enumerate(fileList):
+        print("%d/%d %s" % (iFile,nFiles,f))
+        tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        tree = tf.Get("skimTree")
+
+        tNames = ["channel","mH","trapENFCal"]
+        tree.SetBranchStatus('*',0)
+        for name in tNames: tree.SetBranchStatus(name,1)
+
+        for iEnt in range(tree.GetEntries()):
+            tree.GetEntry(iEnt)
+
+            nHits = tree.channel.size()
+            hitList = [i for i in range(nHits) if int(tree.channel.at(i)) in chList]
+            hitE = np.asarray([tree.trapENFCal.at(i) for i in hitList])
+
+            idx2615 = np.where((hitE > xLo) & (hitE < xHi))
+            if len(idx2615[0]) == 0: continue
+            # print("%d  mH %d  mG %d  idx2615 %d " % (iEnt, tree.mH, len(hitList), idx2615[0]),"hitE:",hitE)
+            hit2615 = hitE[idx2615][0]
+            h2615.append(hit2615)
+
+            # now look at events where the hit is within peak mean + 2 sigma (only 0.38% bkg contamination)
+            if not 2612.051 < hit2615 < 2616.971: continue
+
+            ------- save some stuff about mH of noise hits.
+
+        tf.Close()
+        # if iFile > 2: break
+
+    y, x = np.histogram(h2615, bins=nb, range=(xLo, xHi))
+    np.savez("../plots/longCal-2615.npz", x, y)
+
+
+def plot2615Peak():
+    f = np.load("../plots/longCal-2615.npz")
+    x, h2615 = f['arr_0'], f['arr_1']
+    x = x[1:]
+
+    fig = plt.figure(figsize=(9,6))
+
+    plt.plot(x, h2615, ls='steps', color='blue', label='pk2615')
+
+    p0 = (np.mean(h2615[:5]), max(h2615), 2614.511, roughSigma(2614.511))
+    popt,_ = curve_fit(gaus, x, h2615, p0=p0)
+    bpx = x[1] - x[0]
+    bgRate = popt[0] * bpx
+    mu, sig = popt[2], popt[3]
+    idx = np.where((x > mu-2*sig) & (x < mu+2*sig))  # yes, 2 sigma
+    totCts = np.sum(h2615[idx])
+    bgCts = bgRate * len(h2615[idx])
+    pkCts = totCts - bgCts
+    pbr = pkCts / bgCts
+    plt.plot(x, gaus(x, *popt), 'r-', label='fit.  mu %.2f  sig %.2f\nP/B %.2f' % (mu,sig,pbr))
+
+    plt.axvline(mu+2*sig, color='green', label='2 sigma')
+    plt.axvline(mu-2*sig, color='green')
+    plt.plot(np.nan, np.nan, 'w', label='bkg in peak: %.2f%%' % (100 * bgCts / totCts))
+
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
+    plt.legend()
+    plt.savefig("../plots/longCal-2615-peak.png")
+
 
 
 if __name__=="__main__":

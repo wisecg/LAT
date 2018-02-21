@@ -19,9 +19,9 @@ def main():
     # plotDTMult()
     # chanNoiseRate()
     # plotNoiseRate()
-    # chanNoiseRate2()
+    chanNoiseRate2()
     # plotChanNoiseRate2()
-    m4Prob()
+    # m4Prob()
 
 
 def getDTMult():
@@ -208,6 +208,8 @@ def chanNoiseRate2():
 
     runList = calInfo.GetSpecialRuns("longCal",5)
     runList = runList[:10] # limit
+    print(runList)
+    return
     fileList = []
     for run in runList:
         fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
