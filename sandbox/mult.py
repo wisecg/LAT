@@ -4,11 +4,11 @@ import numpy as np
 import subprocess as sp
 import tinydb as db
 from scipy.optimize import curve_fit
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-sys.argv.append("-b")
+# sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 calInfo = ds.CalInfo()
@@ -36,8 +36,9 @@ def main():
     # plotMultip()
     # getChannelRates()
     # getPhysProbability()
-    get2615Peak()
-    # plot2615Peak()
+    # get2615()
+    # plot2615()
+    plotCrosstalk()
 
 
 def getSumEne(tree, theCut):
@@ -1230,12 +1231,12 @@ def getPhysProbability():
         print("mH==%d, %.2e" % (i, pNHits[i]/pNTot))
 
 
-def get2615Peak():
+def get2615():
     from ROOT import TFile, TTree
 
     # 5 hr M1 calibration: https://majorana.npl.washington.edu/elog/Run+Elog/1703
     runList = calInfo.GetSpecialRuns("longCal",5)
-    runList = runList[:3] # truncate
+    # runList = runList[:10] # truncate
     fileList = []
     for run in runList:
         fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
@@ -1246,6 +1247,8 @@ def get2615Peak():
     xLo, xHi, xpb = 2605.0, 2625.0, 0.2
     nb = int((xHi-xLo)/xpb)
     h2615 = []
+
+    xTalkEvts = []
 
     for iFile, f in enumerate(fileList):
         print("%d/%d %s" % (iFile,nFiles,f))
@@ -1265,23 +1268,21 @@ def get2615Peak():
 
             idx2615 = np.where((hitE > xLo) & (hitE < xHi))
             if len(idx2615[0]) == 0: continue
-            # print("%d  mH %d  mG %d  idx2615 %d " % (iEnt, tree.mH, len(hitList), idx2615[0]),"hitE:",hitE)
             hit2615 = hitE[idx2615][0]
             h2615.append(hit2615)
 
-            # now look at events where the hit is within peak mean + 2 sigma (only 0.38% bkg contamination)
+            # now save events where the hit is within peak mean + 2 sigma (only 0.38% bkg contamination)
             if not 2612.051 < hit2615 < 2616.971: continue
-
-            ------- save some stuff about mH of noise hits.
+            hitCh = np.asarray([tree.channel.at(i) for i in hitList])
+            xTalkEvts.append([hitE, hitCh])
 
         tf.Close()
-        # if iFile > 2: break
 
     y, x = np.histogram(h2615, bins=nb, range=(xLo, xHi))
-    np.savez("../plots/longCal-2615.npz", x, y)
+    np.savez("../plots/longCal-2615.npz", x, y, xTalkEvts)
 
 
-def plot2615Peak():
+def plot2615():
     f = np.load("../plots/longCal-2615.npz")
     x, h2615 = f['arr_0'], f['arr_1']
     x = x[1:]
@@ -1310,6 +1311,74 @@ def plot2615Peak():
     plt.legend()
     plt.savefig("../plots/longCal-2615-peak.png")
 
+
+def plotCrosstalk():
+
+    f = np.load("../plots/longCal-2615.npz")
+    evts = f['arr_2']
+    nTot = len(evts)
+
+    eAny, eLoOnly = [], []
+    mAll, mNoise, mMid = [], [], []
+
+    nOnlyNoise = 0
+    for evt in evts:
+        hitE, hitCh = evt[0], evt[1]
+
+        mAll.append(len(hitE))
+
+        idxMid = np.where((hitE > 10) & (hitE < 2612.051))
+        if len(idxMid[0]) > 0: mMid.append(len(idxMid[0]))
+
+        idxLo = np.where(hitE <= 10.)
+        if len(idxLo[0]) > 0: mNoise.append(len(idxLo[0]))
+
+        for hit in hitE: eAny.append(hit)
+        for hit in hitE[idxLo]: eLoOnly.append(hit)
+
+        if len(idxLo[0]) > 0 and len(idxMid[0]) == 0:
+            nOnlyNoise += 1
+
+    print("%d total evts w/ hit=2615, %d have only hits < 10 keV (%.4f%%)" % (nTot, nOnlyNoise, 100*nOnlyNoise/nTot))
+
+    xLo, xHi, xpb = -5., 30., 0.2
+    nb = int((xHi-xLo)/xpb)
+
+    fig = plt.figure(figsize=(9,6))
+
+    yAny, x = np.histogram(eAny, bins=nb, range=(xLo, xHi))
+    plt.plot(x[1:], yAny, ls='steps', color='green', linewidth=2, label='eAny')
+
+    yOnly, x = np.histogram(eLoOnly, bins=nb, range=(xLo, xHi))
+    plt.plot(x[1:], yOnly, ls='steps', color='red', label='eOnly')
+
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("../plots/longCal-2615-eLoHits.png")
+
+
+    plt.cla()
+
+    xLo, xHi, xpb = 0, 6, 1
+    nb = int((xHi-xLo)/xpb)
+
+    x, y = wl.GetHisto(mAll, nb, xLo, xHi, xpb)
+    # plt.semilogy(x, y, ls='steps', color='r', label='mAll')
+    plt.bar(x-xpb/2., y, 0.95, color='r', log=True, label='All Hits E < 2614: %d' % len(mAll))
+
+    x, y = wl.GetHisto(mMid, nb, xLo, xHi, xpb)
+    plt.bar(x-xpb/2., y, 0.9, color='b', log=True, label='Hits 10 < E < 2614: %d' % len(mMid))
+
+    x, y = wl.GetHisto(mNoise, nb, xLo, xHi, xpb)
+    plt.bar(x-xpb/2., y, 0.85, color='g', log=True, label='Hits E < 10: %d' % len(mNoise))
+
+    plt.xlabel("multiplicity", horizontalalignment='right', x=1.)
+    plt.xlim(xLo, xHi)
+    plt.legend()
+    plt.tight_layout()
+    # plt.savefig("../plots/longCal-2615-mult.png")
+    plt.show()
 
 
 if __name__=="__main__":
