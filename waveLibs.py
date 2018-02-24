@@ -25,10 +25,7 @@ def GetHisto(npArr, nb, xLo, xHi, xpb, shift=True):
     y = np.insert(y, 0, 0, axis=0)
     if shift: x = x-xpb/2.
     return x, y
-<<<<<<< HEAD
 
-=======
->>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
 
 def H1D(tree,bins,xlo,xhi,drawStr,cutStr,xTitle="",yTitle="",Title=None, Name=None):
     from ROOT import TH1D

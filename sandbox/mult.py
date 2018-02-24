@@ -1315,41 +1315,6 @@ def plot2615():
 def plotCrosstalk():
 
     f = np.load("../plots/longCal-2615.npz")
-<<<<<<< HEAD
-    evts, nTot = f['arr_2'], f['arr_3']
-    nTot = len(evts)
-
-    eAny, eLoOnly = [], []
-
-    nHaveNoise = len(evts)
-    nOnlyNoise = 0
-    for evt in evts:
-        hitE, hitCh = evt[0], evt[1]
-        mGood = len(hitE)
-
-        idxLo = np.where(hitE <= 10.)
-        mNoise = len(idxLo[0])
-        for hit in hitE[idxLo]:
-            eLoOnly.append(hit)
-            # eAny.append(hit)
-
-        idxMid = np.where((hitE > 10.) & (hitE < 2612.051))
-        mMid = len(idxMid[0])
-        for hit in hitE[idxMid]:
-            eAny.append(hit)
-
-        idxHi = np.where(hitE > 2612.051)
-        mHi = len(idxHi[0])
-
-        # print("mG %d  mN %d  mM %d  mHi %d" % (mGood, mNoise, mMid, mHi))
-
-        if mNoise > 0 and mMid == 0:
-            nOnlyNoise += 1
-
-        # return
-
-    print("%d total evts w/ hit=2615, %d have any hits < 10 keV, %d have only hits < 10 keV" % (nTot, nHaveNoise, nOnlyNoise))
-=======
     evts = f['arr_2']
     nTot = len(evts)
 
@@ -1375,7 +1340,6 @@ def plotCrosstalk():
             nOnlyNoise += 1
 
     print("%d total evts w/ hit=2615, %d have only hits < 10 keV (%.4f%%)" % (nTot, nOnlyNoise, 100*nOnlyNoise/nTot))
->>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
 
     xLo, xHi, xpb = -5., 30., 0.2
     nb = int((xHi-xLo)/xpb)
@@ -1388,23 +1352,16 @@ def plotCrosstalk():
     yOnly, x = np.histogram(eLoOnly, bins=nb, range=(xLo, xHi))
     plt.plot(x[1:], yOnly, ls='steps', color='red', label='eOnly')
 
-<<<<<<< HEAD
-=======
     plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
->>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
     plt.legend()
     plt.tight_layout()
     plt.savefig("../plots/longCal-2615-eLoHits.png")
-
-<<<<<<< HEAD
-=======
 
     plt.cla()
 
     xLo, xHi, xpb = 0, 6, 1
     nb = int((xHi-xLo)/xpb)
 
->>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
     x, y = wl.GetHisto(mAll, nb, xLo, xHi, xpb)
     # plt.semilogy(x, y, ls='steps', color='r', label='mAll')
     plt.bar(x-xpb/2., y, 0.95, color='r', log=True, label='All Hits E < 2614: %d' % len(mAll))
@@ -1422,11 +1379,6 @@ def plotCrosstalk():
     # plt.savefig("../plots/longCal-2615-mult.png")
     plt.show()
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
 
 if __name__=="__main__":
     main()
