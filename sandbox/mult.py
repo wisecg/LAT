@@ -4,11 +4,11 @@ import numpy as np
 import subprocess as sp
 import tinydb as db
 from scipy.optimize import curve_fit
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-sys.argv.append("-b")
+# sys.argv.append("-b")
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 calInfo = ds.CalInfo()
@@ -1315,6 +1315,7 @@ def plot2615():
 def plotCrosstalk():
 
     f = np.load("../plots/longCal-2615.npz")
+<<<<<<< HEAD
     evts, nTot = f['arr_2'], f['arr_3']
     nTot = len(evts)
 
@@ -1348,6 +1349,33 @@ def plotCrosstalk():
         # return
 
     print("%d total evts w/ hit=2615, %d have any hits < 10 keV, %d have only hits < 10 keV" % (nTot, nHaveNoise, nOnlyNoise))
+=======
+    evts = f['arr_2']
+    nTot = len(evts)
+
+    eAny, eLoOnly = [], []
+    mAll, mNoise, mMid = [], [], []
+
+    nOnlyNoise = 0
+    for evt in evts:
+        hitE, hitCh = evt[0], evt[1]
+
+        mAll.append(len(hitE))
+
+        idxMid = np.where((hitE > 10) & (hitE < 2612.051))
+        if len(idxMid[0]) > 0: mMid.append(len(idxMid[0]))
+
+        idxLo = np.where(hitE <= 10.)
+        if len(idxLo[0]) > 0: mNoise.append(len(idxLo[0]))
+
+        for hit in hitE: eAny.append(hit)
+        for hit in hitE[idxLo]: eLoOnly.append(hit)
+
+        if len(idxLo[0]) > 0 and len(idxMid[0]) == 0:
+            nOnlyNoise += 1
+
+    print("%d total evts w/ hit=2615, %d have only hits < 10 keV (%.4f%%)" % (nTot, nOnlyNoise, 100*nOnlyNoise/nTot))
+>>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
 
     xLo, xHi, xpb = -5., 30., 0.2
     nb = int((xHi-xLo)/xpb)
@@ -1360,10 +1388,23 @@ def plotCrosstalk():
     yOnly, x = np.histogram(eLoOnly, bins=nb, range=(xLo, xHi))
     plt.plot(x[1:], yOnly, ls='steps', color='red', label='eOnly')
 
+<<<<<<< HEAD
+=======
+    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
+>>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
     plt.legend()
     plt.tight_layout()
     plt.savefig("../plots/longCal-2615-eLoHits.png")
 
+<<<<<<< HEAD
+=======
+
+    plt.cla()
+
+    xLo, xHi, xpb = 0, 6, 1
+    nb = int((xHi-xLo)/xpb)
+
+>>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
     x, y = wl.GetHisto(mAll, nb, xLo, xHi, xpb)
     # plt.semilogy(x, y, ls='steps', color='r', label='mAll')
     plt.bar(x-xpb/2., y, 0.95, color='r', log=True, label='All Hits E < 2614: %d' % len(mAll))
@@ -1381,8 +1422,11 @@ def plotCrosstalk():
     # plt.savefig("../plots/longCal-2615-mult.png")
     plt.show()
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> c47ba8fbcbccc45fc5264274b2c8c9deef10f25a
 
 if __name__=="__main__":
     main()
