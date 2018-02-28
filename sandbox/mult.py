@@ -128,8 +128,8 @@ def plotSpectrum():
     plt.semilogy(x[1:], sum3, linewidth=0.9, alpha=0.6, ls='steps', color='m', label='mH=3')
     plt.semilogy(x[1:], sum4, linewidth=1.0, alpha=0.4, ls='steps', color='c', label='mH=4')
 
-    plt.xlabel("SumE (keV)", horizontalalignment='right', x=1.)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.)
+    plt.xlabel("SumE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts", ha='right', y=1.)
     plt.legend(loc='best')
 
     plt.tight_layout()
@@ -221,8 +221,8 @@ def plotPeakSpec():
     plt.plot(x1, gaus(x1, *popt), 'r-', label='fit.  mu %.2f  sig %.2f\nP/B %.2f' % (popt[2], popt[3], pbr))
 
     plt.title("Peak-to-bkg ratio: %.3f" % pbr)
-    plt.xlabel("SumE (keV)", horizontalalignment='right', x=1.)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.)
+    plt.xlabel("SumE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts", ha='right', y=1.)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m2-238.png")
@@ -247,8 +247,8 @@ def plotPeakSpec():
     plt.plot(x2, gaus(x2, *popt), 'r-', label='fit.  mu %.2f  sig %.2f\nP/B %.2f' % (popt[2], popt[3], pbr))
 
     plt.title("Peak-to-bkg ratio: %.3f" % pbr)
-    plt.xlabel("SumE (keV)", horizontalalignment='right', x=1.)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.)
+    plt.xlabel("SumE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts", ha='right', y=1.)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m3-583.png")
@@ -355,8 +355,8 @@ def plotSelected():
 
     plt.axvline(critE238, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % critE238)
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("Counts", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m2.png")
@@ -370,8 +370,8 @@ def plotSelected():
     y, x = np.histogram(lo238, bins=nb, range=(xLo,xHi))
     plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("Counts", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m2-low.png")
@@ -394,8 +394,8 @@ def plotSelected():
     plt.axvline(critE583, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % critE583)
     plt.axvline(177.64, color='green', linewidth=2., alpha=0.3, label='Crit. E: %.2f keV' % 177.64)
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("Counts", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m3.png")
@@ -409,8 +409,8 @@ def plotSelected():
     y, x = np.histogram(lo583, bins=nb, range=(xLo,xHi))
     plt.plot(x[1:], y, linewidth=0.7, alpha=1.0, ls='steps', color='r', label='lo hits')
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("Counts", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("Counts", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-m3-low.png")
@@ -505,8 +505,8 @@ def plotWideEvents():
     plt.cla()
     plt.plot(eLo2, fsLo2, '.', c='black', markersize=0.5, label="wide-lo-m2", alpha=0.5)
     plt.ylim(0,300)
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("fitSlo", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-wide-m2.png")
@@ -515,8 +515,8 @@ def plotWideEvents():
     plt.cla()
     plt.plot(eLo3, fsLo3, '.', c='black', markersize=0.5, label="wide-lo-m3", alpha=0.5)
     plt.ylim(0,300)
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("fitSlo", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-wide-m3.png")
@@ -539,8 +539,8 @@ def plotParams():
     fig.colorbar(im, ax=p1)
     # p1.axhline(fsCut, color='black', linewidth=3)
 
-    p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-    p1.set_ylabel("fitSlo", horizontalalignment='right',y=1.0)
+    p1.set_xlabel("trapENFCal (keV)", ha='right',x=1.0)
+    p1.set_ylabel("fitSlo", ha='right',y=1.0)
     plt.tight_layout()
     plt.savefig("../plots/mult-238-fitSlo.png")
 
@@ -554,8 +554,8 @@ def plotParams():
     _,_,_,im = p1.hist2d(lo238, rn238, bins=[nbX, nbY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
     fig.colorbar(im, ax=p1)
 
-    p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-    p1.set_ylabel("riseNoise", horizontalalignment='right',y=1.0)
+    p1.set_xlabel("trapENFCal (keV)", ha='right',x=1.0)
+    p1.set_ylabel("riseNoise", ha='right',y=1.0)
     plt.tight_layout()
     plt.savefig("../plots/mult-238-riseNoise.png")
 
@@ -570,8 +570,8 @@ def plotParams():
     fig.colorbar(im, ax=p1)
     # p1.axhline(fsCut, color='black', linewidth=3)
 
-    p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-    p1.set_ylabel("fitSlo", horizontalalignment='right',y=1.0)
+    p1.set_xlabel("trapENFCal (keV)", ha='right',x=1.0)
+    p1.set_ylabel("fitSlo", ha='right',y=1.0)
     plt.tight_layout()
     plt.savefig("../plots/mult-583-fitSlo.png")
 
@@ -586,8 +586,8 @@ def plotParams():
     _,_,_,im = p1.hist2d(lo583, rn583, bins=[nbX, nbY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
     fig.colorbar(im, ax=p1)
 
-    p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-    p1.set_ylabel("riseNoise", horizontalalignment='right',y=1.0)
+    p1.set_xlabel("trapENFCal (keV)", ha='right',x=1.0)
+    p1.set_ylabel("riseNoise", ha='right',y=1.0)
     plt.tight_layout()
     plt.savefig("../plots/mult-583-riseNoise.png")
 
@@ -598,8 +598,8 @@ def plotParams():
     plt.ylim(0,300)
     plt.plot(lo238, fs238, '.', c='black', markersize=2., label="lo238", alpha=0.5)
     plt.plot(lo583, fs583, '.', c='red', markersize=3., label="lo583")
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("fitSlo", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-238-583-fscompare.png")
@@ -643,8 +643,8 @@ def plotEfficiency():
     plt.plot(eFail, fsFail, 'o', c='red', fillstyle='full', markersize=2., label="fail")
     plt.xlim(0,100)
     plt.ylim(0,300)
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("fitSlo", horizontalalignment='right', y=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
+    plt.ylabel("fitSlo", ha='right', y=1.0)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/mult-238-passFail.png")
@@ -662,8 +662,8 @@ def plotEfficiency():
     yPass, x = np.histogram(ePass, bins=nbx, range=(xLo,xHi))
     p1.plot(x[1:], yPass, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='hits passing')
 
-    p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
-    p1.set_ylabel("Counts", horizontalalignment='right', y=1.)
+    p1.set_xlabel("trapENFCal (keV)", ha='right', x=1.)
+    p1.set_ylabel("Counts", ha='right', y=1.)
     p1.legend(loc='best')
 
     p2 = p1.twinx()
@@ -671,7 +671,7 @@ def plotEfficiency():
     p2.plot(x[1:], 100.*yPass/yAll, '.r', markersize=5, label='efficiency')
 
     p2.set_ylim(0,110)
-    p2.set_ylabel('% Efficiency', color='r', horizontalalignment='right', y=1.0)
+    p2.set_ylabel('% Efficiency', color='r', ha='right', y=1.0)
     p2.tick_params('y', colors='black')
 
     plt.tight_layout()
@@ -862,8 +862,8 @@ def plotSimTest():
     plt.semilogy(x[1:], xGran, linewidth=0.7, alpha=1.0, ls='steps', color='b', label='+mH==1')
     plt.semilogy(x[1:], xPSA, linewidth=0.7, alpha=1.0, ls='steps', color='g', label='+PSA')
     plt.legend(loc='best')
-    plt.xlabel("fEnergy (keV)", horizontalalignment='right', x=1.0)
-    plt.ylabel("Counts (arb)", horizontalalignment='right', y=1.0)
+    plt.xlabel("fEnergy (keV)", ha='right', x=1.0)
+    plt.ylabel("Counts (arb)", ha='right', y=1.0)
     plt.savefig("../plots/mult-sim-test.png")
 
 
@@ -956,7 +956,7 @@ def compareDataSimSpec():
 
     p0.semilogy(x, dm1, ls='steps', color='r', label='data m=1')
     p0.semilogy(x, sm1*dsr, ls='steps', color='b', alpha=0.6, label='sim m=1')
-    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_xlabel("Energy (keV)", ha='right',x=1.0)
     p0.set_ylabel("Counts (arb)")
     p0.legend()
     p1.plot(x, sm1-dm1)
@@ -968,7 +968,7 @@ def compareDataSimSpec():
     p1.cla()
     p0.semilogy(x, dm2, ls='steps', color='r', label='data m=2')
     p0.semilogy(x, sm2*dsr, ls='steps', color='b', alpha=0.6, label='sim m=2')
-    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_xlabel("Energy (keV)", ha='right',x=1.0)
     p0.set_ylabel("Counts (arb)")
     p0.legend()
     p1.plot(x, sm2-dm2)
@@ -980,7 +980,7 @@ def compareDataSimSpec():
     p1.cla()
     p0.semilogy(x, dm3, ls='steps', color='r', label='data m=3')
     p0.semilogy(x, sm3*dsr, ls='steps', color='b', alpha=0.6, label='sim m=3')
-    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_xlabel("Energy (keV)", ha='right',x=1.0)
     p0.set_ylabel("Counts (arb)")
     p0.legend()
     p1.plot(x, sm3-dm3)
@@ -992,7 +992,7 @@ def compareDataSimSpec():
     p1.cla()
     p0.semilogy(x, dm4, ls='steps', color='r', label='data m=4')
     p0.semilogy(x, sm4*dsr, ls='steps', color='b', alpha=0.6, label='sim m=4')
-    p0.set_xlabel("Energy (keV)", horizontalalignment='right',x=1.0)
+    p0.set_xlabel("Energy (keV)", ha='right',x=1.0)
     p0.set_ylabel("Counts (arb)")
     p0.legend()
     p1.plot(x, sm4-dm4)
@@ -1051,7 +1051,7 @@ def plotLowSimSpec():
     fig = plt.figure(figsize=(9,6))
 
     plt.plot(x[1:], sm1, ls='steps', color='red', label='sim spec, mH==1, all dets')
-    plt.xlabel("Energy (keV)", horizontalalignment='right', x=1.)
+    plt.xlabel("Energy (keV)", ha='right', x=1.)
     plt.legend(loc='best')
     plt.tight_layout()
     plt.savefig("../plots/sim-lowEspec.png")
@@ -1134,7 +1134,7 @@ def plotMultip():
     plt.xlim(0,12)
     plt.ylim(0.01)
 
-    plt.xlabel("mH", horizontalalignment='right', x=1.0)
+    plt.xlabel("mH", ha='right', x=1.0)
     plt.ylabel("Rate (Hz)")
 
     plt.title("mH. runTime %.0f sec.  mH=4 rate: %.2f pm %.4f Hz" % (runTime, rates[4], np.sqrt(mult[4])/runTime))
@@ -1307,7 +1307,7 @@ def plot2615():
     plt.axvline(mu-2*sig, color='green')
     plt.plot(np.nan, np.nan, 'w', label='bkg in peak: %.2f%%' % (100 * bgCts / totCts))
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.0)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.0)
     plt.legend()
     plt.savefig("../plots/longCal-2615-peak.png")
 
@@ -1352,7 +1352,7 @@ def plotCrosstalk():
     yOnly, x = np.histogram(eLoOnly, bins=nb, range=(xLo, xHi))
     plt.plot(x[1:], yOnly, ls='steps', color='red', label='eOnly')
 
-    plt.xlabel("trapENFCal (keV)", horizontalalignment='right', x=1.)
+    plt.xlabel("trapENFCal (keV)", ha='right', x=1.)
     plt.legend()
     plt.tight_layout()
     plt.savefig("../plots/longCal-2615-eLoHits.png")
@@ -1372,7 +1372,7 @@ def plotCrosstalk():
     x, y = wl.GetHisto(mNoise, nb, xLo, xHi, xpb)
     plt.bar(x-xpb/2., y, 0.85, color='g', log=True, label='Hits E < 10: %d' % len(mNoise))
 
-    plt.xlabel("multiplicity", horizontalalignment='right', x=1.)
+    plt.xlabel("multiplicity", ha='right', x=1.)
     plt.xlim(xLo, xHi)
     plt.legend()
     plt.tight_layout()

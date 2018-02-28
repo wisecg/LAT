@@ -46,8 +46,8 @@ function sourceEnvClint {
   alias ls="ls --color"
   # alias fixrpf="kill `ps -u wisecg | grep sshd | awk '{print $1}'`"
   alias fixrpf=""
-  alias intr="salloc -t 10:00:00 -p shared"
-  alias shiftermj="shifter --image wisecg/mjsw:v2 bash"
+  alias inter="salloc -t 10:00:00 -p shared"
+  alias imj="shifter --image wisecg/mjsw:v2 bash"
 }
 
 function rpf {

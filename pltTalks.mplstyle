@@ -1,0 +1,28 @@
+axes.titlesize : 24
+axes.labelsize : 24
+lines.linewidth : 3
+lines.markersize : 10
+xtick.labelsize : 16
+ytick.labelsize : 16
+
+# Note:  plt.plot(..., ha='right', x=1.)
+# isn't in the default rc parameters (python >>> print(matplotlib.rcParams)).
+# maybe it could be added with some call to matplotlib.rc('stuff') but idk
+
+figure.titlesize : large        # size of the figure title (Figure.suptitle())
+figure.titleweight : normal     # weight of the figure title
+figure.figsize   : 9, 6         # figure size in inches
+figure.dpi       : 200          # figure dots per inch
+figure.facecolor : white        # figure facecolor; 0.75 is scalar gray
+figure.edgecolor : white        # figure edgecolor
+figure.autolayout : True        # Automatically apply 'plt.tight_layout'
+
+# The figure subplot parameters.  All dimensions are a fraction
+figure.subplot.left    : 0.1    # the left side of the subplots of the figure
+figure.subplot.right   : 0.9    # the right side of the subplots of the figure
+figure.subplot.bottom  : 0.1    # the bottom of the subplots of the figure
+figure.subplot.top     : 0.9    # the top of the subplots of the figure
+figure.subplot.wspace  : 0.2    # the amount of width reserved for space between subplots,
+                                # expressed as a fraction of the average axis width
+figure.subplot.hspace  : 0.2    # the amount of height reserved for space between subplots,
+                                # expressed as a fraction of the average axis height
