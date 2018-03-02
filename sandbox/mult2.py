@@ -5,15 +5,17 @@ from scipy.optimize import curve_fit
 
 import matplotlib as mpl
 # mpl.use('Agg')
+# sys.argv.append("-b")
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
 
-# sys.argv.append("-b")
+# load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+calInfo = ds.CalInfo()
 
-# get threshold information
+# load threshold data
 import tinydb as db
 dsNum, bkgIdx = 5, 83
 calDB = db.TinyDB('../calDB.json')
@@ -43,13 +45,21 @@ def main():
     # plotDT_wThr()
     # plotChannelRates_mH1()
     # plotDTCut()
-    plotPCut()
+    # plotPCut()
 
     # noiseProbability()
     # noiseProbability2D()
 
     # getPeaks()
     # plotPeaks()
+
+    # getSumEvents()
+    # plotComptonEdge()
+    # plotLoHits()
+    # plotSloHits()
+    # plotChannelEff()
+
+    getExtPulser()
 
 
 # def moveData():
@@ -70,12 +80,12 @@ def main():
 #         print(fScr[i])
 #         shutil.copy2(fFull[i], fScr[i])
 #     return
-
-
+#
+#
 # def unpackData():
-    # cd $SLURM_TMP
-    # cp /global/project/projectdirs/majorana/users/wisecg/special/lat/latLongCal.tar.gz .
-    # tar -zxvf latLongCal.tar.gz
+#     cd $SLURM_TMP
+#     cp /global/project/projectdirs/majorana/users/wisecg/special/lat/latLongCal.tar.gz .
+#     tar -zxvf latLongCal.tar.gz
 
 
 def getSumE(tree, tNames, theCut):
@@ -1110,8 +1120,8 @@ def plotDTCut():
     for mH in [1,2,3,4]:
 
         ax.semilogy(*wl.GetHisto(hitESpec[mH], xLo, xHi, xpb), c=cols[mH], lw=1., ls='steps', label='mH=%d' % mH)
-        line1, = ax.semilogy(*wl.GetHisto(hitESpec_dtp[mH], xLo, xHi, xpb), '--', c=cols[mH], lw=1., ls='steps', label='mH=%d w/dtp' % mH)
-        line1.set_dashes([1, 1])
+        # line1, = ax.semilogy(*wl.GetHisto(hitESpec_dtp[mH], xLo, xHi, xpb), '--', c=cols[mH], lw=1., ls='steps', label='mH=%d w/dtp' % mH)
+        # line1.set_dashes([1, 1])
 
     plt.xlabel("hitE (keV)", ha='right', x=1.)
     plt.legend(loc=1, fontsize=12)
@@ -1246,7 +1256,8 @@ def getPeaks():
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
     # runList = runList[:3]
-    runList = runList[:15] # this gets ~10k mH=4 events
+    # runList = runList[:15] # this gets ~10k mH=4 events
+    runList = runList[:] # hi stats, using different file name below
     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
     nFiles = len(fileList)
 
@@ -1277,7 +1288,7 @@ def getPeaks():
     for iFile, f in enumerate(fileList):
         print("%d/%d %s" % (iFile,nFiles,f))
         # tf = TFile("%s/lat/%s" % (ds.specialDir,f))
-        tf = TFile("%s/%s" % (os.environ['SLURM_TMP'],f))
+        tf = TFile("%s/%s" % (os.environ['SLURM_TMP'],f)) # I moved my shit here
         lTree = tf.Get("skimTree")
 
         for mH in range(2,4):
@@ -1291,7 +1302,8 @@ def getPeaks():
 
         tf.Close()
 
-    np.savez("../plots/mult2-peaks.npz", runTime, pks, pkHist)
+    # np.savez("../plots/mult2-peaks.npz", runTime, pks, pkHist)
+    np.savez("../plots/mult2-peaks-histats.npz", runTime, pks, pkHist)
 
 
 def roughSigma(ene):
@@ -1307,7 +1319,8 @@ def gaus(x, b, a, mu, sig):
 
 def plotPeaks():
 
-    f = np.load("../plots/mult2-peaks.npz")
+    # f = np.load("../plots/mult2-peaks.npz")
+    f = np.load("../plots/mult2-peaks-histats.npz") # full cal run
     runTime, pks, pkHist = f['arr_0'], f['arr_1'], f['arr_2'].item()
 
     # note: to access x and y histogram values:
@@ -1343,6 +1356,410 @@ def plotPeaks():
             plt.savefig("../plots/mult2-m%d-pk%d.png" % (mH,iPk))
 
             # return
+
+
+def getSumEvents():
+
+    from ROOT import gROOT, TFile, TTree, GATDataSet
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
+
+    fileList = []
+    calInfo = ds.CalInfo()
+    runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
+
+    # runList = runList[:2] # make a lo-stats file (check filename below)
+    # runList = runList[:15] # this gets ~10k mH=4 events
+    runList = runList[:] # get big stats (saved as different filename below)
+
+    for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
+    nFiles = len(fileList)
+
+    runTime = 0
+    for run in runList:
+        gds = GATDataSet()
+        gatPath = gds.GetPathToRun(run, GATDataSet.kGatified)
+        tf = TFile(gatPath)
+        gatTree = tf.Get("mjdTree")
+        gatTree.GetEntry(0)
+        runTime += gatTree.timeinfo.stopTime - gatTree.timeinfo.startTime
+        tf.Close()
+        print(run, runTime)
+
+    # each entry: (chan, sumE, hitE, dtpc, fitSlo) - only keep the lo hits.
+    sumEvts = {
+        2:{238:[], 583:[], 2615:[]},
+        3:{238:[], 583:[], 2615:[]}
+        }
+    sumPks = [
+        (2,238,237.28,239.46), (2,583,581.26,584.46), (2,2615,2610.57,2618.01),
+        (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
+        ]
+
+    # save a dict of just hit groups
+    comptonEvts2 = { 238:[], 583:[], 2615:[] }
+    comptonEvts3 = { 238:[], 583:[], 2615:[] }
+
+    bNames = ["Entry$","mH","gain","isGood","EventDC1Bits","sumEH","channel","trapENFCal","dtPulserCard","fitSlo"]
+
+    for iFile, f in enumerate(fileList):
+        print("%d/%d %s" % (iFile,nFiles,f))
+        # tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        tf = TFile("%s/%s" % (os.environ['SLURM_TMP'], f)) # moved my shit to here
+        lTree = tf.Get("skimTree")
+
+        for sp in sumPks:
+            mH, pk, sLo, sHi = sp
+
+            # this draw trusts sumEH to be true.  it's ok - i've already confirmed it matches the GetSumE function.
+            theCut = "mH==%d && gain==0 && isGood && !EventDC1Bits && sumEH > %.2f && sumEH < %.2f" % (mH, sLo, sHi)
+            tvals = wl.GetVX(lTree, bNames, theCut)
+
+            # create a set of entry numbers - not so bad for single files
+            eList = sorted(set(tvals["Entry$"]))
+            for iEnt in eList:
+                idx = np.where(tvals["Entry$"]==iEnt)
+                if len(idx[0]) != mH: continue
+
+                hitE = tvals["trapENFCal"][idx]
+                chan = tvals["channel"][idx]
+                fSlo = tvals["fitSlo"][idx]
+                dtpc = tvals["dtPulserCard"][idx]
+
+                sumE = tvals["sumEH"][idx][0]
+                if not sLo < sumE < sHi:
+                    print("ERROR: some stuff went funny. sumEH: %.2f  sLo, sHi: %.2f %.2f" % (sumE, sLo, sHi))
+                    return
+
+                # save the hit array
+                if mH==2: comptonEvts2[pk].append(hitE)
+                if mH==3: comptonEvts3[pk].append(hitE)
+
+                # save the lo hit only (floats)
+                iLo = np.argmin(hitE)
+                sumEvts[mH][pk].append((chan[iLo],sumE,hitE[iLo],dtpc[iLo],fSlo[iLo]))
+
+        tf.Close()
+
+    # np.savez("../plots/mult2-comptonEdgeEvts.npz", runTime, comptonEvts2, comptonEvts3)
+    # np.savez("../plots/mult2-sumLoEvts.npz", runTime, sumEvts)
+
+    np.savez("../plots/mult2-comptonEdgeEvts-histats.npz", runTime, comptonEvts2, comptonEvts3)
+    np.savez("../plots/mult2-sumLoEvts-histats.npz", runTime, sumEvts)
+
+
+def plotComptonEdge():
+
+    # f = np.load("../plots/mult2-comptonEdgeEvts.npz")
+    f = np.load("../plots/mult2-comptonEdgeEvts-histats.npz")
+    runTime, comptonEvts2, comptonEvts3 = f['arr_0'], f['arr_1'].item(), f['arr_2'].item()
+
+    f = plt.figure()
+
+    for i, pk in enumerate(comptonEvts2):
+
+        evts = comptonEvts2[pk]
+        eLo, eHi = [], []
+        for evt in evts:
+            iLo, iHi = np.argmin(evt), np.argmax(evt)
+            eLo.append(evt[iLo])
+            eHi.append(evt[iHi])
+        eLo, eHi = np.asarray(eLo), np.asarray(eHi)
+
+        if i==0: xLo, xHi, xpb, pkE = 0., 240., 1., 238.
+        if i==1: xLo, xHi, xpb, pkE = 0., 590., 1., 583.
+        if i==2: xLo, xHi, xpb, pkE = 0., 2620., 1., 2615.
+
+        plt.cla()
+        plt.plot(*wl.GetHisto(eLo, xLo, xHi, xpb), c='r', lw=2., ls='steps',label='lo hits')
+        plt.plot(*wl.GetHisto(eHi, xLo, xHi, xpb), c='b', lw=2., ls='steps',label='hi hits')
+
+        # eCrit = pkE * (1 - 1 / (1 + 2*pkE/511))
+        eCrit = pkE / (1 + 2*pkE/511)
+        plt.axvline(eCrit, color='g', alpha=0.3, label=r'$E_C=$%.1f keV' % eCrit)
+        plt.axvline(pkE, color='g', alpha=0.3, label=r'$E=$%.0f keV' % pkE)
+
+        plt.xlabel("hitE (keV)", ha='right', x=1.)
+        plt.ylabel("Counts / %.1f keV" % xpb, ha='right', y=1.)
+        plt.legend(loc=2, fontsize=14)
+        plt.savefig("../plots/mult2-comptonEdge-%.0f.png" % (pkE))
+
+    for i, pk in enumerate(comptonEvts3):
+
+        evts = comptonEvts3[pk]
+        eLo, eMid, eHi = [], [], []
+        for evt in evts:
+            iLo, iHi = np.argmin(evt), np.argmax(evt)
+            iMid = list(set([0,1,2]) - set([iLo,iHi]))[0]
+            eLo.append(evt[iLo])
+            eMid.append(evt[iMid])
+            eHi.append(evt[iHi])
+        eLo, eMid, eHi = np.asarray(eLo), np.asarray(eMid), np.asarray(eHi)
+
+        if i==0: xLo, xHi, xpb, pkE = 0., 240., 1., 238.
+        if i==1: xLo, xHi, xpb, pkE = 0., 590., 1., 583.
+        if i==2: xLo, xHi, xpb, pkE = 0., 2620., 1., 2615.
+
+        plt.cla()
+        plt.plot(*wl.GetHisto(eLo, xLo, xHi, xpb), c='r', lw=2., ls='steps',label='lo hits')
+        plt.plot(*wl.GetHisto(eMid, xLo, xHi, xpb), c='g', lw=2., ls='steps',label='mid hits')
+        plt.plot(*wl.GetHisto(eHi, xLo, xHi, xpb), c='b', lw=2., ls='steps',label='hi hits')
+
+        # eCrit = pkE * (1 - 1 / (1 + 2*pkE/511))
+        eCrit = pkE / (1 + 2*pkE/511)
+        plt.axvline(eCrit, color='g', alpha=0.3, label=r'$E_C=$%.1f keV' % eCrit)
+        plt.axvline(pkE, color='g', alpha=0.3, label=r'$E=$%.0f keV' % pkE)
+
+        plt.xlabel("hitE (keV)", ha='right', x=1.)
+        plt.ylabel("Counts / %.1f keV" % xpb, ha='right', y=1.)
+        plt.legend(loc=2, fontsize=14)
+        plt.savefig("../plots/mult2-comptonEdge-m3-%.0f.png" % (pkE))
+
+
+def plotLoHits():
+
+    f = np.load("../plots/mult2-sumLoEvts.npz")
+    # f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    runTime, sumEvts = f['arr_0'], f['arr_1'].item()
+
+    f = plt.figure()
+
+    cols = ['r','b','m','c','k','g','o','y']
+    for iP, mH, pk in [(0,2,238),(1,2,583),(2,2,2615),(3,3,238),(4,3,583),(5,3,2615)]:
+
+        evts = sumEvts[mH][pk]
+
+        # chan = [evt[0] for evt in evts]
+        # sumE = [evt[1] for evt in evts]
+        hitE = [evt[2] for evt in evts]
+        # dtpc = [evt[3] for evt in evts]
+        # fSlo = [evt[4] for evt in evts]
+
+        # plt.cla()
+        xLo, xHi, xpb = 0., 50., 0.2
+
+        plt.plot(*wl.GetHisto(hitE,xLo,xHi,xpb), ls='steps', c=cols[iP], lw=2., label='mH=%d E=%d' % (mH,pk))
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts / %.1f keV" % xpb, ha='right', y=1.)
+    plt.legend()
+    plt.savefig("../plots/mult2-loHitSpec.png")
+
+
+def plotSloHits():
+
+    # f = np.load("../plots/mult2-sumLoEvts.npz")
+    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    runTime, sumEvts = f['arr_0'], f['arr_1'].item()
+
+    f = plt.figure()
+
+    mH, pk = 2, 238
+
+    # load fitSlo constants for cal run range closest to the run range [22513, 22566]
+    dsNum, modNum, calIdx = 5, 1, 11  # calIdx 11: [[22568,22635],22568,22841],
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+    fsDict = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+
+    evts = sumEvts[mH][pk]
+    chan = [evt[0] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7] # only plot detectors we have fs values for
+    hitE = [evt[2] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7]
+    fSlo = [evt[4] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7]
+    n = len(hitE)
+
+    # # apply threshold cut
+    chanTh, hitETh = [], []
+    for i in range(n):
+        if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3 * thD[chan[i]][1]:
+            chanTh.append(chan[i])
+            hitETh.append(hitE[i])
+    chan, hitE = chanTh, hitETh
+    nTot = len(hitE)
+
+    n = len(hitE)
+    hitEPass = [hitE[i] for i in range(nTot) if fSlo[i] < fsDict[chan[i]][2]]
+    fSloPass = [fSlo[i] for i in range(nTot) if fSlo[i] < fsDict[chan[i]][2]]
+    nPass = len(hitEPass)
+
+    hitECut = [hitE[i] for i in range(nTot) if fSlo[i] > fsDict[chan[i]][2]]
+    fSloCut = [fSlo[i] for i in range(nTot) if fSlo[i] > fsDict[chan[i]][2]]
+    nCut = len(hitECut)
+
+    plt.plot(hitEPass, fSloPass, ".", ms=0.5, c='k', label='pass')
+    plt.plot(hitECut, fSloCut, '.', ms=1.0, c='r', label='cut')
+
+    plt.ylim(-10, 600)
+    plt.xlim(0, 30)
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("fitSlo", ha='right', y=1.)
+    plt.legend()
+    plt.savefig("../plots/mult2-fitSloScatter.png")
+
+
+    plt.cla()
+    fig = plt.figure(figsize=(9,12))
+    p1 = plt.subplot(211)
+    p2 = plt.subplot(212)
+
+    xLo, xHi, xpb = 0, 15, 0.2
+
+    x, hTot = wl.GetHisto(hitE, xLo, xHi, xpb)
+    x, hPass = wl.GetHisto(hitEPass, xLo, xHi, xpb)
+    x, hCut = wl.GetHisto(hitECut, xLo, xHi, xpb)
+
+    p1.plot(x, hTot, c='b', lw=1.5, ls='steps', label='m=%d, pk %d, w/thresh cuts' % (mH, pk))
+    p1.plot(x, hPass, c='g', lw=1.5, ls='steps', label='fitSlo pass')
+    p1.plot(x, hCut, c='r', lw=1.5, ls='steps', label='fitSlo cut')
+
+    p1.set_xlabel("hitE (keV)", ha='right', x=1.)
+    p1.set_ylabel("Counts / %.1f kev" % xpb, ha='right', y=1.)
+    p1.legend()
+
+    # --------------------------------------------------
+
+    from statsmodels.stats import proportion
+    idx = np.where((hTot > 0) & (hPass > 0))
+    ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
+    sloEff = hPass[idx] / hTot[idx]
+
+    nPad = len(hPass)-len(hPass[idx])
+    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+
+    p2.plot(x, sloEff, '.b', ms=10., label='efficiency')
+    p2.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+    idx = np.where(np.abs(ci_upp) > 0)
+    xCut = x[6]
+    p2.axvline(xCut,color='g',label='cutoff: %.2f keV' % xCut)
+
+    p2.set_xlabel("hitE (keV)", ha='right', x=1.)
+    p2.set_ylabel("Efficiency", ha='right', y=1.)
+    p2.legend()
+    plt.savefig("../plots/mult2-fitSloHitSpec.png")
+
+
+def plotChannelEff():
+
+    # Idea: show a bar plot for efficiency of each detector (integrated over energy)
+
+    # f = np.load("../plots/mult2-sumLoEvts.npz")
+    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    runTime, sumEvts = f['arr_0'], f['arr_1'].item()
+
+    # load fitSlo constants for cal run range closest to the run range [22513, 22566]
+    dsNum, modNum, calIdx = 5, 1, 11  # calIdx 11: [[22568,22635],22568,22841],
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+    fsDict = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+
+    mH, pk = 2, 238
+    evts = sumEvts[mH][pk]
+    chan = [evt[0] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7] # only plot detectors we have fs values for
+    hitE = [evt[2] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7]
+    fSlo = [evt[4] for evt in evts if evt[0] in fsDict.keys() and evt[2] > 0.7]
+    n = len(hitE)
+
+    chanTh = [chan[i] for i in range(n) if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3*thD[chan[i]][1]]
+    hitETh = [hitE[i] for i in range(n) if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3*thD[chan[i]][1]]
+    fSloTh = [fSlo[i] for i in range(n) if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3*thD[chan[i]][1]]
+    n = len(hitETh)
+
+    chanPass = [chanTh[i] for i in range(n) if fSloTh[i] < fsDict[chan[i]][2]]
+    hitEPass = [hitETh[i] for i in range(n) if fSloTh[i] < fsDict[chan[i]][2]]
+    fSloPass = [fSloTh[i] for i in range(n) if fSloTh[i] < fsDict[chan[i]][2]]
+
+    chanMap = sorted(list(set(chanTh)))
+    chanIdx = np.arange(0, len(chanMap), 1)
+    chanDict = {chanMap[i]:i for i in range(len(chanIdx))}
+
+    print(len(chanTh), len(chanPass))
+
+    chanTh = [chanDict[ch] for ch in chanTh]
+    chanPass = [chanDict[ch] for ch in chanPass]
+
+    f = plt.figure()
+    p1 = plt.subplot(111)
+
+    x, hThr = wl.GetHisto(chanTh, 0, len(chanMap), 1.)
+    p1.barh(x, hThr, 0.95, color='r', label='w/thresh')
+
+    x, hPass = wl.GetHisto(chanPass, 0, len(chanMap), 1.)
+    p1.barh(x, hPass, 0.95, color='b', label='+fitSlo')
+
+    p1.set_xlabel("Counts", ha='right', x=1.)
+    yticks = np.arange(0, len(chanMap)) + 0.5
+    p1.set_yticks(yticks)
+    p1.set_yticklabels(chanMap, fontsize=12)
+    p1.set_ylabel("Channel", ha='right', y=1.)
+    p1.set_ylim(-0.5)
+    p1.legend()
+    plt.savefig("../plots/mult2-channelEff.png")
+
+
+def getExtPulser():
+    """ Get ext pulser data and save it for comparison w/ the Compton events. """
+    from ROOT import TFile, TChain, GATDataSet
+
+    effs = [] # run, runTime, nExp, trigEff, cutEff
+    evts = [] # chan, hitE, run, fSlo
+
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
+    dsNum, modNum, calIdx = 0, 1, 33
+    fsDXP = ds.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+
+    for pIdx in [19, 20, 21]:
+
+        runList = calInfo.GetSpecialRuns("extPulser", pIdx)
+        extChan = extPulserInfo[pIdx][-1]
+        fsCut = fsDXP[extChan][2]
+
+        for i, run in enumerate(runList):
+            if run in [7225, 7233]: continue
+
+            gds = GATDataSet()
+            gatPath = gds.GetPathToRun(run, GATDataSet.kGatified)
+            tf = TFile(gatPath)
+            gatTree = tf.Get("mjdTree")
+            gatTree.GetEntry(0)
+            runTime = gatTree.timeinfo.stopTime - gatTree.timeinfo.startTime
+            tf.Close()
+
+            pulseRate = 20 # Hz
+            nExp = runTime * pulseRate
+
+            fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+            lTree = TChain("skimTree")
+            # for f in fileList: lTree.Add("%s/%s" % (os.environ['SLURM_TMP'], f))
+            for f in fileList: lTree.Add("%s/lat/%s" % (ds.specialDir,f))
+
+            bNames = ["Entry$","mH","channel","trapENFCal","fitSlo"]
+            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
+            tvals = wl.GetVX(lTree, bNames, theCut)
+            nPass = len(tvals["Entry$"])
+
+            hitE = [tvals["trapENFCal"][i] for i in range(nPass) if tvals["channel"][i] == extChan]
+            fSlo = [tvals["fitSlo"][i] for i in range(nPass) if tvals["channel"][i] == extChan]
+            chan = [tvals["channel"][i] for i in range(nPass) if tvals["channel"][i] == extChan] # redundant, but who cares
+
+            if len(hitE)==0:
+                print("Run %d, no hits in channel %d found.  Continuing ..." % (run, extChan))
+                continue
+
+            for iEvt in range(len(hitE)):
+                hit, fit, ch = hitE[iEvt], fSlo[iEvt], chan[iEvt]
+                evts.append((hit,fit,run,ch))
+
+            fPass = [fSlo[i] for i in range(len(fSlo)) if fSlo[i] < fsDXP[chan[i]][2]]
+            cutEff = len(fPass)/len(fSlo)
+            effs.append((run,runTime,nExp,cutEff,extChan))
+
+            print(run,runTime,np.mean(hitE),nExp,cutEff,extChan)
+
+    np.savez("../plots/mult2-extPulser.npz", effs, evts)
 
 
 
