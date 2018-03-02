@@ -13,16 +13,19 @@ from scipy.optimize import curve_fit
 calInfo = ds.CalInfo()
 
 def main():
-    # riseTime()
-    # getEff()
-    # compareRunTypes()
-    manualBuild()
+    riseTime()
+    getEff()
+    compareRunTypes()
+    # manualBuild()
     # getEffMultiChan()
 
 
 def riseTime():
     """ fitSlo vs. rise time study """
     from ROOT import TChain
+
+    f = plt.figure()
+    plt.cla()
 
     extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
     syncChan = wl.getChan(0,10,0) # 672
@@ -117,6 +120,9 @@ def riseTime():
 def getEff():
     """ Efficiency vs. energy, each detector in Test 3"""
     from ROOT import TChain, GATDataSet
+
+    f = plt.figure()
+    plt.cla()
 
     extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
     syncChan = wl.getChan(0,10,0) # 672
@@ -275,6 +281,9 @@ def compareRunTypes():
     """ Plot fitSlo for extPulser, bkg, and cal runs for one channel. """
     from ROOT import TChain, GATDataSet, TFile
 
+    f = plt.figure()
+    plt.cla()
+
     extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
     syncChan = wl.getChan(0,10,0) # 672
 
@@ -291,6 +300,7 @@ def compareRunTypes():
         # ext pulser
         extEne, extSlo = [], []
         for i, run in enumerate(runList):
+            print("%d/%d %s" % (i,len(runList),run))
             fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
             extChain = TChain("skimTree")
             for f in fileList:
@@ -378,8 +388,6 @@ def manualBuild():
         # if idx > 100:
         #     print("    ")
         #     break
-
-
 
 
 def getEffMultiChan():

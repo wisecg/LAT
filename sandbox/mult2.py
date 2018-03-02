@@ -59,29 +59,10 @@ def main():
     # plotSloHits()
     # plotChannelEff()
 
-    getExtPulser()
+    # getExtPulser()
+    plotExtPulser()
 
 
-# def moveData():
-#     # move data to $SLURM_TMP to increase I/O speed (can also just do from terminal - same speed)
-#     import shutil
-#     fileList = []
-#     calInfo = ds.CalInfo()
-#     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
-#     # runList = runList[:3]
-#     runList = runList[:15] # this gets ~10k mH=4 events
-#     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
-#     nFiles = len(fileList)
-#
-#     fFull = ["%s/lat/%s" % (ds.specialDir,f) for f in fileList]
-#     tmpDir = os.environ['SLURM_TMP']
-#     fScr = ["%s/%s" % (tmpDir, f) for f in fileList]
-#     for i in range(len(fFull)):
-#         print(fScr[i])
-#         shutil.copy2(fFull[i], fScr[i])
-#     return
-#
-#
 # def unpackData():
 #     cd $SLURM_TMP
 #     cp /global/project/projectdirs/majorana/users/wisecg/special/lat/latLongCal.tar.gz .
@@ -150,7 +131,8 @@ def getSumSpec():
 
     for iFile, f in enumerate(fileList):
         print("%d/%d %s" % (iFile,nFiles,f))
-        tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        # tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        tf = TFile("%s/%s" % (os.environ['SLURM_TMP'], f))
         lTree = tf.Get("skimTree")
 
         # activate only branches we want
@@ -197,11 +179,11 @@ def plotSumSpec():
         rm.append((rate,error))
         # print("rt %d sec  mH %d  sumCts %d  hitCts %d  rate %.2f pm %.3f" % (runTime, i, sumCts, hitCts, rate, error))
 
-    plt.semilogy(x, sumSpec[1], ls='steps', c='r', lw=1.0, alpha=0.6, label=r"mH=1 %.2f$\pm$%.3f $s^{-1}$ " % (rm[1][0],rm1[1][1]))
-    plt.semilogy(x, sumSpec[2], ls='steps', c='b', lw=0.9, alpha=0.7, label=r"mH=2 %.2f$\pm$%.3f $s^{-1}$ " % (rm[2][0],rm1[2][1]))
-    plt.semilogy(x, sumSpec[3], ls='steps', c='m', lw=0.8, alpha=0.8, label=r"mH=3 %.2f$\pm$%.3f $s^{-1}$ " % (rm[3][0],rm1[3][1]))
-    plt.semilogy(x, sumSpec[4], ls='steps', c='c', lw=0.7, alpha=0.9, label=r"mH=4 %.2f$\pm$%.3f $s^{-1}$ " % (rm[4][0],rm1[4][1]))
-    plt.semilogy(x, sumSpec[5], ls='steps', c='g', lw=0.6, alpha=1.0, label=r"mH=5 %.2f$\pm$%.3f $s^{-1}$ " % (rm[5][0],rm1[5][1]))
+    plt.semilogy(x, sumSpec[1], ls='steps', c='r', lw=1.0, alpha=0.6, label=r"mH=1 %.2f$\pm$%.3f $s^{-1}$ " % (rm[1][0],rm[1][1]))
+    plt.semilogy(x, sumSpec[2], ls='steps', c='b', lw=0.9, alpha=0.7, label=r"mH=2 %.2f$\pm$%.3f $s^{-1}$ " % (rm[2][0],rm[2][1]))
+    plt.semilogy(x, sumSpec[3], ls='steps', c='m', lw=0.8, alpha=0.8, label=r"mH=3 %.2f$\pm$%.3f $s^{-1}$ " % (rm[3][0],rm[3][1]))
+    plt.semilogy(x, sumSpec[4], ls='steps', c='c', lw=0.7, alpha=0.9, label=r"mH=4 %.2f$\pm$%.3f $s^{-1}$ " % (rm[4][0],rm[4][1]))
+    plt.semilogy(x, sumSpec[5], ls='steps', c='g', lw=0.6, alpha=1.0, label=r"mH=5 %.2f$\pm$%.3f $s^{-1}$ " % (rm[5][0],rm[5][1]))
 
     plt.xlabel("sumE (keV)", ha='right', x=1.)
     plt.ylabel("Counts / 2 keV", ha='right', y=1.)
@@ -254,8 +236,8 @@ def getLoHitSpec():
     fileList = []
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
-    # runList = runList[:1]
-    runList = runList[:15] # this gets ~10k mH=4 events
+    # runList = runList[:5]
+    runList = runList[:] # hi stats - different filename, see below
     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
     nFiles = len(fileList)
 
@@ -276,7 +258,8 @@ def getLoHitSpec():
 
     for iFile, f in enumerate(fileList):
         print("%d/%d %s" % (iFile,nFiles,f))
-        tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        # tf = TFile("%s/lat/%s" % (ds.specialDir,f))
+        tf = TFile("%s/%s" % (os.environ['SLURM_TMP'], f))
         lTree = tf.Get("skimTree")
 
         # activate only branches we want
@@ -294,11 +277,12 @@ def getLoHitSpec():
             x, y = wl.GetHisto(hitE, eLo, eHi, epb)
             hitSpec[i] = np.add(hitSpec[i], y)
 
-    np.savez("../plots/mult2-lowHitSpec.npz", x, hitSpec, runTime)
+    # np.savez("../plots/mult2-lowHitSpec.npz", x, hitSpec, runTime)
+    np.savez("../plots/mult2-lowHitSpec-histats.npz", x, hitSpec, runTime)
 
 
 def plotLoHitSpec():
-    f = np.load("../plots/mult2-lowHitSpec.npz")
+    f = np.load("../plots/mult2-lowHitSpec-histats.npz")
     x, hitSpec, runTime = f['arr_0'], f['arr_1'], f['arr_2']
     fig = plt.figure()
 
@@ -455,9 +439,9 @@ def getDT():
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
 
-    runList = runList[:5] # make a lo-stats file (check filename below)
+    # runList = runList[:5] # make a lo-stats file (check filename below)
     # runList = runList[:15] # this gets ~10k mH=4 events
-    # runList = runList[:30] # get big stats (saved as different filename below)
+    runList = runList[:30] # get big stats (saved as different filename below)
 
     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
     nFiles = len(fileList)
@@ -514,14 +498,14 @@ def getDT():
                 # print("%-4d  %-3d  evt %-10.9f  pr[%d] %-10.9f" % (iEnt, mH, evtTime, mH, prev[mH]))
             prev[mH] = evtTime
 
-    np.savez("../plots/mult2-dtVals-ene.npz", dtVals, runTime)
-    # np.savez("../plots/mult2-dtVals-ene-30runs.npz", dtVals, runTime)
+    # np.savez("../plots/mult2-dtVals-ene.npz", dtVals, runTime)
+    np.savez("../plots/mult2-dtVals-ene-histats.npz", dtVals, runTime)
 
 
 def plotFitRates():
 
     # f = np.load("../plots/mult2-dtVals.npz")
-    f = np.load("../plots/mult2-dtVals-ene-30runs.npz")
+    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
 
     # get raw rate
@@ -829,7 +813,7 @@ def plotDT_wThr():
     # same as above, but show fewer steps and do it for all multiplicities
 
     # f = np.load("../plots/mult2-dtVals-ene.npz")
-    f = np.load("../plots/mult2-dtVals-ene-30runs.npz") # hi-stats
+    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
     dtVals = f['arr_0'].item()
 
     for mH in [1,2,3,4]:
@@ -919,6 +903,9 @@ def plotChannelRates_mH1():
     runTime = 2473.0 # kludge - this is for runList[7:14] in getDT
 
     f = plt.figure()
+
+    mH = 1
+    n = len(dtVals[mH])
 
     plt.cla()
     chan = [dtVals[mH][i][1][0] for i in range(n)]
@@ -1073,7 +1060,7 @@ def plotDTCut():
     hitESpec_dtp = {mH:[] for mH in [1,2,3,4]}  # dtPulser cut
 
     # f = np.load("../plots/mult2-dtVals-ene.npz")
-    f = np.load("../plots/mult2-dtVals-ene-30runs.npz") # hi-stats
+    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
     for mH in [1,2,3,4]:
         n = len(dtVals[mH])
@@ -1133,7 +1120,7 @@ def plotPCut():
     # use the 2d histo to cut on probability
 
     f = np.load("../plots/mult2-dtVals-ene.npz")
-    # f = np.load("../plots/mult2-dtVals-ene-30runs.npz") # hi-stats
+    # f = np.load("../plots/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
 
     mH = 1
@@ -1255,7 +1242,7 @@ def getPeaks():
     fileList = []
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
-    # runList = runList[:3]
+    # runList = runList[:5]
     # runList = runList[:15] # this gets ~10k mH=4 events
     runList = runList[:] # hi stats, using different file name below
     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
@@ -1761,6 +1748,14 @@ def getExtPulser():
 
     np.savez("../plots/mult2-extPulser.npz", effs, evts)
 
+
+def plotExtPulser():
+
+    f = np.load("../plots/mult2-extPulser.npz")
+    effs, evts = f['arr_0'], f['arr_1']
+
+    # effs: (run,runTime,nExp,cutEff,extChan)
+    # evts: (hit,fit,run,ch)
 
 
 if __name__=="__main__":
