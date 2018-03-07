@@ -25,26 +25,28 @@ thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, par
 def main():
 
     # getSpec()
-    # plotSpec()
-    # plotHitSpec()
-    plotTest()
+    plotSumHitCut()
+    plotSpec()
 
-    # findPeaks, < use sumList
+    # plotHitSpec() < move to mult4.  everything should use mHT and sumET!
+    # findPeaks,
     # plotPeaks,
     # plotBkgPeaks
+    # retuneFitSlo()
 
 
 def getSpec():
-    """ Get sum and hit spectra w/ threshold cut, minus ch. 598 (it's noisy.)
+    """ Get sum and hit spectra w/ threshold cut, without ch. 598 (it's noisy.)
     Also w/ !EventDC1Bits and trapENFCal > 0.7, all hits.  (Skim file was generated w/ 'dontSkipAnything')
+    Save detailed info for events with hits < 100 keV.
     """
     from ROOT import TFile, TTree
 
     fileList = []
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
-    runList = runList[:3]
-    # runList = runList[:15] # this gets ~10k mH=4 events
+    # runList = runList[:3]
+    runList = runList[:15] # this gets ~10k mH=4 events
     # runList = runList[:] # histats file, see filename below
     for run in runList: fileList.extend(ds.getLATRunList([run],"%s/lat" % (ds.specialDir)))
     nFiles = len(fileList)
@@ -52,7 +54,13 @@ def getSpec():
 
     chList = ds.GetGoodChanListNew(dsNum=5)
 
-    sumList, sumList50, hitList50 = [], [], []
+    eCut = 250
+    hitList, hitData = [], []
+    xLo, xHi, xpb = 0, 4000, 1
+    nb = int((xHi-xLo)/xpb)+1
+    sumTSpec = {mHT:np.zeros(nb) for mHT in range(7)}
+    sumSpec = {mH:np.zeros(nb) for mH in range(7)}
+    dtVals = {mHT:[] for mHT in range(7)}
 
     for iFile, f in enumerate(fileList):
         print("%d/%d %s" % (iFile,nFiles,f))
@@ -60,21 +68,23 @@ def getSpec():
         tf = TFile("%s/%s" % (os.environ['SLURM_TMP'], f))
         lTree = tf.Get("skimTree")
 
-        bnames = ["startClockTime_s","clockTime_s","EventDC1Bits","isGood",
-        "gain","mH","channel","trapENFCal","dtPulserCard","fitSlo","riseNoise"]
+        bnames = ["startClockTime_s","clockTime_s","EventDC1Bits","sumEH",
+        "mH","channel","trapENFCal","dtPulserCard","fitSlo","riseNoise"]
         lTree.SetBranchStatus('*',0)
         for name in bnames: lTree.SetBranchStatus(name,1)
 
         lTree.GetEntry(0)
         startTime = lTree.startClockTime_s
         dt, prev = {}, {}
+        sumTVals = {mHT:[] for mHT in range(7)}
+        sumVals = {mH:[] for mH in range(7)}
 
         for iEnt in range(lTree.GetEntries()):
             lTree.GetEntry(iEnt)
             if lTree.EventDC1Bits != 0: continue
 
             # get iteration numbers for hits passing cuts
-            hitList = [i for i in range(lTree.channel.size())
+            idxList = [i for i in range(lTree.channel.size())
                 if lTree.channel.at(i) in chList
                 and lTree.channel.at(i) != 598
                 and lTree.channel.at(i) in thD.keys()
@@ -82,40 +92,49 @@ def getSpec():
                 and lTree.trapENFCal.at(i) < 9999
                 and lTree.trapENFCal.at(i) > 0.7
                 ]
-            if len(hitList) == 0: continue
+            if len(idxList) == 0: continue
+            hitE = np.asarray([lTree.trapENFCal.at(i) for i in idxList])
 
-            hitE = np.asarray([lTree.trapENFCal.at(i) for i in hitList])
-            chan = np.asarray([lTree.channel.at(i) for i in hitList])
-            fSlo = np.asarray([lTree.fitSlo.at(i) for i in hitList])
-            rise = np.asarray([lTree.riseNoise.at(i) for i in hitList])
-            dtpc = np.asarray([lTree.dtPulserCard.at(i) for i in hitList])
-
-            sumEThr = sum(hitE)
-            mHT = len(hitE)
+            # save multiplicity and sum energy
             mH = lTree.mH
+            mHT = len(hitE)
             sumE = lTree.sumEH
+            sumET = sum(hitE)
+            if mH < 7: sumVals[mH].append(sumE)
+            if mHT < 7: sumTVals[mHT].append(sumET)
 
-            # calculate dtmH (based on mH. could change to mHT)
+            # calculate dt since last m=N event
+            # Tried w/ mH - fitted rates were lower than raw rates (could be from removing 592)
+            # Now trying w/ mHT ...
             clockTime = lTree.clockTime_s
             evtTime = clockTime-startTime
-            if mH not in prev:
-                prev[mH], dt[mH] = 0, -1
-            if prev[mH] != 0:
-                dt[mH] = evtTime - prev[mH]
-            prev[mH] = evtTime
+            if mHT not in prev:
+                prev[mHT], dt[mHT] = 0, -1
+            if prev[mHT] != 0:
+                dt[mHT] = evtTime - prev[mHT]
+            prev[mHT] = evtTime
+            if mHT < 7: dtVals[mHT].append(dt[mHT])
 
-            sumList.append([mH, mHT, sumE, sumEThr, dt[mH], iFile, iEnt])
+            # save all information for events that have at least one hit under 'eCut'.
+            if mHT > 1 and len(hitE[np.where(hitE < eCut)]) > 0:
+                chan = np.asarray([int(lTree.channel.at(i)) for i in idxList])
+                fSlo = np.asarray([lTree.fitSlo.at(i) for i in idxList])
+                rise = np.asarray([lTree.riseNoise.at(i) for i in idxList])
+                dtpc = np.asarray([lTree.dtPulserCard.at(i) for i in idxList])
 
-            # idx = np.where(hitE < 50)
-            # if len(hitE[idx]) > 0:
-            sumList50.append([mH, mHT, sumE, sumEThr, dt[mH], iFile, iEnt])
-            hitList50.append([hitE, chan, fSlo, rise, dtpc])
+                hitData.append([mH, mHT, sumE, sumET, dt[mHT]])#, iFile, iEnt])
+                hitList.append([hitE, chan, fSlo, rise, dtpc])
 
-    np.savez("../plots/mult3-sumE-test.npz", runTime, sumList)
-    np.savez("../plots/mult3-hit50List-test.npz", runTime, sumList50, hitList50)
+        # save sum spectra
+        for i in range(7):
+            x, y = wl.GetHisto(sumTVals[i], xLo, xHi, xpb)
+            sumTSpec[i] = np.add(sumTSpec[i], y)
+            x, y = wl.GetHisto(sumVals[i], xLo, xHi, xpb)
+            sumSpec[i] = np.add(sumSpec[i], y)
 
-    # np.savez("../plots/mult3-sumE.npz", runTime, sumList)
-    # np.savez("../plots/mult3-sumE-histats.npz", runTime, sumList)
+    np.savez("../plots/mult3-sumE.npz", runTime, x, sumSpec, sumTSpec)
+    np.savez("../plots/mult3-dtmHT.npz", runTime, dtVals)
+    np.savez("../plots/mult3-hitE.npz", runTime, hitList, hitData, eCut)
 
 
 def getRunTime(runList):
@@ -139,118 +158,103 @@ def expoDist(t, rate, amp):
     return amp * np.exp(-1*rate*t)
 
 
-def plotSpec():
-    """ sumList: (mHT, sumEThr, dt[mHT])
-    NEW FORMAT: [mH, mHT, sumE, sumEThr, dt[mH], iFile, iEnt]
-    Plot sum spectrum, multiplicity counts, and dt[mHT] plots.
-    """
-    f = np.load("../plots/mult3-sumE.npz")
-    # f = np.load("../plots/mult3-sumE-histats.npz")
-    runTime, sumList = f['arr_0'], f['arr_1']
+def plotSumHitCut():
+    """ Keeping only events w/ hits > some threshold has some strange effects on the higher sum peaks.
+    Just making sure I didn't mess up any code.
 
-    # # counts & rates for each multiplicity
-    # multHits = [0]
-    # for mH in range(1,7):
-    #     nM = sum([evt[0] for evt in sumList if evt[0]==mH])
-    #     multHits.append(nM)
-    # multErr = [np.sqrt(multHits[mH]) for mH in range(7)]
-    # multPct = [100/multErr[mH] if multHits[mH] > 0 else 0 for mH in range(7)]
-    # rMult = [multHits[i]/runTime for i in range(7)]
-    # rErr = [multErr[i]/runTime for i in range(7)]
-    # # for i in range(1,7):
-    #     # print("mH %d  cts %d  err %.2f  pct %.2f  rate %.3f  err %.3f" % (i, multHits[i], multErr[i], multPct[i], multHits[i]/runTime, multErr[i]/runTime))
-    #
-    # # sum spectrum
-    # fig = plt.figure()
-    # xLo, xHi, xpb = 0, 4000, 2
-    # cols = [0,'r','b','m','c','g','k']
-    # for mH in range(1,7):
-    #     sumE = [evt[1] for evt in sumList if evt[0]==mH]
-    #     plt.semilogy(*wl.GetHisto(sumE, xLo, xHi, xpb), ls='steps', lw=1.5, c=cols[mH],
-    #         label=r'mH=%d %.2f $\pm$ %.3f Hz' % (mH, rMult[mH], rErr[mH]))
-    # plt.xlabel("sumE (keV)", ha='right', x=1.)
-    # plt.ylabel("Counts / %.1f keV" % (xpb), ha='right', y=1.)
-    # plt.legend(fontsize=12)
-    # plt.savefig("../plots/mult3-sumSpec.png")
-    #
-    # # delta-t plots
-    # plt.cla()
-    #
-    # fig2 = plt.figure(figsize=(18,12))
-    # p = [0,0,0,0,0]
-    # p[1] = plt.subplot(221) # two columns (slides)
-    # p[2] = plt.subplot(222)
-    # p[3] = plt.subplot(223)
-    # p[4] = plt.subplot(224)
-    # ranges = [0, (0.00001,0.004,0.00001), (0.0001,0.03,0.0001), (0.001,0.3,0.001), (0.01,3.,0.01)]
-    #
-    # for i in range(1,5):
-    #     xLo, xHi, xpb = ranges[i][0], ranges[i][1], ranges[i][2]
-    #     dtv = [evt[2] for evt in sumList if evt[0]==i]
-    #
-    #     x, y = wl.GetHisto(dtv, xLo, xHi, xpb)
-    #     # norm = np.sum(y)
-    #     # y = np.divide(y, norm)
-    #     p[i].plot(x, y, c=cols[i], lw=1., ls='steps', label='mH=%d, Raw: %.2f Hz' % (i, rMult[i]))
-    #     popt, pcov = curve_fit(expoDist, x, y, p0=(rMult[i],1))
-    #     perr = np.sqrt(np.diag(pcov))
-    #     rateFit, rateErr = popt[0], perr[0]
-    #     p[i].plot(x, expoDist(x, *popt), '-b', lw=1.5, label=r'Fit: %.2f$\pm$%.2f Hz ' % (rateFit, rateErr))
-    #     p[i].set_ylabel("Cts / %.0e sec" % xpb, ha='right', y=1.)
-    #     p[i].legend()
-    #     if i==1:
-    #         p[i].ticklabel_format(axis='x',style='sci',scilimits=(1,2))
-    #         p[i].set_xlabel("sec       ", ha='right', x=1.)
-    #     else:
-    #         p[i].set_xlabel("sec", ha='right', x=1.)
-    #
-    # plt.savefig("../plots/mult3-expoFit.png")
+    To illustrate: plot the hitE spec below with smaller values of eCut.
 
-
-def plotTest():
+    sumSpec : {mH: histos}
+    hitData : [mH, mHT, sumE, sumET, dt[mH], iFile, iEnt]
+    hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    sumList   : [mH, mHT, sumE, sumEThr, dt[mH], iFile, iEnt]
-    sumList50 : [mH, mHT, sumE, sumEThr, dt[mH], iFile, iEnt]
-    hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as sumList50)
-    """
-    f1 = np.load("../plots/mult3-sumE-test.npz")
-    f2 = np.load("../plots/mult3-hit50List-test.npz")
-    runTime, sumList = f1['arr_0'], f1['arr_1']
-    sumList50, hitList = f2['arr_1'], f2['arr_2']
+    f1 = np.load("../plots/mult3-sumE.npz")
+    f2 = np.load("../plots/mult3-hitE.npz")
+    runTime, x, sumSpec, sumSpecT = f1['arr_0'], f1['arr_1'], f1['arr_2'].item(), f1['arr_3'].item()
+    hitList, hitData, eCut = f2['arr_1'], f2['arr_2'], f2['arr_3']
 
     mH = 2
+    # cut = eCut
+    cut = 50
 
-    sumE = [evt[3] for evt in sumList if evt[0]==mH]
-    sumE50 = [evt[3] for evt in sumList50 if evt[0]==mH]
+    xLo, xHi, xpb = 0, 4000, 1
+    plt.semilogy(x, sumSpec[mH],'r',lw=1.,ls='steps',label='sumEH')
+    plt.semilogy(x, sumSpecT[mH],'b',lw=1.,ls='steps',label='sumET')
 
-    xLo, xHi, xpb = 0, 3000, 20
-    plt.semilogy(*wl.GetHisto(sumE,xLo,xHi,xpb),'r',lw=2.,ls='steps',label='sumList')
+    n = len(hitList)
+    hitE = [sum(hitList[i][0]) for i in range(n) if hitData[i][1]==mH and (any(i < cut for i in hitList[i][0]))]
+    plt.semilogy(*wl.GetHisto(hitE,xLo,xHi,xpb),c='m',lw=1.,ls='steps',label='hitList %d' % cut)
 
-    for cut, col in [(500,'b'), (250,'g'), (100,'m'), (50,'k')]:
-        hitECut = [sum(hitList[i][0]) for i in range(len(hitList)) if sumList50[i][0]==mH and (any(i < cut for i in hitList[i][0]))]
-        plt.semilogy(*wl.GetHisto(hitECut,xLo,xHi,xpb),c=col,lw=1.,ls='steps',label='hitList %d' % cut)
-
-    # for thresh in [500, 200, 100, 50]:
-    #     print(thresh)
-    #     for i in range(len(sumList50)):
-    #         hitE50 = []
-    #         if sumList50[i][0] == mH:
-    #             iFile, iEnt = sumList50[i][5], sumList50[i][6]
-    #             sumE1 = sumList50[i][3]
-    #             hitE = hitList[i][0]
-    #             idx = np.where(hitE < thresh)
-    #             if len(hitE[idx]) > 0:
-    #                 hitE50.append(sum(hitE))
-    #             # print("iE %d  iF %d  mH %d  sumE %-8.2f  hSum %-8.2f  u50 %d  hits" % (iEnt, iFile, mH, sumE1, hitSum, under50), hitE)
-    #             # if i > 100: break
-    #             plt.semilogy(*wl.GetHisto(hitE50,xLo,xHi,xpb),lw=1.,ls='steps',label='hitList')
-
-    plt.legend()
-    plt.savefig("../plots/mult3-sumSpec-test.png")
+    plt.xlabel("sumE (keV)", ha='right', x=1.)
+    plt.legend(loc=1, fontsize=14)
+    plt.savefig("../plots/mult3-sumECut.png")
 
 
+def plotSpec():
+    """ Plot sum spectrum, multiplicity counts, and dt[mHT] plots.
+    dtVals  : {mH : [dt vals]}
+    hitData : [mH, mHT, sumE, sumET, dt[mH], iFile, iEnt]
+    hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
+    """
+    f1 = np.load("../plots/mult3-hitE.npz")
+    f2 = np.load("../plots/mult3-dtmHT.npz")
+    f3 = np.load("../plots/mult3-sumE.npz")
+    runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
+    runTime, dtVals = f2['arr_0'], f2['arr_1'].item()
+    runTime, x, sumSpec, sumSpecT = f3['arr_0'], f3['arr_1'], f3['arr_2'].item(), f3['arr_3'].item()
 
-# def retuneFitSlo():
+    # counts & rates for each multiplicity (use mHT)
+    nHits = [sum(sumSpecT[i]) for i in range(7)]
+    nErr = [np.sqrt(nHits[i]) for i in range(7)]
+    nPct = [100 / nErr[i] if nHits[i] > 0 else 0 for i in range(7)]
+    rate = [nHits[i] / runTime for i in range(7)]
+    rErr = [nErr[i] / runTime for i in range(7)]
+
+    # sum spectrum
+    fig = plt.figure()
+    xLo, xHi, xpb = 0, 4000, 2
+    cols = [0,'r','b','m','c','g','k']
+    for mH in range(1,7):
+        pLabel = r'mHT=%d %.2f $\pm$ %.3f Hz' % (mH,rate[mH],rErr[mH])
+        plt.semilogy(x, sumSpecT[mH], ls='steps', lw=1.5, c=cols[mH],label=pLabel)
+    plt.xlabel("sumE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts / %.1f keV" % (xpb), ha='right', y=1.)
+    plt.legend(fontsize=12)
+    plt.savefig("../plots/mult3-sumSpec.png")
+
+    # delta-t plots.  some question as to use mHT or mH ...
+
+    fig2 = plt.figure(figsize=(18,12))
+    p = [0,0,0,0,0]
+    p[1] = plt.subplot(221) # two columns (slides)
+    p[2] = plt.subplot(222)
+    p[3] = plt.subplot(223)
+    p[4] = plt.subplot(224)
+    ranges = [0, (0,0.005,0.000005), (0,0.05,0.00005), (0,0.5,0.0005), (0,5.,0.005)]
+
+    for i in range(1,5):
+        xLo, xHi, xpb = ranges[i][0], ranges[i][1], ranges[i][2]
+        x, y = wl.GetHisto(dtVals[i], xLo, xHi, xpb)
+        # y = np.divide(y, np.sum(y))
+
+        p[i].plot(x, y, c=cols[i], lw=1., ls='steps', label='mH=%d, Raw %.2f Hz' % (i, rate[i]))
+
+        g = (rate[i], np.mean(y[2:5])*1.3)
+        popt, pcov = curve_fit(expoDist, x, y, p0=g)
+        perr = np.sqrt(np.diag(pcov))
+        rateFit, rateErr = popt[0], perr[0]
+        p[i].plot(x, expoDist(x, popt[0], popt[1]), '-b', lw=1.5, label=r'Fit: %.2f$\pm$%.3f Hz' % (rateFit, rateErr))
+
+        p[i].set_ylabel("Cts / %.0e sec" % xpb, ha='right', y=1.)
+        p[i].legend()
+        if i==1:
+            p[i].ticklabel_format(axis='x',style='sci',scilimits=(1,2))
+            p[i].set_xlabel("sec         ", ha='right', x=1.)
+        else:
+            p[i].set_xlabel("sec", ha='right', x=1.)
+
+    plt.savefig("../plots/mult3-expoFit-mH.png")
+
 
 
 
