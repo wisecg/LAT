@@ -6,6 +6,7 @@ wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 import matplotlib
 matplotlib.use('pdf')
 import matplotlib.pyplot as plt
+plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm
 import numpy as np
 import tinydb as db
@@ -13,11 +14,14 @@ from scipy.optimize import curve_fit
 calInfo = ds.CalInfo()
 
 def main():
-    riseTime()
-    getEff()
-    compareRunTypes()
+    # riseTime()
+    # getEff()
+    # compareRunTypes()
     # manualBuild()
     # getEffMultiChan()
+
+    getFitFails()
+    plotFitFails()
 
 
 def riseTime():
@@ -440,10 +444,59 @@ def getEffMultiChan():
                     break
 
 
-def wfFitter():
-    """ fitSlo vs energy for different wf fit methods.
-        Probably should save this for ext3.py
+def getFitFails():
+    """ WF fitter has a bad tendency to have fitSlo converge to ~0.
+        I’m pretty sure the fitter stuff is when like np.exp blows up, which you can probably fix w/ a try/except.
+        All I'm gonna do here is pull out the right run, to reprocess locally w/ LAT.
     """
+    from ROOT import TChain
+
+    pIdx = 19
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    attList = extPulserInfo[pIdx][0]
+    extChan = extPulserInfo[pIdx][-1]
+    syncChan = wl.getChan(0,10,0) # 672
+    runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+    # runList = runList[5:7]
+
+    hitE, fSlo = [], []
+
+    for i, run in enumerate(runList):
+
+        lTree = TChain("skimTree")
+        fList = ds.getLATRunList([run], "%s/lat" % ds.specialDir)
+        for f in fList: lTree.Add("%s/lat/%s" % (ds.specialDir, f))
+
+        theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
+        tNames = ["Entry$","mH","channel","trapENFCal","fitSlo"]
+        tvals = wl.GetVX(lTree, tNames, theCut)
+        n = len(tvals["Entry$"])
+
+        hTmp = [tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+
+        hitE.extend(hTmp)
+        fSlo.extend([tvals["fitSlo"][i] for i in range(n) if tvals["channel"][i]==extChan])
+
+        print(run, lTree.GetEntries(), np.mean(hTmp))
+
+    np.savez("../plots/ext2-fitFails.npz", hitE, fSlo)
+
+
+def plotFitFails():
+    f = np.load("../plots/ext2-fitFails.npz")
+    hitE, fSlo = f['arr_0'], f['arr_1']
+
+    n = len(fSlo)
+    nFails = len([fSlo[i] for i in range(n) if -5 < fSlo[i] < 20])
+    print("Total:",n,"Fails:",nFails)
+
+    plt.plot(hitE, fSlo, ".", ms=2.)
+
+    plt.ylim(-10, 200)
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel('fitSlo', ha='right', y=1.)
+    plt.savefig("../plots/ext2-fitFails.png")
 
 
 if __name__=="__main__":

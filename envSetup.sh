@@ -44,8 +44,6 @@ function sourceEnvClint {
   alias rootmj="root -b -l"
   alias atom="rmate"
   alias ls="ls --color"
-  # alias fixrpf="kill `ps -u wisecg | grep sshd | awk '{print $1}'`"
-  alias fixrpf=""
   alias inter="salloc -t 10:00:00 -p shared"
   alias imj="shifter --image wisecg/mjsw:v2 bash"
 }
