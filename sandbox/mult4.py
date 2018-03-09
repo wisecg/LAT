@@ -48,11 +48,12 @@ def main():
     # getSpecTest() # a test version of getSpec
     # plotSpecTest()
 
-    plotFitSlo()
+    # plotFitSlo()
 
     # getSimDataEvtLoop()
     # plotSimDataLoop()
 
+    compareDataSim()
 
 def getSpecTest():
     from ROOT import TFile, TTree
@@ -919,25 +920,38 @@ def plotSimDataLoop():
 
 def compareDataSim():
 
+def compareDataSim():
+
+    xLo, xHi, xpb = 0, 240, 1
+
     # sim
     f = np.load("../plots/mult4-simDataLoop.npz")
     eTotHits, eActHits = f['arr_0'].item(), f['arr_1'].item()
     mH = 2
     n = len(eTotHits[mH])
-    simTotal = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n)]
-    simBulk = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n) if abs(eActHits[mH][i]-1) < 0.001]
-    simDead = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n) if abs(eActHits[mH][i]) < 1.]
+    # simTotal = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n)]
+    # simBulk = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n) if abs(eActHits[mH][i]-1) < 0.001]
+    # simDead = [eTotHits[mH][i]/eActHits[mH][i] for i in range(n) if abs(eActHits[mH][i]) < 1.]
+
+    simTotal = [eTotHits[mH][i] for i in range(n)]
+    simBulk = [eTotHits[mH][i] for i in range(n) if abs(eActHits[mH][i]-1) < 0.001]
+    simDead = [eTotHits[mH][i] for i in range(n) if abs(eActHits[mH][i]) < 1.]
+
+    x, sTotal = wl.GetHisto(simTotal,xLo,xHi,xpb)
+    x, sBulk = wl.GetHisto(simBulk,xLo,xHi,xpb)
+    x, sDead = wl.GetHisto(simDead,xLo,xHi,xpb)
 
     # data
-    # fitSlo results from tuneFitSlo.
+    mHT = 2
     fsVals = {
         584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
         626: 81.5, 628: 102.5, 632: 81.5, 640: 73.5, 648: 74.5, 658: 75.5,
         660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
         690: 80.5, 694: 80.5
         }
-    f1 = np.load("../plots/mult4-hitE.npz")
-    # f1 = np.load("../plots/mult4-hitE-histats.npz")
+    chList = list(fsVals.keys())
+    # f1 = np.load("../plots/mult4-hitE.npz")
+    f1 = np.load("../plots/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
     hitE, chan, fSlo = [], [], []
     for i in range(len(hitData)):
@@ -950,18 +964,26 @@ def compareDataSim():
     fSloShift = [fSlo[i]-fsVals[chan[i]] for i in range(n) if chan[i] in chList]
     print("peak evts:",n)
 
-    xLo, xHi, xpb = 0, 240, 1
-
     hitESlow = [hitE[i] for i in range(len(hitE)) if fSloShift[i] > 30]
     hitEFast = [hitE[i] for i in range(len(hitE)) if fSloShift[i] < 30]
 
-    x, hSlo = wl.GetHisto(hitESlow,xLo,xHi,xpb)
+    x, hSlow = wl.GetHisto(hitESlow,xLo,xHi,xpb)
     x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
 
-    plt.plot(x, simTotal/np.sum(simTotal), ls='steps', c='r', lw=2., label='sim total')
-    # plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
-    plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    # -----------------------------------------------
 
+    # plt.plot(x, sBulk/np.sum(sBulk), ls='steps', c='r', lw=2., label='sim bulk')
+    # plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    # plt.plot(x, sDead/np.sum(sBulk), ls='steps', c='m', lw=2., label='sim dead')
+    # plt.plot(x, hSlow/np.sum(hFast), ls='steps', c='g', lw=2., label='data slow')
+
+    # plt.plot(x, sBulk/np.sum(sBulk), ls='steps', c='r', lw=2., label='sim bulk')
+    # plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    plt.plot(x, sDead/np.sum(sDead), ls='steps', c='m', lw=2., label='sim dead')
+    plt.plot(x, hSlow/np.sum(hSlow), ls='steps', c='g', lw=2., label='slow data, m=2,s=238')
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Normalized Cts", ha='right', y=1.)
     plt.legend(loc=1,fontsize=12)
     plt.savefig("../plots/mult4-dataSimSpec.png")
 
