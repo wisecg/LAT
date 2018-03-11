@@ -9,7 +9,8 @@ or built/gatified data.  Calculates various waveform parameters
 for HITS passing cuts.
 
 Does not handle TChains - pyroot can't always recognize
-the vector<MGTWaveform*> branch in the skim tree. Damn you, ROOT.
+the vector<MGTWaveform*> branch in the skim tree when a TEntryList
+is in use.  Damn you, ROOT.
 
 Usage:
 ./lat.py [-r [dsNum] [subNum] use skim range & sub-range]
@@ -22,14 +23,14 @@ Usage:
          [-c "custom cut" -- adds custom cut application]
          [-b batch mode -- creates new file]
 
-
 v1: 27 May 2017
 v2: 04 Aug 2017 - improvements to wf fitting, handle multisampling, etc.
 v3: 18 Jan 2018 - update to python3
+v4: 09 Mar 2018 - wf fitting error handling (scipy v1.0 improves convergence!)
 
 ================ C. Wiseman (USC), B. Zhu (LANL) ================
 """
-import sys, time, os, pywt
+import sys, time, os, pywt, imp
 from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject, gROOT
 from ROOT import GATDataSet, MGTEvent, MGTWaveform, MGWFTimePointCalculator
 import numpy as np
@@ -38,8 +39,8 @@ import scipy.optimize as op
 from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 import scipy.special as sp
-import waveLibs as wl
-limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
+# import waveLibs as wl
+wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 
 def main(argv):
 
@@ -115,6 +116,7 @@ def main(argv):
     if pathMode and gatMode:
         outPath = manualOutput
 
+
     # Initialize trees
     if rangeMode or fileMode or pathMode:
         inFile = TFile(inPath)
@@ -138,7 +140,9 @@ def main(argv):
             theCut = ""
     if cutMode:
         # theCut += customPar
-        theCut = "trapENFCal < 50 && gain==0 && channel==648"
+        # theCut = "(channel==672 || channel==674) && mH==2" # sync chan: 672, extp chan: 674
+        theCut = "channel==674 && mH==2"
+        theCut += " && fitSlo < 10"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -176,6 +180,7 @@ def main(argv):
     nMS = std.vector("int")()
     tE50, latE50, wfStd = std.vector("double")(), std.vector("double")(), std.vector("double")()
     wfAvgBL, wfRMSBL = std.vector("double")(), std.vector("double")()
+    fitErr = std.vector("int")()
 
     # It's not possible to put the "out.Branch" call into a class initializer (waveLibs::latBranch). You suck, ROOT.
     b1, b2 = out.Branch("waveS1",waveS1), out.Branch("waveS2",waveS2)
@@ -195,6 +200,7 @@ def main(argv):
     b38 = out.Branch("nMS",nMS)
     b39, b40, b41 = out.Branch("tE50", tE50), out.Branch("latE50", latE50), out.Branch("wfStd", wfStd)
     b42, b43 = out.Branch("wfAvgBL", wfAvgBL), out.Branch("wfRMSBL", wfRMSBL)
+    b44 = out.Branch("fitErr",fitErr)
 
     # make a dictionary that can be iterated over (avoids code repetition in the loop)
     brDict = {
@@ -213,7 +219,8 @@ def main(argv):
         "t0_SLE":[t0_SLE,b31], "t0_ALE":[t0_ALE,b32], "lat":[lat,b33], "latF":[latF,b34],
         "latAF":[latAF,b35], "latFC":[latFC,b36], "latAFC":[latAFC,b37],
         "nMS":[nMS,b38], "tE50":[tE50,b39], "latE50":[latE50,b40], "wfStd":[wfStd,b41],
-        "wfAvgBL":[wfAvgBL,b42], "wfRMSBL":[wfRMSBL,b43]
+        "wfAvgBL":[wfAvgBL,b42], "wfRMSBL":[wfRMSBL,b43],
+        "fitErr":[fitErr,b44]
     }
 
     # Make a figure (-i option: select different plots)
@@ -238,7 +245,7 @@ def main(argv):
         p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
         p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
         p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
-        p[6] = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
+        p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
     elif plotNum==9:
         p0 = plt.subplot2grid((5,1), (0,0)) # 9- wpt on wf fit residual
         p1 = plt.subplot2grid((5,1), (1,0), rowspan=2)
@@ -250,13 +257,13 @@ def main(argv):
     # print("Generating signal template ...")
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
     # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo) # Damn you to hell, PDSF
-    templateFile = np.load("./data/lat_template.npz")
-    if dsNum==2 or dsNum==6: templateFile = np.load("./data/lat_ds2template.npz")
+    templateFile = np.load("%s/data/lat_template.npz" % os.environ['LATDIR'])
+    if dsNum==2 or dsNum==6: templateFile = np.load("%s/data/lat_ds2template.npz" % os.environ['LATDIR'])
     tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
 
 
     # Load stuff from DS1 forced acq. runs
-    npzfile = np.load("./data/fft_forcedAcqDS1.npz")
+    npzfile = np.load("%s/data/fft_forcedAcqDS1.npz" % os.environ['LATDIR'])
     noise_asd, noise_xFreq, avgPwrSpec, xPwrSpec, data_forceAcq, data_fft = npzfile['arr_0'],npzfile['arr_1'],npzfile['arr_2'],npzfile['arr_3'],npzfile['arr_4'],npzfile['arr_5']
 
 
@@ -290,6 +297,7 @@ def main(argv):
         for key in brDict: brDict[key][0].assign(nChans,-88888)
         brDict["fails"][0].assign(nChans,0) # set error code to 'true' by default
         errorCode = [0,0,0,0]
+
 
         # Loop over hits passing cuts
         numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
@@ -418,23 +426,30 @@ def main(argv):
             # datas = [dataTS, data, dataNoise] # fit data
             datas = [dataTS, data_wlDenoised + dataBL, denoisedNoise] # fit wavelet-denoised data w/ Bl added back in
 
-            # L-BGFS-B
-            bnd = ((None,None),(None,None),(None,None),(None,None),(None,None)) # A,mu,sig,tau.  Unbounded rn.
+            # Set bounds - A,mu,sig,tau,bl.
+            # bnd = ((None,None),(None,None),(None,None),(None,None),(None,None))   # often gets caught at sig=0
+            bnd = ((None,None),(None,None),(2.,None),(-72001.,-71999.),(None,None)) # gets caught much less often.
 
-            # numerical gradient - seems trustworthy
+            # L-BGFS-B with numerical gradient.
             start = time.clock()
-            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=None, bounds=None)
+            result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=None, bounds=bnd)
             fitSpeed = time.clock() - start
 
+            fitErr[iH] = 0
             if not result["success"]:
-                # print("fit 'fail': ", result["message"])
+                # print("fit fail: ", result["message"])
+                fitErr[iH] = 1
                 errorCode[0] = 1
 
-            # save parameters
             amp, mu, sig, tau, bl = result["x"]
+
+            # save parameters
+
             fitMu[iH], fitAmp[iH], fitSlo[iH], fitTau[iH], fitBL[iH] = mu, amp, sig, tau, bl
             floats = np.asarray([amp, mu, sig, tau, bl])
             fit = xgModelWF(dataTS, floats)
+
+            # print("%d/%d iH %d  e %-10.2f  fs %-8.2f  f %d" % (iList, nList, iH, dataENFCal, fitSlo[iH], fitErr[iH]))
 
             # log-likelihood of this fit
             fitLL[iH] = result["fun"]
@@ -774,9 +789,11 @@ def main(argv):
                 p5.cla()
                 p5.plot(tauTr[1:],label='tau',color='black')
                 p5.legend(loc='best')
-                p[6].cla()
-                p[6].plot(blTr[1:],label='bl',color='magenta')
-                p[6].legend(loc='best')
+                p6.cla()
+                p6.plot(blTr[1:],label='bl',color='magenta')
+                p6.legend(loc='best')
+
+                print(gatTree.fitSlo.at(iH), sig)
 
             if plotNum==7: # new traps plot
                 p0.cla()
@@ -865,19 +882,25 @@ def main(argv):
 def evalGaus(x,mu,sig):
     return np.exp(-((x-mu)**2./2./sig**2.))
 
+
 def evalXGaus(x,mu,sig,tau):
     """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
         Negative tau: Regular WF, high tail
         Positive tau: Backwards WF, low tail
     """
     tmp = (x-mu + sig**2./2./tau)/tau
-    if all(tmp < limit):
+
+    # np.exp of this is 1.7964120280206387e+308, the largest python float value: sys.float_info.max
+    fLimit = 709.782
+
+    if all(tmp < fLimit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
     else:
-        #print("Exceeded limit ...")
-        # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
+        # print("Exceeded limit ...")
+        # Use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
+
 
 def xgModelWF(dataTS, floats):
     """ Make a model waveform: Take a timestamp vector, generate an
@@ -885,6 +908,13 @@ def xgModelWF(dataTS, floats):
     """
     amp, mu, sig, tau, bl = floats
     model = evalXGaus(dataTS,mu,sig,tau)
+
+    if np.isnan(model).any():
+        # print("d'oh!",model)
+        return(np.zeros(len(model)))
+    if np.sum(model)==0:
+        # print("dooh!",model)
+        return(np.zeros(len(model)))
 
     # pin max value of function to amp
     model = model * 1./np.sum(model)
@@ -896,11 +926,13 @@ def xgModelWF(dataTS, floats):
 
     return model
 
+
 def MakeTracesGlobal():
     """ This is so 'lnLike' can write to the trace arrays. Has to remain in this file to work. """
     tmp1, tmp2, tmp3, tmp4, tmp5 = [], [], [], [], []
     global ampTr, muTr, sigTr, tauTr, blTr
     ampTr, muTr, sigTr, tauTr, blTr = tmp1, tmp2, tmp3, tmp4, tmp5
+
 
 def lnLike(floats, *datas):
     """ log-likelihood function: L(A,mu,sig,tau)

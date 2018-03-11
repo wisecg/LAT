@@ -20,8 +20,9 @@ def main():
     # manualBuild()
     # getEffMultiChan()
 
-    getFitFails()
-    plotFitFails()
+    # getFitFails()
+    # plotFitFails()
+    checkFile()
 
 
 def riseTime():
@@ -497,6 +498,96 @@ def plotFitFails():
     plt.xlabel("hitE (keV)", ha='right', x=1.)
     plt.ylabel('fitSlo', ha='right', y=1.)
     plt.savefig("../plots/ext2-fitFails.png")
+
+
+def checkFile():
+    from ROOT import TFile, TTree
+
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
+    extChan = extPulserInfo[19][-1] # 674
+
+    f1 = TFile("../data/latSkimDS0_run7228.root")       # new method
+    f2 = TFile("../data/latSkimDS0_run7228_0_v1.root")  # old method
+    tNew = f1.Get("skimTree")
+    tOld = f2.Get("skimTree")
+
+    # cut = "(channel==672 || channel==674) && mH==2"
+    cut = "(channel==672) && mH==2"
+    n1 = tNew.Draw('fitSlo',cut,'goff')
+    n2 = tOld.Draw('fitSlo',cut,'goff')
+
+    cut = "(channel==672) && mH==2 && !fails"
+    n3 = tNew.Draw('fitSlo',cut,'goff')
+    n4 = tOld.Draw('fitSlo',cut,'goff')
+
+    cut = "(channel==672) && mH==2 && fitSlo < 10"
+    n5 = tNew.Draw('fitSlo',cut,'goff')
+    n6 = tOld.Draw('fitSlo',cut,'goff')
+
+    cut = "(channel==672) && mH==2 && fitErr"
+    n7 = tNew.Draw('fitSlo',cut,'goff')
+
+    cut = "(channel==672) && mH==2 && fails"
+    n8 = tNew.Draw('fitSlo',cut,'goff')
+
+    print("tot %d  %d  !fails %d %d  fs<10 %d %d  fitErr %d  fails %d " % (n1,n2,n3,n4,n5,n6,n7,n8))
+
+
+    cut = "(channel==674) && mH==2"
+    n1 = tNew.Draw('trapENFCal:fitSlo',cut,'goff')
+    hitENew, fSloNew = tNew.GetV1(), tNew.GetV2()
+    hitENew = [hitENew[i] for i in range(n1)]
+    fSloNew = [fSloNew[i] for i in range(n1)]
+
+    n2 = tOld.Draw('trapENFCal:fitSlo',cut,'goff')
+    hitEOld, fSloOld = tOld.GetV1(), tOld.GetV2()
+    hitEOld = [hitEOld[i] for i in range(n2)]
+    fSloOld = [fSloOld[i] for i in range(n2)]
+
+    cut += "&& fitErr"
+    n3 = tNew.Draw('trapENFCal:fitSlo',cut,'goff')
+    hitEErr, fSloErr = tNew.GetV1(), tNew.GetV2()
+    hitEErr = [hitEErr[i] for i in range(n3)]
+    fSloErr = [fSloErr[i] for i in range(n3)]
+
+    cut += "&& fails"
+    n4 = tNew.Draw('trapENFCal:fitSlo',cut,'goff')
+    hitEFails, fSloFails = tNew.GetV1(), tNew.GetV2()
+    hitEFails = [hitEFails[i] for i in range(n4)]
+    fSloFails = [fSloFails[i] for i in range(n4)]
+
+    cut = "(channel==674) && mH==2"
+    n5 = tNew.Draw('trapENFCal:den90-den10',cut,'goff')
+    hitErt, rt90 = tNew.GetV1(), tNew.GetV2()
+    hitErt = [hitErt[i] for i in range(n5)]
+    rt90 = [rt90[i] for i in range(n5)]
+
+
+    fig = plt.figure()
+    plt.plot(hitENew,fSloNew,'.r',ms=10.,label='new {}'.format(n1))
+    plt.plot(hitEOld,fSloOld,'.b',ms=8.,label='old {}'.format(n2))
+    plt.plot(hitEErr,fSloErr,'.m',ms=6.,label='fitErr {}'.format(n3))
+    plt.plot(hitEFails,fSloFails,'.c',ms=4.,label='fails {}'.format(n4))
+    plt.xlim(2,8)
+    plt.ylim(-5,150)
+    plt.xlabel("hitE",ha='right',x=1.)
+    plt.ylabel("fSlo",ha='right',y=1.)
+    plt.legend()
+    plt.savefig("../plots/ext2-compareFits.png")
+
+    plt.cla()
+    plt.plot(hitENew,fSloNew,'.r',ms=10.,label='new {}'.format(n1))
+    plt.plot(hitErt,rt90,'.c',ms=4.,label='rt90-10')
+    plt.xlim(2,8)
+    plt.ylim(-5,150)
+    plt.xlabel("hitE",ha='right',x=1.)
+    plt.ylabel("fSlo",ha='right',y=1.)
+    plt.legend()
+    plt.savefig("../plots/ext2-rt90compare.png")
+
+
+
 
 
 if __name__=="__main__":

@@ -180,12 +180,15 @@ def runBatch():
 
     # EX. 6 - bkg file sequence
     # sh("%s slurm.slr './job-pump.sh jobLists/skimBkg.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
     # EX. 7 - cal file sequence
     # sh("%s slurm.slr './job-pump.sh jobLists/skimCal.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/waveCal.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    sh("%s slurm.slr './job-pump.sh jobLists/test.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/test.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+
+    # EX. 8 - ext pulser
+    sh("%s slurm.slr './job-pump.sh jobLists/extPulserLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -769,8 +772,8 @@ def specialDelete():
 def specialLAT():
     """ ./job-panda.py [-q (use job queue)] -slat"""
     cal = ds.CalInfo()
-    # runList = cal.GetSpecialRuns("extPulser")
-    runList = cal.GetSpecialRuns("longCal",5)
+    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("longCal",5)
 
     # deal with unsplit files
     # run = runList[0]
