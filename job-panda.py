@@ -176,7 +176,7 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal_cleanup.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
 
-    nCores, peakLoad = nc["pdsf"][0], nc["pdsf"][1]
+    nCores, peakLoad = nc["edison"][0], nc["edison"][1]
 
     # EX. 6 - bkg file sequence
     # sh("%s slurm.slr './job-pump.sh jobLists/skimBkg.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
@@ -188,7 +188,13 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobLists/test.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
 
     # EX. 8 - ext pulser
-    sh("%s slurm.slr './job-pump.sh jobLists/extPulserLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/extPulserLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
+
+    # EX. 9 - forced acq range
+    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSkim.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigWave.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSplit.list python3 %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    sh("%s slurm.slr './job-pump.sh jobLists/forceAcqLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -629,22 +635,26 @@ def specialSkim():
     cal = ds.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("delayedTrigger")
-    runList = cal.GetSpecialRuns("longCal",5)
+    # runList = cal.GetSpecialRuns("longCal",5)
+    runList = cal.GetSpecialRuns("forcedAcq",8)
     for run in runList:
         if useJobQueue:
-            sh("""./skim_mjd_data -f %d -l -t 0.7 %s/skim >& ./logs/specialSkim-DS%d-%d.txt""" % (run,ds.specialDir,ds.GetDSNum(run),run))
+            # sh("""./skim_mjd_data -f %d -l -t 0.7 %s/skim >& ./logs/specialSkim-DS%d-%d.txt""" % (run,ds.specialDir,ds.GetDSNum(run),run))
+            sh("""./skim_mjd_data -f %d -x -l %s/skim >& ./logs/specialSkim-DS%d-%d.txt""" % (run,ds.specialDir,ds.GetDSNum(run),run))
         else:
-            sh("""%s './skim_mjd_data -f %d -l -t 0.7 %s/skim >& ./logs/specialSkim-DS%d-%d.txt""" % (jobStr,run,ds.specialDir,ds.GetDSNum(run),run))
+            sh("""%s './skim_mjd_data -f %d -x -l %s/skim'""" % (jobStr,run,ds.specialDir))
 
 
 def specialWave():
     """ ./job-panda.py [-q (use queue)] -swave """
     cal = ds.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
-    runList = cal.GetSpecialRuns("longCal",5)
+    # runList = cal.GetSpecialRuns("longCal",5)
+    runList = cal.GetSpecialRuns("forcedAcq",8)
     for run in runList:
         if useJobQueue:
-            sh("""./wave-skim -l -n -f %d %d -p %s/skim %s/waves >& ./logs/wave-ds%d-%d.txt""" % (ds.GetDSNum(run),run,ds.specialDir,ds.specialDir,ds.GetDSNum(run),run))
+            # sh("""./wave-skim -l -n -f %d %d -p %s/skim %s/waves >& ./logs/wave-ds%d-%d.txt""" % (ds.GetDSNum(run),run,ds.specialDir,ds.specialDir,ds.GetDSNum(run),run))
+            sh("""./wave-skim -x -n -f %d %d -p %s/skim %s/waves >& ./logs/wave-ds%d-%d.txt""" % (ds.GetDSNum(run),run,ds.specialDir,ds.specialDir,ds.GetDSNum(run),run))
         else:
             sh("""%s './wave-skim -x -n -f %d %d -p %s/skim %s/waves'""" % (jobStr, ds.GetDSNum(run), run, ds.specialDir, ds.specialDir) )
 
@@ -656,10 +666,9 @@ def specialSplit():
     """
     cal = ds.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
-    runList = cal.GetSpecialRuns("longCal",5)
+    # runList = cal.GetSpecialRuns("longCal",5)
+    runList = cal.GetSpecialRuns("forcedAcq",8)
     for run in runList:
-        # print(run)
-        # if run <= 4592: continue
 
         inPath = "%s/waves/waveSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
         outPath = "%s/split/splitSkimDS%d_run%d.root" % (ds.specialDir, ds.GetDSNum(run), run)
@@ -674,7 +683,7 @@ def specialSplit():
         if useJobQueue:
             sh("""./job-panda.py -splitf %s %s""" % (inPath,outPath))
         else:
-            sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath, outPath))
+            sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath,outPath))
 
 
 def splitFile(inPath,outPath):
@@ -772,8 +781,9 @@ def specialDelete():
 def specialLAT():
     """ ./job-panda.py [-q (use job queue)] -slat"""
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
+    # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("longCal",5)
+    runList = cal.GetSpecialRuns("forcedAcq",8)
 
     # deal with unsplit files
     # run = runList[0]
@@ -803,7 +813,8 @@ def specialLAT():
 
                 # this is what i need for a 1-node job pump
                 # sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/extPulser-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
-                sh("""./lat.py -b -f %d %d -p %s %s >& ./logs/longCal-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
+                # sh("""./lat.py -b -f %d %d -p %s %s >& ./logs/longCal-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
+                sh("""./lat.py -x -b -f %d %d -p %s %s >& ./logs/forceAcq-%d-%d.txt""" % (dsNum, run, inFile, outFile, run, idx))
             else:
                 sh("""%s './lat.py -x -b -f %d %d -p %s %s' """ % (jobStr, dsNum, run, inFile, outFile))
 
@@ -873,10 +884,16 @@ def quickTest():
     # now = datetime.datetime.now()
     # print("Done. Date: ",str(now))
 
+    from ROOT import TFile, TTree
     cal = ds.CalInfo()
-    runList = cal.GetSpecialRuns("extPulser")
-    print(runList)
-
+    runList = cal.GetSpecialRuns("forcedAcq",8)
+    for run in runList:
+        dsNum = ds.GetDSNum(run)
+        inFiles = glob.glob("%s/split/splitSkimDS%d_run%d*.root" % (ds.specialDir, dsNum, run))
+        # for idx in range(len(inFiles)):
+        for f in inFiles:
+            print(f)
+            # tf = TFile()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

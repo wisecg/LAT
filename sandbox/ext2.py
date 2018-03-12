@@ -22,7 +22,13 @@ def main():
 
     # getFitFails()
     # plotFitFails()
-    checkFile()
+    # checkFile()
+
+    # getSloParams()
+    # getForceAcqVals()
+    # getNoiseVals()
+    plotSloParams()
+
 
 
 def riseTime():
@@ -587,7 +593,201 @@ def checkFile():
     plt.savefig("../plots/ext2-rt90compare.png")
 
 
+def getSloParams():
+    from ROOT import TChain, GATDataSet
 
+    extPulserInfo = calInfo.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
+    # for pIdx in [19,20,21]:
+    pIdx = 20
+    runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+    attList = extPulserInfo[pIdx][0]
+    extChan = extPulserInfo[pIdx][-1]
+
+    sloVals = {}
+
+    for i, run in enumerate(runList):
+
+        # elogs: "20 Hz, 150 second runs"
+        gds = GATDataSet(run)
+        runTime = gds.GetRunTime()/1e9 # sec
+        pulseRate = 20 # Hz
+
+        fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+        latChain = TChain("skimTree")
+        for f in fileList: latChain.Add("%s/lat/%s" % (ds.specialDir,f))
+
+        theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan)
+        tNames = ["Entry$","mH","channel","trapENFCal","fitSlo","den90","den10","kvorrT","wfStd"]
+        tvals = wl.GetVX(latChain,tNames,theCut)
+        n = len(tvals["Entry$"])
+        if n==0: continue
+
+        hitE = [tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        fSlo = [tvals["fitSlo"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        kvTE = [tvals["kvorrT"][i]/tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        rt90 = [tvals["den90"][i]-tvals["den10"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        wStd = [tvals["wfStd"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        trigEff = 100 * len(hitE) / (runTime * pulseRate)
+
+        print("%d  %.2f  %.2f" % (run, trigEff, np.mean(hitE)))
+
+        sloVals[run] = [trigEff,hitE,fSlo,kvTE,rt90,wStd]
+
+    np.savez("../plots/ext2-compare.npz", sloVals)
+
+
+def getForceAcqVals():
+    from ROOT import TChain
+
+    cal = ds.CalInfo()
+    runList = cal.GetSpecialRuns("forcedAcq",8)
+    runList = runList[1:4]
+
+    fAcqChans = [576, 592, 594, 598, 600, 608, 610, 614, 624, 626, 628]
+    extChan = 624 # corresponds to pIdx = 20 (only one that overlaps in both studies)
+
+    fAcqVals = {}
+
+    for i, run in enumerate(runList):
+
+        fileList = ds.getLATRunList([run],"%s/lat" % (ds.specialDir))
+        lTree = TChain("skimTree")
+        for f in fileList: lTree.Add("%s/lat/%s" % (ds.specialDir,f))
+
+        # these runs were not built into events (all events are mH=1)
+        theCut = "trapENFCal > -100 && channel==624"
+        bnames = ["Entry$","channel","trapENFCal","fitSlo","den90","den10","kvorrT"]
+        tvals = wl.GetVX(lTree,bnames,theCut)
+        n = len(tvals["Entry$"])
+
+        # chList = sorted(list(set(tvals["channel"])))
+        # dets = [ds.CPD[0][ch] for ch in chList]
+        # for ch in chList:
+        #     hitE = [tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i] == ch]
+        #     print("   %d  %.2f  %.2f" % (ch,np.mean(hitE),np.std(hitE)))
+
+        hitE = [tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        fSlo = [tvals["fitSlo"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        kvTE = [tvals["kvorrT"][i]/tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+        rt90 = [tvals["den90"][i]-tvals["den10"][i] for i in range(n) if tvals["channel"][i]==extChan]
+
+        fAcqVals[run] = [hitE,fSlo,kvTE,rt90]
+
+    np.savez("../plots/ext2-forceAcq-ch624.npz",fAcqVals)
+
+
+def getNoiseVals():
+    # get some trapETailMin > 0 values for ch 624 for bkg runs around this time in DS0
+    from ROOT import TChain
+
+    extChan = 624 # corresponds to pIdx = 20 (only one that overlaps in ext and facq studies)
+    dsNum, bkgIdx = 0, 60
+    fDir, fList = ds.getLATList(dsNum, bkgIdx)
+    lTree = TChain("skimTree")
+    for f in fList:
+        print("%s/%s" % (fDir,f))
+        lTree.Add("%s/%s" % (fDir, f))
+
+    noiseVals = {}
+
+    theCut = "channel==%d" % extChan
+    bnames = ["Entry$","channel","trapENFCal","fitSlo","den90","den10","kvorrT","trapETailMin"]
+    tvals = wl.GetVX(lTree,bnames,theCut)
+    n = len(tvals["Entry$"])
+    hitE = [tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+    fSlo = [tvals["fitSlo"][i] for i in range(n) if tvals["channel"][i]==extChan]
+    kvTE = [tvals["kvorrT"][i]/tvals["trapENFCal"][i] for i in range(n) if tvals["channel"][i]==extChan]
+    rt90 = [tvals["den90"][i]-tvals["den10"][i] for i in range(n) if tvals["channel"][i]==extChan]
+    tetm = [tvals["trapETailMin"][i] for i in range(n) if tvals["channel"][i]==extChan]
+
+    noiseVals[bkgIdx] = [hitE,fSlo,kvTE,rt90,tetm]
+
+    np.savez('../plots/ext2-ds0bkg60.npz',noiseVals)
+
+
+def plotSloParams():
+
+    f1 = np.load('../plots/ext2-compare.npz')
+    f2 = np.load('../plots/ext2-forceAcq-ch624.npz')
+    f3 = np.load('../plots/ext2-ds0bkg60.npz')
+    sloVals = f1['arr_0'].item()
+    ftrVals = f2['arr_0'].item()
+    bkgVals = f3['arr_0'].item()
+
+    hitE, fSlo, kvTE, rt90, wStd = [], [], [], [], []
+    for run in sloVals:
+        hitE.extend(sloVals[run][1])
+        fSlo.extend(sloVals[run][2])
+        kvTE.extend(sloVals[run][3])
+        rt90.extend(sloVals[run][4])
+        wStd.extend(sloVals[run][5])
+
+    fig = plt.figure(figsize=(16,16))
+    p1 = plt.subplot(221)
+    p2 = plt.subplot(222)
+    p3 = plt.subplot(223)
+    p4 = plt.subplot(224)
+
+    p1.plot(hitE,fSlo,".k",label='fitSlo')
+    p1.set_xlim(0,20)
+    p1.legend()
+
+    p2.plot(hitE,kvTE,".k",label='T/E')
+    p2.set_xlim(0,20)
+    p2.legend()
+
+    p3.plot(hitE,rt90,".k",label='rt90')
+    p3.set_xlim(0,20)
+    p3.legend()
+
+    wStd = [wStd[i]/hitE[i] for i in range(len(wStd))]
+
+    p4.plot(hitE,wStd,".k",label='wfStd/E')
+    p4.set_xlim(0,20)
+    p4.legend()
+
+    plt.savefig("../plots/ext2-sloCompare.png")
+
+    # now make plots comparing fitSlo & rt90
+    ftHitE, ftSlo, ftTE, ftRT90 = [], [], [], []
+    for run in ftrVals:
+        ftHitE.extend(ftrVals[run][0])
+        ftSlo.extend(ftrVals[run][1])
+        ftTE.extend(ftrVals[run][2])
+        ftRT90.extend(ftrVals[run][3])
+
+    bHitE, bSlo, bTE, bRT90, bTETM = [], [], [], [], []
+    for bkgIdx in bkgVals:
+        bHitE.extend(bkgVals[bkgIdx][0])
+        bSlo.extend(bkgVals[bkgIdx][1])
+        bTE.extend(bkgVals[bkgIdx][2])
+        bRT90.extend(bkgVals[bkgIdx][3])
+        bTETM.extend(bkgVals[bkgIdx][4])
+
+    plt.cla()
+    fig = plt.figure(figsize=(9,12))
+    p1 = plt.subplot(211)
+    p2 = plt.subplot(212)
+
+    p1.plot(ftHitE,ftSlo,'.r',label='fitSlo - facq')
+    p1.plot(hitE,fSlo,".k",label='fitSlo - ext')
+    p1.plot(bHitE,bSlo,".b",label='fitSlo - bkg')
+    p1.set_xlabel("hitE (keV)",ha='right',x=1.)
+    p1.set_ylabel("fitSlo",ha='right',y=1.)
+    p1.set_ylim(-20,10000)
+    p1.set_xlim(0,10)
+    p1.legend(loc=1)
+
+    p2.plot(ftHitE,ftRT90,'.r',label='rt90 - facq')
+    p2.plot(hitE,rt90,'.k',label='rt90 - ext')
+    p2.plot(bHitE,bRT90,'.b',label='rt90 - bkg')
+    p2.set_xlabel("hitE (keV)",ha='right',x=1.)
+    p2.set_ylabel("rt90",ha='right',y=1.)
+    p2.set_xlim(0,10)
+    p2.legend(loc=1)
+
+    plt.savefig("../plots/ext2-facqCompare.png")
 
 
 if __name__=="__main__":

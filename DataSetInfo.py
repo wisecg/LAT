@@ -289,7 +289,7 @@ class CalInfo:
             5: [4178, 4182],
             6: [4183, 4184],
             7: [4185, 4198],
-            8: [4199, 4209],
+            8: [4199, 4209], # note: no NLC for at least this range (probly all forcedAcq runs ...)
             9: [4210, 4225],
             10: [4226, 4223]
             }
