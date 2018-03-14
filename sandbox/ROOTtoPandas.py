@@ -4,6 +4,7 @@ from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject, MGT
 import numpy as np
 import pandas as pd
 import waveLibs as wl
+import warnings
 
 """
 	This script converts a ROOT TTree with a skimTree into a Pandas dataframe (HDF5 format)
@@ -11,56 +12,39 @@ import waveLibs as wl
 	Events become unpacked, as in multi-hit events are just separated as single events
 	Using the Draw command for building event lists makes the processing significantly slower
 
-	Usage: ./ROOTtoPandas.py -ws [DS #] [SubDS #]
-	Usage: ./ROOTtoPandas.py -f [DS #] [Run #]
-	Option "-l": Saves LAT parameters
-	Option "-p": Saves wavelet packet parameters
-	Option "-w": Saves waveforms
+	Usage: ./ROOTtoPandas.py -f [inDir] [inFile] [outDir]
 
 """
 def main(argv):
 
 	startT = time.clock()
 	inDir, outDir = ".", "."
-	inFile, outFile = TFile(), TFile()
-	gatTree, outTree = TTree(), TTree()
-	dsNum, runNum, theCut, inFileName = -1, -1, "", ""
+	inFile, inFileName, outFileName = TFile(), "", ""
+	gatTree = TTree()
+	dsNum, subNum, runNum, theCut, inFileName = -1, -1, -1, "", ""
 	saveLAT, savePacket, saveWave = False, False, False
 
 	if len(argv) == 0: return
-
 	for i,opt in enumerate(argv):
 		if opt == "-f":
-			dsNum, runNum = int(argv[i+1]), int(argv[i+2])
-			inFileName = 'waveSkimDS%d_run%d.root' % (dsNum, runNum)
-			print "Scanning DS-%d, run %d" % (dsNum, runNum)
-		if opt == "-ws":
-			dsNum, subNum = int(argv[i+1]), int(argv[i+2])
-			print "Scanning DS-%d sub-range %d" % (dsNum, subNum)
-			inFileName = 'waveSkimDS%d_%d.root' % (dsNum, subNum)
-		if opt == "-ls":
-			dsNum, subNum, subsubNum = int(argv[i+1]), int(argv[i+2], int(argv[i+3]))
-			print "Scanning DS-%d sub-range %d (sub %d)" % (dsNum, subNum, subsubNum)
-			inFileName = 'latSkimDS%d_%d_%d.root' % (dsNum, subNum, subsubNum)
-		if opt == "-p":
-			savePacket = True
-			print "Saving wavelet packet"
-		if opt == "-w":
-			saveWave = True
-			print "Saving waveform"
-		if opt == "-l":
-			saveLAT = True
-			print "Saving LAT parameters"
-		if opt == "-d":
-			inDir, outDir = argv[i+1], argv[i+2]
-			print "Custom paths: Input %s,  Output %s" % (inDir,outDir)
+			# dsNum, subNum, inDir, outDir = int(argv[i+1]), int(argv[i+2]), str(argv[i+3]), str(argv[i+4])
+			inDir, inFileName, outDir = str(argv[i+1]), str(argv[i+2]), str(argv[i+3])
+			# inFileName = "waveSkimDS{}_{}.root".format(dsNum, subNum)
+		if opt == "-r":
+			inDir, inFileName, outDir = str(argv[i+1]), str(argv[i+2]), str(argv[i+3])
+			# dsNum, runNum, inDir, outDir = int(argv[i+1]), int(argv[i+2]), str(argv[i+3]), str(argv[i+4])
+			# inFileName = "waveSkimDS{}_run{}.root".format(dsNum, runNum)
 
+	# inFileName = inDir + inFile
+	print ("Scanning File: {}".format(inFileName))
 	inFile = TFile("%s/%s" % (inDir, inFileName))
 	gatTree = inFile.Get("skimTree")
 	theCut = inFile.Get("theCut").GetTitle()
 
 	# Make files smaller for tests
-	theCut += " && trapENFCal > 100.0 && channel == 626"
+	# theCut += " && sumEHL > 236 && sumEHL < 240 && mHL==2 && trapENFCal < 5"
+	# Select only pulsers
+	# theCut += " && EventDC1Bits > 0"
 
 	print "Using cut:\n",theCut
 	gatTree.Draw(">>elist", theCut, "entrylist")
@@ -69,131 +53,91 @@ def main(argv):
 	nList = elist.GetN()
 	print "Found",gatTree.GetEntries(),"input entries."
 	print "Found",nList,"entries passing cuts."
-
-	# Test purposes
-	# nList = 50000
-	# Divide up run for chunk-writing
-	nDivis, nChunk = nList//5000, 5000
-
 	# Gimmicky but works... this bypasses creating the branches...
 	gatTree.GetEntry(0)
 
 	# Mess of various branches
-	channel, fails, C = std.vector("int")(), std.vector("int")(), std.vector("int")()
-	threshKeV, threshSigma = std.vector("double")(), std.vector("double")()
-	kvorrT = std.vector("double")()
-	trapENFCal, trapENMCal, trapENMSample = std.vector("double")(), std.vector("double")(), std.vector("int")()
-	trapENF, trapENM, triggerTrapt0 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	waveS1, waveS2, waveS3, waveS4, waveS5 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
-	bcMax, bcMin, wpar4 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	tOffset, derivMax, derivTime = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	waveS0, bandMax, bandTime = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	den10, den50, den90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	raw10, raw50, raw90 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	oppie, fitMatch, fitE = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	fitSlo, matchMax, matchWidth = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	matchTime, fitMax, pol0 = std.vector("double")(), std.vector("double")(), std.vector("double")()
-	pol1, pol2, exp0, exp1 = std.vector("double")(), std.vector("double")(), std.vector("double")(), std.vector("double")()
-	avse, dcr99 = std.vector("double")(), std.vector("double")()
+	channel = std.vector("int")()
+	trapENFCal = std.vector("double")()
+	trapENM = std.vector("double")()
 
 	# Create map of branches to put into dataframe
 	# This map is only for branches that we want to keep!
 	keepMapBase = {
-		'trapENFCal':gatTree.trapENFCal, 'triggerTrapt0':gatTree.triggerTrapt0, "channel":gatTree.channel, "run":gatTree.run, "mHL":gatTree.mHL, "C":gatTree.C, "avse":gatTree.avse, "dcr99":gatTree.dcr99
+		'trapENFCal':gatTree.trapENFCal, 'trapENM':gatTree.trapENM, "channel":gatTree.channel, "run":gatTree.run, "mHL":gatTree.mHL
 		}
-
-	keepMapLAT = {}
-	if saveLAT:
-		keepMapLAT = { "waveS1":gatTree.waveS1, "waveS2":gatTree.waveS2, "waveS3":gatTree.waveS3, "waveS4":gatTree.waveS4, "waveS5":gatTree.waveS5, "bcMax":gatTree.bcMax, "bcMin":gatTree.bcMin, "tOffset":gatTree.tOffset, "fitMatch":gatTree.fitMatch, "fitE":gatTree.fitE, "fitSlo":gatTree.fitSlo, "matchMax":gatTree.matchMax, "matchWidth":gatTree.matchWidth, "matchTime":gatTree.matchTime, "fitMax":gatTree.fitMax, "pol0":gatTree.pol0, "pol1":gatTree.pol1, "pol2":gatTree.pol2, "kvorrT":gatTree.kvorrT}
 
 	# Combine dictionaries, if keepMapLAT is empty it won't add any branches
 	keepMap = dict(keepMapBase)
-	keepMap.update(keepMapLAT)
+	# keepMap.update(keepMapLAT)
 
-	dfList = []
-	print 'Writing to: ', '%s/%s.h5' % (outDir,inFileName.split('.')[0])
-	store = pd.HDFStore('%s/%s.h5' % (outDir,inFileName.split('.')[0]), 'w', complevel=9, complib='blosc')
-	iList, iChunk = -1, -1
-	# Loop through number of chunks
-	print 'Splitting to %d chunks of chunksize %d'%(nDivis, nChunk)
-	for chunk in xrange(0,nDivis+1):
-		# Select size to save, depending on remaining events
-		chunkSize = np.amin([nList-chunk*nChunk, nChunk])
-		# Create empty dictionary of branch names and arrays of values
-		branchMap = {}
-		removeNBeg, removeNEnd = 10, 10
-		for branch in gatTree.GetListOfBranches():
-			if branch.GetName() in keepMap: branchMap[branch.GetName()] = np.zeros(chunkSize)
-		if saveWave:
-			# wf = gatTree.MGTWaveforms.at(0)
-			# signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-			# data = signal.GetWaveBLSub()
-			# Save individual samples as column
-			# for idx,sample in enumerate(data):
-				# if idx < 400 or idx > 1600: continue
-			for idx in xrange(0, 800):
-				branchMap["wave%d"%(idx)] = np.zeros(chunkSize)
-		# Save wavelet packet values as columns
-		if savePacket:
-			for xsample in range(0, 16):
-				for ysample in range(0, 128):
-					branchMap["wp%d_%d"%(xsample, ysample)] = np.zeros(chunkSize)
+	dataList = []
+	print 'Writing to: ', '%s/proc%s.h5' % (outDir,inFileName.split('.')[0])
 
-    	# Loop over events
-		print "Looping chunk ", chunk
-		while True:
-			iList += 1
-			iChunk += 1
-			if iList >= nList: break
-			entry = gatTree.GetEntryNumber(iList)
-			gatTree.LoadTree(entry)
-			gatTree.GetEntry(entry)
-			nChans = gatTree.channel.size()
-			numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
-			chans = gatTree.GetV1()
-			chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-			hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
-			for iH in hitList:
-				wp = []
-				wave = []
-				if savePacket or saveWave:
-					wf = gatTree.MGTWaveforms.at(iH)
-					signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
-					wave = signal.GetWaveBLSub()
-				for key, branch in keepMap.items():
-					# Save branches that aren't vector<Template> (so far only run and mHL)
-					if key == 'run' or key == 'mHL': branchMap[key][iChunk] = branch
-					else: branchMap[key][iChunk] = branch.at(iH)
-				if saveWave:
-					# Normalize waveform according to maximum ADC value
-					norm = np.amax(wave[400:-400])
-					wave /= norm
-					# Find 50% mark
-					mid = np.where(wave[400:-400] > 0.5)
-					for idx, val in enumerate( wave[mid[0][0]:mid[0][0]+800 ] ):
-						# Fill 800 samples around the 50% mark of the waveform
-						branchMap['wave%d'%(idx)][iChunk] = val
-				if savePacket:
-					packet = pywt.WaveletPacket(wave, 'db2', 'symmetric', maxlevel=4)
-					nodes = packet.get_level(4, order='freq')
-					wp = np.array([n.data for n in nodes],'d')
-					wp = abs(wp)
-					for (x, y), val in np.ndenumerate(wp):
-						branchMap['wp%d_%d'%(x, y)][iChunk] = val
-			if iList == (chunk+1)*nChunk-1:
-				iChunk = -1
-				break
+	iList, removeNBeg, removeNEnd = -1, 500, 500
+	# Loop over events
+	while True:
+		iList += 1
+		if iList >= nList: break
+		# if iList >= 5000: break
+		entry = gatTree.GetEntryNumber(iList)
+		gatTree.LoadTree(entry)
+		gatTree.GetEntry(entry)
+		nChans = gatTree.channel.size()
+		numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
+		chans = gatTree.GetV1()
+		chanList = list(set(int(chans[n]) for n in xrange(numPass)))
+		hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
+		for iH in hitList:
+			dataMap = {}
+			wf = gatTree.MGTWaveforms.at(iH)
+			signal = wl.processWaveform(wf,removeNBeg,removeNEnd)
+			wave = np.array(signal.GetWaveRaw(), dtype=np.int16)
+			for key, branch in keepMap.items():
+				# Save branches that aren't vector<Template> (so far only run and mHL)
+				if key == 'run' or key == 'mHL': dataMap[key] = int(branch)
+				elif key == 'channel': dataMap[key] = int(branch.at(iH))
+				else: dataMap[key] = float(branch.at(iH))
+			dataMap['waveform'] = wave.tolist()
+			dataList.append(dataMap)
+
 		if iList%5000 == 0 and iList!=0:
 			print "%d / %d entries saved (%.2f %% done), time: %s" % (iList,nList,100*(float(iList)/nList),time.strftime('%X %x %Z'))
-		# Convert dictionary to Pandas DataFrame -- make sure to set the index correctly
-		df = pd.DataFrame(branchMap)
-		df.index = pd.Series(df.index) + chunk*chunkSize
-		store.append('skimTree', df, complevel=9, complib='blosc')
 
-	store.close()
+
+	df = pd.DataFrame.from_dict(dataList)
+	print(df.head())
+	print(df.info())
+	print(np.unique(df.channel))
+	print(np.unique(df.mHL))
+	print(np.unique(df.run))
+	# Suppress stupid warning
+	warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
+
+	# Chunk write like a sucker
+	chunksize = 50000
+	start = 0
+	end = chunksize-1
+	i = 0
+	# for i in len(df):
+	while end < df.shape[0]:
+		# chunk = df.iloc[(i*chunksize):min((i+1)*chunksize,len(df))]
+		chunk = df.iloc[start:end]
+		try:
+			chunk.to_hdf('{}/proc{}_{}.h5'.format(outDir,inFileName.split('.')[0],i), key='skimTree', data_columns=['trapENFCal', 'trapENM','channel','mHL','waveform'], format='fixed', mode='w', complevel=9)
+		except (Exception) as e:
+			print e
+			print chunk
+			print chunk.info()
+		start += chunksize
+		end += chunksize
+		i += 1
+
+	# df.to_hdf('%s/proc%s.h5' % (outDir,inFileName.split('.')[0]), key="skimTree", data_columns=['trapENFCal', 'trapENM','channel','mHL','waveform'], format='fixed', mode='w', complevel=9)
+
 	stopT = time.clock()
-	print "Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60
-	print float(nList)/((stopT-startT)/60.),"entries per minute."
+	print("Stopped:",time.strftime('%X %x %Z'),"\nProcess time (min):",(stopT - startT)/60)
+	print(float(nList)/((stopT-startT)/60.),"entries per minute.")
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
