@@ -241,7 +241,9 @@ def npTH1D(hist,opt=""):
         if opt=="i": xArr[i] = int(ctr)
         else: xArr[i] = ctr
         yArr[i] = hist.GetBinContent(i)
-    return xArr,yArr
+    xpb = xArr[1] - xArr[0]
+    if opt=='ctr': xArr = xArr + xpb/2.
+    return xArr, yArr, xpb
 
 
 def integFunc(arr):
