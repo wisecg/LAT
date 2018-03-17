@@ -920,8 +920,6 @@ def plotSimDataLoop():
 
 def compareDataSim():
 
-def compareDataSim():
-
     xLo, xHi, xpb = 0, 240, 1
 
     # sim

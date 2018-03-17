@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import os, math, glob, imp
+import os, math, glob, imp, sys
 import numpy as np
+
+import matplotlib as mpl
+mpl.use('Agg')
+sys.argv.append("-b")
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+# plt.style.use('../pltReports.mplstyle')
 # import seaborn as sns
 
 # load LAT libraries
@@ -19,7 +23,9 @@ def main():
 
     # compare1DHistos()
     # plotDLSimSpec()
-    plotResiduals()
+    # plotResiduals()
+    # testSimData()
+    testNewSimData()
 
 
 def getSimData():
@@ -280,6 +286,78 @@ def plotResiduals():
 
     plt.tight_layout()
     plt.savefig("../plots/sim1-residuals.png")
+
+
+def testSimData():
+    from ROOT import TChain, TFile
+    inDir = os.environ['SLURM_TMP']
+    fileList = sorted(glob.glob("%s/DS3processed*.root" % inDir))
+    fileList = fileList[:40]
+    # fileList = fileList[:]
+
+    hits = {i:[] for i in range(7)}
+    actList = []
+
+    totESpec = []
+    sumHitESpec = []
+
+    nPk, nCont = 0,0
+
+    for i, f in enumerate(fileList):
+        # print("%d/%d %s" % (i,len(fileList),f))
+        print("%d/%d" % (i,len(fileList)))
+        tf = TFile(f)
+        simTree = tf.Get("simTree")
+
+        for iEnt in range(simTree.GetEntries()):
+            simTree.GetEntry(iEnt)
+
+            ae = simTree.fAnalysisEvent
+            sumE = ae.GetTotalEnergy()
+
+            mH = ae.GetNElements()
+
+            if 0.2 < sumE < 0.25 and mH==2:
+                totESpec.append(sumE*1000)
+
+                sumHitE = 0
+                for iH in range(mH):
+                    ele = ae.GetElement(iH)
+                    ene = ele.GetEnergy()*1000
+                    act = ele.GetActiveness()
+                    if ene < 0.7 or np.isnan(ene) or np.isnan(act):
+                        continue
+                    sumHitE += ene
+                sumHitESpec.append(sumHitE)
+
+            if 0.23775 < sumE < 0.23924 and mH==2 : # sims window
+            # if 0.23728 < sumE < 0.23946 and mH==2 : # data window
+
+                hitE = []
+                for iH in range(mH):
+                    ele = ae.GetElement(iH)
+                    ene = ele.GetEnergy()*1000
+                    act = ele.GetActiveness()
+                    # if ene < 0.7 or np.isnan(ene) or np.isnan(act):
+                        # continue
+                    actList.append(act)
+                    hits[mH].append(ene/act)
+                    hitE.append(ene)
+
+                hitE = np.asarray(hitE)
+                idx = np.where((hitE > 237.5) & (hitE < 239.2))
+                if len(idx[0]) > 0:
+                    nPk += 1
+                    print("%-8d  pk   sumE %.2f  hits:[" % (iEnt, sumE*1000), "  ".join("%.2f" % e for e in hitE),"]")
+
+                idx2 = np.where((hitE > 233.6) & (hitE < 235.55))
+                if len(idx2[0]) > 0:
+                    nCont += 1
+                    print("%-8d  con  sumE %.2f  hits:[" % (iEnt, sumE*1000), "  ".join("%.2f" % e for e in hitE),"]")
+
+    print("Peak cts: %d  Cont cts: %d" % (nPk,nCont))
+
+    np.savez("../plots/mult4-simTest.npz", hits, actList, totESpec, sumHitESpec)
 
 
 

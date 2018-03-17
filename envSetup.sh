@@ -26,8 +26,10 @@ function sourceEnvMJD {
 
   # export MGDODIR=${MJSWDIR}/MGDO
   # export GATDIR=${MJSWDIR}/GAT
-  export MGDODIR=${HOMEDIR}/mgsw/MGDO
-  export GATDIR=${HOMEDIR}/mgsw/GAT
+  # export MGDODIR=${HOMEDIR}/mgsw/MGDO
+  # export GATDIR=${HOMEDIR}/mgsw/GAT
+  export MGDODIR=${HOMEDIR}/mgsw/test/MGDO
+  export GATDIR=${HOMEDIR}/mgsw/test/GAT
 
   export TAMDIR=${MGDODIR}/tam
   export ORDIR=${MJSWDIR}/OrcaRoot
@@ -37,6 +39,7 @@ function sourceEnvMJD {
   export ROOT_INCLUDE_PATH=${CLHEP_INCLUDE_DIR}:${MGDODIR}/Base:${MGDODIR}/Gerda:${MGDODIR}/GerdaTransforms:${MGDODIR}/Majorana:${MGDODIR}/MJDB:${MGDODIR}/Root:${MGDODIR}/Tabree:${MGDODIR}/Tools:${MGDODIR}/Transforms:${TAMDIR}:${TAMDIR}/inc:${GATDIR}/BaseClasses:${GATDIR}/MGTEventProcessing:${GATDIR}/MGOutputMCRunProcessing:${GATDIR}/SiggenWrapper
 
   export LATDIR=${HOMEDIR}/lat
+  export MAGERESULTS=/global/projecta/projectdirs/majorana/sim/MJDG41003Sims
 }
 
 function sourceEnvClint {
