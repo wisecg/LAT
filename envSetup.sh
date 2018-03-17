@@ -26,10 +26,10 @@ function sourceEnvMJD {
 
   # export MGDODIR=${MJSWDIR}/MGDO
   # export GATDIR=${MJSWDIR}/GAT
-  # export MGDODIR=${HOMEDIR}/mgsw/MGDO
-  # export GATDIR=${HOMEDIR}/mgsw/GAT
-  export MGDODIR=${HOMEDIR}/mgsw/test/MGDO
-  export GATDIR=${HOMEDIR}/mgsw/test/GAT
+  export MGDODIR=${HOMEDIR}/mgsw/MGDO
+  export GATDIR=${HOMEDIR}/mgsw/GAT
+  # export MGDODIR=${HOMEDIR}/mgsw/test/MGDO
+  # export GATDIR=${HOMEDIR}/mgsw/test/GAT
 
   export TAMDIR=${MGDODIR}/tam
   export ORDIR=${MJSWDIR}/OrcaRoot

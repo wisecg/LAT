@@ -31,30 +31,26 @@
 using namespace std;
 using namespace CLHEP;
 
-// NOTE: This is IDENTICAL to the skimmer code used for the 0nbb analysis,
-// with these small exceptions:
-// - "GetChannelSelectionPath" points at the OFFICIAL channel selection files.
-// - -x activates "Don't skip anything" mode, used for special runs.
-
-// TODO: The "noSkip" option is enabled by default.
-//       Once we trust the saturated WF tag, this should be changed back.
-
-vector<int> getBestIDs(vector<int> input);
-
 int main(int argc, const char** argv)
 {
   if (argc < 3 || argc > 8) {
     cout << "Usage:  ./skim_mjd_data [options] [output path (optional)]\n"
-         << " -- Single run:   ./skim_mjd_data -f [runNum] \n"
-         << " -- Custom file:  ./skim_mjd_data --filename [file] [runNum]\n"
-         << " -- Data sets:    ./skim_mjd_data [dsNum] [subRun]\n"
+         << " -- Data sets:       ./skim_mjd_data [dsNum] [subNum]\n"
+         << " -- Blind data sets: ./skim_mjd_data -b [ds] [sub]\n"
+         << " -- Single run:      ./skim_mjd_data -f [runNum] \n"
+         << " -- Custom file:     ./skim_mjd_data --filename [file] [runNum]\n"
          << "Additional options: \n"
          << "   [-m] (minimal skim file - use for calibrations etc.) \n"
          << "   [-l] (low energy skim file - additional parameters) \n"
-         << "   [-n] (LG event skipping - set this to turn ON.) \n"
+         << "   [-d] (Use double type for integer branches. Needed for GAT tag v1.06 or older) \n"
          << "   [-t] [number] (custom energy threshold - default is 2 keV) \n"
+         << "   [-c] (use official channel selection files)\n"
+         << "   [-n] (Use HG/LG hit swap mode) \n"
          << "   [-x] (don't skip anything!)\n"
-         << "   [-g] (skip all low-gain hits)\n";
+         << "   [-g] (skip all low-gain hits)\n"
+         << "   [-s] (sumE skip mode)\n"
+         << "   [-b] (blind mode (can use after -f or --filename))\n"
+         << "   [-e] (suppress energy information)\n";
     return 1;
   }
   // ==========================================================================
@@ -62,52 +58,94 @@ int main(int argc, const char** argv)
   GATDataSet ds;
   TChain *gatChain=NULL, *vetoChain=NULL;
   string outputPath = "";
-  int dsNum = -1, subRun = -1;
-  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, noSkip=1, dontSkipAnything=0, skipLG=0;
+  int dsNum = -1, subNum = -1;
+  bool smallOutput=0, simulatedInput=0, singleFile=0, lowEnergy=0, swapMode=0;
+  bool useDoubles=0, dontSkipAnything=0, skipLG=0, officialChSel=0, sumSkip=0;
+  bool suppressE=0;
+  bool blindMode=0, unblind1=0, unblind2=0, unblind3=0;
   double energyThresh = 5; // keV
+  double startTime0 = 0;
   vector<string> opt(argv + 1, argv + argc);
   for (size_t i = 0; i < opt.size(); i++)
   {
-    if (opt[i] == "-m") { smallOutput=1;      cout << "Minimal skim file selected. \n"; }
-    if (opt[i] == "-l") { lowEnergy=1;        cout << "Augmented low-energy selected. \n"; }
-    if (opt[i] == "-n") { noSkip=0;           cout << "No LG-skip option deactivated. \n"; }
+    if (opt[i] == "-l") { lowEnergy=1;        cout << "Augmented low-energy selected ... \n"; }
+    if (opt[i] == "-n") { swapMode=1;         cout << "Using LG-swap option ... \n"; }
+    if (opt[i] == "-d") { useDoubles=1;       cout << "Using doubles in int branches ... \n"; }
     if (opt[i] == "-x") { dontSkipAnything=1; cout << "No skipping of any kind ...  \n"; }
     if (opt[i] == "-g") { skipLG=1;           cout << "Skipping all low-gain hits ...\n"; }
+    if (opt[i] == "-c") { officialChSel=1;    cout << "Using official chan sel files ...\n"; }
+    if (opt[i] == "-s") { sumSkip=1;          cout << "Using sumE skip mode ...\n"; }
+    if (opt[i] == "-e") { suppressE=1;        cout << "Suppressing energy variables ... \n"; }
+    if (opt[i] == "-m") {
+      smallOutput=1;
+      energyThresh=200.;
+      cout << "Minimal skim file selected ... \n";
+    }
     if (opt[i] == "-t") {
       energyThresh = stod(opt[i+1]);
       opt.erase(opt.begin()+i+1);
-      cout << "Set HG energy threshold to " << energyThresh << " keV\n";
+      cout << "Set energy threshold to " << energyThresh << " keV\n";
     }
-    if (opt[i] == "-f") {  // single run
+    // default - open data sub range
+    if (isdigit((opt[i].c_str())[0])) {
+      dsNum = stoi(opt[i]);
+      subNum = stoi(opt[i+1]);
+      opt.erase(opt.begin()+i+1, opt.begin()+i+2);
+      cout << Form("Loading dataset %i run sequence %i\n",dsNum,subNum);
+      LoadDataSet(ds, dsNum, subNum);
+      startTime0 = GetDSStartTime(dsNum, blindMode);
+    }
+    // blind mode
+    if (opt[i] == "-b") {
+      blindMode=1;
+      cout << "Skimming in BLIND MODE ...\n";
+      if (isdigit((opt[i+1].c_str())[0]))  {
+        dsNum = stoi(opt[i+1]);
+        subNum = stoi(opt[i+2]);
+        opt.erase(opt.begin()+i+1, opt.begin()+i+3);
+        cout << Form("Loading BLIND dataset %i run sequence %i\n", dsNum, subNum);
+        LoadBlindDataSet(ds, dsNum, subNum);
+        startTime0 = GetDSStartTime(dsNum, blindMode);
+      }
+    }
+    if (opt[i] == "-b1" && blindMode) { unblind1=1; cout << "Unblinding 1900 < E < 2400 region ...\n"; }
+    if (opt[i] == "-b2" && blindMode) { unblind2=1; cout << "Unblinding E < 100 region ...\n"; }
+    if (opt[i] == "-b3" && blindMode) { unblind3=1; cout << "Unblinding m > 1 events ...\n"; }
+    // single run
+    if (opt[i] == "-f") {
       singleFile=1;
-      subRun = stoi(opt[i+1]);
+      subNum = stoi(opt[i+1]);
       opt.erase(opt.begin()+i+1);
-      dsNum = FindDataSet(subRun);
+      dsNum = FindDataSet(subNum);
       if (dsNum==-1) return 1;
-      ds.AddRunNumber(subRun);
+      ds.AddRunNumber(subNum);
     }
-    if (opt[i] == "--filename") {  // custom file
+    // custom file
+    if (opt[i] == "--filename") {
+      cout << "buhhh" << endl;
       singleFile=1;
       string fileName = opt[i+1];
-      subRun = stoi(opt[i+2]);
+      subNum = stoi(opt[i+2]);
       opt.erase(opt.begin()+i+2);
-      dsNum = FindDataSet(subRun);
+      dsNum = FindDataSet(subNum);
       if (dsNum==-1) return 1;
-      cout << Form("Reading file: %s \nDS-%i, Run %i\n", fileName.c_str(),dsNum,subRun);
+      cout << Form("Reading file: %s \nDS-%i, Run %i\n", fileName.c_str(),dsNum,subNum);
       gatChain = new TChain("mjdTree","mjdTree");
       gatChain->AddFile(fileName.c_str());
       vetoChain = new TChain("vetoTree","vetoTree");
-      string vetoPath = ds.GetPathToRun(subRun,GATDataSet::kVeto);
+      string vetoPath = ds.GetPathToRun(subNum,GATDataSet::kVeto);
       vetoChain->Add(vetoPath.c_str());
     }
-    if (isdigit((opt[i].c_str())[0])) {  // dataset sub-range
-      dsNum = stoi(opt[i]);
-      subRun = stoi(opt[i+1]);
-      opt.erase(opt.begin()+i+1, opt.begin()+i+2);
-      cout << Form("Loading dataset %i run sequence %i\n",dsNum,subRun);
-      LoadDataSet(ds, dsNum, subRun);
-    }
   }
+
+  // Some modes are mutually exclusive, throw an error if they conflict
+  if ((dontSkipAnything && (swapMode || sumSkip || skipLG))
+    || (skipLG && swapMode))
+  {
+    cout << "Conflicting modes!  Check your flags.  Exiting ...\n";
+    return 1;
+  }
+
   // Set outputPath only if last arg is a valid system path
   struct stat info;
   const char *pathname = opt[opt.size()-1].c_str();
@@ -117,6 +155,7 @@ int main(int argc, const char** argv)
     cout << "Writing to output directory: " << tmp << endl;
   }
 
+
   // ==========================================================================
   // Set up germanium and veto data inputs.
 
@@ -124,8 +163,9 @@ int main(int argc, const char** argv)
   TTreeReader gatReader(gatChain);
 
   // Check if this is simulated data.
-  if(!gatChain->GetListOfBranches()->FindObject("timeinfo")) {
+  if(!gatChain->GetListOfBranches()->FindObject("index")) {
     simulatedInput = true;
+    cout << "Processing as simulated input" << endl;
   }
 
   // Load muon data if this is not a simulation
@@ -187,9 +227,17 @@ int main(int argc, const char** argv)
   // Set up the rest of the inputs from gatified data.
 
   // ID variables
-  TTreeReaderValue<double> runIn(gatReader, "run");
+  ROOT::Internal::TTreeReaderValueBase *runIn = 0, *rawRunIn = 0, *indexIn = 0, *channelIn = 0;
+  if(!useDoubles) {
+    runIn = new TTreeReaderValue<int>(gatReader, "run");
+    rawRunIn = new TTreeReaderValue< vector<int> >(gatReader, "rawRun");
+    indexIn = new TTreeReaderValue< vector<unsigned long> >(gatReader, "index");
+    channelIn = new TTreeReaderValue< vector<unsigned int> >(gatReader, "channel");
+  } else {
+    runIn = new TTreeReaderValue<double>(gatReader, "run");
+    channelIn = new TTreeReaderValue< vector<double> >(gatReader, "channel");
+  }
   TTreeReaderValue<unsigned int> gatrevIn(gatReader, "gatrev");
-  TTreeReaderValue< vector<double> > channelIn(gatReader, "channel");
   TTreeReaderValue< vector<int> > detIDIn(gatReader, "detID");
   TTreeReaderValue< vector<int> > posIn(gatReader, "P");
   TTreeReaderValue< vector<int> > detIn(gatReader, "D");
@@ -243,34 +291,39 @@ int main(int argc, const char** argv)
   TTreeReaderValue< vector<double> > d2wf30MHzTo35MHzPowerIn(gatReader, "d2wf30MHzTo35MHzPower");
   TTreeReaderValue< vector<double> > d2wf0MHzTo50MHzPowerIn(gatReader, "d2wf0MHzTo50MHzPower");
   TTreeReaderValue< vector<double> > d2wfnoiseTagNormIn(gatReader, "d2wfnoiseTagNorm");
-
-  //Temporary addition until all files reprocessed with fixed negative
-  //saturated waveform tagging code.
   TTreeReaderValue< vector<double> > rawWFMinIn(gatReader, "rawWFMin");
 
 
   // ==========================================================================
   // Set up output file
   string outputFile = Form("skimDS%i",dsNum);
-  if (singleFile) outputFile += Form("_run%i",subRun);
-  else outputFile += Form("_%i",subRun);
+  if (singleFile) outputFile += Form("_run%i",subNum);
+  else outputFile += Form("_%i",subNum);
   if (smallOutput) outputFile += "_small";
   if (lowEnergy) outputFile += "_low";
+  if (sumSkip) outputFile += "_s";
+  if (blindMode) outputFile += "_b";
   outputFile += ".root";
   cout << outputFile << endl;
   if (outputPath != "") outputFile = outputPath + "/" + outputFile;
   TFile *fOut = TFile::Open(outputFile.c_str(), "recreate");
   TTree* skimTree = new TTree("skimTree", "skimTree");
+  TDirectory* skimDir = gROOT->CurrentDirectory();
 
   // output - run level variables & indices
   unsigned int skimgatrev = strtol(GATUtils::GetGATRevision(), NULL, 16);
   cout << "skimgatrev_" << skimgatrev << endl;
   int run=0, iEvent=0;
   unsigned int gatrev=0;
-  vector<int> iHit;
+  vector<int> iHit, rawRun;
+  vector<unsigned long> index;
   skimTree->Branch("skimgatrev", &skimgatrev, "skimgatrev/i");
   skimTree->Branch("gatrev", &gatrev, "gatrev/i");
   skimTree->Branch("run", &run, "run/I");
+  if(!useDoubles) {
+    skimTree->Branch("rawRun", &rawRun);
+    skimTree->Branch("index", &index);
+  }
   skimTree->Branch("iEvent", &iEvent, "iEvent/I");
   skimTree->Branch("iHit", &iHit);
 
@@ -292,16 +345,12 @@ int main(int argc, const char** argv)
   skimTree->Branch("c0Channels", &c0Chan);
 
   // output - time variables
-  double runTime_s=0, startTime=0, startTime0=0, stopTime=0, startClockTime,
-    clockTime, localTime, dtPulserGlobal;
+  double startTime=0, stopTime=0, startClockTime, clockTime, localTime, dtPulserGlobal;
   vector<double> tOffset, blrwfFMR50, triggerTrapt0, dtPulserCard;
   vector<int> trapENMSample;
   TTimeStamp globalTime;
-  GetDSRunAndStartTimes(dsNum, runTime_s, startTime0);
-  // cout << Form("%.0f  %.0f", runTime_s, startTime0);
   skimTree->Branch("startTime_s", &startTime, "startTime/D");
   skimTree->Branch("startTime0_s", &startTime0, "startTime0/D");
-  skimTree->Branch("runTime_s", &runTime_s, "runTime_s/D");
   skimTree->Branch("stopTime_s", &stopTime, "stopTime/D");
   skimTree->Branch("startClockTime_s", &startClockTime);
   skimTree->Branch("clockTime_s", &clockTime);
@@ -317,33 +366,40 @@ int main(int argc, const char** argv)
   }
 
   // output - energy variables
-  vector<double> trapECal, onBoardE, trapENFCal, trapENMCal, trapENF, trapENM, trapENFCalC, trapENMCalC;
-  double sumEH=0, sumEL=0, sumEHClean=0, sumELClean=0, sumEHL=0;
-  skimTree->Branch("trapENFCal", &trapENFCal);
-  skimTree->Branch("trapENMCal", &trapENMCal);
-  skimTree->Branch("trapENFCalC", &trapENFCalC);
-  skimTree->Branch("trapENMCalC", &trapENMCalC);
-  if(!smallOutput) {
+  vector<double> trapECal, onBoardE, trapENFCal, trapENMCal, trapENF, trapENM, trapENFCalC;
+  double sumEH=0, sumEL=0, sumEHClean=0, sumELClean=0, sumEHL=0, sumEHLClean=0;
+  if (!suppressE) {
+    skimTree->Branch("trapENFCal", &trapENFCal);
+    skimTree->Branch("trapENMCal", &trapENMCal);
+    skimTree->Branch("trapENFCalC", &trapENFCalC);
     skimTree->Branch("trapECal", &trapECal);
-    skimTree->Branch("onBoardE", &onBoardE);
+    if(!smallOutput) {
+      skimTree->Branch("onBoardE", &onBoardE);
+    }
+    if (lowEnergy){
+      skimTree->Branch("trapENF", &trapENF);
+      skimTree->Branch("trapENM", &trapENM);
+    }
+    skimTree->Branch("sumEH", &sumEH, "sumEH/D");
+    skimTree->Branch("sumEL", &sumEL, "sumEL/D");
+    skimTree->Branch("sumEHClean", &sumEHClean, "sumEHClean/D");
+    skimTree->Branch("sumELClean", &sumELClean, "sumELClean/D");
+    if (swapMode) {
+      skimTree->Branch("sumEHLClean", &sumEHLClean, "sumEHLClean/D");
+      skimTree->Branch("sumEHL", &sumEHL, "sumEHL/D");
+    }
   }
-  if (lowEnergy){
-    skimTree->Branch("trapENF", &trapENF);
-    skimTree->Branch("trapENM", &trapENM);
-  }
-  skimTree->Branch("sumEHL", &sumEHL, "sumEHL/D");
-  skimTree->Branch("sumEH", &sumEH, "sumEH/D");
-  skimTree->Branch("sumEL", &sumEL, "sumEL/D");
-  skimTree->Branch("sumEHClean", &sumEHClean, "sumEHClean/D");
-  skimTree->Branch("sumELClean", &sumELClean, "sumELClean/D");
 
   // output - granularity variables
-  int mH=0, mL=0, mHClean=0, mLClean=0, mHL=0;
-  skimTree->Branch("mHL", &mHL, "mHL/I");
+  int mH=0, mL=0, mHClean=0, mLClean=0, mHL=0, mHLClean=0;
   skimTree->Branch("mH", &mH, "mH/I");
   skimTree->Branch("mL", &mL, "mL/I");
   skimTree->Branch("mHClean", &mHClean, "mHClean/I");
   skimTree->Branch("mLClean", &mLClean, "mLClean/I");
+  if (swapMode) {
+    skimTree->Branch("mHL", &mHL, "mHL/I");
+    skimTree->Branch("mHLClean", &mHLClean, "mHLClean/I");
+  }
 
   // output - pulse shape variables
   vector<double> avse, kvorrT, trapETailMin;
@@ -431,7 +487,10 @@ int main(int argc, const char** argv)
   skimTree->Branch("mVeto_M1Total_kg", &mVeto_M1Total_kg, "mVeto_M1Total_kg/D");
   skimTree->Branch("mVeto_M2Total_kg", &mVeto_M2Total_kg, "mVeto_M2Total_kg/D");
 
-  // Update the veto list and active mass by channel and run (DS-5 only)
+  // ==========================================================================
+  // Automatic channel selection
+
+  // When we have channel selection files, use them to update the veto list and active mass, by channel and by run.
   map <int,map<int,bool>> fix_detIDisVetoOnly;
   map <int,map<int,bool>> fix_detIDisBad;
   vector<double> M1_mass_tot(ds.GetNRuns(), 0);
@@ -443,44 +502,57 @@ int main(int argc, const char** argv)
   vector<double> M1_mass_veto(ds.GetNRuns(), 0);
   vector<double> M2_mass_veto(ds.GetNRuns(), 0);
 
-  // Load official 0nbb paper channel selection files
-  string channelSelectionPath = GetChannelSelectionPath(dsNum,1);
-  cout << "Channel selection files are being read from: " << endl;
-  cout << channelSelectionPath << endl;
-
-  for (size_t irun=0; irun<ds.GetNRuns(); irun++)
+  bool noChSelFiles=0;
+  // if (true) // someday maybe we'll apply to all datasets
+  if (dsNum==1 || dsNum==5 || dsNum==6)
   {
-    int run_num = ds.GetRunNumber(irun);
-    TDirectory* tdir = gROOT->CurrentDirectory();
-    GATChannelSelectionInfo ch_select (channelSelectionPath.c_str(), run_num);
-    vector<int> DetIDList = ch_select.GetDetIDList();
-    gROOT->cd(tdir->GetPath());
-    for (size_t ich=0; ich < DetIDList.size(); ich++)
+    string channelSelectionPath = GetChannelSelectionPath(dsNum, int(officialChSel));
+    cout << "Channel selection path: \n" << channelSelectionPath << endl;
+
+    for (size_t irun=0; irun < ds.GetNRuns(); irun++)
     {
-      int detID = DetIDList[ich];
-      string det = to_string(detID);
-      char detType = det.at(0);
-      pair<int,int> ch_pair = ch_select.GetChannelsFromDetID(detID);
-      tuple<int, int, int, int> CPDG = ch_select.GetCPDGFromChannel(ch_pair.first);
-      bool fix_veto = (ch_select.GetDetIsVetoOnly(detID) || detIDIsVetoOnly[detID]);
-      bool fix_bad = (ch_select.GetDetIsBad(detID) || detIDIsBad[detID]);
-      fix_detIDisVetoOnly[run_num][detID]= fix_veto;
-      fix_detIDisBad[run_num][detID] = fix_bad;
-      if(!fix_veto && !fix_bad) {
-        if ((get<0>(CPDG))==1) {
-          M1_mass_tot[irun] += actM4Det_g[detID];
-          if (detType=='1') M1_mass_enr[irun] += actM4Det_g[detID];
-          else if (detType=='2') M1_mass_nat[irun] += actM4Det_g[detID];
-        }
-        else if ((get<0>(CPDG))==2) {
-          M2_mass_tot[irun] += actM4Det_g[detID];
-          if (detType=='1') M2_mass_enr[irun] += actM4Det_g[detID];
-          else if (detType=='2') M2_mass_nat[irun] += actM4Det_g[detID];
-        }
+      int run_num = ds.GetRunNumber(irun);
+      TDirectory* tdir = gROOT->CurrentDirectory();
+      GATChannelSelectionInfo ch_select(channelSelectionPath.c_str(), run_num);
+      vector<int> DetIDList = ch_select.GetDetIDList();
+      gROOT->cd(tdir->GetPath());
+
+      // if we're missing ANY chsel files, throw a warning that applies to the WHOLE skim range
+      if (DetIDList.size()==0) {
+        noChSelFiles=1;
+        cout << "No channel selection files found for run " << run_num << ".\n"
+             << "Reverting to default active mass and veto-only/bad lists for the entire skim range ...\n";
+        break;
       }
-      else if (fix_veto) {
-        if ((get<0>(CPDG))==1) M1_mass_veto[irun] += actM4Det_g[detID];
-        else if ((get<0>(CPDG))==2) M2_mass_veto[irun] += actM4Det_g[detID];
+
+      // if we've got em, use em.
+      for (size_t ich=0; ich < DetIDList.size(); ich++)
+      {
+        int detID = DetIDList[ich];
+        string det = to_string(detID);
+        char detType = det.at(0);
+        pair<int,int> ch_pair = ch_select.GetChannelsFromDetID(detID);
+        tuple<int, int, int, int> CPDG = ch_select.GetCPDGFromChannel(ch_pair.first);
+        bool fix_veto = (ch_select.GetDetIsVetoOnly(detID) || detIDIsVetoOnly[detID]);
+        bool fix_bad = (ch_select.GetDetIsBad(detID) || detIDIsBad[detID]);
+        fix_detIDisVetoOnly[run_num][detID] = fix_veto;
+        fix_detIDisBad[run_num][detID] = fix_bad;
+        if(!fix_veto && !fix_bad) {
+          if ((get<0>(CPDG))==1) {
+            M1_mass_tot[irun] += actM4Det_g[detID];
+            if (detType=='1') M1_mass_enr[irun] += actM4Det_g[detID];
+            else if (detType=='2') M1_mass_nat[irun] += actM4Det_g[detID];
+          }
+          else if ((get<0>(CPDG))==2) {
+            M2_mass_tot[irun] += actM4Det_g[detID];
+            if (detType=='1') M2_mass_enr[irun] += actM4Det_g[detID];
+            else if (detType=='2') M2_mass_nat[irun] += actM4Det_g[detID];
+          }
+        }
+        else if (fix_veto) {
+          if ((get<0>(CPDG))==1) M1_mass_veto[irun] += actM4Det_g[detID];
+          else if ((get<0>(CPDG))==2) M2_mass_veto[irun] += actM4Det_g[detID];
+        }
       }
     }
   }
@@ -492,18 +564,22 @@ int main(int argc, const char** argv)
   // Rule of thumb: CR mode not enabled for DS-0 and DS-1 prior to 11635.
   bool isCRMode = false;
   gatReader.SetEntry(0);
-  string builtPath = ds.GetPathToRun(*runIn,GATDataSet::kBuilt);
-  TDirectory* tdir = gROOT->CurrentDirectory();
+  int run0;
+  if(useDoubles)
+    run0 = int(**static_cast<TTreeReaderValue<double>*>(runIn));
+  else
+    run0 = **static_cast<TTreeReaderValue<int>*>(runIn);
+  string builtPath = ds.GetPathToRun(run0,GATDataSet::kBuilt);
   TFile *bltFile = new TFile(builtPath.c_str(),"READ");
   MJTRun *runInfo = (MJTRun*)bltFile->Get("run");
   isCRMode = (runInfo->GetStartRunBoundaryType()==1 || runInfo->GetStopRunBoundaryType()==1);
-  if (!isCRMode) cout << Form("Continuous running mode NOT enabled for DS-%i, run %.0f\n",dsNum,*runIn);
+  if (!isCRMode) cout << Form("Continuous running mode NOT enabled for DS-%i, run %i\n",dsNum,run0);
 
-  MJTChannelMap *chMap = (MJTChannelMap*)bltFile->Get("ChannelMap");
-  vector<uint32_t> pulserMons = chMap->GetPulserChanList();
 
   // Variables for time of pulser event (dtPulser)
   // This assumes the Gretina card/settings map doesn't change for this skim period.
+  MJTChannelMap *chMap = (MJTChannelMap*)bltFile->Get("ChannelMap");
+  vector<uint32_t> pulserMons = chMap->GetPulserChanList();
   double dummyDTGlobal = -1.;
   map<int, double> dummydTCard = {};
   katrin::KTable chTable = chMap->GetTable();
@@ -520,19 +596,23 @@ int main(int argc, const char** argv)
     pulserCardMap[(int)chIDLoVec[i].AsDouble()] = (int)chVMEVec[i].AsDouble()*100 + (int)chSlotVec[i].AsDouble();
   }
 
-  gatReader.SetTree(gatChain); // reset the reader
-  gROOT->cd(tdir->GetPath());
-
   // Loop over events
+  gatReader.SetTree(gatChain); // reset the reader
+  gROOT->cd(skimDir->GetPath());
   double runSave = -1;
   int run_count = 0;
   bool lnFillCoverage = true;
   while(gatReader.Next())
   {
+    if(useDoubles)
+      run = int(**static_cast<TTreeReaderValue<double>*>(runIn));
+    else
+      run = **static_cast<TTreeReaderValue<int>*>(runIn);
+
     // stuff to do on run boundaries
-    if(runSave != *runIn) {
-      runSave = *runIn;
-      cout << "Processing run " << *runIn << ", "
+    if(runSave != run) {
+      runSave = run;
+      cout << "Processing run " << run << ", "
            << skimTree->GetEntries() << " entries saved so far"
            << endl;
       skimTree->Write("", TObject::kOverwrite);
@@ -545,10 +625,10 @@ int main(int argc, const char** argv)
       isCRMode = (runInfo->GetStartRunBoundaryType() == MJTRun::kContinuousNoTSReset || runInfo->GetStopRunBoundaryType() == MJTRun::kContinuousNoTSReset);
       chMap = (MJTChannelMap*)bltFile->Get("ChannelMap");
       pulserMons = chMap->GetPulserChanList();
-      gROOT->cd(tdir->GetPath());
+      gROOT->cd(skimDir->GetPath());
 
-      // Update active mass for this run.
-      if (dsNum==1 || dsNum==5) {
+      // Update active mass for this run IF we have good chSel files
+      if (!noChSelFiles && (dsNum==1 || dsNum==5)) {
         mAct_M1Total_kg = M1_mass_tot[run_count]/1000;
         mAct_M1enr_kg = M1_mass_enr[run_count]/1000;
         mAct_M1nat_kg = M1_mass_nat[run_count]/1000;
@@ -558,37 +638,51 @@ int main(int argc, const char** argv)
         mVeto_M1Total_kg = M1_mass_veto[run_count]/1000;
         mVeto_M2Total_kg = M2_mass_veto[run_count]/1000;
         run_count++;
-        detIDIsVetoOnly=fix_detIDisVetoOnly[*runIn];
-        detIDIsBad=fix_detIDisBad[*runIn];
+        detIDIsVetoOnly = fix_detIDisVetoOnly[run];
+        detIDIsBad = fix_detIDisBad[run];
       }
 
       // Check if we are covered by the LN fill tag.
-      bool runCov = GetLNRunCoverage(dsNum,*runIn);
+      bool runCov = GetLNRunCoverage(dsNum,run);
       if (!runCov && lnFillCoverage) {
-        cout << Form("WARNING:  LN fill tag does not cover DS-%i, run %i.  Further warnings will be suppressed.\n",dsNum,(int)*runIn);
+        cout << Form("WARNING:  LN fill tag does not cover DS-%i, run %i.  Further warnings will be suppressed.\n",dsNum,run);
         lnFillCoverage = false;
       }
     }
 
+    // Get channel list for event as vector<int>
+    vector<int> chList;
+    if(useDoubles) {
+      vector<double>& chanlist = **static_cast<TTreeReaderValue< vector<double> >* >(channelIn);
+      for(double chan : chanlist)
+        chList.push_back(int(chan));
+    }
+    else {
+      vector<unsigned int>& chanlist = **static_cast<TTreeReaderValue< vector<unsigned int> >* >(channelIn);
+      for(unsigned int chan : chanlist)
+        chList.push_back(int(chan));
+    }
+
     // Skip this event if it is a pulser event as identified by Pinghan
     // But still use it to update the dtPulser variables.
-    if(*eventDC1BitsIn & kPinghanPulserMask)
-    {
+    if(*eventDC1BitsIn & kPinghanPulserMask) {
       dummyDTGlobal = (double)*globalTimeIn;
       // cout << (int)dummyDTGlobal << endl;
-  		for (size_t i = 0; i < (*channelIn).size(); i++) {
-  			if(pulserCardMap[(*channelIn)[i]] == 0) continue; // Skip PMon channels
-  			dummydTCard[ pulserCardMap[(*channelIn)[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
+  		for (size_t i = 0; i < chList.size(); i++) {
+  			if(pulserCardMap[chList[i]] == 0) continue; // Skip PMon channels
+  			dummydTCard[ pulserCardMap[chList[i]] ] = (double)*globalTimeIn + (*tOffsetIn)[i]/CLHEP::s;
   		}
       if (!dontSkipAnything) continue;
     }
 
     // Clear all hit-level vector variables
+    rawRun.resize(0);
+    index.resize(0);
     iHit.resize(0);
     trapENFCal.resize(0);
     trapENMCal.resize(0);
     trapENFCalC.resize(0);
-    trapENMCalC.resize(0);
+    trapECal.resize(0);
     channel.resize(0);
     pos.resize(0);
     det.resize(0);
@@ -616,7 +710,6 @@ int main(int argc, const char** argv)
     dtPulserCard.resize(0);
     if (!simulatedInput) dtmu_s.resize(0);
     if (!smallOutput) {
-      trapECal.resize(0);
       onBoardE.resize(0);
       kvorrT.resize(0);
       trapETailMin.resize(0);
@@ -642,7 +735,6 @@ int main(int argc, const char** argv)
     // Copy event-level info to output variables
     iEvent = gatChain->GetTree()->GetReadEntry();
     gatrev = *gatrevIn;
-    run = int(*runIn);
     startTime = *startTimeIn;
     stopTime = *stopTimeIn;
     startClockTime = *startClockTimeIn/CLHEP::s;
@@ -654,7 +746,6 @@ int main(int argc, const char** argv)
     sumEH=0, sumEL=0, sumEHClean=0, sumELClean=0, sumEHL=0;
 
     // Event timing and vetos
-    muVeto = 0; // default
     if (!simulatedInput)
     {
       if (nMu!=0)
@@ -700,34 +791,35 @@ int main(int argc, const char** argv)
     }
 
     // ==========================================================================
-    // Create a list of hits to copy to output.
-    // NOTE: Instead of storing all HG and LG hits in an event,
-    //       setting the "noSkip" option to true (-n option)
-    //       decreases the "true" dead time by swapping in LG events
-    //       when the corresponding HG events are "bad" or do not exist.
+    // SKIM HIT SKIPPING.  Covers a buncha use cases in a couple of loops over hits.
+    // Creates a list of hits to copy to output: "hitsFinal"
 
-    vector<int> hits; // this is a VECTOR INDEX, not a channel number
-    if (!noSkip)
+    // Here we store the VECTOR INDEX (aka. Iteration$), not a channel number
+    vector<int> hits, hitsGood, hitsFinal;
+
+    // Round 1: HG/LG-based skips (reduce deadtime.  -n flag)
+    if (swapMode)
     {
-      // Get a map of channel numbers to vector indexes for this event.
-      // Skip any stray hits from pulser monitor channels.
+      // NOTE: Instead of storing all HG and LG hits in an event,
+      //       setting the "swapMode" option to true (-n option)
+      //       decreases the "true" dead time by swapping in LG events
+      //       when the corresponding HG events are "bad" or do not exist.
+
+      // Map channels to indexes.  Skip pulser monitor hits.
       map<int,int> chIdxMap;
-      for (size_t i = 0; i < (*channelIn).size(); i++) {
-        if (find(pulserMons.begin(),pulserMons.end(),(*channelIn)[i])!=pulserMons.end()) continue;
-        chIdxMap[(*channelIn)[i]] = (int)i;
+      for (size_t i = 0; i < chList.size(); i++) {
+        if (find(pulserMons.begin(),pulserMons.end(),chList[i])!=pulserMons.end()) continue;
+        chIdxMap[chList[i]] = (int)i;
       }
-
-      // Loop over the raw list of channels
-      for (size_t i=0; i < (*channelIn).size(); i++)
+      // Loop over channels
+      for (size_t i=0; i < chList.size(); i++)
       {
-        int chan = (*channelIn)[i];
-
         // Take LG if HG is not available
+        int chan = chList[i];
         if (chan%2==1 && chIdxMap.find(chan-1)==chIdxMap.end()) {
           hits.push_back(i);
           continue;
         }
-
         // Check if LG hit exists
         vector<int>::iterator it;
         if (chan%2==0) {
@@ -737,7 +829,6 @@ int main(int argc, const char** argv)
             // Take LG if HG is saturated and/or late trigger
             bool isSat = (*wfDCBitsIn)[i] & 0x40;  // RSDC Bit 6 - either pos. or neg. saturated WF
             bool isLate = (*wfDCBitsIn)[i] & 0x20; // RSDC Bit 5 - late trigger WF
-
             if (!isSat && !isLate) hits.push_back(i);   // H
             if (isSat || isLate)   hits.push_back(iLG); // L
           }
@@ -747,57 +838,158 @@ int main(int argc, const char** argv)
       }
     }
     else {
-      for (size_t i = 0; i < (*channelIn).size(); i++) {
-        int chan = (*channelIn)[i];
+      for (size_t i = 0; i < chList.size(); i++) {
+        int chan = chList[i];
         if (skipLG && chan%2==1) continue;
         hits.push_back(i);
       }
-
     }
 
-    // Finally, loop over hits, applying additional skips
+    // Round 2: bad/veto, bad cryo, and hitE skips
     for (auto i : hits)
     {
+      double hitENFCal = (*trapENFCalIn)[i];
+      double hitENF = (*trapENFIn)[i];
+      double hitEMax = (*trapECalIn)[i];
+      int hitCh = chList[i];
+      int hitDetID = (*detIDIn)[i];
+
       // Skip all hits with E_H < 5 keV, E_L < 10 keV in either trapECal or trapENFCal
-      // For small skim files, skip all hits with E_H and E_L < 200 keV in trapECal or trapENFCal
+      // Check hitEMax s/t we don't include a bunch of E=999999 hits from uncalibrated detectors.
+      if (!smallOutput && hitCh%2 == 0 && (hitENFCal < energyThresh || hitEMax < energyThresh)) continue;
+      if (!smallOutput && hitCh%2 == 1 && (hitENFCal < 10. || hitEMax < 10.)) continue;
+
+      // TODO: when we are ready to break backwards compatibility, we can use this (clearer?) condition:
+      // if (!smallOutput && (hitENFCal < energyThresh || hitENFCal > 999998)) continue;
+
+      // For small skim files, skip all hits with E_H and E_L < 200 keV in trapECal or trapENFCal by default
+      if (smallOutput && (hitENFCal < energyThresh || hitEMax < energyThresh)) continue;
+
+      // Skip hits from totally "bad" detectors (not biased, etc)
+      // for veto-only detectors, skip if trapENFCal or abs(trapENF) is < 10 keV
+      if(!simulatedInput && detIDIsBad[hitDetID]) continue;
+      if(!simulatedInput && detIDIsVetoOnly[hitDetID] && (abs(hitENF) < 10. || hitENFCal < 10.)) continue;
+
+      // Skip any hits from a nonsense cryostat
+      int hitCryo = (*cryoIn)[i];
+      if (hitCryo == 0) {
+      if (find(c0Chan.begin(), c0Chan.end(), hitCh) == c0Chan.end())
+        c0Chan.push_back(hitCh);
+      continue;
+      }
+
+      // calculate multiplicity and sum energy
+      if(hitCh%2 == 0) {
+        mH++;
+        if(!detIDIsVetoOnly[hitDetID]) sumEH += hitENFCal;
+      }
+      else {
+        mL++;
+        if(!detIDIsVetoOnly[hitDetID]) sumEL += hitENFCal;
+      }
+      if (swapMode) {
+        mHL++;
+        if(!detIDIsVetoOnly[hitDetID]) sumEHL += hitENFCal;
+      }
+
+      hitsGood.push_back(i);
+    }
+
+    // Round 3 (optional): Apply sumEH (whole-event) skip, recalculate multiplicity & sumE. (-s flag)
+    if (sumSkip) {
+      mH=0, mL=0, mHL=0, sumEH=0, sumEL=0, sumEHL=0;
+
+      bool hitOver10 = 0;
+      for (auto i : hitsGood) {
+        int hitCh = chList[i];
+        int hitDetID = (*detIDIn)[i];
+        double hitENFCal = (*trapENFCalIn)[i];
+
+        if (hitENFCal > 99998) continue;
+        if (hitENFCal > 10.) hitOver10 = 1;
+
+        if (hitCh%2==0) {
+          mH++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEH += hitENFCal;
+        }
+        else {
+          mL++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEL += hitENFCal;
+        }
+        if (swapMode){
+          mHL++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEHL += hitENFCal;
+        }
+      }
+
+      // conditions to skip this event completely
+      if (!swapMode && (!hitOver10 || sumEH < energyThresh || sumEL < energyThresh)) continue;
+      if (swapMode && (!hitOver10 || sumEHL < energyThresh)) continue;
+    }
+
+    // Round 4 (optional): Blind mode (-b flag)
+    if (blindMode) {
+      mH=0, mL=0, mHL=0, sumEH=0, sumEL=0, sumEHL=0;
+
+      bool rejectEvent=0;
+      for (auto i : hitsGood) {
+        int hitCh = chList[i];
+        int hitDetID = (*detIDIn)[i];
+        double hitENFCal = (*trapENFCalIn)[i];
+        double hitENFCalC = GetENFC(hitCh, dsNum, hitENFCal, run);
+
+        if (!unblind1 && hitENFCalC > 1900 && hitENFCalC < 2400) rejectEvent=1;
+        if (!unblind2 && hitENFCalC < 100) rejectEvent=1;
+
+        if (hitCh%2==0) {
+          mH++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEH += hitENFCal;
+        }
+        else {
+          mL++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEL += hitENFCal;
+        }
+        if (swapMode){
+          mHL++;
+          if(!detIDIsVetoOnly[hitDetID]) sumEHL += hitENFCal;
+        }
+        hitsFinal.push_back(i);
+      }
+      if (!unblind3 && (mH > 1 || mL > 1 || mHL > 1)) rejectEvent=1;
+      if (rejectEvent) continue;
+    }
+    else
+      hitsFinal = hitsGood;
+
+
+    // ==========================================================================
+    // WRITE OUTPUT
+    // Now that we've applied all skips, write any surviving hits to the output tree.
+    for (auto i : hitsFinal)
+    {
       double hitENFCal = (*trapENFCalIn)[i];
       double hitENMCal = (*trapENMCalIn)[i];
       double hitENF = (*trapENFIn)[i];
       double hitEMax = (*trapECalIn)[i];
-      int hitCh = (*channelIn)[i];
-      if (!dontSkipAnything) {
-        if (!smallOutput && hitCh%2 == 0 && (hitENFCal < energyThresh || hitEMax < energyThresh)) continue;
-        if (!smallOutput && hitCh%2 == 1 && (hitENFCal < 10. || hitEMax < 10.)) continue;
-        if (smallOutput && hitCh%2 == 0 && (hitENFCal <  200. || hitEMax < 200.)) continue;
-        if (smallOutput && hitCh%2 == 1 && (hitENFCal < 200. || hitEMax < 200.)) continue;
-      }
-
-      // Skip hits from totally "bad" detectors (not biased, etc)
-      // for veto-only detectors, skip if trapENFCal or abs(trapENF) is < 10 keV
+      int hitCh = chList[i];
       int hitDetID = (*detIDIn)[i];
-      if (!dontSkipAnything) {
-        if(!simulatedInput && detIDIsBad[hitDetID]) continue;
-        if(!simulatedInput && detIDIsVetoOnly[hitDetID] && (abs(hitENF) < 10. || hitENFCal < 10.)) continue;
-      }
-
-      // Skip any hits from a nonsense cryostat
       int hitCryo = (*cryoIn)[i];
-      if (hitCryo == 0 && !dontSkipAnything) {
-        if (find(c0Chan.begin(), c0Chan.end(), hitCh) == c0Chan.end())
-          c0Chan.push_back(hitCh);
-        continue;
-      }
 
       // Copy hit info to output vectors
+      if(!useDoubles) {
+        rawRun.push_back((**static_cast<TTreeReaderValue< vector<int> >* >(rawRunIn))[i]);
+        index.push_back((**static_cast<TTreeReaderValue< vector<unsigned long> >* >(indexIn))[i]);
+      }
+      channel.push_back(hitCh);
       cryo.push_back(hitCryo);
       pos.push_back((*posIn)[i]);
       det.push_back((*detIn)[i]);
       gain.push_back(hitCh % 2);
-      channel.push_back(hitCh);
       iHit.push_back(i);
       tOffset.push_back((*tOffsetIn)[i]);
       trapENFCal.push_back(hitENFCal);
       trapENMCal.push_back(hitENMCal);
+      trapECal.push_back(hitEMax);
       mageID.push_back((*mageIDIn)[i]);
       detID.push_back(hitDetID);
       detName.push_back((*detNameIn)[i]);
@@ -806,36 +998,31 @@ int main(int argc, const char** argv)
       mAct_g.push_back(actM4Det_g[hitDetID]);
       isGood.push_back(!detIDIsVetoOnly[hitDetID]);
       trapENFCalC.push_back(GetENFC(hitCh, dsNum, hitENFCal, run));
-      trapENMCalC.push_back(GetENMC(hitCh, dsNum, hitENMCal, run));
 
       //============================================================================
       // FIXME: Temporary change to fix some data cleaning bits at the skim
       // level, until it makes sense to reprocess to fix them in GAT.
-      // Break out wfDCBitsIn into something more readable.
       unsigned int wfDCBitsVal = (*wfDCBitsIn)[i];
       bitset<32> wfDCBitset(wfDCBitsVal);
 
-      //If the pileup waveforms bit (8) has been set, set it to false, then
-      //update wfDCBitsVal.
+      // If the pileup waveforms bit (8) has been set, set it to false, then update wfDCBitsVal.
       if(wfDCBitset[8]){
         wfDCBitset.set(8,0);
         wfDCBitsVal = (unsigned int)(wfDCBitset.to_ulong());
       }
-
-      // if dsNum != 2 , dsNum < 6, fix the negative saturated waveform tagging by
+      // If dsNum != 2 , dsNum < 6, fix the negative saturated waveform tagging by
       // looking for the correct rawWFMin value to cut on, then setting
       // wfDCBitset Bit 7 to true, and updating wfDCBitsVal.
-      if((dsNum != 2) && (dsNum < 6)){
-
-          //First of all, if it's been tagged negative saturated, but the
-          //rawWFMin is not in the correct range, undo the tag.
+      if((dsNum != 2) && (dsNum < 6))
+      {
+          // If it's been tagged negative saturated, but the
+          // rawWFMin is not in the correct range, undo the tag.
           if((wfDCBitset[7]) && (!((-8192.5 < (*rawWFMinIn)[i]) && ((*rawWFMinIn)[i] < -8191.5)))){
             wfDCBitset.set(7,0);
             wfDCBitsVal = (unsigned int)(wfDCBitset.to_ulong());
           }
-
-          //If rawWFMin is in the correct range to tag, and the bit has not
-          //been set, set the bit to tag it properly.
+          // If rawWFMin is in the correct range to tag, and the bit has not
+          // been set, set the bit to tag it properly.
           if((!(wfDCBitset[7])) && ((-8192.5 < (*rawWFMinIn)[i]) && ((*rawWFMinIn)[i] < -8191.5))){
             wfDCBitset.set(7,1);
             wfDCBitsVal = (unsigned int)(wfDCBitset.to_ulong());
@@ -844,12 +1031,25 @@ int main(int argc, const char** argv)
       // Unless one or both of the above changes have been made, this is untouched
       wfDCBits.push_back(wfDCBitsVal);
       //============================================================================
+      // Do a 'clean' multiplicity & sum energy calculation (applies wfDCBits)
+      if(hitCh%2 == 0 && !((~0x010) & wfDCBits[wfDCBits.size()-1])) {
+        mHClean++;
+        if(!detIDIsVetoOnly[hitDetID]) sumEHClean += hitENFCal;
+      }
+      if (hitCh%2 == 1 && !((~0x010) & wfDCBits[wfDCBits.size()-1])) {
+        mLClean++;
+        if(!detIDIsVetoOnly[hitDetID]) sumELClean += hitENFCal;
+      }
+      if (swapMode && !((~0x010) & wfDCBits[wfDCBits.size()-1])) {
+        mHLClean++;
+        if(!detIDIsVetoOnly[hitDetID]) sumEHLClean += hitENFCal;
+      }
+      //============================================================================
 
       nX.push_back((*nRisingXIn)[i]);
       d2wfnoiseTagNorm.push_back((*d2wfnoiseTagNormIn)[i]);
       nFlippedBits.push_back((*nFlippedBitsIn)[i]);
       if(!smallOutput){
-        trapECal.push_back(hitEMax);
         onBoardE.push_back((*energyIn)[i]);
         kvorrT.push_back((*triTrapMaxIn)[i]);
         trapETailMin.push_back((*trapETailMinIn)[i]);
@@ -894,29 +1094,6 @@ int main(int argc, const char** argv)
         dtmu_s.push_back(dtmu);
       }
 
-      // Granularity (multiplicity) and sum energy calculation
-      if(hitCh%2 == 0) {
-        mH++;
-        if(!detIDIsVetoOnly[hitDetID]) sumEH += hitENFCal;
-      }
-      else {
-        mL++;
-        if(!detIDIsVetoOnly[hitDetID]) sumEL += hitENFCal;
-      }
-      if(hitCh%2 == 0 && !((~0x010) & wfDCBits[wfDCBits.size()-1])) {
-        mHClean++;
-        if(!detIDIsVetoOnly[hitDetID]) sumEHClean += hitENFCal;
-      }
-      if (hitCh%2 == 1 && !((~0x010) & wfDCBits[wfDCBits.size()-1])) {
-        mLClean++;
-        if(!detIDIsVetoOnly[hitDetID]) sumELClean += hitENFCal;
-      }
-
-      // Hit skipping is already done, so add to mHL and sumEHL.
-      mHL++;
-      sumEHL += hitENFCal;
-
-
     } // end loop over hits.
 
     // Done with this event.
@@ -935,3 +1112,6 @@ int main(int argc, const char** argv)
   fOut->Close();
   return 0;
 }
+
+
+
