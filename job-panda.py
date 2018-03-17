@@ -22,7 +22,7 @@ def main(argv):
     # defaults
     global jobStr, useJobQueue
     # jobStr = "sbatch slurm-job.sh" # SLURM mode
-    jobStr = "sbatch pdsf.slr" # SLURM+Shifter mode
+    jobStr = "sbatch pdsf.slr" # SLURM + Shifter mode
     dsNum, subNum, runNum, argString, calList, useJobQueue = None, None, None, None, [], False
 
     # loop over user args
@@ -194,7 +194,7 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSkim.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigWave.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
     # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSplit.list python3 %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    sh("%s slurm.slr './job-pump.sh jobLists/forceAcqLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
+    # sh("%s slurm.slr './job-pump.sh jobLists/forceAcqLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

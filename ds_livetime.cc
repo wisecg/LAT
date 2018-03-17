@@ -6,14 +6,6 @@
 // "Livetime and Exposure for Majorana Demonstrator Data Sets 0-5"
 // https://mjdoc.npl.washington.edu/record/1863?ln=en
 
-// NOTE: Updates to this code since the 0nbb analysis:
-// -- "-idx" option: prints results for every detector in every bkgIdx to screen.
-// -- PulserDT's are now calculated as FRACTIONS, instead of being applied once per subset.
-//    There was a slight difference between David's run selection and the 0nbb selection,
-//    which caused ONLY pulser deadtime to be very slightly overcounted.
-// -- Corrected a small bug that allowed a "dead" detector (no pulser counts) to have a
-//    negative livetime for a single run when the muon and LN vetos were applied.
-
 #include <iostream>
 #include <map>
 #include <ctime>
@@ -35,7 +27,7 @@
 using namespace std;
 using namespace MJDB;
 
-void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT, bool idx,
+void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT,
   map<int,vector<string>> ranges = map<int,vector<string>>(),
   vector<pair<int,double>> times = vector<pair<int,double>>(),
   map<int,vector<int>> burst = map<int,vector<int>>());
@@ -44,7 +36,7 @@ bool compareInterval(pair<int,int> i1, pair<int,int> i2) { return (i1.first < i2
 int mergeIntervals(vector<pair<int,int>> vals, int start, int stop);
 map<int,vector<int>> LoadBurstCut();
 void getDBRunList(int &dsNum, double &ElapsedTime, string options, vector<int> &runList, vector<pair<int,double>> &times);
-int locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT);
+void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT);
 map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi=-1) ;
 double getTotalLivetimeUncertainty(map<int, double> livetimes, string opt="");
 double getLivetimeAverage(map<int, double> livetimes, string opt="");
@@ -52,7 +44,7 @@ double getVectorUncertainty(vector<double> aVector);
 double getVectorAverage(vector<double> aVector);
 vector<uint32_t> getBestIDs(vector<uint32_t> input);
 double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> expUnc, vector<uint32_t> IDs, int nIterations=1000);
-vector<int> GetBkgIdxRuns(int dsNum);
+
 
 bool check_num(std::string const &in) {
     char *end;
@@ -81,7 +73,7 @@ int main(int argc, char** argv)
          << "    Ex.2: ./ds_livetime 5 -db1 'dataset 3'\n";
 		return 1;
 	}
-  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, ds5a=0, ds5b=0, idx=0;
+  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, ds5a=0, ds5b=0;
   int dsNum;
   string dsStr = argv[1];
   if (check_num(dsStr)) dsNum = stoi(dsStr);
@@ -92,7 +84,6 @@ int main(int argc, char** argv)
   string runDBOpt = "";
   vector<string> opt(argv+1, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
-    if (opt[i] == "-idx") { idx=1; }
     if (opt[i] == "-raw") { raw=1; }
     if (opt[i] == "-gds") { gds=1; }
     if (opt[i] == "-db1") { lt=0; rdb=1; runDBOpt = opt[i+1]; }
@@ -113,7 +104,7 @@ int main(int argc, char** argv)
     map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT);
 
     // -- Main routine --
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,idx,ranges);
+    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges);
   }
 
   // -- Do SIMPLE GATDataSet method and quit (-gds) --
@@ -143,7 +134,7 @@ int main(int argc, char** argv)
     getDBRunList(dsNum, ElapsedTime, runDBOpt, runList, times); // auto-detects dsNum
     map<int, vector<string>> ranges = getDeadtimeMap(0,noDT,5); // we don't know what DS we're in, so load them all.
     // -- Main routine --
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,idx,ranges,times);
+    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges,times);
   }
 
   // -- Do primary livetime with a low-energy run+channels 'burst' cut applied. --
@@ -158,22 +149,18 @@ int main(int argc, char** argv)
 
     // -- Main routine --
     vector<pair<int,double>> times; // dummy (empty)
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,idx,ranges,times,burst);
+    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges,times,burst);
   }
 }
 // =======================================================================================
 
-void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT, bool idx,
+void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT,
   map<int,vector<string>> ranges,
   vector<pair<int,double>> times,
   map<int,vector<int>> burst)
 {
   // Do we have deadtime files for this dataset?
   if (noDT) cout << "No deadtime files available, will show only runtime-exposure...\n";
-
-  // was "idx" set?
-  if (idx)
-    cout << "'-idx' option selected. Printing results for each bkgIdx ...\n";
 
   // Do we have M1 and M2 enabled?
   bool mod1=0, mod2=0;
@@ -200,7 +187,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   map<int,double> actM4Det_g = LoadActiveMasses(dsNum);
   map<int,double> actMUnc4Det_g = LoadActiveMassUncertainties(dsNum);
   map<int,bool> detIsEnr = LoadEnrNatMap();
-  vector<int> bkgIdxRuns = GetBkgIdxRuns(dsNum);
+
 
   // ====== Loop over runs ======
   double runTime=0, vetoRunTime=0, vetoDead=0, m1LNDead=0, m2LNDead=0;
@@ -214,24 +201,19 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   double dtfRunTimeHG=0, dtfRunTimeLG=0;  // dummy runtimes for deadtime fraction (hg and lg det's)
   double dtfRunTimeBest=0;                // dummy runtime for deadtime fraction ('best' det's)
   vector<double> dtfDeadTime(10,0);       // individual deadtimes
-  map <int,double> bkgIdxExposure;// exposure for each channel in each bkgIdx
   time_t prevStop=0;
   int prevSubSet=-1;
-  int bkgIdx = 0;
   for (size_t r = 0; r < runList.size(); r++)
   {
     int run = runList[r];
+    // cout << "Scanning run " << run << endl;
     if (fmod(100*(double)r/runList.size(), 10.0) < 0.1)
       cout << 100*(double)r/runList.size() << " % done, run " << run << endl;
 
      // Load the deadtime file ONLY when the subset changes.
     int runInSet = -1;
     string dtFilePath;
-    int nRunsDTSubset = 0;
-    if (!noDT) {
-      nRunsDTSubset = locateRunRange(run,ranges,runInSet,dtFilePath,noDT);
-      if (dsNum==0) nRunsDTSubset = 2149; // deadtime is applied to entire dataset
-    }
+    if (!noDT) locateRunRange(run,ranges,runInSet,dtFilePath,noDT);
     double hgDeadAvg=0, lgDeadAvg=0, orDeadAvg=0;
     if (!noDT && (runInSet != prevSubSet))
     {
@@ -292,21 +274,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       prevSubSet = runInSet;
     }
     // if (firstTimeInSubset) continue; // debugging for printing out deadtime maps
-
-    // '-idx' option: At each new bkgIdx, print out the exposure for all detectors.
-    if (idx) {
-      if ( std::find(bkgIdxRuns.begin(), bkgIdxRuns.end(), run) != bkgIdxRuns.end() ) {
-        cout << "bkgIdx " << bkgIdx << endl;
-        for(auto &idx : bkgIdxExposure) {
-          int chan = idx.first;
-          double exposure = idx.second;
-          cout << chan << " : " << exposure << endl;
-        }
-        bkgIdx++;
-        bkgIdxExposure.clear();
-        // cout << "Warning, not clearing bkgIdxExposure\n";
-      }
-    }
 
     // Load built file
     GATDataSet ds;
@@ -545,12 +512,11 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
       double thisLiveTime=0;
       string pos = chMap->GetDetectorPos(ch);
-      double hgDead=0, lgDead=0, hgPulserDT=0, lgPulserDT=0;
       if (dtMap.find(pos) != dtMap.end())
       {
         // calculate hardware deadtime and handle bad values (val<0)
-        hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
-        lgDead = dtMap[pos][1]/100.0;
+        double hgDead = dtMap[pos][0]/100.0; // value is in percent, divide by 100
+        double lgDead = dtMap[pos][1]/100.0;
         if (hgDead < 0 && lgDead >= 0) hgDead = lgDead;
         if (lgDead < 0 && hgDead >= 0) lgDead = hgDead;
         if (lgDead < 0 && hgDead < 0) { hgDead = hgDeadAvg; lgDead = lgDeadAvg; }
@@ -559,27 +525,20 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         // Takes out 62 or 100 us per pulser as deadtime.
         double hgPulsers = dtMap[pos][3];
         double lgPulsers = dtMap[pos][4];
-        hgPulserDT = hgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
-        lgPulserDT = lgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
+        double hgPulserDT = hgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
+        double lgPulserDT = lgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
 
-        // Get livetime for this channel.
-        // OLD: Subtract off the pulser deadtime from the entire subset only once.
-        // NEW: Subtract off hgPulserDT/nRunsDTSubset.
-
+        // Get livetime for this channel.  Subtract off the pulser deadtime from the entire subset only once.
         if (ch%2 == 0) {
-          // thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
-          thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT / (double)nRunsDTSubset;
+          thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[0] += thisRunTime * hgDead;
-          // dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
-          dtfDeadTime[3] += hgPulserDT / (double)nRunsDTSubset;
+          dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
           dtfRunTimeHG += thisRunTime;
         }
         if (ch%2 == 1) {
-          // thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT*(firstTimeInSubset?1:0);
-          thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT / (double)nRunsDTSubset;
+          thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT*(firstTimeInSubset?1:0);
           dtfDeadTime[1] += thisRunTime * lgDead;
-          // dtfDeadTime[4] += lgPulserDT*(firstTimeInSubset?1:0);
-          dtfDeadTime[4] += lgPulserDT / (double)nRunsDTSubset;
+          dtfDeadTime[4] += lgPulserDT*(firstTimeInSubset?1:0);
           dtfRunTimeLG += thisRunTime;
         }
       }
@@ -587,52 +546,29 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         cout << "Warning: Detector " << pos << " not found! Exiting ...\n";
         return;
       }
+      channelLivetime[ch] += thisLiveTime;
 
-      // Sanity check: livetime must always be >= 0.
-      if (thisLiveTime < 0){
-        cout << Form("ERROR - ch %i  LT %.2f  ",ch,thisLiveTime);
-        if (ch%2==0) cout << Form("hgDead %.2f  pulserDead %.4f\n",hgDead,hgPulserDT/(double)nRunsDTSubset);
-        if (ch%2==1) cout << Form("lgDead %.2f  pulserDead %.4f\n",lgDead,lgPulserDT/(double)nRunsDTSubset);
-        return;
-      }
-
-      // Calculate LN dead time
+      // LN reduction - depends on if channel is M1 or M2
       double thisLNDeadTime = 0;
       GATDetInfoProcessor gp;
       int detID = gp.GetDetIDFromName( chMap->GetString(ch, "kDetectorName") );
       if (CheckModule(detID)==1) thisLNDeadTime = m1LNDeadRun;
       if (CheckModule(detID)==2) thisLNDeadTime = m2LNDeadRun;
+      channelLivetime[ch] -= thisLNDeadTime;
+      thisLiveTime -= thisLNDeadTime;
+      dtfDeadTime[6] += thisLNDeadTime;
 
-      // Apply veto and LN reductions.
-      if ((thisLNDeadTime + vetoDeadRun) <= thisLiveTime)
-      {
-          thisLiveTime -= thisLNDeadTime;
-          dtfDeadTime[6] += thisLNDeadTime;
-
-          thisLiveTime -= vetoDeadRun;
-          dtfDeadTime[8] += vetoDeadRun;
-      }
-      else {
-        // subtract UP TO 'thisRunTime' from the counters.
-        // cout << Form("This happened, channel %i  lnDead %.1f  vetoDead %.1f  thisLT %.1f\n", ch,thisLNDeadTime,vetoDeadRun,thisLiveTime);
-        dtfDeadTime[6] -= (thisLiveTime > thisLNDeadTime) ? thisLNDeadTime : thisLiveTime;
-        dtfDeadTime[8] -= (thisLiveTime > vetoDeadRun) ? vetoDeadRun : thisLiveTime;
-        thisLiveTime = 0;
-      }
-
-      // increment the global counter
-      channelLivetime[ch] += thisLiveTime;
+      // Veto reduction - applies to all channels in BOTH modules.
+      channelLivetime[ch] -= vetoDeadRun;
+      thisLiveTime -= vetoDeadRun;
+      dtfDeadTime[8] += vetoDeadRun;
 
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
 
-      // '-idx' option: increment channel exposure (used w/ low-energy, so print HG channels only)
-      if (idx && ch%2==0) {
-        int detID = detChanToDetIDMap[ch];
-        double activeMass = actM4Det_g[detID]/1000;
-        bkgIdxExposure[ch] += activeMass * thisLiveTime/86400.0;
-      }
     }
+    // cout << "dtfRunTimeHG " << dtfRunTimeHG << " dtfRunTimeLG " << dtfRunTimeLG << endl;
+    // cout << "Now best\n";
 
     // Add to "Best" Livetime:  One entry per detector (loops over 'best' channel list)
     for (auto ch : bestIDs)
@@ -680,12 +616,10 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         // calculate pulser deadtime only if we have a nonzero number of OR pulsers
         double orPulsers = p3;
         double orPulserDT = orPulsers*(dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
-        // dtfDeadTime[5] += orPulserDT*(firstTimeInSubset?1:0);
-        dtfDeadTime[5] += orPulserDT / (double)nRunsDTSubset;
+        dtfDeadTime[5] += orPulserDT*(firstTimeInSubset?1:0);
 
         // get best livetime
-        // bestLiveTime = thisRunTime * (1 - orDead) - orPulserDT*(firstTimeInSubset?1:0);
-        bestLiveTime = thisRunTime * (1 - orDead) - orPulserDT / (double)nRunsDTSubset;
+        bestLiveTime = thisRunTime * (1 - orDead) - orPulserDT*(firstTimeInSubset?1:0);
         if (bestLiveTime < 0) {
           cout << Form("Error, negative livetime.  ch %d  orDead %.4f  orPulser %.4f\n", ch, orDead, orPulserDT);
           return;
@@ -727,16 +661,6 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     delete bltFile;
   } // End loop over runs.
 
-  // print out the last bkgIdxExposure
-  if (idx) {
-    int nLastBkgIdx = GetDataSetSequences(dsNum);
-    cout << "bkgIdx " << nLastBkgIdx << endl;
-    for(auto &idx : bkgIdxExposure) {
-      int chan = idx.first;
-      double exposure = idx.second;
-      cout << chan << " : " << exposure << endl;
-    }
-  }
 
   // ========================================================
   // === Calculate channel-by-channel exposure in kg-days ===
@@ -773,6 +697,9 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 
     channelExposure[chan] = activeMass * livetime;
 
+    if(hwDeadTimes[chan].size() < 1){
+
+    }
     double ltHWUnc = livetime*getVectorUncertainty(hwDeadTimes[chan]);  // TODO: This should maybe not use hwDeadTimes
     double totalLTUnc = sqrt(channelRuntimeStd2[chan] + ltHWUnc*ltHWUnc)/(3600*24);
 
@@ -977,8 +904,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
          << Form("\n   Muon Veto OR/Best: %.4e  %.4e  %.4e\n",dtFrac[9]*100,dtfDeadTime[9],dtfRunTimeBest);
   }
 
-  cout << "\nAll-channel summary: \n"
-       << "Chan  DetID     A.M.(kg)  Runtime(d)  Exposure (w/DT) (kg-d)\n";
+  cout << "\nAll-channel summary (no deadtime corrections) : \n"
+       << "Chan  DetID     A.M.(kg)  Runtime(d)  RT-Expo(kg-d)\n";
 
   for(auto &raw : channelRuntime) // Loop over raw, not reduced livetimes for now.
   {
@@ -988,7 +915,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     if (detID==-1) continue; // don't print pulser monitor chans
     double activeMass = actM4Det_g[detID]/1000;
 
-    cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-13.10f\n", chan,detID,activeMass,chRun,channelExposure[chan]);
+    cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-13.4f\n", chan,detID,activeMass,chRun,channelExposure[chan]);
   }
 }
 
@@ -1140,14 +1067,12 @@ map<int,vector<int>> LoadBurstCut()
 }
 
 
-// Looks up which sub-range a particular run is in, given a range map.  Returns the number of runs in the subset.
-int locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT)
+// Looks up which sub-range a particular run is in, given a range map.
+void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT)
 {
   bool foundRun = false;
-  int nRuns = 0;
-  vector<string> thisRange;
   for (auto& r : ranges) {
-    thisRange = r.second; // c++ map trick: the first string is the file path, the rest are the run ranges.
+    vector<string> thisRange = r.second; // c++ map trick: the first string is the file path, the rest are the run ranges.
     dtFilePath = thisRange[0];
 
     for (size_t i = 1; i < thisRange.size(); i+=2) {
@@ -1158,20 +1083,13 @@ int locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, strin
         break;
       }
     }
-    if (foundRun) {
-      string lisFilePath = dtFilePath.substr(0, dtFilePath.find_last_of(".")) + ".lis";
-      string line;
-      ifstream lisFile(lisFilePath);
-      while (getline(lisFile, line)) nRuns++;
-      break;
-    }
+    if (foundRun) break;
   }
   if (!foundRun) {
     if (!noDT) cout << "Couldn't find deadtime file for run " << run << ". Reverting to runtime-only calculation ...\n";
     runInSet = -1;
     noDT = true;
   }
-  return nRuns;
 }
 
 // Parses the 'lis' files in ./deadtime/ to make a range map.
@@ -1419,15 +1337,3 @@ double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> ex
 
 }
 
-
-vector<int> GetBkgIdxRuns(int dsNum)
-{
-  GATDataSet ds;
-  map<int, vector<int>> runRanges = LoadDataSet(ds, dsNum);
-
-  vector<int> bkgRuns;
-  for (int i = 1; i <= GetDataSetSequences(dsNum); i++){
-    bkgRuns.push_back(runRanges[i][0]);
-  }
-  return bkgRuns;
-}
