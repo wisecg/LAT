@@ -33,7 +33,7 @@ using namespace CLHEP;
 
 int main(int argc, const char** argv)
 {
-  if (argc < 3 || argc > 8) {
+  if (argc < 3) {
     cout << "Usage:  ./skim_mjd_data [options] [output path (optional)]\n"
          << " -- Data sets:       ./skim_mjd_data [dsNum] [subNum]\n"
          << " -- Blind data sets: ./skim_mjd_data -b [ds] [sub]\n"

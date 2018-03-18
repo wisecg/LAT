@@ -23,11 +23,10 @@ pandaDir    = dataDir+"/pandas"
 
 # ==================================================================================
 #                                RUN INFORMATION
-# Taken from DataSetInfo.hh from the GAT version on Sep 12th 2017.
 # ==================================================================================
 
 # number of BG run ranges
-dsMap = {0:75,1:51,2:7,3:24,4:18,5:112,6:26}
+dsMap = {0:75,1:51,2:7,3:24,4:18,5:121,6:43}
 
 # runs must cover bg list and calibration runs
 dsRanges = {
@@ -359,7 +358,7 @@ class CalInfo:
             lo, hi = lst[i], lst[i+1]
             runList += range(lo, hi+1)
         if runLimit is not None:
-            del runList[10:]
+            del runList[runLimit:]
         return runList
 
     def GetCalRunCoverage(self,key,idx):

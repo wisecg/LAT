@@ -13,7 +13,7 @@ import sys, shlex, glob, os, re, time
 import subprocess as sp
 import DataSetInfo as ds
 
-nc = {"pdsf":[30,33], "cori":[60,66], "edison":[48,52]}
+
 jobQueue = ds.latSWDir+"/job.queue"
 
 # =============================================================
@@ -48,11 +48,11 @@ def main(argv):
         if opt == "-pandify":   pandifySkim(dsNum, subNum, runNum, calList=calList)
 
         # mega modes
-        if opt == "-mskim":  [runSkimmer(i) for i in range(0,5+1)]
-        if opt == "-mwave":  [runWaveSkim(i) for i in range(0,5+1)]
-        if opt == "-msplit": [qsubSplit(i) for i in range(0,5+1)]
-        if opt == "-mlat":   [runLAT(i) for i in range(0,5+1)]
-        if opt == "-mcut":   [writeCut(i) for i in range(0,5+1)]
+        if opt == "-mskim":  [runSkimmer(i) for i in range(0,6+1)]
+        if opt == "-mwave":  [runWaveSkim(i) for i in range(0,6+1)]
+        if opt == "-msplit": [qsubSplit(i) for i in range(0,6+1)]
+        if opt == "-mlat":   [runLAT(i) for i in range(0,6+1)]
+        if opt == "-mcut":   [writeCut(i) for i in range(0,6+1)]
 
         # misc
         if opt == "-split":     splitTree(dsNum, subNum, runNum)
@@ -92,7 +92,7 @@ def sh(cmd):
             f.write(cmd + "\n")
 
 
-def getSBatch(opt):
+def getSBatch(opt, getCores=True):
     """
     http://www.nersc.gov/users/computational-systems/cori/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
@@ -118,8 +118,8 @@ def getSBatch(opt):
             "--output=%s/logs/pdsf-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
             "-p shared",
-            "-n%d" % nc["pdsf"][0],
-            "-t 24:00:00",
+            "-n30", # match nCores for pdsf below
+            "-t 12:00:00",
         ],
         "cori": [
             "--workdir=%s" % (ds.latSWDir),
@@ -128,21 +128,28 @@ def getSBatch(opt):
             "-C haswell",
             "-N 1",
             "--qos=debug",
+            "-t 00:10:00"
             # "--qos=regular",
             # "-t 24:00:00",
-            "-t 00:10:00"
         ],
         "edison": [
             "--workdir=%s" % (ds.latSWDir),
             "--output=%s/logs/edison-%%j.txt" % (ds.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-t 10:00:00",
+            "-t 24:00:00",
             # "-t 00:10:00",
             # "--qos=debug"
             "--qos=regular"
         ]
     }
-    return "sbatch "+' '.join(batchOpts[opt])
+    sbStr = "sbatch "+' '.join(batchOpts[opt])
+
+    if getCores:
+        if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
+        if "cori" in opt: return sbStr, 60, 66
+        if "edison" in opt: return sbStr, 48, 52
+    else:
+        return sbStr
 
 
 def runBatch():
@@ -151,50 +158,44 @@ def runBatch():
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/queues-and-policies/
     http://www.nersc.gov/users/accounts/user-accounts/how-usage-is-charged/
     """
-    # EX. 1 - single job -- chos
+    # EX. 1: Run a single job under chos
     # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (ds.specialDir)
-    # sh("%s slurm-job.sh %s" % (getSBatch("chos"), cmd))
+    # sh("%s slurm-job.sh %s" % (getSBatch("chos",False), cmd))
 
-    # EX. 2 - run 'make clean && make' in a new env (pdsf-single, cori, edison)
+    # EX. 2 Run 'make clean && make' in a new env (pdsf-single, cori, edison)
     # sh("make clean")
-    # sh("%s slurm.slr make" % (getSBatch("edison"),cmd))
+    # sh("%s slurm.slr make" % (getSBatch("edison",False),cmd))
 
-    # EX. 3 - single job -- pdsf-single / edison / cori
+    # EX. 3: Single job
     # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (ds.specialDir)
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single"),cmd))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),cmd))
 
-    # EX. 4 - run a job pump -- pdsf-single / edison / cori
-    # sbatch = "sbatch "+' '.join(batchOpts["cori"])
-    # sh("%s slurm.slr './job-pump.sh jobLists/test.list skim_mjd_data %d %d'" % (getSBatch("cori"), nC["cori"][0], nC["cori"][1]))
+    # EX. 4: Run a job pump
+    # sh("%s slurm.slr './job-pump.sh jobLists/test.ls skim_mjd_data %d %d'" % getSBatch("cori"))
 
-    # EX. 5 - skim long cal on edison
-    # nCores, peakLoad = nC["edison"][0], nC["edison"][1]
-    # sh("%s slurm.slr './job-pump.sh jobLists/skimLongCal.list skim_mjd_data %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/waveLongCal.list wave-skim %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/splitLongCal.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/test.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/latLongCal_cleanup.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
+    # EX. 5: Long calibration
+    # sh("%s slurm.slr './job-pump.sh jobLists/longSkim.ls skim_mjd_data %d %d'" % getSBatch("edison"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/longWave.ls wave-skim %d %d'" % getSBatch("edison"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/longSplit.ls python3 %d %d'" % getSBatch("edison"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/longLAT.ls python3 %d %d'" % getSBatch("edison"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/longLAT_2.ls python3 %d %d'" % getSBatch("edison"))
 
-    nCores, peakLoad = nc["edison"][0], nc["edison"][1]
+    # EX. 6: External pulser
+    # sh("%s slurm.slr './job-pump.sh jobLists/extPulserLAT.ls python3 %d %d'" % getSBatch("edison"))
 
-    # EX. 6 - bkg file sequence
-    # sh("%s slurm.slr './job-pump.sh jobLists/skimBkg.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/waveBkg.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # EX. 7: Force trigger
+    # sh("%s slurm.slr './job-pump.sh jobLists/trigSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/trigWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/trigSplit.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/trigLAT.ls python3 %d %d'" % getSBatch("edison"))
 
-    # EX. 7 - cal file sequence
-    # sh("%s slurm.slr './job-pump.sh jobLists/skimCal.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/waveCal.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/test.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
+    # EX. 8: PROCESS BKG DATA
+    sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/bkgWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
 
-    # EX. 8 - ext pulser
-    # sh("%s slurm.slr './job-pump.sh jobLists/extPulserLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
-
-    # EX. 9 - forced acq range
-    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSkim.list skim_mjd_data %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigWave.list wave-skim %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/forceTrigSplit.list python3 %d %d'" % (getSBatch("pdsf-pump"), nCores, peakLoad))
-    # sh("%s slurm.slr './job-pump.sh jobLists/forceAcqLAT.list python3 %d %d'" % (getSBatch("edison"), nCores, peakLoad))
+    # EX. 9: PROCESS CAL DATA
+    # sh("%s slurm.slr './job-pump.sh jobLists/calSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/calWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -203,7 +204,7 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
         Note that the -sub option is re-defined here to mean a calibration range idx.
         Note that running with -cal alone will create a list for all datasets (mega mode).
     """
-    runLimit = 15 # yeah I'm hardcoding this, sue me.
+    runLimit = None # need all the stats we can get ...
     calList = []
     calInfo = ds.CalInfo()
     calKeys = calInfo.GetKeys(dsNum)
@@ -247,28 +248,30 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py [-q] -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit skim_mjd_data jobs.
     """
+    dub = "-d" if dsNum < 6 else ""
+
     # bkg
     if not calList:
         # -ds
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
-                job = "./skim_mjd_data %d %d -l -g -t 0.7 %s" % (dsNum, i, ds.skimDir)
+                job = "./skim_mjd_data %d %d -l -g %s -t 0.7 %s" % (dsNum, i, dub, ds.skimDir)
                 if useJobQueue: sh("%s >& ./logs/skim-ds%d-%d.txt" % (job, dsNum, i))
                 else: sh("%s '%s'" % (jobStr, job))
         # -sub
         elif runNum==None:
-            job = "./skim_mjd_data %d %d -l -g -t 0.7 %s" % (dsNum, subNum, ds.skimDir)
+            job = "./skim_mjd_data %d %d -l -g %s -t 0.7 %s" % (dsNum, subNum, dub, ds.skimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-%d.txt" % (job, dsNum, subNum))
             else: sh("%s '%s'" % (jobStr, job))
         # -run
         elif subNum==None:
-            job = "./skim_mjd_data -f %d -l -g -t 0.7 %s" % (runNum, ds.skimDir)
+            job = "./skim_mjd_data -f %d -l -g %s -t 0.7 %s" % (runNum, dub, ds.skimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-run%d.txt" % (job, ds.GetDSNum(run), run))
             else: sh("%s '%s'" % (jobStr, job))
     # cal
     else:
         for run in calList:
-            job = "./skim_mjd_data -f %d -l -g -t 0.7 %s" % (run, ds.calSkimDir)
+            job = "./skim_mjd_data -f %d -l -g %s -t 0.7 %s" % (run, dub, ds.calSkimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-run%d.txt" % (job, ds.GetDSNum(run),run))
             else: sh("%s '%s'" % (jobStr, job))
 
