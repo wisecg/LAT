@@ -13,7 +13,6 @@ import sys, shlex, glob, os, re, time
 import subprocess as sp
 import DataSetInfo as ds
 
-
 jobQueue = ds.latSWDir+"/job.queue"
 
 # =============================================================
@@ -168,6 +167,7 @@ def runBatch():
 
     # EX. 3: Single job
     # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (ds.specialDir)
+    # cmd = "./skim_mjd_data 1 11 -l -g -d -t 0.7"
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),cmd))
 
     # EX. 4: Run a job pump
@@ -190,7 +190,9 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobLists/trigLAT.ls python3 %d %d'" % getSBatch("edison"))
 
     # EX. 8: PROCESS BKG DATA
-    sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim_2.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobLists/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobLists/bkgWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 9: PROCESS CAL DATA
@@ -255,6 +257,7 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
         # -ds
         if subNum==None and runNum==None:
             for i in range(ds.dsMap[dsNum]+1):
+                if dsNum==5 and i >= 113: dub = ""
                 job = "./skim_mjd_data %d %d -l -g %s -t 0.7 %s" % (dsNum, i, dub, ds.skimDir)
                 if useJobQueue: sh("%s >& ./logs/skim-ds%d-%d.txt" % (job, dsNum, i))
                 else: sh("%s '%s'" % (jobStr, job))
@@ -897,6 +900,7 @@ def quickTest():
         for f in inFiles:
             print(f)
             # tf = TFile()
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

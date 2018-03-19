@@ -40,6 +40,7 @@ function sourceEnvMJD {
 
   export LATDIR=${HOMEDIR}/lat
   export MAGERESULTS=/global/projecta/projectdirs/majorana/sim/MJDG41003Sims
+  export PYTHONPATH=${LATDIR}:${PYTHONPATH}
 }
 
 function sourceEnvClint {
