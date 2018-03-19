@@ -49,6 +49,7 @@ int main(int argc, char** argv)
         << "       [-p [inPath] [outPath]: file locations]\n"
         << "       [-c : use calibration TCut]\n"
         << "       [-x : don't apply a data cleaning TCut]\n"
+        << "       [-l : long calibration mode TCut]\n"
         << "       [-n : do the Radford 2-pass NLC correction]\n";
    return 1;
   }
@@ -74,7 +75,7 @@ int main(int argc, char** argv)
   // string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && isGood && !wfDCBits && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && !muVeto && mHL==1 && avse>-1 && dcr99<0 && isEnr"
 
   // Low-E DS0-5 standard bkg data cut:
-  string theCut = "!(channel==592 && run>=11348 && run<=11488) && !((channel & 0x2B0) == 0x2B0 && run >= 4239 && run <= 4436) && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && isGood && !muVeto && mH==1 && gain==0 && trapENFCal > 0.7";
+  string theCut = "!(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && isGood && !muVeto && mH==1 && gain==0 && trapENFCal > 0.7";
 
   // DS0-5 calibration data cut
   if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && (mH==1 || mH==2) && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";

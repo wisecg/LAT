@@ -191,9 +191,7 @@ def runBatch():
 
     # EX. 8: PROCESS BKG DATA
     # sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
-    # sh("%s slurm.slr './job-pump.sh jobLists/bkgSkim_2.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
-    sh("%s slurm.slr './job-pump.sh jobLists/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
-    # sh("%s slurm.slr './job-pump.sh jobLists/bkgWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobLists/bkgWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 9: PROCESS CAL DATA
     # sh("%s slurm.slr './job-pump.sh jobLists/calSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))

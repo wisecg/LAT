@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import os, json
+""" 'dsi.py': DataSetInfo for LAT.
+    C. Wiseman, 18 March 2018
+"""
+import os, json, glob
 import numpy as np
 
 latSWDir    = os.environ['LATDIR']
@@ -147,37 +150,27 @@ class CalInfo:
             return None
         return self.master[key][idx][1], self.master[key][idx][2]
 
-    def getCalFiles(dsNum, calIdx=None, modNum=None, verbose=False, calDir=None):
+    def GetCalFiles(self, dsNum, calIdx=None, modNum=None, verbose=False, cDir=calDir):
         """ Get a list of all files for a particular dsNum+calIdx.
-            This uses the CalInfo object in DataSetInfo.py.
             This will match the cut record entries in the DB.
         """
-        import os, glob
-
-        calInfo = CalInfo()
-        calKeys = calInfo.GetKeys(dsNum)
-        if calDir is None:
-            home   = os.path.expanduser('~')
-            calDir = home + "/project/cal-lat"
+        calKeys = self.GetKeys(dsNum)
 
         fList = []
         for key in calKeys:
             if modNum is not None and str(modNum) not in key:
                 continue
-
             if verbose: print(key)
-
-            # number of cal subsets
-            nIdx = calInfo.GetIdxs(key)
+            nIdx = self.GetIdxs(key)  # number of cal subsets
 
             # get the runs in each calIdx
             runList = []
             if calIdx!=None:
-                runList = calInfo.GetCalList(key, calIdx, 10)
+                runList = self.GetCalList(key, calIdx, 10)
                 if verbose: print(runList)
             else:
                 for idx in range(nIdx):
-                    tmp = calInfo.GetCalList(key, idx, 10)
+                    tmp = self.GetCalList(key, idx, 10)
                     if verbose: print(tmp)
                     runList += tmp
 
@@ -277,7 +270,7 @@ class SimInfo:
 
 
 def scrubDict(myDict):
-    """ Give the human-readable json files integer keys, and scrub out notes"""
+    """ Give dict imported by json files integer keys, and scrub out notes"""
     for key in list(myDict):
         if "note" in key:
             del myDict[key]
@@ -287,6 +280,82 @@ def scrubDict(myDict):
                 del myDict[key][key2]
     makeIntKeys = {int(key):{int(key2):myDict[key][key2] for key2 in myDict[key]} for key in myDict}
     return makeIntKeys
+
+
+def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
+
+    chList = GetGoodChanList(dsNum)
+    if dsNum==5 and modNum==1: chList = [ch for ch in chList if ch < 1000 and ch!=692]
+    if dsNum==5 and modNum==2: chList = [ch for ch in chList if ch > 1000 and ch!=1232]
+
+    expDict = {ch:[] for ch in chList}
+    tmpDict, bkgIdx, prevBkgIdx = {}, -1, -1
+
+    with open("%s/expos_ds%d.txt" % (dPath, dsNum), "r") as f:
+        table = f.readlines()
+
+    for idx, line in enumerate(table):
+        tmp = (line.rstrip()).split(" ")
+        if len(tmp)==0: continue
+
+        if bkgIdx != prevBkgIdx:
+            for ch in chList:
+                if ch in tmpDict.keys():
+                    expDict[ch].append(tmpDict[ch])
+                else:
+                    expDict[ch].append(0.)
+            tmpDict = {}
+            prevBkgIdx = bkgIdx
+
+        if tmp[0] == "bkgIdx":
+            bkgIdx = tmp[1]
+
+        if len(tmp) > 1 and tmp[1] == ":" and tmp[0].isdigit() and int(tmp[0]) in chList:
+            ch, exp = int(tmp[0]), float(tmp[2])
+            tmpDict[ch] = exp
+
+        if line == "All-channel summary: \n":
+            summaryIdx = idx
+
+    # get last bkgIdx
+    for ch in chList:
+        if ch in tmpDict.keys():
+            expDict[ch].append(tmpDict[ch])
+        else:
+            expDict[ch].append(0.)
+
+    # knock off the first element (it's 0).  Now expDict is done
+    for ch in expDict:
+        if expDict[ch][0] > 0:
+            print("ERROR, WTF")
+            exit(1)
+        expDict[ch].pop(0)
+
+    # now get the all-channel summary for HG channels
+    summaryDict = {ch:[] for ch in chList}
+    for line in table[summaryIdx+2:]:
+        tmp = (line.rstrip()).split()
+        ch, detID, aMass, runTime, expo = int(tmp[0]), int(tmp[1]), float(tmp[2]), float(tmp[3]), float(tmp[4])
+        summaryDict[ch] = [expo, aMass]
+
+    # now a final cross check
+    if verbose:
+        print("DS%d, M%d" % (dsNum, modNum))
+    for ch in chList:
+
+        if sum(expDict[ch]) > 0 and len(summaryDict[ch]) == 0:
+            print("That ain't shoulda happened")
+            exit(1)
+        elif len(summaryDict[ch]) == 0:
+            continue;
+
+        mySum, ltResult, aMass = sum(expDict[ch]), summaryDict[ch][0], summaryDict[ch][1]
+        diff = ((ltResult-mySum)/aMass) * 86400
+
+        if verbose:
+            print("%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff))
+
+    return expDict
 
 
 def test():
