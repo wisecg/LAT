@@ -30,7 +30,7 @@ v4: 09 Mar 2018 - wf fitting error handling (scipy v1.0 improves convergence!)
 
 ================ C. Wiseman (USC), B. Zhu (LANL) ================
 """
-import sys, time, os, pywt, imp
+import sys, time, os, pywt
 from ROOT import TFile, TTree, TEntryList, gDirectory, TNamed, std, TObject, gROOT
 from ROOT import GATDataSet, MGTEvent, MGTWaveform, MGWFTimePointCalculator
 import numpy as np
@@ -39,8 +39,7 @@ import scipy.optimize as op
 from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 import scipy.special as sp
-# import waveLibs as wl
-wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+import waveLibs as wl
 
 def main(argv):
 
@@ -141,8 +140,9 @@ def main(argv):
     if cutMode:
         # theCut += customPar
         # theCut = "(channel==672 || channel==674) && mH==2" # sync chan: 672, extp chan: 674
-        theCut = "channel==674 && mH==2"
-        theCut += " && fitSlo < 10"
+        # theCut = "channel==674 && mH==2"
+        # theCut += " && fitSlo < 10"
+        theCut = "Entry$ < 10"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")

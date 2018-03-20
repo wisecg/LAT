@@ -1,0 +1,8 @@
+#!/bin/bash
+#SBATCH --workdir=/global/homes/w/wisecg/lat
+#SBATCH --output=/global/homes/w/wisecg/lat/logs/edison-%j.txt
+#SBATCH --image=wisecg/mjsw:v2
+#SBATCH --array=1-2
+#SBATCH -t 00:10:00
+#SBATCH --qos=debug
+shifter /bin/bash slurm-job.sh ./job-pump.sh jobs/test/test_${SLURM_ARRAY_TASK_ID}.ls python3 1 1

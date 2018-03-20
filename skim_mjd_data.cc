@@ -49,8 +49,11 @@ int main(int argc, const char** argv)
          << "   [-x] (don't skip anything!)\n"
          << "   [-g] (skip all low-gain hits)\n"
          << "   [-s] (sumE skip mode)\n"
-         << "   [-b] (blind mode (can use after -f or --filename))\n"
-         << "   [-e] (suppress energy information)\n";
+         << "   [-e] (suppress energy information)\n"
+         << "   [-b] (blind file mode: Suppress 0vBB, LowE, and m>1 regions by default)\n"
+         << "        (Sub-options: -b1: Unblind the 0vBB ROI)\n"
+         << "        (             -b2: Unblind LowE region)\n"
+         << "        (             -b3: Unblind m>1 data)\n";
     return 1;
   }
   // ==========================================================================
