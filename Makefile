@@ -4,7 +4,7 @@ include $(MGDODIR)/buildTools/config.mk
 APPS = skim_mjd_data wave-skim ds_livetime auto-thresh validate_skim
 
 # Stuff needed by BasicMakefile
-SHLIB = libLAT
+SHLIB = 
 ARCHIVE =
 # TAMDIR ?= $(ROOTSYS)
 SOURCESSCRATCH = $(wildcard *.cc)

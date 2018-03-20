@@ -2,7 +2,7 @@
 """ 'dsi.py': DataSetInfo for LAT.
     C. Wiseman, 18 March 2018
 """
-import os, json, glob, re
+import os, json, glob
 import numpy as np
 
 latSWDir    = os.environ['LATDIR']
@@ -38,12 +38,12 @@ class BkgInfo:
         }
 
     def dsMap(self):
-        """returns {ds:numSubDS}"""
-        numSubDS = {}
+        """{ds:lastRange}"""
+        lastRange = {}
         for key in sorted(list(self.master)):
             last = int(list(self.master[key].keys())[-1])
-            numSubDS[int(key)] = last
-        return numSubDS
+            lastRange[int(key)] = last
+        return lastRange
 
     def GetDSNum(self,run):
         ranges = self.dsRanges()
@@ -282,25 +282,6 @@ def scrubDict(myDict):
     return makeIntKeys
 
 
-def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
-    """ Creates a dict of files w/ the format {'DSX_X_X':filePath.}
-        Used to combine and split apart files during the LAT processing.
-        Used in place of sorted(glob.glob(myPath)).
-    """
-    files = {}
-    for fl in glob.glob(filePathRegexString):
-        int(re.search(r'\d+',fl).group())
-        ints = list(map(int, re.findall(r'\d+',fl)))
-        if (ints[1]==subNum):
-            if (len(ints)==2):
-                ints.append(0)
-            if not uniqueKey:
-                files[ints[2]] = fl # zero index
-            else:
-                files["DS%d_%d_%d" % (dsNum,subNum,ints[2])] = fl
-    return files
-
-
 def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
 
     chList = GetGoodChanList(dsNum)
@@ -385,10 +366,10 @@ def test():
     # print(runsCal)
 
     ds = BkgInfo()
-    print(ds.dsMap())
+    # print(ds.dsMap())
     # print(ds.dsRanges())
     # print(ds.GetDSNum(18588))
-    # print(ds.GetBkgIdx(6,27065))
+    print(ds.GetBkgIdx(6,27065))
 
 
 if __name__=="__main__":
