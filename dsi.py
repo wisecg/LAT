@@ -25,6 +25,14 @@ class BkgInfo:
         with open("%s/data/runsBkg.json" % latSWDir) as f:
             self.master = scrubDict(json.load(f))
 
+    def dsMap(self):
+        """returns {ds:numSubDS}"""
+        numSubDS = {}
+        for key in sorted(list(self.master)):
+            last = int(list(self.master[key].keys())[-1])
+            numSubDS[int(key)] = last
+        return numSubDS
+
     def dsRanges(self):
         """ Manual edit.  Must cover BG list and cal runs. """
         return {
@@ -33,17 +41,9 @@ class BkgInfo:
             2:[14699,15892],
             3:[16797,18589],
             4:[60000791,60002394],
-            5:[18623,23958],
+            5:[18623,25508],
             6:[25672,100000]
         }
-
-    def dsMap(self):
-        """returns {ds:numSubDS}"""
-        numSubDS = {}
-        for key in sorted(list(self.master)):
-            last = int(list(self.master[key].keys())[-1])
-            numSubDS[int(key)] = last
-        return numSubDS
 
     def GetDSNum(self,run):
         ranges = self.dsRanges()
@@ -69,9 +69,9 @@ class BkgInfo:
 class CalInfo:
     def __init__(self):
         with open("%s/data/runsCal.json" % latSWDir) as f:
-            self.master = scrubNotes(json.load(f))
+            self.master = scrubDict(json.load(f),'cal')
         with open("%s/data/runsSpecial.json" % latSWDir) as f:
-            self.special = scrubNotes(json.load(f))
+            self.special = scrubDict(json.load(f),'cal')
 
         # Track all the 'hi' run coverage numbers for fast run range lookups
         self.covIdx = {}
@@ -133,7 +133,7 @@ class CalInfo:
             return None
 
         runList = []
-        if idx not in self.master[key]:
+        if idx not in self.master[key].keys():
             return None
         lst = self.master[key][idx][0]
         for i in range(0,len(lst),2):
@@ -269,8 +269,8 @@ class SimInfo:
         return self.dtCutoffs[module][iD]
 
 
-def scrubDict(myDict):
-    """ Give dict imported by json files integer keys, and scrub out notes"""
+def scrubDict(myDict,opt=''):
+    """ Create appropriate python dicts from our run list json files. """
     for key in list(myDict):
         if "note" in key:
             del myDict[key]
@@ -278,8 +278,13 @@ def scrubDict(myDict):
         for key2 in list(myDict[key]):
             if "note" in key2:
                 del myDict[key][key2]
-    makeIntKeys = {int(key):{int(key2):myDict[key][key2] for key2 in myDict[key]} for key in myDict}
-    return makeIntKeys
+
+    if opt=='cal':
+        makeIntKeys = {key:{int(key2):myDict[key][key2] for key2 in myDict[key]} for key in myDict}
+        return makeIntKeys
+    else:
+        makeIntKeys = {int(key):{int(key2):myDict[key][key2] for key2 in myDict[key]} for key in myDict}
+        return makeIntKeys
 
 
 def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):

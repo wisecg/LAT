@@ -1,1438 +1,2550 @@
-./skim_mjd_data -f 2571 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2571.txt
-./skim_mjd_data -f 2572 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2572.txt
-./skim_mjd_data -f 2573 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2573.txt
-./skim_mjd_data -f 2574 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2574.txt
-./skim_mjd_data -f 2575 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2575.txt
-./skim_mjd_data -f 2576 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2576.txt
-./skim_mjd_data -f 2577 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2577.txt
-./skim_mjd_data -f 2578 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2578.txt
-./skim_mjd_data -f 2579 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2579.txt
-./skim_mjd_data -f 2630 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2630.txt
-./skim_mjd_data -f 2631 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2631.txt
-./skim_mjd_data -f 2632 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2632.txt
-./skim_mjd_data -f 2633 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2633.txt
-./skim_mjd_data -f 2634 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2634.txt
-./skim_mjd_data -f 2635 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2635.txt
-./skim_mjd_data -f 2636 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2636.txt
-./skim_mjd_data -f 2637 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2637.txt
-./skim_mjd_data -f 2638 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2638.txt
-./skim_mjd_data -f 2639 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2639.txt
-./skim_mjd_data -f 2650 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2650.txt
-./skim_mjd_data -f 2651 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2651.txt
-./skim_mjd_data -f 2652 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2652.txt
-./skim_mjd_data -f 2653 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2653.txt
-./skim_mjd_data -f 2654 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2654.txt
-./skim_mjd_data -f 2655 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2655.txt
-./skim_mjd_data -f 2656 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2656.txt
-./skim_mjd_data -f 2657 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2657.txt
-./skim_mjd_data -f 2674 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2674.txt
-./skim_mjd_data -f 2675 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2675.txt
-./skim_mjd_data -f 2676 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2676.txt
-./skim_mjd_data -f 2677 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2677.txt
-./skim_mjd_data -f 2678 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2678.txt
-./skim_mjd_data -f 2679 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2679.txt
-./skim_mjd_data -f 2680 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2680.txt
-./skim_mjd_data -f 2681 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2681.txt
-./skim_mjd_data -f 2931 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2931.txt
-./skim_mjd_data -f 2932 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2932.txt
-./skim_mjd_data -f 2933 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2933.txt
-./skim_mjd_data -f 2934 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2934.txt
-./skim_mjd_data -f 2935 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2935.txt
-./skim_mjd_data -f 2936 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2936.txt
-./skim_mjd_data -f 2937 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2937.txt
-./skim_mjd_data -f 2938 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2938.txt
-./skim_mjd_data -f 2939 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2939.txt
-./skim_mjd_data -f 2940 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2940.txt
-./skim_mjd_data -f 3057 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3057.txt
-./skim_mjd_data -f 3058 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3058.txt
-./skim_mjd_data -f 3059 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3059.txt
-./skim_mjd_data -f 3060 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3060.txt
-./skim_mjd_data -f 3061 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3061.txt
-./skim_mjd_data -f 3062 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3062.txt
-./skim_mjd_data -f 3063 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3063.txt
-./skim_mjd_data -f 3064 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3064.txt
-./skim_mjd_data -f 3065 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3065.txt
-./skim_mjd_data -f 3066 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3066.txt
-./skim_mjd_data -f 3130 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3130.txt
-./skim_mjd_data -f 3131 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3131.txt
-./skim_mjd_data -f 3132 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3132.txt
-./skim_mjd_data -f 3133 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3133.txt
-./skim_mjd_data -f 3134 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3134.txt
-./skim_mjd_data -f 3135 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3135.txt
-./skim_mjd_data -f 3136 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3136.txt
-./skim_mjd_data -f 3273 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3273.txt
-./skim_mjd_data -f 3274 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3274.txt
-./skim_mjd_data -f 3275 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3275.txt
-./skim_mjd_data -f 3277 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3277.txt
-./skim_mjd_data -f 3278 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3278.txt
-./skim_mjd_data -f 3280 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3280.txt
-./skim_mjd_data -f 3281 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3281.txt
-./skim_mjd_data -f 3282 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3282.txt
-./skim_mjd_data -f 3283 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3283.txt
-./skim_mjd_data -f 3284 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3284.txt
-./skim_mjd_data -f 3285 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3285.txt
-./skim_mjd_data -f 3286 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3286.txt
-./skim_mjd_data -f 3287 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3287.txt
-./skim_mjd_data -f 3288 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3288.txt
-./skim_mjd_data -f 3289 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3289.txt
-./skim_mjd_data -f 3290 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3290.txt
-./skim_mjd_data -f 3433 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3433.txt
-./skim_mjd_data -f 3434 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3434.txt
-./skim_mjd_data -f 3435 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3435.txt
-./skim_mjd_data -f 3436 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3436.txt
-./skim_mjd_data -f 3437 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3437.txt
-./skim_mjd_data -f 3438 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3438.txt
-./skim_mjd_data -f 3439 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3439.txt
-./skim_mjd_data -f 3440 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3440.txt
-./skim_mjd_data -f 3441 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3441.txt
-./skim_mjd_data -f 3442 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3442.txt
-./skim_mjd_data -f 3646 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3646.txt
-./skim_mjd_data -f 3647 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3647.txt
-./skim_mjd_data -f 3648 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3648.txt
-./skim_mjd_data -f 3649 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3649.txt
-./skim_mjd_data -f 3650 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3650.txt
-./skim_mjd_data -f 3651 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3651.txt
-./skim_mjd_data -f 3652 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3652.txt
-./skim_mjd_data -f 3653 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3653.txt
-./skim_mjd_data -f 3654 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3654.txt
-./skim_mjd_data -f 3655 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3655.txt
-./skim_mjd_data -f 3688 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3688.txt
-./skim_mjd_data -f 3689 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3689.txt
-./skim_mjd_data -f 3690 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3690.txt
-./skim_mjd_data -f 3691 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3691.txt
-./skim_mjd_data -f 3692 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3692.txt
-./skim_mjd_data -f 3693 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3693.txt
-./skim_mjd_data -f 3694 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3694.txt
-./skim_mjd_data -f 3695 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3695.txt
-./skim_mjd_data -f 3696 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3696.txt
-./skim_mjd_data -f 3697 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3697.txt
-./skim_mjd_data -f 3983 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3983.txt
-./skim_mjd_data -f 3984 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3984.txt
-./skim_mjd_data -f 3985 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3985.txt
-./skim_mjd_data -f 3986 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3986.txt
-./skim_mjd_data -f 3987 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3987.txt
-./skim_mjd_data -f 3988 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3988.txt
-./skim_mjd_data -f 3989 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3989.txt
-./skim_mjd_data -f 3990 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3990.txt
-./skim_mjd_data -f 3991 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3991.txt
-./skim_mjd_data -f 3992 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3992.txt
-./skim_mjd_data -f 4135 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4135.txt
-./skim_mjd_data -f 4136 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4136.txt
-./skim_mjd_data -f 4137 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4137.txt
-./skim_mjd_data -f 4138 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4138.txt
-./skim_mjd_data -f 4139 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4139.txt
-./skim_mjd_data -f 4140 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4140.txt
-./skim_mjd_data -f 4141 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4141.txt
-./skim_mjd_data -f 4142 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4142.txt
-./skim_mjd_data -f 4143 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4143.txt
-./skim_mjd_data -f 4144 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4144.txt
-./skim_mjd_data -f 4521 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4521.txt
-./skim_mjd_data -f 4522 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4522.txt
-./skim_mjd_data -f 4523 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4523.txt
-./skim_mjd_data -f 4524 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4524.txt
-./skim_mjd_data -f 4525 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4525.txt
-./skim_mjd_data -f 4526 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4526.txt
-./skim_mjd_data -f 4527 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4527.txt
-./skim_mjd_data -f 4528 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4528.txt
-./skim_mjd_data -f 4529 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4529.txt
-./skim_mjd_data -f 4530 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4530.txt
-./skim_mjd_data -f 4833 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4833.txt
-./skim_mjd_data -f 4834 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4834.txt
-./skim_mjd_data -f 4835 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4835.txt
-./skim_mjd_data -f 4836 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4836.txt
-./skim_mjd_data -f 4837 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4837.txt
-./skim_mjd_data -f 4838 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4838.txt
-./skim_mjd_data -f 4839 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4839.txt
-./skim_mjd_data -f 4840 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4840.txt
-./skim_mjd_data -f 4842 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4842.txt
-./skim_mjd_data -f 4843 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4843.txt
-./skim_mjd_data -f 4908 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4908.txt
-./skim_mjd_data -f 4909 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4909.txt
-./skim_mjd_data -f 4910 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4910.txt
-./skim_mjd_data -f 4911 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4911.txt
-./skim_mjd_data -f 4912 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4912.txt
-./skim_mjd_data -f 4913 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4913.txt
-./skim_mjd_data -f 4914 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4914.txt
-./skim_mjd_data -f 4915 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4915.txt
-./skim_mjd_data -f 4916 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4916.txt
-./skim_mjd_data -f 4917 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4917.txt
-./skim_mjd_data -f 4982 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4982.txt
-./skim_mjd_data -f 4983 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4983.txt
-./skim_mjd_data -f 4984 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4984.txt
-./skim_mjd_data -f 4985 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4985.txt
-./skim_mjd_data -f 4986 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4986.txt
-./skim_mjd_data -f 4987 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4987.txt
-./skim_mjd_data -f 4988 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4988.txt
-./skim_mjd_data -f 4989 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4989.txt
-./skim_mjd_data -f 4990 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4990.txt
-./skim_mjd_data -f 4991 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4991.txt
-./skim_mjd_data -f 5062 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5062.txt
-./skim_mjd_data -f 5063 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5063.txt
-./skim_mjd_data -f 5064 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5064.txt
-./skim_mjd_data -f 5065 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5065.txt
-./skim_mjd_data -f 5066 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5066.txt
-./skim_mjd_data -f 5067 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5067.txt
-./skim_mjd_data -f 5068 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5068.txt
-./skim_mjd_data -f 5069 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5069.txt
-./skim_mjd_data -f 5070 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5070.txt
-./skim_mjd_data -f 5071 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5071.txt
-./skim_mjd_data -f 5253 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5253.txt
-./skim_mjd_data -f 5254 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5254.txt
-./skim_mjd_data -f 5255 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5255.txt
-./skim_mjd_data -f 5256 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5256.txt
-./skim_mjd_data -f 5257 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5257.txt
-./skim_mjd_data -f 5258 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5258.txt
-./skim_mjd_data -f 5259 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5259.txt
-./skim_mjd_data -f 5260 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5260.txt
-./skim_mjd_data -f 5261 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5261.txt
-./skim_mjd_data -f 5262 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5262.txt
-./skim_mjd_data -f 5331 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5331.txt
-./skim_mjd_data -f 5332 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5332.txt
-./skim_mjd_data -f 5333 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5333.txt
-./skim_mjd_data -f 5334 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5334.txt
-./skim_mjd_data -f 5335 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5335.txt
-./skim_mjd_data -f 5336 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5336.txt
-./skim_mjd_data -f 5337 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5337.txt
-./skim_mjd_data -f 5338 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5338.txt
-./skim_mjd_data -f 5339 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5339.txt
-./skim_mjd_data -f 5340 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5340.txt
-./skim_mjd_data -f 5415 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5415.txt
-./skim_mjd_data -f 5416 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5416.txt
-./skim_mjd_data -f 5417 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5417.txt
-./skim_mjd_data -f 5418 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5418.txt
-./skim_mjd_data -f 5419 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5419.txt
-./skim_mjd_data -f 5420 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5420.txt
-./skim_mjd_data -f 5421 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5421.txt
-./skim_mjd_data -f 5422 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5422.txt
-./skim_mjd_data -f 5423 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5423.txt
-./skim_mjd_data -f 5424 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5424.txt
-./skim_mjd_data -f 5502 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5502.txt
-./skim_mjd_data -f 5503 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5503.txt
-./skim_mjd_data -f 5504 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5504.txt
-./skim_mjd_data -f 5505 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5505.txt
-./skim_mjd_data -f 5506 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5506.txt
-./skim_mjd_data -f 5507 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5507.txt
-./skim_mjd_data -f 5508 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5508.txt
-./skim_mjd_data -f 5509 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5509.txt
-./skim_mjd_data -f 5510 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5510.txt
-./skim_mjd_data -f 5511 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5511.txt
-./skim_mjd_data -f 5851 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5851.txt
-./skim_mjd_data -f 5852 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5852.txt
-./skim_mjd_data -f 5853 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5853.txt
-./skim_mjd_data -f 5854 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5854.txt
-./skim_mjd_data -f 5855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5855.txt
-./skim_mjd_data -f 5856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5856.txt
-./skim_mjd_data -f 5857 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5857.txt
-./skim_mjd_data -f 5858 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5858.txt
-./skim_mjd_data -f 5859 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5859.txt
-./skim_mjd_data -f 5860 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5860.txt
-./skim_mjd_data -f 5911 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5911.txt
-./skim_mjd_data -f 5912 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5912.txt
-./skim_mjd_data -f 5913 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5913.txt
-./skim_mjd_data -f 5914 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5914.txt
-./skim_mjd_data -f 5915 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5915.txt
-./skim_mjd_data -f 5916 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5916.txt
-./skim_mjd_data -f 5917 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5917.txt
-./skim_mjd_data -f 5918 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5918.txt
-./skim_mjd_data -f 5919 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5919.txt
-./skim_mjd_data -f 5920 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5920.txt
-./skim_mjd_data -f 5994 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5994.txt
-./skim_mjd_data -f 5995 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5995.txt
-./skim_mjd_data -f 5996 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5996.txt
-./skim_mjd_data -f 5997 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5997.txt
-./skim_mjd_data -f 5998 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5998.txt
-./skim_mjd_data -f 5999 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5999.txt
-./skim_mjd_data -f 6000 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6000.txt
-./skim_mjd_data -f 6001 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6001.txt
-./skim_mjd_data -f 6002 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6002.txt
-./skim_mjd_data -f 6003 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6003.txt
-./skim_mjd_data -f 6169 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6169.txt
-./skim_mjd_data -f 6170 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6170.txt
-./skim_mjd_data -f 6171 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6171.txt
-./skim_mjd_data -f 6172 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6172.txt
-./skim_mjd_data -f 6173 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6173.txt
-./skim_mjd_data -f 6174 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6174.txt
-./skim_mjd_data -f 6175 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6175.txt
-./skim_mjd_data -f 6176 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6176.txt
-./skim_mjd_data -f 6177 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6177.txt
-./skim_mjd_data -f 6178 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6178.txt
-./skim_mjd_data -f 6318 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6318.txt
-./skim_mjd_data -f 6319 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6319.txt
-./skim_mjd_data -f 6320 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6320.txt
-./skim_mjd_data -f 6321 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6321.txt
-./skim_mjd_data -f 6322 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6322.txt
-./skim_mjd_data -f 6323 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6323.txt
-./skim_mjd_data -f 6324 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6324.txt
-./skim_mjd_data -f 6325 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6325.txt
-./skim_mjd_data -f 6326 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6326.txt
-./skim_mjd_data -f 6327 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6327.txt
-./skim_mjd_data -f 6353 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6353.txt
-./skim_mjd_data -f 6354 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6354.txt
-./skim_mjd_data -f 6355 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6355.txt
-./skim_mjd_data -f 6356 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6356.txt
-./skim_mjd_data -f 6357 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6357.txt
-./skim_mjd_data -f 6358 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6358.txt
-./skim_mjd_data -f 6359 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6359.txt
-./skim_mjd_data -f 6360 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6360.txt
-./skim_mjd_data -f 6361 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6361.txt
-./skim_mjd_data -f 6362 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6362.txt
-./skim_mjd_data -f 6545 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6545.txt
-./skim_mjd_data -f 6546 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6546.txt
-./skim_mjd_data -f 6547 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6547.txt
-./skim_mjd_data -f 6548 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6548.txt
-./skim_mjd_data -f 6549 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6549.txt
-./skim_mjd_data -f 6550 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6550.txt
-./skim_mjd_data -f 6551 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6551.txt
-./skim_mjd_data -f 6552 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6552.txt
-./skim_mjd_data -f 6578 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6578.txt
-./skim_mjd_data -f 6579 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6579.txt
-./skim_mjd_data -f 6580 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6580.txt
-./skim_mjd_data -f 6581 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6581.txt
-./skim_mjd_data -f 6582 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6582.txt
-./skim_mjd_data -f 6583 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6583.txt
-./skim_mjd_data -f 6584 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6584.txt
-./skim_mjd_data -f 6585 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6585.txt
-./skim_mjd_data -f 6586 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6586.txt
-./skim_mjd_data -f 6587 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6587.txt
-./skim_mjd_data -f 6754 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6754.txt
-./skim_mjd_data -f 6755 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6755.txt
-./skim_mjd_data -f 6756 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6756.txt
-./skim_mjd_data -f 6757 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6757.txt
-./skim_mjd_data -f 6758 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6758.txt
-./skim_mjd_data -f 6759 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6759.txt
-./skim_mjd_data -f 6760 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6760.txt
-./skim_mjd_data -f 6761 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6761.txt
-./skim_mjd_data -f 6762 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6762.txt
-./skim_mjd_data -f 6763 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6763.txt
-./skim_mjd_data -f 6854 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6854.txt
-./skim_mjd_data -f 6855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6855.txt
-./skim_mjd_data -f 6856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6856.txt
-./skim_mjd_data -f 6857 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6857.txt
-./skim_mjd_data -f 6858 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6858.txt
-./skim_mjd_data -f 6859 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6859.txt
-./skim_mjd_data -f 6860 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6860.txt
-./skim_mjd_data -f 6861 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6861.txt
-./skim_mjd_data -f 6862 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6862.txt
-./skim_mjd_data -f 6863 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6863.txt
-./skim_mjd_data -f 6904 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6904.txt
-./skim_mjd_data -f 6905 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6905.txt
-./skim_mjd_data -f 6906 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6906.txt
-./skim_mjd_data -f 6907 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6907.txt
-./skim_mjd_data -f 6908 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6908.txt
-./skim_mjd_data -f 6909 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6909.txt
-./skim_mjd_data -f 6910 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6910.txt
-./skim_mjd_data -f 6911 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6911.txt
-./skim_mjd_data -f 6912 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6912.txt
-./skim_mjd_data -f 6913 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6913.txt
-./skim_mjd_data -f 7275 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7275.txt
-./skim_mjd_data -f 7276 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7276.txt
-./skim_mjd_data -f 7277 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7277.txt
-./skim_mjd_data -f 7278 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7278.txt
-./skim_mjd_data -f 7279 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7279.txt
-./skim_mjd_data -f 7281 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7281.txt
-./skim_mjd_data -f 7282 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7282.txt
-./skim_mjd_data -f 7283 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7283.txt
-./skim_mjd_data -f 7284 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7284.txt
-./skim_mjd_data -f 7285 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7285.txt
-./skim_mjd_data -f 9407 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9407.txt
-./skim_mjd_data -f 9408 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9408.txt
-./skim_mjd_data -f 9409 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9409.txt
-./skim_mjd_data -f 9410 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9410.txt
-./skim_mjd_data -f 9411 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9411.txt
-./skim_mjd_data -f 9412 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9412.txt
-./skim_mjd_data -f 9414 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9414.txt
-./skim_mjd_data -f 9415 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9415.txt
-./skim_mjd_data -f 9416 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9416.txt
-./skim_mjd_data -f 9417 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9417.txt
-./skim_mjd_data -f 9453 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9453.txt
-./skim_mjd_data -f 9454 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9454.txt
-./skim_mjd_data -f 9456 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9456.txt
-./skim_mjd_data -f 9457 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9457.txt
-./skim_mjd_data -f 9458 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9458.txt
-./skim_mjd_data -f 9459 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9459.txt
-./skim_mjd_data -f 9460 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9460.txt
-./skim_mjd_data -f 9461 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9461.txt
-./skim_mjd_data -f 9462 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9462.txt
-./skim_mjd_data -f 9463 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9463.txt
-./skim_mjd_data -f 9497 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9497.txt
-./skim_mjd_data -f 9498 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9498.txt
-./skim_mjd_data -f 9499 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9499.txt
-./skim_mjd_data -f 9500 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9500.txt
-./skim_mjd_data -f 9501 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9501.txt
-./skim_mjd_data -f 9502 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9502.txt
-./skim_mjd_data -f 9503 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9503.txt
-./skim_mjd_data -f 9504 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9504.txt
-./skim_mjd_data -f 9521 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9521.txt
-./skim_mjd_data -f 9523 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9523.txt
-./skim_mjd_data -f 9524 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9524.txt
-./skim_mjd_data -f 9525 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9525.txt
-./skim_mjd_data -f 9526 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9526.txt
-./skim_mjd_data -f 9527 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9527.txt
-./skim_mjd_data -f 9528 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9528.txt
-./skim_mjd_data -f 9529 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9529.txt
-./skim_mjd_data -f 9530 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9530.txt
-./skim_mjd_data -f 9531 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9531.txt
-./skim_mjd_data -f 9699 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9699.txt
-./skim_mjd_data -f 9700 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9700.txt
-./skim_mjd_data -f 9701 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9701.txt
-./skim_mjd_data -f 9702 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9702.txt
-./skim_mjd_data -f 9703 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9703.txt
-./skim_mjd_data -f 9704 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9704.txt
-./skim_mjd_data -f 9705 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9705.txt
-./skim_mjd_data -f 9706 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9706.txt
-./skim_mjd_data -f 9707 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9707.txt
-./skim_mjd_data -f 9738 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9738.txt
-./skim_mjd_data -f 9739 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9739.txt
-./skim_mjd_data -f 9740 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9740.txt
-./skim_mjd_data -f 9741 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9741.txt
-./skim_mjd_data -f 9742 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9742.txt
-./skim_mjd_data -f 9743 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9743.txt
-./skim_mjd_data -f 9744 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9744.txt
-./skim_mjd_data -f 9745 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9745.txt
-./skim_mjd_data -f 9746 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9746.txt
-./skim_mjd_data -f 9747 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9747.txt
-./skim_mjd_data -f 9788 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9788.txt
-./skim_mjd_data -f 9789 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9789.txt
-./skim_mjd_data -f 9790 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9790.txt
-./skim_mjd_data -f 9791 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9791.txt
-./skim_mjd_data -f 9792 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9792.txt
-./skim_mjd_data -f 9793 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9793.txt
-./skim_mjd_data -f 9794 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9794.txt
-./skim_mjd_data -f 9795 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9795.txt
-./skim_mjd_data -f 9796 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9796.txt
-./skim_mjd_data -f 9797 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9797.txt
-./skim_mjd_data -f 9938 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9938.txt
-./skim_mjd_data -f 9939 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9939.txt
-./skim_mjd_data -f 9940 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9940.txt
-./skim_mjd_data -f 9941 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9941.txt
-./skim_mjd_data -f 9942 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9942.txt
-./skim_mjd_data -f 9944 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9944.txt
-./skim_mjd_data -f 9945 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9945.txt
-./skim_mjd_data -f 9946 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9946.txt
-./skim_mjd_data -f 9947 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9947.txt
-./skim_mjd_data -f 9948 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9948.txt
-./skim_mjd_data -f 9998 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9998.txt
-./skim_mjd_data -f 9999 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9999.txt
-./skim_mjd_data -f 10000 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10000.txt
-./skim_mjd_data -f 10001 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10001.txt
-./skim_mjd_data -f 10002 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10002.txt
-./skim_mjd_data -f 10003 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10003.txt
-./skim_mjd_data -f 10004 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10004.txt
-./skim_mjd_data -f 10005 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10005.txt
-./skim_mjd_data -f 10006 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10006.txt
-./skim_mjd_data -f 10007 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10007.txt
-./skim_mjd_data -f 10039 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10039.txt
-./skim_mjd_data -f 10040 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10040.txt
-./skim_mjd_data -f 10041 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10041.txt
-./skim_mjd_data -f 10042 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10042.txt
-./skim_mjd_data -f 10043 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10043.txt
-./skim_mjd_data -f 10044 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10044.txt
-./skim_mjd_data -f 10045 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10045.txt
-./skim_mjd_data -f 10046 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10046.txt
-./skim_mjd_data -f 10047 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10047.txt
-./skim_mjd_data -f 10048 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10048.txt
-./skim_mjd_data -f 10093 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10093.txt
-./skim_mjd_data -f 10094 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10094.txt
-./skim_mjd_data -f 10095 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10095.txt
-./skim_mjd_data -f 10096 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10096.txt
-./skim_mjd_data -f 10097 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10097.txt
-./skim_mjd_data -f 10098 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10098.txt
-./skim_mjd_data -f 10099 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10099.txt
-./skim_mjd_data -f 10100 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10100.txt
-./skim_mjd_data -f 10101 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10101.txt
-./skim_mjd_data -f 10102 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10102.txt
-./skim_mjd_data -f 10240 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10240.txt
-./skim_mjd_data -f 10241 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10241.txt
-./skim_mjd_data -f 10242 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10242.txt
-./skim_mjd_data -f 10243 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10243.txt
-./skim_mjd_data -f 10244 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10244.txt
-./skim_mjd_data -f 10245 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10245.txt
-./skim_mjd_data -f 10246 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10246.txt
-./skim_mjd_data -f 10247 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10247.txt
-./skim_mjd_data -f 10248 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10248.txt
-./skim_mjd_data -f 10249 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10249.txt
-./skim_mjd_data -f 10358 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10358.txt
-./skim_mjd_data -f 10359 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10359.txt
-./skim_mjd_data -f 10360 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10360.txt
-./skim_mjd_data -f 10361 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10361.txt
-./skim_mjd_data -f 10362 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10362.txt
-./skim_mjd_data -f 10363 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10363.txt
-./skim_mjd_data -f 10364 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10364.txt
-./skim_mjd_data -f 10365 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10365.txt
-./skim_mjd_data -f 10366 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10366.txt
-./skim_mjd_data -f 10367 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10367.txt
-./skim_mjd_data -f 10402 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10402.txt
-./skim_mjd_data -f 10403 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10403.txt
-./skim_mjd_data -f 10404 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10404.txt
-./skim_mjd_data -f 10405 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10405.txt
-./skim_mjd_data -f 10406 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10406.txt
-./skim_mjd_data -f 10407 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10407.txt
-./skim_mjd_data -f 10408 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10408.txt
-./skim_mjd_data -f 10409 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10409.txt
-./skim_mjd_data -f 10410 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10410.txt
-./skim_mjd_data -f 10411 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10411.txt
-./skim_mjd_data -f 10497 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10497.txt
-./skim_mjd_data -f 10498 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10498.txt
-./skim_mjd_data -f 10499 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10499.txt
-./skim_mjd_data -f 10500 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10500.txt
-./skim_mjd_data -f 10501 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10501.txt
-./skim_mjd_data -f 10502 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10502.txt
-./skim_mjd_data -f 10503 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10503.txt
-./skim_mjd_data -f 10504 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10504.txt
-./skim_mjd_data -f 10505 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10505.txt
-./skim_mjd_data -f 10529 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10529.txt
-./skim_mjd_data -f 10530 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10530.txt
-./skim_mjd_data -f 10531 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10531.txt
-./skim_mjd_data -f 10532 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10532.txt
-./skim_mjd_data -f 10533 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10533.txt
-./skim_mjd_data -f 10534 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10534.txt
-./skim_mjd_data -f 10535 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10535.txt
-./skim_mjd_data -f 10536 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10536.txt
-./skim_mjd_data -f 10537 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10537.txt
-./skim_mjd_data -f 10538 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10538.txt
-./skim_mjd_data -f 10721 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10721.txt
-./skim_mjd_data -f 10723 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10723.txt
-./skim_mjd_data -f 10724 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10724.txt
-./skim_mjd_data -f 10725 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10725.txt
-./skim_mjd_data -f 10726 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10726.txt
-./skim_mjd_data -f 10727 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10727.txt
-./skim_mjd_data -f 10729 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10729.txt
-./skim_mjd_data -f 10730 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10730.txt
-./skim_mjd_data -f 10731 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10731.txt
-./skim_mjd_data -f 10732 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10732.txt
-./skim_mjd_data -f 10767 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10767.txt
-./skim_mjd_data -f 10768 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10768.txt
-./skim_mjd_data -f 10769 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10769.txt
-./skim_mjd_data -f 10770 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10770.txt
-./skim_mjd_data -f 10771 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10771.txt
-./skim_mjd_data -f 10772 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10772.txt
-./skim_mjd_data -f 10773 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10773.txt
-./skim_mjd_data -f 10774 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10774.txt
-./skim_mjd_data -f 10775 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10775.txt
-./skim_mjd_data -f 10776 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10776.txt
-./skim_mjd_data -f 10810 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10810.txt
-./skim_mjd_data -f 10811 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10811.txt
-./skim_mjd_data -f 10812 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10812.txt
-./skim_mjd_data -f 10813 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10813.txt
-./skim_mjd_data -f 10814 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10814.txt
-./skim_mjd_data -f 10815 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10815.txt
-./skim_mjd_data -f 10816 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10816.txt
-./skim_mjd_data -f 10817 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10817.txt
-./skim_mjd_data -f 10818 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10818.txt
-./skim_mjd_data -f 10819 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10819.txt
-./skim_mjd_data -f 10847 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10847.txt
-./skim_mjd_data -f 10848 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10848.txt
-./skim_mjd_data -f 10849 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10849.txt
-./skim_mjd_data -f 10850 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10850.txt
-./skim_mjd_data -f 10851 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10851.txt
-./skim_mjd_data -f 10852 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10852.txt
-./skim_mjd_data -f 10853 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10853.txt
-./skim_mjd_data -f 10854 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10854.txt
-./skim_mjd_data -f 10855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10855.txt
-./skim_mjd_data -f 10856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10856.txt
-./skim_mjd_data -f 10943 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10943.txt
-./skim_mjd_data -f 10944 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10944.txt
-./skim_mjd_data -f 10945 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10945.txt
-./skim_mjd_data -f 10946 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10946.txt
-./skim_mjd_data -f 10947 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10947.txt
-./skim_mjd_data -f 10948 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10948.txt
-./skim_mjd_data -f 10949 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10949.txt
-./skim_mjd_data -f 10950 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10950.txt
-./skim_mjd_data -f 10951 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10951.txt
-./skim_mjd_data -f 10952 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10952.txt
-./skim_mjd_data -f 10983 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10983.txt
-./skim_mjd_data -f 10984 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10984.txt
-./skim_mjd_data -f 10985 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10985.txt
-./skim_mjd_data -f 10986 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10986.txt
-./skim_mjd_data -f 10987 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10987.txt
-./skim_mjd_data -f 10988 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10988.txt
-./skim_mjd_data -f 10989 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10989.txt
-./skim_mjd_data -f 10990 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10990.txt
-./skim_mjd_data -f 10991 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10991.txt
-./skim_mjd_data -f 10992 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10992.txt
-./skim_mjd_data -f 11029 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11029.txt
-./skim_mjd_data -f 11030 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11030.txt
-./skim_mjd_data -f 11031 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11031.txt
-./skim_mjd_data -f 11032 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11032.txt
-./skim_mjd_data -f 11033 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11033.txt
-./skim_mjd_data -f 11034 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11034.txt
-./skim_mjd_data -f 11035 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11035.txt
-./skim_mjd_data -f 11036 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11036.txt
-./skim_mjd_data -f 11037 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11037.txt
-./skim_mjd_data -f 11038 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11038.txt
-./skim_mjd_data -f 11068 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11068.txt
-./skim_mjd_data -f 11069 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11069.txt
-./skim_mjd_data -f 11070 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11070.txt
-./skim_mjd_data -f 11071 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11071.txt
-./skim_mjd_data -f 11072 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11072.txt
-./skim_mjd_data -f 11073 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11073.txt
-./skim_mjd_data -f 11074 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11074.txt
-./skim_mjd_data -f 11075 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11075.txt
-./skim_mjd_data -f 11076 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11076.txt
-./skim_mjd_data -f 11077 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11077.txt
-./skim_mjd_data -f 11215 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11215.txt
-./skim_mjd_data -f 11216 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11216.txt
-./skim_mjd_data -f 11217 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11217.txt
-./skim_mjd_data -f 11218 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11218.txt
-./skim_mjd_data -f 11219 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11219.txt
-./skim_mjd_data -f 11220 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11220.txt
-./skim_mjd_data -f 11221 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11221.txt
-./skim_mjd_data -f 11222 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11222.txt
-./skim_mjd_data -f 11223 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11223.txt
-./skim_mjd_data -f 11307 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11307.txt
-./skim_mjd_data -f 11308 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11308.txt
-./skim_mjd_data -f 11309 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11309.txt
-./skim_mjd_data -f 11310 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11310.txt
-./skim_mjd_data -f 11311 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11311.txt
-./skim_mjd_data -f 11312 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11312.txt
-./skim_mjd_data -f 11313 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11313.txt
-./skim_mjd_data -f 11314 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11314.txt
-./skim_mjd_data -f 11315 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11315.txt
-./skim_mjd_data -f 11316 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11316.txt
-./skim_mjd_data -f 11340 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11340.txt
-./skim_mjd_data -f 11341 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11341.txt
-./skim_mjd_data -f 11342 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11342.txt
-./skim_mjd_data -f 11343 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11343.txt
-./skim_mjd_data -f 11344 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11344.txt
-./skim_mjd_data -f 11345 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11345.txt
-./skim_mjd_data -f 11346 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11346.txt
-./skim_mjd_data -f 11347 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11347.txt
-./skim_mjd_data -f 11489 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11489.txt
-./skim_mjd_data -f 11490 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11490.txt
-./skim_mjd_data -f 11491 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11491.txt
-./skim_mjd_data -f 11492 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11492.txt
-./skim_mjd_data -f 11493 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11493.txt
-./skim_mjd_data -f 11494 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11494.txt
-./skim_mjd_data -f 11495 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11495.txt
-./skim_mjd_data -f 11496 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11496.txt
-./skim_mjd_data -f 11507 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11507.txt
-./skim_mjd_data -f 11508 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11508.txt
-./skim_mjd_data -f 11509 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11509.txt
-./skim_mjd_data -f 11510 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11510.txt
-./skim_mjd_data -f 11511 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11511.txt
-./skim_mjd_data -f 11512 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11512.txt
-./skim_mjd_data -f 11513 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11513.txt
-./skim_mjd_data -f 11514 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11514.txt
-./skim_mjd_data -f 11515 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11515.txt
-./skim_mjd_data -f 11516 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11516.txt
-./skim_mjd_data -f 11799 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11799.txt
-./skim_mjd_data -f 11800 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11800.txt
-./skim_mjd_data -f 11801 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11801.txt
-./skim_mjd_data -f 11802 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11802.txt
-./skim_mjd_data -f 11803 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11803.txt
-./skim_mjd_data -f 11804 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11804.txt
-./skim_mjd_data -f 11805 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11805.txt
-./skim_mjd_data -f 11806 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11806.txt
-./skim_mjd_data -f 11807 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11807.txt
-./skim_mjd_data -f 11808 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11808.txt
-./skim_mjd_data -f 12502 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12502.txt
-./skim_mjd_data -f 12503 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12503.txt
-./skim_mjd_data -f 12504 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12504.txt
-./skim_mjd_data -f 12505 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12505.txt
-./skim_mjd_data -f 12506 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12506.txt
-./skim_mjd_data -f 12507 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12507.txt
-./skim_mjd_data -f 12508 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12508.txt
-./skim_mjd_data -f 12509 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12509.txt
-./skim_mjd_data -f 12627 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12627.txt
-./skim_mjd_data -f 12628 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12628.txt
-./skim_mjd_data -f 12629 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12629.txt
-./skim_mjd_data -f 12630 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12630.txt
-./skim_mjd_data -f 12631 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12631.txt
-./skim_mjd_data -f 12632 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12632.txt
-./skim_mjd_data -f 12633 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12633.txt
-./skim_mjd_data -f 12634 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12634.txt
-./skim_mjd_data -f 12656 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12656.txt
-./skim_mjd_data -f 12657 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12657.txt
-./skim_mjd_data -f 12658 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12658.txt
-./skim_mjd_data -f 12659 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12659.txt
-./skim_mjd_data -f 12660 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12660.txt
-./skim_mjd_data -f 12661 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12661.txt
-./skim_mjd_data -f 12662 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12662.txt
-./skim_mjd_data -f 12726 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12726.txt
-./skim_mjd_data -f 12727 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12727.txt
-./skim_mjd_data -f 12728 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12728.txt
-./skim_mjd_data -f 12729 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12729.txt
-./skim_mjd_data -f 12730 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12730.txt
-./skim_mjd_data -f 12731 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12731.txt
-./skim_mjd_data -f 12732 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12732.txt
-./skim_mjd_data -f 12733 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12733.txt
-./skim_mjd_data -f 12800 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12800.txt
-./skim_mjd_data -f 12801 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12801.txt
-./skim_mjd_data -f 12802 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12802.txt
-./skim_mjd_data -f 12803 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12803.txt
-./skim_mjd_data -f 12804 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12804.txt
-./skim_mjd_data -f 12805 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12805.txt
-./skim_mjd_data -f 12806 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12806.txt
-./skim_mjd_data -f 12807 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12807.txt
-./skim_mjd_data -f 12808 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12808.txt
-./skim_mjd_data -f 12864 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12864.txt
-./skim_mjd_data -f 12865 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12865.txt
-./skim_mjd_data -f 12866 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12866.txt
-./skim_mjd_data -f 12867 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12867.txt
-./skim_mjd_data -f 12868 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12868.txt
-./skim_mjd_data -f 12869 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12869.txt
-./skim_mjd_data -f 12870 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12870.txt
-./skim_mjd_data -f 12871 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12871.txt
-./skim_mjd_data -f 12872 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12872.txt
-./skim_mjd_data -f 12873 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12873.txt
-./skim_mjd_data -f 12886 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12886.txt
-./skim_mjd_data -f 12887 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12887.txt
-./skim_mjd_data -f 12888 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12888.txt
-./skim_mjd_data -f 12889 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12889.txt
-./skim_mjd_data -f 12890 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12890.txt
-./skim_mjd_data -f 12891 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12891.txt
-./skim_mjd_data -f 12892 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12892.txt
-./skim_mjd_data -f 12893 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12893.txt
-./skim_mjd_data -f 12894 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12894.txt
-./skim_mjd_data -f 12895 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12895.txt
-./skim_mjd_data -f 12969 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12969.txt
-./skim_mjd_data -f 12970 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12970.txt
-./skim_mjd_data -f 12971 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12971.txt
-./skim_mjd_data -f 12972 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12972.txt
-./skim_mjd_data -f 12973 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12973.txt
-./skim_mjd_data -f 12974 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12974.txt
-./skim_mjd_data -f 12975 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12975.txt
-./skim_mjd_data -f 12976 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12976.txt
-./skim_mjd_data -f 12977 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12977.txt
-./skim_mjd_data -f 12978 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12978.txt
-./skim_mjd_data -f 13058 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13058.txt
-./skim_mjd_data -f 13059 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13059.txt
-./skim_mjd_data -f 13060 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13060.txt
-./skim_mjd_data -f 13061 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13061.txt
-./skim_mjd_data -f 13062 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13062.txt
-./skim_mjd_data -f 13063 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13063.txt
-./skim_mjd_data -f 13064 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13064.txt
-./skim_mjd_data -f 13139 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13139.txt
-./skim_mjd_data -f 13140 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13140.txt
-./skim_mjd_data -f 13141 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13141.txt
-./skim_mjd_data -f 13142 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13142.txt
-./skim_mjd_data -f 13143 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13143.txt
-./skim_mjd_data -f 13144 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13144.txt
-./skim_mjd_data -f 13145 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13145.txt
-./skim_mjd_data -f 13146 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13146.txt
-./skim_mjd_data -f 13353 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13353.txt
-./skim_mjd_data -f 13354 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13354.txt
-./skim_mjd_data -f 13355 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13355.txt
-./skim_mjd_data -f 13356 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13356.txt
-./skim_mjd_data -f 13357 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13357.txt
-./skim_mjd_data -f 13358 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13358.txt
-./skim_mjd_data -f 13359 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13359.txt
-./skim_mjd_data -f 13360 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13360.txt
-./skim_mjd_data -f 13385 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13385.txt
-./skim_mjd_data -f 13386 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13386.txt
-./skim_mjd_data -f 13387 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13387.txt
-./skim_mjd_data -f 13388 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13388.txt
-./skim_mjd_data -f 13389 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13389.txt
-./skim_mjd_data -f 13390 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13390.txt
-./skim_mjd_data -f 13391 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13391.txt
-./skim_mjd_data -f 13392 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13392.txt
-./skim_mjd_data -f 13420 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13420.txt
-./skim_mjd_data -f 13421 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13421.txt
-./skim_mjd_data -f 13422 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13422.txt
-./skim_mjd_data -f 13423 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13423.txt
-./skim_mjd_data -f 13424 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13424.txt
-./skim_mjd_data -f 13425 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13425.txt
-./skim_mjd_data -f 13426 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13426.txt
-./skim_mjd_data -f 13427 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13427.txt
-./skim_mjd_data -f 13550 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13550.txt
-./skim_mjd_data -f 13551 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13551.txt
-./skim_mjd_data -f 13552 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13552.txt
-./skim_mjd_data -f 13553 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13553.txt
-./skim_mjd_data -f 13554 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13554.txt
-./skim_mjd_data -f 13555 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13555.txt
-./skim_mjd_data -f 13556 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13556.txt
-./skim_mjd_data -f 13690 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13690.txt
-./skim_mjd_data -f 13691 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13691.txt
-./skim_mjd_data -f 13692 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13692.txt
-./skim_mjd_data -f 13693 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13693.txt
-./skim_mjd_data -f 13694 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13694.txt
-./skim_mjd_data -f 13695 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13695.txt
-./skim_mjd_data -f 13696 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13696.txt
-./skim_mjd_data -f 13697 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13697.txt
-./skim_mjd_data -f 13706 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13706.txt
-./skim_mjd_data -f 13707 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13707.txt
-./skim_mjd_data -f 13708 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13708.txt
-./skim_mjd_data -f 13709 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13709.txt
-./skim_mjd_data -f 13710 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13710.txt
-./skim_mjd_data -f 13711 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13711.txt
-./skim_mjd_data -f 13712 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13712.txt
-./skim_mjd_data -f 13713 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13713.txt
-./skim_mjd_data -f 13740 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13740.txt
-./skim_mjd_data -f 13741 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13741.txt
-./skim_mjd_data -f 13742 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13742.txt
-./skim_mjd_data -f 13743 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13743.txt
-./skim_mjd_data -f 13744 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13744.txt
-./skim_mjd_data -f 13745 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13745.txt
-./skim_mjd_data -f 13746 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13746.txt
-./skim_mjd_data -f 13747 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13747.txt
-./skim_mjd_data -f 13773 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13773.txt
-./skim_mjd_data -f 13774 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13774.txt
-./skim_mjd_data -f 13775 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13775.txt
-./skim_mjd_data -f 13776 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13776.txt
-./skim_mjd_data -f 13777 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13777.txt
-./skim_mjd_data -f 13778 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13778.txt
-./skim_mjd_data -f 13779 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13779.txt
-./skim_mjd_data -f 13780 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13780.txt
-./skim_mjd_data -f 13905 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13905.txt
-./skim_mjd_data -f 13906 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13906.txt
-./skim_mjd_data -f 13907 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13907.txt
-./skim_mjd_data -f 13908 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13908.txt
-./skim_mjd_data -f 13909 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13909.txt
-./skim_mjd_data -f 13910 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13910.txt
-./skim_mjd_data -f 13911 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13911.txt
-./skim_mjd_data -f 13912 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13912.txt
-./skim_mjd_data -f 13954 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13954.txt
-./skim_mjd_data -f 13955 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13955.txt
-./skim_mjd_data -f 13956 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13956.txt
-./skim_mjd_data -f 13957 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13957.txt
-./skim_mjd_data -f 13958 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13958.txt
-./skim_mjd_data -f 13959 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13959.txt
-./skim_mjd_data -f 13960 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13960.txt
-./skim_mjd_data -f 13961 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13961.txt
-./skim_mjd_data -f 13962 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13962.txt
-./skim_mjd_data -f 13964 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13964.txt
-./skim_mjd_data -f 13987 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13987.txt
-./skim_mjd_data -f 13988 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13988.txt
-./skim_mjd_data -f 13989 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13989.txt
-./skim_mjd_data -f 13990 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13990.txt
-./skim_mjd_data -f 13991 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13991.txt
-./skim_mjd_data -f 13992 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13992.txt
-./skim_mjd_data -f 13993 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13993.txt
-./skim_mjd_data -f 13994 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13994.txt
-./skim_mjd_data -f 14093 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14093.txt
-./skim_mjd_data -f 14094 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14094.txt
-./skim_mjd_data -f 14095 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14095.txt
-./skim_mjd_data -f 14096 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14096.txt
-./skim_mjd_data -f 14097 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14097.txt
-./skim_mjd_data -f 14098 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14098.txt
-./skim_mjd_data -f 14099 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14099.txt
-./skim_mjd_data -f 14100 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14100.txt
-./skim_mjd_data -f 14149 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14149.txt
-./skim_mjd_data -f 14150 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14150.txt
-./skim_mjd_data -f 14151 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14151.txt
-./skim_mjd_data -f 14152 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14152.txt
-./skim_mjd_data -f 14153 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14153.txt
-./skim_mjd_data -f 14154 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14154.txt
-./skim_mjd_data -f 14155 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14155.txt
-./skim_mjd_data -f 14156 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14156.txt
-./skim_mjd_data -f 14180 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14180.txt
-./skim_mjd_data -f 14181 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14181.txt
-./skim_mjd_data -f 14182 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14182.txt
-./skim_mjd_data -f 14183 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14183.txt
-./skim_mjd_data -f 14184 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14184.txt
-./skim_mjd_data -f 14185 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14185.txt
-./skim_mjd_data -f 14186 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14186.txt
-./skim_mjd_data -f 14187 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14187.txt
-./skim_mjd_data -f 14188 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14188.txt
-./skim_mjd_data -f 14274 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14274.txt
-./skim_mjd_data -f 14275 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14275.txt
-./skim_mjd_data -f 14276 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14276.txt
-./skim_mjd_data -f 14277 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14277.txt
-./skim_mjd_data -f 14278 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14278.txt
-./skim_mjd_data -f 14279 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14279.txt
-./skim_mjd_data -f 14280 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14280.txt
-./skim_mjd_data -f 14281 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14281.txt
-./skim_mjd_data -f 14282 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14282.txt
-./skim_mjd_data -f 14317 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14317.txt
-./skim_mjd_data -f 14318 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14318.txt
-./skim_mjd_data -f 14319 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14319.txt
-./skim_mjd_data -f 14320 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14320.txt
-./skim_mjd_data -f 14321 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14321.txt
-./skim_mjd_data -f 14322 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14322.txt
-./skim_mjd_data -f 14323 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14323.txt
-./skim_mjd_data -f 14324 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14324.txt
-./skim_mjd_data -f 14325 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14325.txt
-./skim_mjd_data -f 14376 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14376.txt
-./skim_mjd_data -f 14377 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14377.txt
-./skim_mjd_data -f 14378 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14378.txt
-./skim_mjd_data -f 14379 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14379.txt
-./skim_mjd_data -f 14380 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14380.txt
-./skim_mjd_data -f 14381 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14381.txt
-./skim_mjd_data -f 14382 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14382.txt
-./skim_mjd_data -f 14383 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14383.txt
-./skim_mjd_data -f 14384 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14384.txt
-./skim_mjd_data -f 14699 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14699.txt
-./skim_mjd_data -f 14700 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14700.txt
-./skim_mjd_data -f 14701 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14701.txt
-./skim_mjd_data -f 14702 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14702.txt
-./skim_mjd_data -f 14703 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14703.txt
-./skim_mjd_data -f 14704 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14704.txt
-./skim_mjd_data -f 14705 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14705.txt
-./skim_mjd_data -f 14706 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14706.txt
-./skim_mjd_data -f 14855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14855.txt
-./skim_mjd_data -f 14856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14856.txt
-./skim_mjd_data -f 14857 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14857.txt
-./skim_mjd_data -f 14858 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14858.txt
-./skim_mjd_data -f 14859 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14859.txt
-./skim_mjd_data -f 14860 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14860.txt
-./skim_mjd_data -f 14861 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14861.txt
-./skim_mjd_data -f 14927 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14927.txt
-./skim_mjd_data -f 14928 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14928.txt
-./skim_mjd_data -f 14929 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14929.txt
-./skim_mjd_data -f 14930 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14930.txt
-./skim_mjd_data -f 14931 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14931.txt
-./skim_mjd_data -f 14932 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14932.txt
-./skim_mjd_data -f 14933 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14933.txt
-./skim_mjd_data -f 15054 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15054.txt
-./skim_mjd_data -f 15055 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15055.txt
-./skim_mjd_data -f 15056 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15056.txt
-./skim_mjd_data -f 15057 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15057.txt
-./skim_mjd_data -f 15058 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15058.txt
-./skim_mjd_data -f 15059 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15059.txt
-./skim_mjd_data -f 15060 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15060.txt
-./skim_mjd_data -f 15248 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15248.txt
-./skim_mjd_data -f 15249 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15249.txt
-./skim_mjd_data -f 15250 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15250.txt
-./skim_mjd_data -f 15251 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15251.txt
-./skim_mjd_data -f 15252 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15252.txt
-./skim_mjd_data -f 15253 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15253.txt
-./skim_mjd_data -f 15254 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15254.txt
-./skim_mjd_data -f 15330 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15330.txt
-./skim_mjd_data -f 15331 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15331.txt
-./skim_mjd_data -f 15332 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15332.txt
-./skim_mjd_data -f 15333 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15333.txt
-./skim_mjd_data -f 15334 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15334.txt
-./skim_mjd_data -f 15335 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15335.txt
-./skim_mjd_data -f 15336 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15336.txt
-./skim_mjd_data -f 15490 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15490.txt
-./skim_mjd_data -f 15491 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15491.txt
-./skim_mjd_data -f 15492 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15492.txt
-./skim_mjd_data -f 15493 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15493.txt
-./skim_mjd_data -f 15494 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15494.txt
-./skim_mjd_data -f 15495 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15495.txt
-./skim_mjd_data -f 15496 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15496.txt
-./skim_mjd_data -f 15497 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15497.txt
-./skim_mjd_data -f 15498 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15498.txt
-./skim_mjd_data -f 15499 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15499.txt
-./skim_mjd_data -f 15627 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15627.txt
-./skim_mjd_data -f 15628 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15628.txt
-./skim_mjd_data -f 15629 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15629.txt
-./skim_mjd_data -f 15630 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15630.txt
-./skim_mjd_data -f 15631 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15631.txt
-./skim_mjd_data -f 15632 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15632.txt
-./skim_mjd_data -f 15707 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15707.txt
-./skim_mjd_data -f 15708 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15708.txt
-./skim_mjd_data -f 15709 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15709.txt
-./skim_mjd_data -f 15710 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15710.txt
-./skim_mjd_data -f 15711 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15711.txt
-./skim_mjd_data -f 15712 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15712.txt
-./skim_mjd_data -f 15713 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15713.txt
-./skim_mjd_data -f 15789 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15789.txt
-./skim_mjd_data -f 15790 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15790.txt
-./skim_mjd_data -f 15791 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15791.txt
-./skim_mjd_data -f 15792 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15792.txt
-./skim_mjd_data -f 15793 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15793.txt
-./skim_mjd_data -f 15794 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15794.txt
-./skim_mjd_data -f 15795 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15795.txt
-./skim_mjd_data -f 15845 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15845.txt
-./skim_mjd_data -f 15846 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15846.txt
-./skim_mjd_data -f 15847 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15847.txt
-./skim_mjd_data -f 15848 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15848.txt
-./skim_mjd_data -f 15849 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15849.txt
-./skim_mjd_data -f 15850 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15850.txt
-./skim_mjd_data -f 15851 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15851.txt
-./skim_mjd_data -f 15852 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15852.txt
-./skim_mjd_data -f 15853 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15853.txt
-./skim_mjd_data -f 15854 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15854.txt
-./skim_mjd_data -f 16836 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16836.txt
-./skim_mjd_data -f 16837 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16837.txt
-./skim_mjd_data -f 16838 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16838.txt
-./skim_mjd_data -f 16839 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16839.txt
-./skim_mjd_data -f 16840 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16840.txt
-./skim_mjd_data -f 16841 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16841.txt
-./skim_mjd_data -f 16842 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16842.txt
-./skim_mjd_data -f 16843 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16843.txt
-./skim_mjd_data -f 16844 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16844.txt
-./skim_mjd_data -f 16845 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16845.txt
-./skim_mjd_data -f 16911 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16911.txt
-./skim_mjd_data -f 16912 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16912.txt
-./skim_mjd_data -f 16913 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16913.txt
-./skim_mjd_data -f 16914 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16914.txt
-./skim_mjd_data -f 16915 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16915.txt
-./skim_mjd_data -f 16916 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16916.txt
-./skim_mjd_data -f 16917 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16917.txt
-./skim_mjd_data -f 16918 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16918.txt
-./skim_mjd_data -f 16919 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16919.txt
-./skim_mjd_data -f 16920 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16920.txt
-./skim_mjd_data -f 17017 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17017.txt
-./skim_mjd_data -f 17018 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17018.txt
-./skim_mjd_data -f 17019 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17019.txt
-./skim_mjd_data -f 17020 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17020.txt
-./skim_mjd_data -f 17021 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17021.txt
-./skim_mjd_data -f 17022 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17022.txt
-./skim_mjd_data -f 17023 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17023.txt
-./skim_mjd_data -f 17024 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17024.txt
-./skim_mjd_data -f 17025 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17025.txt
-./skim_mjd_data -f 17026 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17026.txt
-./skim_mjd_data -f 17183 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17183.txt
-./skim_mjd_data -f 17184 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17184.txt
-./skim_mjd_data -f 17185 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17185.txt
-./skim_mjd_data -f 17186 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17186.txt
-./skim_mjd_data -f 17187 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17187.txt
-./skim_mjd_data -f 17188 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17188.txt
-./skim_mjd_data -f 17189 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17189.txt
-./skim_mjd_data -f 17190 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17190.txt
-./skim_mjd_data -f 17191 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17191.txt
-./skim_mjd_data -f 17192 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17192.txt
-./skim_mjd_data -f 17423 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17423.txt
-./skim_mjd_data -f 17424 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17424.txt
-./skim_mjd_data -f 17425 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17425.txt
-./skim_mjd_data -f 17426 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17426.txt
-./skim_mjd_data -f 17427 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17427.txt
-./skim_mjd_data -f 17428 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17428.txt
-./skim_mjd_data -f 17429 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17429.txt
-./skim_mjd_data -f 17430 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17430.txt
-./skim_mjd_data -f 17431 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17431.txt
-./skim_mjd_data -f 17432 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17432.txt
-./skim_mjd_data -f 17521 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17521.txt
-./skim_mjd_data -f 17522 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17522.txt
-./skim_mjd_data -f 17523 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17523.txt
-./skim_mjd_data -f 17524 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17524.txt
-./skim_mjd_data -f 17525 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17525.txt
-./skim_mjd_data -f 17526 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17526.txt
-./skim_mjd_data -f 17527 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17527.txt
-./skim_mjd_data -f 17528 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17528.txt
-./skim_mjd_data -f 17529 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17529.txt
-./skim_mjd_data -f 17688 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17688.txt
-./skim_mjd_data -f 17689 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17689.txt
-./skim_mjd_data -f 17690 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17690.txt
-./skim_mjd_data -f 17691 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17691.txt
-./skim_mjd_data -f 17692 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17692.txt
-./skim_mjd_data -f 17693 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17693.txt
-./skim_mjd_data -f 17694 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17694.txt
-./skim_mjd_data -f 17695 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17695.txt
-./skim_mjd_data -f 17696 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17696.txt
-./skim_mjd_data -f 17957 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17957.txt
-./skim_mjd_data -f 17958 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17958.txt
-./skim_mjd_data -f 17959 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17959.txt
-./skim_mjd_data -f 17960 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17960.txt
-./skim_mjd_data -f 17961 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17961.txt
-./skim_mjd_data -f 17962 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17962.txt
-./skim_mjd_data -f 17963 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17963.txt
-./skim_mjd_data -f 17964 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17964.txt
-./skim_mjd_data -f 17965 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17965.txt
-./skim_mjd_data -f 18328 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18328.txt
-./skim_mjd_data -f 18329 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18329.txt
-./skim_mjd_data -f 18330 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18330.txt
-./skim_mjd_data -f 18331 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18331.txt
-./skim_mjd_data -f 18332 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18332.txt
-./skim_mjd_data -f 18333 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18333.txt
-./skim_mjd_data -f 18334 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18334.txt
-./skim_mjd_data -f 18335 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18335.txt
-./skim_mjd_data -f 18336 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18336.txt
-./skim_mjd_data -f 18337 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18337.txt
-./skim_mjd_data -f 18713 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18713.txt
-./skim_mjd_data -f 18714 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18714.txt
-./skim_mjd_data -f 18715 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18715.txt
-./skim_mjd_data -f 18716 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18716.txt
-./skim_mjd_data -f 18717 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18717.txt
-./skim_mjd_data -f 18718 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18718.txt
-./skim_mjd_data -f 18719 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18719.txt
-./skim_mjd_data -f 18720 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18720.txt
-./skim_mjd_data -f 18721 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18721.txt
-./skim_mjd_data -f 18722 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18722.txt
-./skim_mjd_data -f 18746 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18746.txt
-./skim_mjd_data -f 18747 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18747.txt
-./skim_mjd_data -f 18748 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18748.txt
-./skim_mjd_data -f 18749 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18749.txt
-./skim_mjd_data -f 18750 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18750.txt
-./skim_mjd_data -f 18753 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18753.txt
-./skim_mjd_data -f 18754 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18754.txt
-./skim_mjd_data -f 18755 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18755.txt
-./skim_mjd_data -f 18756 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18756.txt
-./skim_mjd_data -f 18759 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18759.txt
-./skim_mjd_data -f 19055 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19055.txt
-./skim_mjd_data -f 19056 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19056.txt
-./skim_mjd_data -f 19057 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19057.txt
-./skim_mjd_data -f 19058 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19058.txt
-./skim_mjd_data -f 19059 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19059.txt
-./skim_mjd_data -f 19060 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19060.txt
-./skim_mjd_data -f 19061 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19061.txt
-./skim_mjd_data -f 19062 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19062.txt
-./skim_mjd_data -f 19063 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19063.txt
-./skim_mjd_data -f 19064 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19064.txt
-./skim_mjd_data -f 19094 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19094.txt
-./skim_mjd_data -f 19095 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19095.txt
-./skim_mjd_data -f 19096 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19096.txt
-./skim_mjd_data -f 19097 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19097.txt
-./skim_mjd_data -f 19098 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19098.txt
-./skim_mjd_data -f 19099 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19099.txt
-./skim_mjd_data -f 19100 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19100.txt
-./skim_mjd_data -f 19101 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19101.txt
-./skim_mjd_data -f 19102 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19102.txt
-./skim_mjd_data -f 19103 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19103.txt
-./skim_mjd_data -f 19243 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19243.txt
-./skim_mjd_data -f 19244 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19244.txt
-./skim_mjd_data -f 19245 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19245.txt
-./skim_mjd_data -f 19246 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19246.txt
-./skim_mjd_data -f 19247 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19247.txt
-./skim_mjd_data -f 19248 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19248.txt
-./skim_mjd_data -f 19249 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19249.txt
-./skim_mjd_data -f 19250 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19250.txt
-./skim_mjd_data -f 19251 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19251.txt
-./skim_mjd_data -f 19252 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19252.txt
-./skim_mjd_data -f 19520 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19520.txt
-./skim_mjd_data -f 19521 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19521.txt
-./skim_mjd_data -f 19522 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19522.txt
-./skim_mjd_data -f 19523 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19523.txt
-./skim_mjd_data -f 19524 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19524.txt
-./skim_mjd_data -f 19525 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19525.txt
-./skim_mjd_data -f 19526 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19526.txt
-./skim_mjd_data -f 19527 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19527.txt
-./skim_mjd_data -f 19528 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19528.txt
-./skim_mjd_data -f 19529 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19529.txt
-./skim_mjd_data -f 19586 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19586.txt
-./skim_mjd_data -f 19587 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19587.txt
-./skim_mjd_data -f 19588 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19588.txt
-./skim_mjd_data -f 19589 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19589.txt
-./skim_mjd_data -f 19590 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19590.txt
-./skim_mjd_data -f 19591 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19591.txt
-./skim_mjd_data -f 19592 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19592.txt
-./skim_mjd_data -f 19593 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19593.txt
-./skim_mjd_data -f 19594 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19594.txt
-./skim_mjd_data -f 19595 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19595.txt
-./skim_mjd_data -f 19751 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19751.txt
-./skim_mjd_data -f 19752 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19752.txt
-./skim_mjd_data -f 19753 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19753.txt
-./skim_mjd_data -f 19754 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19754.txt
-./skim_mjd_data -f 19755 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19755.txt
-./skim_mjd_data -f 19756 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19756.txt
-./skim_mjd_data -f 19757 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19757.txt
-./skim_mjd_data -f 19758 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19758.txt
-./skim_mjd_data -f 19759 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19759.txt
-./skim_mjd_data -f 19760 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19760.txt
-./skim_mjd_data -f 19762 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19762.txt
-./skim_mjd_data -f 19763 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19763.txt
-./skim_mjd_data -f 19764 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19764.txt
-./skim_mjd_data -f 19765 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19765.txt
-./skim_mjd_data -f 19766 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19766.txt
-./skim_mjd_data -f 19767 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19767.txt
-./skim_mjd_data -f 19768 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19768.txt
-./skim_mjd_data -f 19769 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19769.txt
-./skim_mjd_data -f 20042 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20042.txt
-./skim_mjd_data -f 20043 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20043.txt
-./skim_mjd_data -f 20044 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20044.txt
-./skim_mjd_data -f 20045 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20045.txt
-./skim_mjd_data -f 20046 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20046.txt
-./skim_mjd_data -f 20047 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20047.txt
-./skim_mjd_data -f 20048 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20048.txt
-./skim_mjd_data -f 20049 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20049.txt
-./skim_mjd_data -f 20050 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20050.txt
-./skim_mjd_data -f 20051 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20051.txt
-./skim_mjd_data -f 20065 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20065.txt
-./skim_mjd_data -f 20066 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20066.txt
-./skim_mjd_data -f 20067 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20067.txt
-./skim_mjd_data -f 20068 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20068.txt
-./skim_mjd_data -f 20069 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20069.txt
-./skim_mjd_data -f 20070 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20070.txt
-./skim_mjd_data -f 20071 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20071.txt
-./skim_mjd_data -f 20072 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20072.txt
-./skim_mjd_data -f 20201 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20201.txt
-./skim_mjd_data -f 20202 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20202.txt
-./skim_mjd_data -f 20203 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20203.txt
-./skim_mjd_data -f 20204 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20204.txt
-./skim_mjd_data -f 20205 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20205.txt
-./skim_mjd_data -f 20206 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20206.txt
-./skim_mjd_data -f 20207 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20207.txt
-./skim_mjd_data -f 20208 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20208.txt
-./skim_mjd_data -f 20209 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20209.txt
-./skim_mjd_data -f 20210 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20210.txt
-./skim_mjd_data -f 20447 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20447.txt
-./skim_mjd_data -f 20448 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20448.txt
-./skim_mjd_data -f 20449 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20449.txt
-./skim_mjd_data -f 20450 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20450.txt
-./skim_mjd_data -f 20451 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20451.txt
-./skim_mjd_data -f 20452 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20452.txt
-./skim_mjd_data -f 20453 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20453.txt
-./skim_mjd_data -f 20454 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20454.txt
-./skim_mjd_data -f 20455 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20455.txt
-./skim_mjd_data -f 20456 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20456.txt
-./skim_mjd_data -f 20466 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20466.txt
-./skim_mjd_data -f 20467 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20467.txt
-./skim_mjd_data -f 20468 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20468.txt
-./skim_mjd_data -f 20469 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20469.txt
-./skim_mjd_data -f 20470 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20470.txt
-./skim_mjd_data -f 20471 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20471.txt
-./skim_mjd_data -f 20472 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20472.txt
-./skim_mjd_data -f 20473 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20473.txt
-./skim_mjd_data -f 20474 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20474.txt
-./skim_mjd_data -f 20475 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20475.txt
-./skim_mjd_data -f 20556 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20556.txt
-./skim_mjd_data -f 20557 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20557.txt
-./skim_mjd_data -f 20558 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20558.txt
-./skim_mjd_data -f 20559 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20559.txt
-./skim_mjd_data -f 20560 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20560.txt
-./skim_mjd_data -f 20562 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20562.txt
-./skim_mjd_data -f 20563 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20563.txt
-./skim_mjd_data -f 20565 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20565.txt
-./skim_mjd_data -f 20566 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20566.txt
-./skim_mjd_data -f 20567 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20567.txt
-./skim_mjd_data -f 21180 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21180.txt
-./skim_mjd_data -f 21181 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21181.txt
-./skim_mjd_data -f 21182 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21182.txt
-./skim_mjd_data -f 21183 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21183.txt
-./skim_mjd_data -f 21184 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21184.txt
-./skim_mjd_data -f 21185 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21185.txt
-./skim_mjd_data -f 21186 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21186.txt
-./skim_mjd_data -f 21187 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21187.txt
-./skim_mjd_data -f 21188 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21188.txt
-./skim_mjd_data -f 21189 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21189.txt
-./skim_mjd_data -f 21203 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21203.txt
-./skim_mjd_data -f 21204 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21204.txt
-./skim_mjd_data -f 21205 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21205.txt
-./skim_mjd_data -f 21206 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21206.txt
-./skim_mjd_data -f 21207 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21207.txt
-./skim_mjd_data -f 21208 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21208.txt
-./skim_mjd_data -f 21209 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21209.txt
-./skim_mjd_data -f 21210 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21210.txt
-./skim_mjd_data -f 21211 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21211.txt
-./skim_mjd_data -f 21212 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21212.txt
-./skim_mjd_data -f 21437 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21437.txt
-./skim_mjd_data -f 21438 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21438.txt
-./skim_mjd_data -f 21439 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21439.txt
-./skim_mjd_data -f 21440 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21440.txt
-./skim_mjd_data -f 21441 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21441.txt
-./skim_mjd_data -f 21442 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21442.txt
-./skim_mjd_data -f 21443 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21443.txt
-./skim_mjd_data -f 21444 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21444.txt
-./skim_mjd_data -f 21445 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21445.txt
-./skim_mjd_data -f 21446 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21446.txt
-./skim_mjd_data -f 21454 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21454.txt
-./skim_mjd_data -f 21455 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21455.txt
-./skim_mjd_data -f 21456 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21456.txt
-./skim_mjd_data -f 21457 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21457.txt
-./skim_mjd_data -f 21458 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21458.txt
-./skim_mjd_data -f 21459 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21459.txt
-./skim_mjd_data -f 21460 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21460.txt
-./skim_mjd_data -f 21461 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21461.txt
-./skim_mjd_data -f 21462 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21462.txt
-./skim_mjd_data -f 21463 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21463.txt
-./skim_mjd_data -f 21802 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21802.txt
-./skim_mjd_data -f 21803 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21803.txt
-./skim_mjd_data -f 21804 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21804.txt
-./skim_mjd_data -f 21805 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21805.txt
-./skim_mjd_data -f 21806 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21806.txt
-./skim_mjd_data -f 21807 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21807.txt
-./skim_mjd_data -f 21808 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21808.txt
-./skim_mjd_data -f 21809 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21809.txt
-./skim_mjd_data -f 21810 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21810.txt
-./skim_mjd_data -f 21811 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21811.txt
-./skim_mjd_data -f 21819 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21819.txt
-./skim_mjd_data -f 21820 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21820.txt
-./skim_mjd_data -f 21821 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21821.txt
-./skim_mjd_data -f 21822 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21822.txt
-./skim_mjd_data -f 21823 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21823.txt
-./skim_mjd_data -f 21824 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21824.txt
-./skim_mjd_data -f 21825 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21825.txt
-./skim_mjd_data -f 21826 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21826.txt
-./skim_mjd_data -f 21827 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21827.txt
-./skim_mjd_data -f 21828 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21828.txt
-./skim_mjd_data -f 21970 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21970.txt
-./skim_mjd_data -f 21971 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21971.txt
-./skim_mjd_data -f 21972 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21972.txt
-./skim_mjd_data -f 21973 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21973.txt
-./skim_mjd_data -f 21974 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21974.txt
-./skim_mjd_data -f 21975 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21975.txt
-./skim_mjd_data -f 21976 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21976.txt
-./skim_mjd_data -f 21977 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21977.txt
-./skim_mjd_data -f 21978 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21978.txt
-./skim_mjd_data -f 21979 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21979.txt
-./skim_mjd_data -f 22282 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22282.txt
-./skim_mjd_data -f 22283 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22283.txt
-./skim_mjd_data -f 22284 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22284.txt
-./skim_mjd_data -f 22285 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22285.txt
-./skim_mjd_data -f 22286 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22286.txt
-./skim_mjd_data -f 22287 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22287.txt
-./skim_mjd_data -f 22288 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22288.txt
-./skim_mjd_data -f 22289 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22289.txt
-./skim_mjd_data -f 22290 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22290.txt
-./skim_mjd_data -f 22291 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22291.txt
-./skim_mjd_data -f 22294 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22294.txt
-./skim_mjd_data -f 22295 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22295.txt
-./skim_mjd_data -f 22296 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22296.txt
-./skim_mjd_data -f 22297 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22297.txt
-./skim_mjd_data -f 22298 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22298.txt
-./skim_mjd_data -f 22299 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22299.txt
-./skim_mjd_data -f 22300 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22300.txt
-./skim_mjd_data -f 22301 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22301.txt
-./skim_mjd_data -f 22302 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22302.txt
-./skim_mjd_data -f 22513 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22513.txt
-./skim_mjd_data -f 22514 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22514.txt
-./skim_mjd_data -f 22515 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22515.txt
-./skim_mjd_data -f 22516 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22516.txt
-./skim_mjd_data -f 22517 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22517.txt
-./skim_mjd_data -f 22518 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22518.txt
-./skim_mjd_data -f 22519 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22519.txt
-./skim_mjd_data -f 22520 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22520.txt
-./skim_mjd_data -f 22521 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22521.txt
-./skim_mjd_data -f 22522 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22522.txt
-./skim_mjd_data -f 22568 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22568.txt
-./skim_mjd_data -f 22569 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22569.txt
-./skim_mjd_data -f 22570 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22570.txt
-./skim_mjd_data -f 22571 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22571.txt
-./skim_mjd_data -f 22572 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22572.txt
-./skim_mjd_data -f 22573 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22573.txt
-./skim_mjd_data -f 22574 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22574.txt
-./skim_mjd_data -f 22575 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22575.txt
-./skim_mjd_data -f 22576 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22576.txt
-./skim_mjd_data -f 22577 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22577.txt
-./skim_mjd_data -f 22842 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22842.txt
-./skim_mjd_data -f 22843 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22843.txt
-./skim_mjd_data -f 22844 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22844.txt
-./skim_mjd_data -f 22845 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22845.txt
-./skim_mjd_data -f 22846 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22846.txt
-./skim_mjd_data -f 22847 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22847.txt
-./skim_mjd_data -f 22848 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22848.txt
-./skim_mjd_data -f 22849 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22849.txt
-./skim_mjd_data -f 22850 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22850.txt
-./skim_mjd_data -f 22851 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22851.txt
-./skim_mjd_data -f 22854 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22854.txt
-./skim_mjd_data -f 22855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22855.txt
-./skim_mjd_data -f 22856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22856.txt
-./skim_mjd_data -f 22857 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22857.txt
-./skim_mjd_data -f 22858 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22858.txt
-./skim_mjd_data -f 22859 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22859.txt
-./skim_mjd_data -f 22860 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22860.txt
-./skim_mjd_data -f 22861 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22861.txt
-./skim_mjd_data -f 22862 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22862.txt
-./skim_mjd_data -f 22863 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22863.txt
-./skim_mjd_data -f 23482 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23482.txt
-./skim_mjd_data -f 23483 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23483.txt
-./skim_mjd_data -f 23484 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23484.txt
-./skim_mjd_data -f 23485 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23485.txt
-./skim_mjd_data -f 23486 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23486.txt
-./skim_mjd_data -f 23487 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23487.txt
-./skim_mjd_data -f 23488 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23488.txt
-./skim_mjd_data -f 23489 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23489.txt
-./skim_mjd_data -f 23490 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23490.txt
-./skim_mjd_data -f 23491 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23491.txt
-./skim_mjd_data -f 23498 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23498.txt
-./skim_mjd_data -f 23499 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23499.txt
-./skim_mjd_data -f 23500 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23500.txt
-./skim_mjd_data -f 23501 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23501.txt
-./skim_mjd_data -f 23502 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23502.txt
-./skim_mjd_data -f 23503 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23503.txt
-./skim_mjd_data -f 23504 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23504.txt
-./skim_mjd_data -f 23505 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23505.txt
-./skim_mjd_data -f 23506 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23506.txt
-./skim_mjd_data -f 23507 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23507.txt
-./skim_mjd_data -f 23887 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23887.txt
-./skim_mjd_data -f 23889 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23889.txt
-./skim_mjd_data -f 23891 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23891.txt
-./skim_mjd_data -f 23892 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23892.txt
-./skim_mjd_data -f 23893 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23893.txt
-./skim_mjd_data -f 23894 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23894.txt
-./skim_mjd_data -f 23895 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23895.txt
-./skim_mjd_data -f 23896 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23896.txt
-./skim_mjd_data -f 23897 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23897.txt
-./skim_mjd_data -f 23898 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23898.txt
-./skim_mjd_data -f 60000791 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000791.txt
-./skim_mjd_data -f 60000792 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000792.txt
-./skim_mjd_data -f 60000793 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000793.txt
-./skim_mjd_data -f 60000794 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000794.txt
-./skim_mjd_data -f 60000795 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000795.txt
-./skim_mjd_data -f 60000796 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000796.txt
-./skim_mjd_data -f 60000797 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000797.txt
-./skim_mjd_data -f 60000798 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000798.txt
-./skim_mjd_data -f 60000799 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000799.txt
-./skim_mjd_data -f 60000800 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000800.txt
-./skim_mjd_data -f 60001014 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001014.txt
-./skim_mjd_data -f 60001015 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001015.txt
-./skim_mjd_data -f 60001016 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001016.txt
-./skim_mjd_data -f 60001017 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001017.txt
-./skim_mjd_data -f 60001018 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001018.txt
-./skim_mjd_data -f 60001019 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001019.txt
-./skim_mjd_data -f 60001020 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001020.txt
-./skim_mjd_data -f 60001021 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001021.txt
-./skim_mjd_data -f 60001022 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001022.txt
-./skim_mjd_data -f 60001023 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001023.txt
-./skim_mjd_data -f 60001148 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001148.txt
-./skim_mjd_data -f 60001149 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001149.txt
-./skim_mjd_data -f 60001150 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001150.txt
-./skim_mjd_data -f 60001151 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001151.txt
-./skim_mjd_data -f 60001152 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001152.txt
-./skim_mjd_data -f 60001153 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001153.txt
-./skim_mjd_data -f 60001154 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001154.txt
-./skim_mjd_data -f 60001155 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001155.txt
-./skim_mjd_data -f 60001156 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001156.txt
-./skim_mjd_data -f 60001157 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001157.txt
-./skim_mjd_data -f 60001207 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001207.txt
-./skim_mjd_data -f 60001208 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001208.txt
-./skim_mjd_data -f 60001209 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001209.txt
-./skim_mjd_data -f 60001210 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001210.txt
-./skim_mjd_data -f 60001211 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001211.txt
-./skim_mjd_data -f 60001212 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001212.txt
-./skim_mjd_data -f 60001213 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001213.txt
-./skim_mjd_data -f 60001214 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001214.txt
-./skim_mjd_data -f 60001215 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001215.txt
-./skim_mjd_data -f 60001216 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001216.txt
-./skim_mjd_data -f 60001352 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001352.txt
-./skim_mjd_data -f 60001353 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001353.txt
-./skim_mjd_data -f 60001354 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001354.txt
-./skim_mjd_data -f 60001355 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001355.txt
-./skim_mjd_data -f 60001356 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001356.txt
-./skim_mjd_data -f 60001357 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001357.txt
-./skim_mjd_data -f 60001358 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001358.txt
-./skim_mjd_data -f 60001359 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001359.txt
-./skim_mjd_data -f 60001360 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001360.txt
-./skim_mjd_data -f 60001361 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001361.txt
-./skim_mjd_data -f 60001446 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001446.txt
-./skim_mjd_data -f 60001447 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001447.txt
-./skim_mjd_data -f 60001448 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001448.txt
-./skim_mjd_data -f 60001449 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001449.txt
-./skim_mjd_data -f 60001450 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001450.txt
-./skim_mjd_data -f 60001451 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001451.txt
-./skim_mjd_data -f 60001452 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001452.txt
-./skim_mjd_data -f 60001453 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001453.txt
-./skim_mjd_data -f 60001454 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001454.txt
-./skim_mjd_data -f 60001455 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001455.txt
-./skim_mjd_data -f 60001508 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001508.txt
-./skim_mjd_data -f 60001509 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001509.txt
-./skim_mjd_data -f 60001510 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001510.txt
-./skim_mjd_data -f 60001511 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001511.txt
-./skim_mjd_data -f 60001512 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001512.txt
-./skim_mjd_data -f 60001513 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001513.txt
-./skim_mjd_data -f 60001514 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001514.txt
-./skim_mjd_data -f 60001515 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001515.txt
-./skim_mjd_data -f 60001516 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001516.txt
-./skim_mjd_data -f 60001517 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001517.txt
-./skim_mjd_data -f 60001578 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001578.txt
-./skim_mjd_data -f 60001579 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001579.txt
-./skim_mjd_data -f 60001580 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001580.txt
-./skim_mjd_data -f 60001581 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001581.txt
-./skim_mjd_data -f 60001582 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001582.txt
-./skim_mjd_data -f 60001583 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001583.txt
-./skim_mjd_data -f 60001584 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001584.txt
-./skim_mjd_data -f 60001585 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001585.txt
-./skim_mjd_data -f 60001586 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001586.txt
-./skim_mjd_data -f 60001587 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001587.txt
-./skim_mjd_data -f 60001720 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001720.txt
-./skim_mjd_data -f 60001721 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001721.txt
-./skim_mjd_data -f 60001722 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001722.txt
-./skim_mjd_data -f 60001723 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001723.txt
-./skim_mjd_data -f 60001724 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001724.txt
-./skim_mjd_data -f 60001725 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001725.txt
-./skim_mjd_data -f 60001726 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001726.txt
-./skim_mjd_data -f 60001727 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001727.txt
-./skim_mjd_data -f 60001728 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001728.txt
-./skim_mjd_data -f 60001729 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001729.txt
-./skim_mjd_data -f 60001855 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001855.txt
-./skim_mjd_data -f 60001856 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001856.txt
-./skim_mjd_data -f 60001857 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001857.txt
-./skim_mjd_data -f 60001858 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001858.txt
-./skim_mjd_data -f 60001859 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001859.txt
-./skim_mjd_data -f 60001860 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001860.txt
-./skim_mjd_data -f 60001861 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001861.txt
-./skim_mjd_data -f 60001862 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001862.txt
-./skim_mjd_data -f 60001863 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001863.txt
-./skim_mjd_data -f 60001864 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001864.txt
-./skim_mjd_data -f 60001914 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001914.txt
-./skim_mjd_data -f 60001915 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001915.txt
-./skim_mjd_data -f 60001916 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001916.txt
-./skim_mjd_data -f 60001917 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001917.txt
-./skim_mjd_data -f 60001918 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001918.txt
-./skim_mjd_data -f 60001919 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001919.txt
-./skim_mjd_data -f 60001920 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001920.txt
-./skim_mjd_data -f 60001921 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001921.txt
-./skim_mjd_data -f 60001922 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001922.txt
-./skim_mjd_data -f 60001923 -l -g -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001923.txt
+./skim_mjd_data -f 2571 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2571.txt
+./skim_mjd_data -f 2572 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2572.txt
+./skim_mjd_data -f 2573 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2573.txt
+./skim_mjd_data -f 2574 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2574.txt
+./skim_mjd_data -f 2575 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2575.txt
+./skim_mjd_data -f 2576 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2576.txt
+./skim_mjd_data -f 2577 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2577.txt
+./skim_mjd_data -f 2578 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2578.txt
+./skim_mjd_data -f 2579 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2579.txt
+./skim_mjd_data -f 2630 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2630.txt
+./skim_mjd_data -f 2631 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2631.txt
+./skim_mjd_data -f 2632 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2632.txt
+./skim_mjd_data -f 2633 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2633.txt
+./skim_mjd_data -f 2634 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2634.txt
+./skim_mjd_data -f 2635 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2635.txt
+./skim_mjd_data -f 2636 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2636.txt
+./skim_mjd_data -f 2637 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2637.txt
+./skim_mjd_data -f 2638 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2638.txt
+./skim_mjd_data -f 2639 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2639.txt
+./skim_mjd_data -f 2640 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2640.txt
+./skim_mjd_data -f 2641 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2641.txt
+./skim_mjd_data -f 2642 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2642.txt
+./skim_mjd_data -f 2643 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2643.txt
+./skim_mjd_data -f 2650 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2650.txt
+./skim_mjd_data -f 2651 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2651.txt
+./skim_mjd_data -f 2652 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2652.txt
+./skim_mjd_data -f 2653 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2653.txt
+./skim_mjd_data -f 2654 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2654.txt
+./skim_mjd_data -f 2655 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2655.txt
+./skim_mjd_data -f 2656 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2656.txt
+./skim_mjd_data -f 2657 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2657.txt
+./skim_mjd_data -f 2674 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2674.txt
+./skim_mjd_data -f 2675 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2675.txt
+./skim_mjd_data -f 2676 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2676.txt
+./skim_mjd_data -f 2677 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2677.txt
+./skim_mjd_data -f 2678 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2678.txt
+./skim_mjd_data -f 2679 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2679.txt
+./skim_mjd_data -f 2680 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2680.txt
+./skim_mjd_data -f 2681 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2681.txt
+./skim_mjd_data -f 2931 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2931.txt
+./skim_mjd_data -f 2932 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2932.txt
+./skim_mjd_data -f 2933 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2933.txt
+./skim_mjd_data -f 2934 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2934.txt
+./skim_mjd_data -f 2935 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2935.txt
+./skim_mjd_data -f 2936 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2936.txt
+./skim_mjd_data -f 2937 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2937.txt
+./skim_mjd_data -f 2938 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2938.txt
+./skim_mjd_data -f 2939 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2939.txt
+./skim_mjd_data -f 2940 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2940.txt
+./skim_mjd_data -f 2941 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2941.txt
+./skim_mjd_data -f 2942 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2942.txt
+./skim_mjd_data -f 2943 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2943.txt
+./skim_mjd_data -f 2944 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2944.txt
+./skim_mjd_data -f 2945 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2945.txt
+./skim_mjd_data -f 2946 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2946.txt
+./skim_mjd_data -f 2947 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2947.txt
+./skim_mjd_data -f 2948 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2948.txt
+./skim_mjd_data -f 2949 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2949.txt
+./skim_mjd_data -f 2950 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2950.txt
+./skim_mjd_data -f 2951 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2951.txt
+./skim_mjd_data -f 2952 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2952.txt
+./skim_mjd_data -f 2953 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2953.txt
+./skim_mjd_data -f 2954 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2954.txt
+./skim_mjd_data -f 2955 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2955.txt
+./skim_mjd_data -f 2956 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2956.txt
+./skim_mjd_data -f 2957 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2957.txt
+./skim_mjd_data -f 2958 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2958.txt
+./skim_mjd_data -f 2959 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2959.txt
+./skim_mjd_data -f 2960 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2960.txt
+./skim_mjd_data -f 2961 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2961.txt
+./skim_mjd_data -f 2962 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2962.txt
+./skim_mjd_data -f 2963 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2963.txt
+./skim_mjd_data -f 2964 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2964.txt
+./skim_mjd_data -f 2965 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2965.txt
+./skim_mjd_data -f 2966 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2966.txt
+./skim_mjd_data -f 2967 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2967.txt
+./skim_mjd_data -f 2968 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2968.txt
+./skim_mjd_data -f 2969 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2969.txt
+./skim_mjd_data -f 2970 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2970.txt
+./skim_mjd_data -f 2971 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2971.txt
+./skim_mjd_data -f 2972 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2972.txt
+./skim_mjd_data -f 2973 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2973.txt
+./skim_mjd_data -f 2974 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run2974.txt
+./skim_mjd_data -f 3057 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3057.txt
+./skim_mjd_data -f 3058 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3058.txt
+./skim_mjd_data -f 3059 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3059.txt
+./skim_mjd_data -f 3060 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3060.txt
+./skim_mjd_data -f 3061 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3061.txt
+./skim_mjd_data -f 3062 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3062.txt
+./skim_mjd_data -f 3063 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3063.txt
+./skim_mjd_data -f 3064 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3064.txt
+./skim_mjd_data -f 3065 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3065.txt
+./skim_mjd_data -f 3066 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3066.txt
+./skim_mjd_data -f 3067 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3067.txt
+./skim_mjd_data -f 3068 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3068.txt
+./skim_mjd_data -f 3069 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3069.txt
+./skim_mjd_data -f 3070 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3070.txt
+./skim_mjd_data -f 3071 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3071.txt
+./skim_mjd_data -f 3072 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3072.txt
+./skim_mjd_data -f 3073 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3073.txt
+./skim_mjd_data -f 3074 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3074.txt
+./skim_mjd_data -f 3075 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3075.txt
+./skim_mjd_data -f 3076 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3076.txt
+./skim_mjd_data -f 3077 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3077.txt
+./skim_mjd_data -f 3130 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3130.txt
+./skim_mjd_data -f 3131 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3131.txt
+./skim_mjd_data -f 3132 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3132.txt
+./skim_mjd_data -f 3133 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3133.txt
+./skim_mjd_data -f 3134 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3134.txt
+./skim_mjd_data -f 3135 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3135.txt
+./skim_mjd_data -f 3136 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3136.txt
+./skim_mjd_data -f 3273 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3273.txt
+./skim_mjd_data -f 3274 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3274.txt
+./skim_mjd_data -f 3275 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3275.txt
+./skim_mjd_data -f 3277 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3277.txt
+./skim_mjd_data -f 3278 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3278.txt
+./skim_mjd_data -f 3280 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3280.txt
+./skim_mjd_data -f 3281 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3281.txt
+./skim_mjd_data -f 3282 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3282.txt
+./skim_mjd_data -f 3283 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3283.txt
+./skim_mjd_data -f 3284 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3284.txt
+./skim_mjd_data -f 3285 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3285.txt
+./skim_mjd_data -f 3286 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3286.txt
+./skim_mjd_data -f 3287 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3287.txt
+./skim_mjd_data -f 3288 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3288.txt
+./skim_mjd_data -f 3289 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3289.txt
+./skim_mjd_data -f 3290 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3290.txt
+./skim_mjd_data -f 3291 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3291.txt
+./skim_mjd_data -f 3292 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3292.txt
+./skim_mjd_data -f 3433 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3433.txt
+./skim_mjd_data -f 3434 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3434.txt
+./skim_mjd_data -f 3435 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3435.txt
+./skim_mjd_data -f 3436 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3436.txt
+./skim_mjd_data -f 3437 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3437.txt
+./skim_mjd_data -f 3438 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3438.txt
+./skim_mjd_data -f 3439 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3439.txt
+./skim_mjd_data -f 3440 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3440.txt
+./skim_mjd_data -f 3441 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3441.txt
+./skim_mjd_data -f 3442 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3442.txt
+./skim_mjd_data -f 3443 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3443.txt
+./skim_mjd_data -f 3444 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3444.txt
+./skim_mjd_data -f 3445 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3445.txt
+./skim_mjd_data -f 3446 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3446.txt
+./skim_mjd_data -f 3447 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3447.txt
+./skim_mjd_data -f 3448 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3448.txt
+./skim_mjd_data -f 3449 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3449.txt
+./skim_mjd_data -f 3450 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3450.txt
+./skim_mjd_data -f 3451 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3451.txt
+./skim_mjd_data -f 3452 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3452.txt
+./skim_mjd_data -f 3453 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3453.txt
+./skim_mjd_data -f 3454 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3454.txt
+./skim_mjd_data -f 3455 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3455.txt
+./skim_mjd_data -f 3456 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3456.txt
+./skim_mjd_data -f 3457 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3457.txt
+./skim_mjd_data -f 3458 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3458.txt
+./skim_mjd_data -f 3459 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3459.txt
+./skim_mjd_data -f 3460 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3460.txt
+./skim_mjd_data -f 3646 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3646.txt
+./skim_mjd_data -f 3647 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3647.txt
+./skim_mjd_data -f 3648 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3648.txt
+./skim_mjd_data -f 3649 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3649.txt
+./skim_mjd_data -f 3650 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3650.txt
+./skim_mjd_data -f 3651 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3651.txt
+./skim_mjd_data -f 3652 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3652.txt
+./skim_mjd_data -f 3653 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3653.txt
+./skim_mjd_data -f 3654 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3654.txt
+./skim_mjd_data -f 3655 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3655.txt
+./skim_mjd_data -f 3656 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3656.txt
+./skim_mjd_data -f 3657 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3657.txt
+./skim_mjd_data -f 3658 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3658.txt
+./skim_mjd_data -f 3659 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3659.txt
+./skim_mjd_data -f 3660 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3660.txt
+./skim_mjd_data -f 3661 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3661.txt
+./skim_mjd_data -f 3662 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3662.txt
+./skim_mjd_data -f 3688 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3688.txt
+./skim_mjd_data -f 3689 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3689.txt
+./skim_mjd_data -f 3690 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3690.txt
+./skim_mjd_data -f 3691 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3691.txt
+./skim_mjd_data -f 3692 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3692.txt
+./skim_mjd_data -f 3693 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3693.txt
+./skim_mjd_data -f 3694 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3694.txt
+./skim_mjd_data -f 3695 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3695.txt
+./skim_mjd_data -f 3696 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3696.txt
+./skim_mjd_data -f 3697 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3697.txt
+./skim_mjd_data -f 3698 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3698.txt
+./skim_mjd_data -f 3699 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3699.txt
+./skim_mjd_data -f 3700 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3700.txt
+./skim_mjd_data -f 3701 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3701.txt
+./skim_mjd_data -f 3702 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3702.txt
+./skim_mjd_data -f 3703 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3703.txt
+./skim_mjd_data -f 3704 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3704.txt
+./skim_mjd_data -f 3705 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3705.txt
+./skim_mjd_data -f 3706 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3706.txt
+./skim_mjd_data -f 3707 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3707.txt
+./skim_mjd_data -f 3708 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3708.txt
+./skim_mjd_data -f 3983 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3983.txt
+./skim_mjd_data -f 3984 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3984.txt
+./skim_mjd_data -f 3985 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3985.txt
+./skim_mjd_data -f 3986 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3986.txt
+./skim_mjd_data -f 3987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3987.txt
+./skim_mjd_data -f 3988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3988.txt
+./skim_mjd_data -f 3989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3989.txt
+./skim_mjd_data -f 3990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3990.txt
+./skim_mjd_data -f 3991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3991.txt
+./skim_mjd_data -f 3992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3992.txt
+./skim_mjd_data -f 3993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3993.txt
+./skim_mjd_data -f 3994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3994.txt
+./skim_mjd_data -f 3995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3995.txt
+./skim_mjd_data -f 3996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3996.txt
+./skim_mjd_data -f 3997 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3997.txt
+./skim_mjd_data -f 3998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3998.txt
+./skim_mjd_data -f 3999 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run3999.txt
+./skim_mjd_data -f 4000 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4000.txt
+./skim_mjd_data -f 4001 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4001.txt
+./skim_mjd_data -f 4002 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4002.txt
+./skim_mjd_data -f 4003 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4003.txt
+./skim_mjd_data -f 4135 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4135.txt
+./skim_mjd_data -f 4136 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4136.txt
+./skim_mjd_data -f 4137 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4137.txt
+./skim_mjd_data -f 4138 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4138.txt
+./skim_mjd_data -f 4139 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4139.txt
+./skim_mjd_data -f 4140 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4140.txt
+./skim_mjd_data -f 4141 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4141.txt
+./skim_mjd_data -f 4142 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4142.txt
+./skim_mjd_data -f 4143 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4143.txt
+./skim_mjd_data -f 4144 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4144.txt
+./skim_mjd_data -f 4145 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4145.txt
+./skim_mjd_data -f 4146 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4146.txt
+./skim_mjd_data -f 4147 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4147.txt
+./skim_mjd_data -f 4148 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4148.txt
+./skim_mjd_data -f 4149 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4149.txt
+./skim_mjd_data -f 4150 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4150.txt
+./skim_mjd_data -f 4151 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4151.txt
+./skim_mjd_data -f 4152 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4152.txt
+./skim_mjd_data -f 4153 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4153.txt
+./skim_mjd_data -f 4154 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4154.txt
+./skim_mjd_data -f 4155 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4155.txt
+./skim_mjd_data -f 4156 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4156.txt
+./skim_mjd_data -f 4157 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4157.txt
+./skim_mjd_data -f 4158 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4158.txt
+./skim_mjd_data -f 4159 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4159.txt
+./skim_mjd_data -f 4160 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4160.txt
+./skim_mjd_data -f 4161 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4161.txt
+./skim_mjd_data -f 4162 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4162.txt
+./skim_mjd_data -f 4163 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4163.txt
+./skim_mjd_data -f 4164 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4164.txt
+./skim_mjd_data -f 4165 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4165.txt
+./skim_mjd_data -f 4166 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4166.txt
+./skim_mjd_data -f 4167 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4167.txt
+./skim_mjd_data -f 4168 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4168.txt
+./skim_mjd_data -f 4169 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4169.txt
+./skim_mjd_data -f 4170 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4170.txt
+./skim_mjd_data -f 4521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4521.txt
+./skim_mjd_data -f 4522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4522.txt
+./skim_mjd_data -f 4523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4523.txt
+./skim_mjd_data -f 4524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4524.txt
+./skim_mjd_data -f 4525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4525.txt
+./skim_mjd_data -f 4526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4526.txt
+./skim_mjd_data -f 4527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4527.txt
+./skim_mjd_data -f 4528 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4528.txt
+./skim_mjd_data -f 4529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4529.txt
+./skim_mjd_data -f 4530 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4530.txt
+./skim_mjd_data -f 4531 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4531.txt
+./skim_mjd_data -f 4532 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4532.txt
+./skim_mjd_data -f 4533 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4533.txt
+./skim_mjd_data -f 4534 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4534.txt
+./skim_mjd_data -f 4535 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4535.txt
+./skim_mjd_data -f 4536 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4536.txt
+./skim_mjd_data -f 4537 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4537.txt
+./skim_mjd_data -f 4538 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4538.txt
+./skim_mjd_data -f 4539 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4539.txt
+./skim_mjd_data -f 4540 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4540.txt
+./skim_mjd_data -f 4541 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4541.txt
+./skim_mjd_data -f 4542 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4542.txt
+./skim_mjd_data -f 4543 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4543.txt
+./skim_mjd_data -f 4544 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4544.txt
+./skim_mjd_data -f 4545 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4545.txt
+./skim_mjd_data -f 4546 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4546.txt
+./skim_mjd_data -f 4833 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4833.txt
+./skim_mjd_data -f 4834 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4834.txt
+./skim_mjd_data -f 4835 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4835.txt
+./skim_mjd_data -f 4836 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4836.txt
+./skim_mjd_data -f 4837 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4837.txt
+./skim_mjd_data -f 4838 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4838.txt
+./skim_mjd_data -f 4839 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4839.txt
+./skim_mjd_data -f 4840 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4840.txt
+./skim_mjd_data -f 4842 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4842.txt
+./skim_mjd_data -f 4843 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4843.txt
+./skim_mjd_data -f 4844 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4844.txt
+./skim_mjd_data -f 4845 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4845.txt
+./skim_mjd_data -f 4846 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4846.txt
+./skim_mjd_data -f 4847 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4847.txt
+./skim_mjd_data -f 4848 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4848.txt
+./skim_mjd_data -f 4849 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4849.txt
+./skim_mjd_data -f 4850 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4850.txt
+./skim_mjd_data -f 4851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4851.txt
+./skim_mjd_data -f 4852 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4852.txt
+./skim_mjd_data -f 4853 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4853.txt
+./skim_mjd_data -f 4908 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4908.txt
+./skim_mjd_data -f 4909 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4909.txt
+./skim_mjd_data -f 4910 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4910.txt
+./skim_mjd_data -f 4911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4911.txt
+./skim_mjd_data -f 4912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4912.txt
+./skim_mjd_data -f 4913 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4913.txt
+./skim_mjd_data -f 4914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4914.txt
+./skim_mjd_data -f 4915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4915.txt
+./skim_mjd_data -f 4916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4916.txt
+./skim_mjd_data -f 4917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4917.txt
+./skim_mjd_data -f 4918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4918.txt
+./skim_mjd_data -f 4919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4919.txt
+./skim_mjd_data -f 4920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4920.txt
+./skim_mjd_data -f 4921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4921.txt
+./skim_mjd_data -f 4922 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4922.txt
+./skim_mjd_data -f 4923 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4923.txt
+./skim_mjd_data -f 4924 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4924.txt
+./skim_mjd_data -f 4925 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4925.txt
+./skim_mjd_data -f 4926 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4926.txt
+./skim_mjd_data -f 4928 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4928.txt
+./skim_mjd_data -f 4929 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4929.txt
+./skim_mjd_data -f 4930 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4930.txt
+./skim_mjd_data -f 4931 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4931.txt
+./skim_mjd_data -f 4932 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4932.txt
+./skim_mjd_data -f 4933 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4933.txt
+./skim_mjd_data -f 4934 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4934.txt
+./skim_mjd_data -f 4935 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4935.txt
+./skim_mjd_data -f 4936 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4936.txt
+./skim_mjd_data -f 4937 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4937.txt
+./skim_mjd_data -f 4982 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4982.txt
+./skim_mjd_data -f 4983 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4983.txt
+./skim_mjd_data -f 4984 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4984.txt
+./skim_mjd_data -f 4985 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4985.txt
+./skim_mjd_data -f 4986 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4986.txt
+./skim_mjd_data -f 4987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4987.txt
+./skim_mjd_data -f 4988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4988.txt
+./skim_mjd_data -f 4989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4989.txt
+./skim_mjd_data -f 4990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4990.txt
+./skim_mjd_data -f 4991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4991.txt
+./skim_mjd_data -f 4992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4992.txt
+./skim_mjd_data -f 4993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4993.txt
+./skim_mjd_data -f 4994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4994.txt
+./skim_mjd_data -f 4995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4995.txt
+./skim_mjd_data -f 4996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4996.txt
+./skim_mjd_data -f 4997 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4997.txt
+./skim_mjd_data -f 4998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4998.txt
+./skim_mjd_data -f 4999 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run4999.txt
+./skim_mjd_data -f 5000 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5000.txt
+./skim_mjd_data -f 5001 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5001.txt
+./skim_mjd_data -f 5002 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5002.txt
+./skim_mjd_data -f 5003 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5003.txt
+./skim_mjd_data -f 5004 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5004.txt
+./skim_mjd_data -f 5005 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5005.txt
+./skim_mjd_data -f 5062 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5062.txt
+./skim_mjd_data -f 5063 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5063.txt
+./skim_mjd_data -f 5064 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5064.txt
+./skim_mjd_data -f 5065 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5065.txt
+./skim_mjd_data -f 5066 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5066.txt
+./skim_mjd_data -f 5067 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5067.txt
+./skim_mjd_data -f 5068 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5068.txt
+./skim_mjd_data -f 5069 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5069.txt
+./skim_mjd_data -f 5070 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5070.txt
+./skim_mjd_data -f 5071 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5071.txt
+./skim_mjd_data -f 5072 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5072.txt
+./skim_mjd_data -f 5073 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5073.txt
+./skim_mjd_data -f 5074 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5074.txt
+./skim_mjd_data -f 5075 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5075.txt
+./skim_mjd_data -f 5076 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5076.txt
+./skim_mjd_data -f 5077 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5077.txt
+./skim_mjd_data -f 5078 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5078.txt
+./skim_mjd_data -f 5079 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5079.txt
+./skim_mjd_data -f 5080 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5080.txt
+./skim_mjd_data -f 5081 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5081.txt
+./skim_mjd_data -f 5082 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5082.txt
+./skim_mjd_data -f 5083 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5083.txt
+./skim_mjd_data -f 5084 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5084.txt
+./skim_mjd_data -f 5085 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5085.txt
+./skim_mjd_data -f 5086 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5086.txt
+./skim_mjd_data -f 5087 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5087.txt
+./skim_mjd_data -f 5088 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5088.txt
+./skim_mjd_data -f 5089 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5089.txt
+./skim_mjd_data -f 5253 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5253.txt
+./skim_mjd_data -f 5254 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5254.txt
+./skim_mjd_data -f 5255 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5255.txt
+./skim_mjd_data -f 5256 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5256.txt
+./skim_mjd_data -f 5257 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5257.txt
+./skim_mjd_data -f 5258 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5258.txt
+./skim_mjd_data -f 5259 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5259.txt
+./skim_mjd_data -f 5260 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5260.txt
+./skim_mjd_data -f 5261 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5261.txt
+./skim_mjd_data -f 5262 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5262.txt
+./skim_mjd_data -f 5263 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5263.txt
+./skim_mjd_data -f 5264 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5264.txt
+./skim_mjd_data -f 5265 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5265.txt
+./skim_mjd_data -f 5266 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5266.txt
+./skim_mjd_data -f 5267 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5267.txt
+./skim_mjd_data -f 5268 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5268.txt
+./skim_mjd_data -f 5269 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5269.txt
+./skim_mjd_data -f 5270 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5270.txt
+./skim_mjd_data -f 5271 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5271.txt
+./skim_mjd_data -f 5272 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5272.txt
+./skim_mjd_data -f 5273 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5273.txt
+./skim_mjd_data -f 5274 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5274.txt
+./skim_mjd_data -f 5275 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5275.txt
+./skim_mjd_data -f 5276 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5276.txt
+./skim_mjd_data -f 5331 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5331.txt
+./skim_mjd_data -f 5332 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5332.txt
+./skim_mjd_data -f 5333 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5333.txt
+./skim_mjd_data -f 5334 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5334.txt
+./skim_mjd_data -f 5335 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5335.txt
+./skim_mjd_data -f 5336 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5336.txt
+./skim_mjd_data -f 5337 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5337.txt
+./skim_mjd_data -f 5338 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5338.txt
+./skim_mjd_data -f 5339 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5339.txt
+./skim_mjd_data -f 5340 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5340.txt
+./skim_mjd_data -f 5341 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5341.txt
+./skim_mjd_data -f 5342 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5342.txt
+./skim_mjd_data -f 5343 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5343.txt
+./skim_mjd_data -f 5344 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5344.txt
+./skim_mjd_data -f 5345 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5345.txt
+./skim_mjd_data -f 5346 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5346.txt
+./skim_mjd_data -f 5347 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5347.txt
+./skim_mjd_data -f 5348 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5348.txt
+./skim_mjd_data -f 5349 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5349.txt
+./skim_mjd_data -f 5350 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5350.txt
+./skim_mjd_data -f 5351 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5351.txt
+./skim_mjd_data -f 5352 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5352.txt
+./skim_mjd_data -f 5353 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5353.txt
+./skim_mjd_data -f 5354 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5354.txt
+./skim_mjd_data -f 5355 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5355.txt
+./skim_mjd_data -f 5356 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5356.txt
+./skim_mjd_data -f 5357 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5357.txt
+./skim_mjd_data -f 5358 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5358.txt
+./skim_mjd_data -f 5359 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5359.txt
+./skim_mjd_data -f 5360 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5360.txt
+./skim_mjd_data -f 5361 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5361.txt
+./skim_mjd_data -f 5362 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5362.txt
+./skim_mjd_data -f 5363 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5363.txt
+./skim_mjd_data -f 5364 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5364.txt
+./skim_mjd_data -f 5365 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5365.txt
+./skim_mjd_data -f 5366 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5366.txt
+./skim_mjd_data -f 5367 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5367.txt
+./skim_mjd_data -f 5368 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5368.txt
+./skim_mjd_data -f 5415 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5415.txt
+./skim_mjd_data -f 5416 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5416.txt
+./skim_mjd_data -f 5417 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5417.txt
+./skim_mjd_data -f 5418 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5418.txt
+./skim_mjd_data -f 5419 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5419.txt
+./skim_mjd_data -f 5420 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5420.txt
+./skim_mjd_data -f 5421 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5421.txt
+./skim_mjd_data -f 5422 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5422.txt
+./skim_mjd_data -f 5423 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5423.txt
+./skim_mjd_data -f 5424 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5424.txt
+./skim_mjd_data -f 5425 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5425.txt
+./skim_mjd_data -f 5426 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5426.txt
+./skim_mjd_data -f 5427 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5427.txt
+./skim_mjd_data -f 5428 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5428.txt
+./skim_mjd_data -f 5429 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5429.txt
+./skim_mjd_data -f 5430 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5430.txt
+./skim_mjd_data -f 5431 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5431.txt
+./skim_mjd_data -f 5432 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5432.txt
+./skim_mjd_data -f 5433 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5433.txt
+./skim_mjd_data -f 5434 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5434.txt
+./skim_mjd_data -f 5435 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5435.txt
+./skim_mjd_data -f 5436 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5436.txt
+./skim_mjd_data -f 5437 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5437.txt
+./skim_mjd_data -f 5438 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5438.txt
+./skim_mjd_data -f 5439 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5439.txt
+./skim_mjd_data -f 5440 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5440.txt
+./skim_mjd_data -f 5441 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5441.txt
+./skim_mjd_data -f 5442 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5442.txt
+./skim_mjd_data -f 5443 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5443.txt
+./skim_mjd_data -f 5444 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5444.txt
+./skim_mjd_data -f 5445 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5445.txt
+./skim_mjd_data -f 5446 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5446.txt
+./skim_mjd_data -f 5447 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5447.txt
+./skim_mjd_data -f 5448 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5448.txt
+./skim_mjd_data -f 5502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5502.txt
+./skim_mjd_data -f 5503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5503.txt
+./skim_mjd_data -f 5504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5504.txt
+./skim_mjd_data -f 5505 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5505.txt
+./skim_mjd_data -f 5506 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5506.txt
+./skim_mjd_data -f 5507 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5507.txt
+./skim_mjd_data -f 5508 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5508.txt
+./skim_mjd_data -f 5509 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5509.txt
+./skim_mjd_data -f 5510 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5510.txt
+./skim_mjd_data -f 5511 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5511.txt
+./skim_mjd_data -f 5512 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5512.txt
+./skim_mjd_data -f 5513 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5513.txt
+./skim_mjd_data -f 5514 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5514.txt
+./skim_mjd_data -f 5515 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5515.txt
+./skim_mjd_data -f 5516 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5516.txt
+./skim_mjd_data -f 5517 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5517.txt
+./skim_mjd_data -f 5518 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5518.txt
+./skim_mjd_data -f 5519 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5519.txt
+./skim_mjd_data -f 5520 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5520.txt
+./skim_mjd_data -f 5521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5521.txt
+./skim_mjd_data -f 5522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5522.txt
+./skim_mjd_data -f 5523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5523.txt
+./skim_mjd_data -f 5524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5524.txt
+./skim_mjd_data -f 5851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5851.txt
+./skim_mjd_data -f 5852 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5852.txt
+./skim_mjd_data -f 5853 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5853.txt
+./skim_mjd_data -f 5854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5854.txt
+./skim_mjd_data -f 5855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5855.txt
+./skim_mjd_data -f 5856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5856.txt
+./skim_mjd_data -f 5857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5857.txt
+./skim_mjd_data -f 5858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5858.txt
+./skim_mjd_data -f 5859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5859.txt
+./skim_mjd_data -f 5860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5860.txt
+./skim_mjd_data -f 5861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5861.txt
+./skim_mjd_data -f 5862 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5862.txt
+./skim_mjd_data -f 5863 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5863.txt
+./skim_mjd_data -f 5864 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5864.txt
+./skim_mjd_data -f 5865 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5865.txt
+./skim_mjd_data -f 5866 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5866.txt
+./skim_mjd_data -f 5867 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5867.txt
+./skim_mjd_data -f 5868 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5868.txt
+./skim_mjd_data -f 5869 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5869.txt
+./skim_mjd_data -f 5870 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5870.txt
+./skim_mjd_data -f 5871 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5871.txt
+./skim_mjd_data -f 5911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5911.txt
+./skim_mjd_data -f 5912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5912.txt
+./skim_mjd_data -f 5913 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5913.txt
+./skim_mjd_data -f 5914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5914.txt
+./skim_mjd_data -f 5915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5915.txt
+./skim_mjd_data -f 5916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5916.txt
+./skim_mjd_data -f 5917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5917.txt
+./skim_mjd_data -f 5918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5918.txt
+./skim_mjd_data -f 5919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5919.txt
+./skim_mjd_data -f 5920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5920.txt
+./skim_mjd_data -f 5921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5921.txt
+./skim_mjd_data -f 5994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5994.txt
+./skim_mjd_data -f 5995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5995.txt
+./skim_mjd_data -f 5996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5996.txt
+./skim_mjd_data -f 5997 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5997.txt
+./skim_mjd_data -f 5998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5998.txt
+./skim_mjd_data -f 5999 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run5999.txt
+./skim_mjd_data -f 6000 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6000.txt
+./skim_mjd_data -f 6001 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6001.txt
+./skim_mjd_data -f 6002 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6002.txt
+./skim_mjd_data -f 6003 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6003.txt
+./skim_mjd_data -f 6004 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6004.txt
+./skim_mjd_data -f 6005 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6005.txt
+./skim_mjd_data -f 6006 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6006.txt
+./skim_mjd_data -f 6007 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6007.txt
+./skim_mjd_data -f 6008 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6008.txt
+./skim_mjd_data -f 6009 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6009.txt
+./skim_mjd_data -f 6010 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6010.txt
+./skim_mjd_data -f 6011 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6011.txt
+./skim_mjd_data -f 6012 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6012.txt
+./skim_mjd_data -f 6013 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6013.txt
+./skim_mjd_data -f 6014 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6014.txt
+./skim_mjd_data -f 6169 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6169.txt
+./skim_mjd_data -f 6170 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6170.txt
+./skim_mjd_data -f 6171 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6171.txt
+./skim_mjd_data -f 6172 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6172.txt
+./skim_mjd_data -f 6173 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6173.txt
+./skim_mjd_data -f 6174 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6174.txt
+./skim_mjd_data -f 6175 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6175.txt
+./skim_mjd_data -f 6176 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6176.txt
+./skim_mjd_data -f 6177 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6177.txt
+./skim_mjd_data -f 6178 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6178.txt
+./skim_mjd_data -f 6179 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6179.txt
+./skim_mjd_data -f 6180 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6180.txt
+./skim_mjd_data -f 6181 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6181.txt
+./skim_mjd_data -f 6182 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6182.txt
+./skim_mjd_data -f 6183 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6183.txt
+./skim_mjd_data -f 6184 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6184.txt
+./skim_mjd_data -f 6185 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6185.txt
+./skim_mjd_data -f 6186 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6186.txt
+./skim_mjd_data -f 6187 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6187.txt
+./skim_mjd_data -f 6188 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6188.txt
+./skim_mjd_data -f 6189 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6189.txt
+./skim_mjd_data -f 6318 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6318.txt
+./skim_mjd_data -f 6319 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6319.txt
+./skim_mjd_data -f 6320 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6320.txt
+./skim_mjd_data -f 6321 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6321.txt
+./skim_mjd_data -f 6322 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6322.txt
+./skim_mjd_data -f 6323 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6323.txt
+./skim_mjd_data -f 6324 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6324.txt
+./skim_mjd_data -f 6325 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6325.txt
+./skim_mjd_data -f 6326 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6326.txt
+./skim_mjd_data -f 6327 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6327.txt
+./skim_mjd_data -f 6328 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6328.txt
+./skim_mjd_data -f 6329 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6329.txt
+./skim_mjd_data -f 6330 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6330.txt
+./skim_mjd_data -f 6353 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6353.txt
+./skim_mjd_data -f 6354 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6354.txt
+./skim_mjd_data -f 6355 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6355.txt
+./skim_mjd_data -f 6356 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6356.txt
+./skim_mjd_data -f 6357 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6357.txt
+./skim_mjd_data -f 6358 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6358.txt
+./skim_mjd_data -f 6359 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6359.txt
+./skim_mjd_data -f 6360 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6360.txt
+./skim_mjd_data -f 6361 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6361.txt
+./skim_mjd_data -f 6362 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6362.txt
+./skim_mjd_data -f 6363 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6363.txt
+./skim_mjd_data -f 6364 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6364.txt
+./skim_mjd_data -f 6365 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6365.txt
+./skim_mjd_data -f 6545 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6545.txt
+./skim_mjd_data -f 6546 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6546.txt
+./skim_mjd_data -f 6547 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6547.txt
+./skim_mjd_data -f 6548 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6548.txt
+./skim_mjd_data -f 6549 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6549.txt
+./skim_mjd_data -f 6550 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6550.txt
+./skim_mjd_data -f 6551 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6551.txt
+./skim_mjd_data -f 6552 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6552.txt
+./skim_mjd_data -f 6578 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6578.txt
+./skim_mjd_data -f 6579 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6579.txt
+./skim_mjd_data -f 6580 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6580.txt
+./skim_mjd_data -f 6581 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6581.txt
+./skim_mjd_data -f 6582 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6582.txt
+./skim_mjd_data -f 6583 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6583.txt
+./skim_mjd_data -f 6584 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6584.txt
+./skim_mjd_data -f 6585 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6585.txt
+./skim_mjd_data -f 6586 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6586.txt
+./skim_mjd_data -f 6587 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6587.txt
+./skim_mjd_data -f 6588 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6588.txt
+./skim_mjd_data -f 6589 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6589.txt
+./skim_mjd_data -f 6590 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6590.txt
+./skim_mjd_data -f 6591 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6591.txt
+./skim_mjd_data -f 6592 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6592.txt
+./skim_mjd_data -f 6593 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6593.txt
+./skim_mjd_data -f 6594 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6594.txt
+./skim_mjd_data -f 6595 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6595.txt
+./skim_mjd_data -f 6596 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6596.txt
+./skim_mjd_data -f 6597 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6597.txt
+./skim_mjd_data -f 6598 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6598.txt
+./skim_mjd_data -f 6754 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6754.txt
+./skim_mjd_data -f 6755 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6755.txt
+./skim_mjd_data -f 6756 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6756.txt
+./skim_mjd_data -f 6757 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6757.txt
+./skim_mjd_data -f 6758 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6758.txt
+./skim_mjd_data -f 6759 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6759.txt
+./skim_mjd_data -f 6760 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6760.txt
+./skim_mjd_data -f 6761 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6761.txt
+./skim_mjd_data -f 6762 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6762.txt
+./skim_mjd_data -f 6763 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6763.txt
+./skim_mjd_data -f 6764 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6764.txt
+./skim_mjd_data -f 6765 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6765.txt
+./skim_mjd_data -f 6766 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6766.txt
+./skim_mjd_data -f 6767 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6767.txt
+./skim_mjd_data -f 6768 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6768.txt
+./skim_mjd_data -f 6769 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6769.txt
+./skim_mjd_data -f 6770 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6770.txt
+./skim_mjd_data -f 6771 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6771.txt
+./skim_mjd_data -f 6772 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6772.txt
+./skim_mjd_data -f 6773 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6773.txt
+./skim_mjd_data -f 6774 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6774.txt
+./skim_mjd_data -f 6854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6854.txt
+./skim_mjd_data -f 6855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6855.txt
+./skim_mjd_data -f 6856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6856.txt
+./skim_mjd_data -f 6857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6857.txt
+./skim_mjd_data -f 6858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6858.txt
+./skim_mjd_data -f 6859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6859.txt
+./skim_mjd_data -f 6860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6860.txt
+./skim_mjd_data -f 6861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6861.txt
+./skim_mjd_data -f 6862 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6862.txt
+./skim_mjd_data -f 6863 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6863.txt
+./skim_mjd_data -f 6864 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6864.txt
+./skim_mjd_data -f 6865 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6865.txt
+./skim_mjd_data -f 6866 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6866.txt
+./skim_mjd_data -f 6867 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6867.txt
+./skim_mjd_data -f 6868 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6868.txt
+./skim_mjd_data -f 6869 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6869.txt
+./skim_mjd_data -f 6870 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6870.txt
+./skim_mjd_data -f 6871 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6871.txt
+./skim_mjd_data -f 6872 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6872.txt
+./skim_mjd_data -f 6873 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6873.txt
+./skim_mjd_data -f 6874 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6874.txt
+./skim_mjd_data -f 6875 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6875.txt
+./skim_mjd_data -f 6876 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6876.txt
+./skim_mjd_data -f 6877 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6877.txt
+./skim_mjd_data -f 6878 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6878.txt
+./skim_mjd_data -f 6879 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6879.txt
+./skim_mjd_data -f 6880 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6880.txt
+./skim_mjd_data -f 6881 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6881.txt
+./skim_mjd_data -f 6882 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6882.txt
+./skim_mjd_data -f 6883 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6883.txt
+./skim_mjd_data -f 6904 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6904.txt
+./skim_mjd_data -f 6905 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6905.txt
+./skim_mjd_data -f 6906 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6906.txt
+./skim_mjd_data -f 6907 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6907.txt
+./skim_mjd_data -f 6908 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6908.txt
+./skim_mjd_data -f 6909 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6909.txt
+./skim_mjd_data -f 6910 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6910.txt
+./skim_mjd_data -f 6911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6911.txt
+./skim_mjd_data -f 6912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6912.txt
+./skim_mjd_data -f 6913 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6913.txt
+./skim_mjd_data -f 6914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6914.txt
+./skim_mjd_data -f 6915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6915.txt
+./skim_mjd_data -f 6916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6916.txt
+./skim_mjd_data -f 6917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6917.txt
+./skim_mjd_data -f 6918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6918.txt
+./skim_mjd_data -f 6919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6919.txt
+./skim_mjd_data -f 6920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6920.txt
+./skim_mjd_data -f 6921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6921.txt
+./skim_mjd_data -f 6922 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6922.txt
+./skim_mjd_data -f 6923 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6923.txt
+./skim_mjd_data -f 6924 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6924.txt
+./skim_mjd_data -f 6925 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run6925.txt
+./skim_mjd_data -f 7275 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7275.txt
+./skim_mjd_data -f 7276 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7276.txt
+./skim_mjd_data -f 7277 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7277.txt
+./skim_mjd_data -f 7278 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7278.txt
+./skim_mjd_data -f 7279 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7279.txt
+./skim_mjd_data -f 7281 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7281.txt
+./skim_mjd_data -f 7282 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7282.txt
+./skim_mjd_data -f 7283 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7283.txt
+./skim_mjd_data -f 7284 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7284.txt
+./skim_mjd_data -f 7285 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7285.txt
+./skim_mjd_data -f 7286 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7286.txt
+./skim_mjd_data -f 7287 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7287.txt
+./skim_mjd_data -f 7288 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7288.txt
+./skim_mjd_data -f 7289 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7289.txt
+./skim_mjd_data -f 7290 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7290.txt
+./skim_mjd_data -f 7291 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7291.txt
+./skim_mjd_data -f 7292 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7292.txt
+./skim_mjd_data -f 7293 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7293.txt
+./skim_mjd_data -f 7294 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7294.txt
+./skim_mjd_data -f 7295 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds0-run7295.txt
+./skim_mjd_data -f 9407 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9407.txt
+./skim_mjd_data -f 9408 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9408.txt
+./skim_mjd_data -f 9409 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9409.txt
+./skim_mjd_data -f 9410 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9410.txt
+./skim_mjd_data -f 9411 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9411.txt
+./skim_mjd_data -f 9412 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9412.txt
+./skim_mjd_data -f 9414 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9414.txt
+./skim_mjd_data -f 9415 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9415.txt
+./skim_mjd_data -f 9416 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9416.txt
+./skim_mjd_data -f 9417 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9417.txt
+./skim_mjd_data -f 9418 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9418.txt
+./skim_mjd_data -f 9419 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9419.txt
+./skim_mjd_data -f 9420 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9420.txt
+./skim_mjd_data -f 9453 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9453.txt
+./skim_mjd_data -f 9454 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9454.txt
+./skim_mjd_data -f 9456 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9456.txt
+./skim_mjd_data -f 9457 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9457.txt
+./skim_mjd_data -f 9458 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9458.txt
+./skim_mjd_data -f 9459 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9459.txt
+./skim_mjd_data -f 9460 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9460.txt
+./skim_mjd_data -f 9461 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9461.txt
+./skim_mjd_data -f 9462 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9462.txt
+./skim_mjd_data -f 9463 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9463.txt
+./skim_mjd_data -f 9464 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9464.txt
+./skim_mjd_data -f 9465 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9465.txt
+./skim_mjd_data -f 9466 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9466.txt
+./skim_mjd_data -f 9467 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9467.txt
+./skim_mjd_data -f 9497 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9497.txt
+./skim_mjd_data -f 9498 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9498.txt
+./skim_mjd_data -f 9499 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9499.txt
+./skim_mjd_data -f 9500 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9500.txt
+./skim_mjd_data -f 9501 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9501.txt
+./skim_mjd_data -f 9502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9502.txt
+./skim_mjd_data -f 9503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9503.txt
+./skim_mjd_data -f 9504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9504.txt
+./skim_mjd_data -f 9521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9521.txt
+./skim_mjd_data -f 9523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9523.txt
+./skim_mjd_data -f 9524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9524.txt
+./skim_mjd_data -f 9525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9525.txt
+./skim_mjd_data -f 9526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9526.txt
+./skim_mjd_data -f 9527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9527.txt
+./skim_mjd_data -f 9528 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9528.txt
+./skim_mjd_data -f 9529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9529.txt
+./skim_mjd_data -f 9530 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9530.txt
+./skim_mjd_data -f 9531 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9531.txt
+./skim_mjd_data -f 9532 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9532.txt
+./skim_mjd_data -f 9533 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9533.txt
+./skim_mjd_data -f 9534 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9534.txt
+./skim_mjd_data -f 9535 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9535.txt
+./skim_mjd_data -f 9699 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9699.txt
+./skim_mjd_data -f 9700 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9700.txt
+./skim_mjd_data -f 9701 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9701.txt
+./skim_mjd_data -f 9702 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9702.txt
+./skim_mjd_data -f 9703 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9703.txt
+./skim_mjd_data -f 9704 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9704.txt
+./skim_mjd_data -f 9705 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9705.txt
+./skim_mjd_data -f 9706 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9706.txt
+./skim_mjd_data -f 9707 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9707.txt
+./skim_mjd_data -f 9738 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9738.txt
+./skim_mjd_data -f 9739 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9739.txt
+./skim_mjd_data -f 9740 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9740.txt
+./skim_mjd_data -f 9741 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9741.txt
+./skim_mjd_data -f 9742 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9742.txt
+./skim_mjd_data -f 9743 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9743.txt
+./skim_mjd_data -f 9744 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9744.txt
+./skim_mjd_data -f 9745 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9745.txt
+./skim_mjd_data -f 9746 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9746.txt
+./skim_mjd_data -f 9747 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9747.txt
+./skim_mjd_data -f 9748 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9748.txt
+./skim_mjd_data -f 9749 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9749.txt
+./skim_mjd_data -f 9750 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9750.txt
+./skim_mjd_data -f 9751 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9751.txt
+./skim_mjd_data -f 9752 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9752.txt
+./skim_mjd_data -f 9753 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9753.txt
+./skim_mjd_data -f 9754 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9754.txt
+./skim_mjd_data -f 9755 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9755.txt
+./skim_mjd_data -f 9756 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9756.txt
+./skim_mjd_data -f 9757 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9757.txt
+./skim_mjd_data -f 9758 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9758.txt
+./skim_mjd_data -f 9788 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9788.txt
+./skim_mjd_data -f 9789 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9789.txt
+./skim_mjd_data -f 9790 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9790.txt
+./skim_mjd_data -f 9791 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9791.txt
+./skim_mjd_data -f 9792 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9792.txt
+./skim_mjd_data -f 9793 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9793.txt
+./skim_mjd_data -f 9794 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9794.txt
+./skim_mjd_data -f 9795 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9795.txt
+./skim_mjd_data -f 9796 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9796.txt
+./skim_mjd_data -f 9797 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9797.txt
+./skim_mjd_data -f 9798 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9798.txt
+./skim_mjd_data -f 9799 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9799.txt
+./skim_mjd_data -f 9800 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9800.txt
+./skim_mjd_data -f 9801 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9801.txt
+./skim_mjd_data -f 9802 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9802.txt
+./skim_mjd_data -f 9803 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9803.txt
+./skim_mjd_data -f 9804 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9804.txt
+./skim_mjd_data -f 9805 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9805.txt
+./skim_mjd_data -f 9806 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9806.txt
+./skim_mjd_data -f 9807 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9807.txt
+./skim_mjd_data -f 9808 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9808.txt
+./skim_mjd_data -f 9809 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9809.txt
+./skim_mjd_data -f 9810 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9810.txt
+./skim_mjd_data -f 9811 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9811.txt
+./skim_mjd_data -f 9938 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9938.txt
+./skim_mjd_data -f 9939 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9939.txt
+./skim_mjd_data -f 9940 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9940.txt
+./skim_mjd_data -f 9941 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9941.txt
+./skim_mjd_data -f 9942 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9942.txt
+./skim_mjd_data -f 9944 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9944.txt
+./skim_mjd_data -f 9945 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9945.txt
+./skim_mjd_data -f 9946 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9946.txt
+./skim_mjd_data -f 9947 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9947.txt
+./skim_mjd_data -f 9948 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9948.txt
+./skim_mjd_data -f 9949 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9949.txt
+./skim_mjd_data -f 9950 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9950.txt
+./skim_mjd_data -f 9998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9998.txt
+./skim_mjd_data -f 9999 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run9999.txt
+./skim_mjd_data -f 10000 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10000.txt
+./skim_mjd_data -f 10001 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10001.txt
+./skim_mjd_data -f 10002 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10002.txt
+./skim_mjd_data -f 10003 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10003.txt
+./skim_mjd_data -f 10004 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10004.txt
+./skim_mjd_data -f 10005 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10005.txt
+./skim_mjd_data -f 10006 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10006.txt
+./skim_mjd_data -f 10007 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10007.txt
+./skim_mjd_data -f 10008 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10008.txt
+./skim_mjd_data -f 10009 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10009.txt
+./skim_mjd_data -f 10010 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10010.txt
+./skim_mjd_data -f 10011 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10011.txt
+./skim_mjd_data -f 10012 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10012.txt
+./skim_mjd_data -f 10013 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10013.txt
+./skim_mjd_data -f 10014 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10014.txt
+./skim_mjd_data -f 10039 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10039.txt
+./skim_mjd_data -f 10040 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10040.txt
+./skim_mjd_data -f 10041 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10041.txt
+./skim_mjd_data -f 10042 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10042.txt
+./skim_mjd_data -f 10043 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10043.txt
+./skim_mjd_data -f 10044 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10044.txt
+./skim_mjd_data -f 10045 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10045.txt
+./skim_mjd_data -f 10046 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10046.txt
+./skim_mjd_data -f 10047 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10047.txt
+./skim_mjd_data -f 10048 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10048.txt
+./skim_mjd_data -f 10049 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10049.txt
+./skim_mjd_data -f 10050 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10050.txt
+./skim_mjd_data -f 10051 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10051.txt
+./skim_mjd_data -f 10052 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10052.txt
+./skim_mjd_data -f 10053 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10053.txt
+./skim_mjd_data -f 10054 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10054.txt
+./skim_mjd_data -f 10055 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10055.txt
+./skim_mjd_data -f 10056 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10056.txt
+./skim_mjd_data -f 10057 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10057.txt
+./skim_mjd_data -f 10058 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10058.txt
+./skim_mjd_data -f 10059 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10059.txt
+./skim_mjd_data -f 10093 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10093.txt
+./skim_mjd_data -f 10094 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10094.txt
+./skim_mjd_data -f 10095 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10095.txt
+./skim_mjd_data -f 10096 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10096.txt
+./skim_mjd_data -f 10097 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10097.txt
+./skim_mjd_data -f 10098 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10098.txt
+./skim_mjd_data -f 10099 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10099.txt
+./skim_mjd_data -f 10100 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10100.txt
+./skim_mjd_data -f 10101 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10101.txt
+./skim_mjd_data -f 10102 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10102.txt
+./skim_mjd_data -f 10103 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10103.txt
+./skim_mjd_data -f 10104 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10104.txt
+./skim_mjd_data -f 10105 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10105.txt
+./skim_mjd_data -f 10106 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10106.txt
+./skim_mjd_data -f 10107 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10107.txt
+./skim_mjd_data -f 10108 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10108.txt
+./skim_mjd_data -f 10109 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10109.txt
+./skim_mjd_data -f 10110 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10110.txt
+./skim_mjd_data -f 10111 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10111.txt
+./skim_mjd_data -f 10112 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10112.txt
+./skim_mjd_data -f 10240 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10240.txt
+./skim_mjd_data -f 10241 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10241.txt
+./skim_mjd_data -f 10242 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10242.txt
+./skim_mjd_data -f 10243 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10243.txt
+./skim_mjd_data -f 10244 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10244.txt
+./skim_mjd_data -f 10245 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10245.txt
+./skim_mjd_data -f 10246 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10246.txt
+./skim_mjd_data -f 10247 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10247.txt
+./skim_mjd_data -f 10248 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10248.txt
+./skim_mjd_data -f 10249 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10249.txt
+./skim_mjd_data -f 10250 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10250.txt
+./skim_mjd_data -f 10251 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10251.txt
+./skim_mjd_data -f 10252 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10252.txt
+./skim_mjd_data -f 10253 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10253.txt
+./skim_mjd_data -f 10254 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10254.txt
+./skim_mjd_data -f 10255 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10255.txt
+./skim_mjd_data -f 10256 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10256.txt
+./skim_mjd_data -f 10257 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10257.txt
+./skim_mjd_data -f 10258 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10258.txt
+./skim_mjd_data -f 10259 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10259.txt
+./skim_mjd_data -f 10260 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10260.txt
+./skim_mjd_data -f 10358 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10358.txt
+./skim_mjd_data -f 10359 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10359.txt
+./skim_mjd_data -f 10360 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10360.txt
+./skim_mjd_data -f 10361 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10361.txt
+./skim_mjd_data -f 10362 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10362.txt
+./skim_mjd_data -f 10363 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10363.txt
+./skim_mjd_data -f 10364 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10364.txt
+./skim_mjd_data -f 10365 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10365.txt
+./skim_mjd_data -f 10366 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10366.txt
+./skim_mjd_data -f 10367 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10367.txt
+./skim_mjd_data -f 10368 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10368.txt
+./skim_mjd_data -f 10402 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10402.txt
+./skim_mjd_data -f 10403 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10403.txt
+./skim_mjd_data -f 10404 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10404.txt
+./skim_mjd_data -f 10405 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10405.txt
+./skim_mjd_data -f 10406 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10406.txt
+./skim_mjd_data -f 10407 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10407.txt
+./skim_mjd_data -f 10408 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10408.txt
+./skim_mjd_data -f 10409 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10409.txt
+./skim_mjd_data -f 10410 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10410.txt
+./skim_mjd_data -f 10411 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10411.txt
+./skim_mjd_data -f 10412 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10412.txt
+./skim_mjd_data -f 10413 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10413.txt
+./skim_mjd_data -f 10414 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10414.txt
+./skim_mjd_data -f 10415 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10415.txt
+./skim_mjd_data -f 10416 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10416.txt
+./skim_mjd_data -f 10417 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10417.txt
+./skim_mjd_data -f 10418 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10418.txt
+./skim_mjd_data -f 10419 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10419.txt
+./skim_mjd_data -f 10420 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10420.txt
+./skim_mjd_data -f 10497 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10497.txt
+./skim_mjd_data -f 10498 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10498.txt
+./skim_mjd_data -f 10499 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10499.txt
+./skim_mjd_data -f 10500 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10500.txt
+./skim_mjd_data -f 10501 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10501.txt
+./skim_mjd_data -f 10502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10502.txt
+./skim_mjd_data -f 10503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10503.txt
+./skim_mjd_data -f 10504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10504.txt
+./skim_mjd_data -f 10505 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10505.txt
+./skim_mjd_data -f 10529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10529.txt
+./skim_mjd_data -f 10530 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10530.txt
+./skim_mjd_data -f 10531 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10531.txt
+./skim_mjd_data -f 10532 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10532.txt
+./skim_mjd_data -f 10533 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10533.txt
+./skim_mjd_data -f 10534 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10534.txt
+./skim_mjd_data -f 10535 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10535.txt
+./skim_mjd_data -f 10536 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10536.txt
+./skim_mjd_data -f 10537 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10537.txt
+./skim_mjd_data -f 10538 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10538.txt
+./skim_mjd_data -f 10539 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10539.txt
+./skim_mjd_data -f 10540 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10540.txt
+./skim_mjd_data -f 10541 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10541.txt
+./skim_mjd_data -f 10542 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10542.txt
+./skim_mjd_data -f 10543 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10543.txt
+./skim_mjd_data -f 10544 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10544.txt
+./skim_mjd_data -f 10545 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10545.txt
+./skim_mjd_data -f 10721 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10721.txt
+./skim_mjd_data -f 10723 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10723.txt
+./skim_mjd_data -f 10724 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10724.txt
+./skim_mjd_data -f 10725 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10725.txt
+./skim_mjd_data -f 10726 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10726.txt
+./skim_mjd_data -f 10727 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10727.txt
+./skim_mjd_data -f 10729 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10729.txt
+./skim_mjd_data -f 10730 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10730.txt
+./skim_mjd_data -f 10731 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10731.txt
+./skim_mjd_data -f 10732 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10732.txt
+./skim_mjd_data -f 10733 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10733.txt
+./skim_mjd_data -f 10734 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10734.txt
+./skim_mjd_data -f 10735 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10735.txt
+./skim_mjd_data -f 10767 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10767.txt
+./skim_mjd_data -f 10768 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10768.txt
+./skim_mjd_data -f 10769 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10769.txt
+./skim_mjd_data -f 10770 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10770.txt
+./skim_mjd_data -f 10771 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10771.txt
+./skim_mjd_data -f 10772 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10772.txt
+./skim_mjd_data -f 10773 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10773.txt
+./skim_mjd_data -f 10774 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10774.txt
+./skim_mjd_data -f 10775 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10775.txt
+./skim_mjd_data -f 10776 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10776.txt
+./skim_mjd_data -f 10777 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10777.txt
+./skim_mjd_data -f 10778 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10778.txt
+./skim_mjd_data -f 10779 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10779.txt
+./skim_mjd_data -f 10780 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10780.txt
+./skim_mjd_data -f 10781 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10781.txt
+./skim_mjd_data -f 10782 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10782.txt
+./skim_mjd_data -f 10783 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10783.txt
+./skim_mjd_data -f 10810 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10810.txt
+./skim_mjd_data -f 10811 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10811.txt
+./skim_mjd_data -f 10812 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10812.txt
+./skim_mjd_data -f 10813 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10813.txt
+./skim_mjd_data -f 10814 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10814.txt
+./skim_mjd_data -f 10815 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10815.txt
+./skim_mjd_data -f 10816 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10816.txt
+./skim_mjd_data -f 10817 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10817.txt
+./skim_mjd_data -f 10818 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10818.txt
+./skim_mjd_data -f 10819 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10819.txt
+./skim_mjd_data -f 10820 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10820.txt
+./skim_mjd_data -f 10821 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10821.txt
+./skim_mjd_data -f 10822 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10822.txt
+./skim_mjd_data -f 10823 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10823.txt
+./skim_mjd_data -f 10824 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10824.txt
+./skim_mjd_data -f 10847 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10847.txt
+./skim_mjd_data -f 10848 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10848.txt
+./skim_mjd_data -f 10849 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10849.txt
+./skim_mjd_data -f 10850 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10850.txt
+./skim_mjd_data -f 10851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10851.txt
+./skim_mjd_data -f 10852 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10852.txt
+./skim_mjd_data -f 10853 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10853.txt
+./skim_mjd_data -f 10854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10854.txt
+./skim_mjd_data -f 10855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10855.txt
+./skim_mjd_data -f 10856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10856.txt
+./skim_mjd_data -f 10857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10857.txt
+./skim_mjd_data -f 10858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10858.txt
+./skim_mjd_data -f 10859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10859.txt
+./skim_mjd_data -f 10860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10860.txt
+./skim_mjd_data -f 10861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10861.txt
+./skim_mjd_data -f 10943 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10943.txt
+./skim_mjd_data -f 10944 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10944.txt
+./skim_mjd_data -f 10945 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10945.txt
+./skim_mjd_data -f 10946 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10946.txt
+./skim_mjd_data -f 10947 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10947.txt
+./skim_mjd_data -f 10948 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10948.txt
+./skim_mjd_data -f 10949 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10949.txt
+./skim_mjd_data -f 10950 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10950.txt
+./skim_mjd_data -f 10951 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10951.txt
+./skim_mjd_data -f 10952 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10952.txt
+./skim_mjd_data -f 10953 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10953.txt
+./skim_mjd_data -f 10954 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10954.txt
+./skim_mjd_data -f 10955 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10955.txt
+./skim_mjd_data -f 10956 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10956.txt
+./skim_mjd_data -f 10983 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10983.txt
+./skim_mjd_data -f 10984 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10984.txt
+./skim_mjd_data -f 10985 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10985.txt
+./skim_mjd_data -f 10986 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10986.txt
+./skim_mjd_data -f 10987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10987.txt
+./skim_mjd_data -f 10988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10988.txt
+./skim_mjd_data -f 10989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10989.txt
+./skim_mjd_data -f 10990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10990.txt
+./skim_mjd_data -f 10991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10991.txt
+./skim_mjd_data -f 10992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10992.txt
+./skim_mjd_data -f 10993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10993.txt
+./skim_mjd_data -f 10994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10994.txt
+./skim_mjd_data -f 10995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10995.txt
+./skim_mjd_data -f 10996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run10996.txt
+./skim_mjd_data -f 11029 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11029.txt
+./skim_mjd_data -f 11030 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11030.txt
+./skim_mjd_data -f 11031 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11031.txt
+./skim_mjd_data -f 11032 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11032.txt
+./skim_mjd_data -f 11033 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11033.txt
+./skim_mjd_data -f 11034 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11034.txt
+./skim_mjd_data -f 11035 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11035.txt
+./skim_mjd_data -f 11036 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11036.txt
+./skim_mjd_data -f 11037 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11037.txt
+./skim_mjd_data -f 11038 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11038.txt
+./skim_mjd_data -f 11039 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11039.txt
+./skim_mjd_data -f 11040 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11040.txt
+./skim_mjd_data -f 11041 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11041.txt
+./skim_mjd_data -f 11042 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11042.txt
+./skim_mjd_data -f 11068 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11068.txt
+./skim_mjd_data -f 11069 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11069.txt
+./skim_mjd_data -f 11070 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11070.txt
+./skim_mjd_data -f 11071 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11071.txt
+./skim_mjd_data -f 11072 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11072.txt
+./skim_mjd_data -f 11073 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11073.txt
+./skim_mjd_data -f 11074 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11074.txt
+./skim_mjd_data -f 11075 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11075.txt
+./skim_mjd_data -f 11076 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11076.txt
+./skim_mjd_data -f 11077 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11077.txt
+./skim_mjd_data -f 11078 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11078.txt
+./skim_mjd_data -f 11079 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11079.txt
+./skim_mjd_data -f 11080 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11080.txt
+./skim_mjd_data -f 11081 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11081.txt
+./skim_mjd_data -f 11215 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11215.txt
+./skim_mjd_data -f 11216 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11216.txt
+./skim_mjd_data -f 11217 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11217.txt
+./skim_mjd_data -f 11218 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11218.txt
+./skim_mjd_data -f 11219 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11219.txt
+./skim_mjd_data -f 11220 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11220.txt
+./skim_mjd_data -f 11221 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11221.txt
+./skim_mjd_data -f 11222 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11222.txt
+./skim_mjd_data -f 11223 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11223.txt
+./skim_mjd_data -f 11307 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11307.txt
+./skim_mjd_data -f 11308 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11308.txt
+./skim_mjd_data -f 11309 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11309.txt
+./skim_mjd_data -f 11310 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11310.txt
+./skim_mjd_data -f 11311 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11311.txt
+./skim_mjd_data -f 11312 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11312.txt
+./skim_mjd_data -f 11313 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11313.txt
+./skim_mjd_data -f 11314 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11314.txt
+./skim_mjd_data -f 11315 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11315.txt
+./skim_mjd_data -f 11316 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11316.txt
+./skim_mjd_data -f 11317 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11317.txt
+./skim_mjd_data -f 11318 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11318.txt
+./skim_mjd_data -f 11319 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11319.txt
+./skim_mjd_data -f 11320 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11320.txt
+./skim_mjd_data -f 11321 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11321.txt
+./skim_mjd_data -f 11340 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11340.txt
+./skim_mjd_data -f 11341 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11341.txt
+./skim_mjd_data -f 11342 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11342.txt
+./skim_mjd_data -f 11343 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11343.txt
+./skim_mjd_data -f 11344 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11344.txt
+./skim_mjd_data -f 11345 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11345.txt
+./skim_mjd_data -f 11346 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11346.txt
+./skim_mjd_data -f 11347 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11347.txt
+./skim_mjd_data -f 11489 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11489.txt
+./skim_mjd_data -f 11490 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11490.txt
+./skim_mjd_data -f 11491 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11491.txt
+./skim_mjd_data -f 11492 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11492.txt
+./skim_mjd_data -f 11493 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11493.txt
+./skim_mjd_data -f 11494 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11494.txt
+./skim_mjd_data -f 11495 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11495.txt
+./skim_mjd_data -f 11496 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11496.txt
+./skim_mjd_data -f 11507 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11507.txt
+./skim_mjd_data -f 11508 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11508.txt
+./skim_mjd_data -f 11509 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11509.txt
+./skim_mjd_data -f 11510 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11510.txt
+./skim_mjd_data -f 11511 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11511.txt
+./skim_mjd_data -f 11512 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11512.txt
+./skim_mjd_data -f 11513 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11513.txt
+./skim_mjd_data -f 11514 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11514.txt
+./skim_mjd_data -f 11515 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11515.txt
+./skim_mjd_data -f 11516 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11516.txt
+./skim_mjd_data -f 11517 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11517.txt
+./skim_mjd_data -f 11518 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11518.txt
+./skim_mjd_data -f 11519 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11519.txt
+./skim_mjd_data -f 11520 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11520.txt
+./skim_mjd_data -f 11521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11521.txt
+./skim_mjd_data -f 11522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11522.txt
+./skim_mjd_data -f 11523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11523.txt
+./skim_mjd_data -f 11524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11524.txt
+./skim_mjd_data -f 11525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11525.txt
+./skim_mjd_data -f 11526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11526.txt
+./skim_mjd_data -f 11527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11527.txt
+./skim_mjd_data -f 11799 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11799.txt
+./skim_mjd_data -f 11800 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11800.txt
+./skim_mjd_data -f 11801 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11801.txt
+./skim_mjd_data -f 11802 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11802.txt
+./skim_mjd_data -f 11803 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11803.txt
+./skim_mjd_data -f 11804 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11804.txt
+./skim_mjd_data -f 11805 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11805.txt
+./skim_mjd_data -f 11806 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11806.txt
+./skim_mjd_data -f 11807 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11807.txt
+./skim_mjd_data -f 11808 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run11808.txt
+./skim_mjd_data -f 12502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12502.txt
+./skim_mjd_data -f 12503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12503.txt
+./skim_mjd_data -f 12504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12504.txt
+./skim_mjd_data -f 12505 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12505.txt
+./skim_mjd_data -f 12506 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12506.txt
+./skim_mjd_data -f 12507 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12507.txt
+./skim_mjd_data -f 12508 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12508.txt
+./skim_mjd_data -f 12509 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12509.txt
+./skim_mjd_data -f 12627 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12627.txt
+./skim_mjd_data -f 12628 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12628.txt
+./skim_mjd_data -f 12629 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12629.txt
+./skim_mjd_data -f 12630 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12630.txt
+./skim_mjd_data -f 12631 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12631.txt
+./skim_mjd_data -f 12632 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12632.txt
+./skim_mjd_data -f 12633 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12633.txt
+./skim_mjd_data -f 12634 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12634.txt
+./skim_mjd_data -f 12656 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12656.txt
+./skim_mjd_data -f 12657 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12657.txt
+./skim_mjd_data -f 12658 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12658.txt
+./skim_mjd_data -f 12659 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12659.txt
+./skim_mjd_data -f 12660 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12660.txt
+./skim_mjd_data -f 12661 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12661.txt
+./skim_mjd_data -f 12662 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12662.txt
+./skim_mjd_data -f 12726 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12726.txt
+./skim_mjd_data -f 12727 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12727.txt
+./skim_mjd_data -f 12728 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12728.txt
+./skim_mjd_data -f 12729 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12729.txt
+./skim_mjd_data -f 12730 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12730.txt
+./skim_mjd_data -f 12731 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12731.txt
+./skim_mjd_data -f 12732 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12732.txt
+./skim_mjd_data -f 12733 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12733.txt
+./skim_mjd_data -f 12800 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12800.txt
+./skim_mjd_data -f 12801 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12801.txt
+./skim_mjd_data -f 12802 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12802.txt
+./skim_mjd_data -f 12803 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12803.txt
+./skim_mjd_data -f 12804 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12804.txt
+./skim_mjd_data -f 12805 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12805.txt
+./skim_mjd_data -f 12806 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12806.txt
+./skim_mjd_data -f 12807 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12807.txt
+./skim_mjd_data -f 12808 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12808.txt
+./skim_mjd_data -f 12864 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12864.txt
+./skim_mjd_data -f 12865 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12865.txt
+./skim_mjd_data -f 12866 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12866.txt
+./skim_mjd_data -f 12867 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12867.txt
+./skim_mjd_data -f 12868 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12868.txt
+./skim_mjd_data -f 12869 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12869.txt
+./skim_mjd_data -f 12870 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12870.txt
+./skim_mjd_data -f 12871 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12871.txt
+./skim_mjd_data -f 12872 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12872.txt
+./skim_mjd_data -f 12873 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12873.txt
+./skim_mjd_data -f 12886 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12886.txt
+./skim_mjd_data -f 12887 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12887.txt
+./skim_mjd_data -f 12888 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12888.txt
+./skim_mjd_data -f 12889 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12889.txt
+./skim_mjd_data -f 12890 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12890.txt
+./skim_mjd_data -f 12891 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12891.txt
+./skim_mjd_data -f 12892 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12892.txt
+./skim_mjd_data -f 12893 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12893.txt
+./skim_mjd_data -f 12894 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12894.txt
+./skim_mjd_data -f 12895 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12895.txt
+./skim_mjd_data -f 12896 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12896.txt
+./skim_mjd_data -f 12897 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12897.txt
+./skim_mjd_data -f 12898 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12898.txt
+./skim_mjd_data -f 12899 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12899.txt
+./skim_mjd_data -f 12900 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12900.txt
+./skim_mjd_data -f 12901 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12901.txt
+./skim_mjd_data -f 12902 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12902.txt
+./skim_mjd_data -f 12903 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12903.txt
+./skim_mjd_data -f 12904 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12904.txt
+./skim_mjd_data -f 12905 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12905.txt
+./skim_mjd_data -f 12906 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12906.txt
+./skim_mjd_data -f 12907 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12907.txt
+./skim_mjd_data -f 12908 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12908.txt
+./skim_mjd_data -f 12909 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12909.txt
+./skim_mjd_data -f 12910 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12910.txt
+./skim_mjd_data -f 12969 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12969.txt
+./skim_mjd_data -f 12970 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12970.txt
+./skim_mjd_data -f 12971 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12971.txt
+./skim_mjd_data -f 12972 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12972.txt
+./skim_mjd_data -f 12973 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12973.txt
+./skim_mjd_data -f 12974 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12974.txt
+./skim_mjd_data -f 12975 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12975.txt
+./skim_mjd_data -f 12976 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12976.txt
+./skim_mjd_data -f 12977 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12977.txt
+./skim_mjd_data -f 12978 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12978.txt
+./skim_mjd_data -f 12979 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12979.txt
+./skim_mjd_data -f 12980 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12980.txt
+./skim_mjd_data -f 12981 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12981.txt
+./skim_mjd_data -f 12982 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12982.txt
+./skim_mjd_data -f 12983 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12983.txt
+./skim_mjd_data -f 12984 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12984.txt
+./skim_mjd_data -f 12985 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12985.txt
+./skim_mjd_data -f 12986 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12986.txt
+./skim_mjd_data -f 12987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12987.txt
+./skim_mjd_data -f 12988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12988.txt
+./skim_mjd_data -f 12989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12989.txt
+./skim_mjd_data -f 12990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12990.txt
+./skim_mjd_data -f 12991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12991.txt
+./skim_mjd_data -f 12992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12992.txt
+./skim_mjd_data -f 12993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12993.txt
+./skim_mjd_data -f 12994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12994.txt
+./skim_mjd_data -f 12995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12995.txt
+./skim_mjd_data -f 12996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12996.txt
+./skim_mjd_data -f 12997 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12997.txt
+./skim_mjd_data -f 12998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run12998.txt
+./skim_mjd_data -f 13058 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13058.txt
+./skim_mjd_data -f 13059 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13059.txt
+./skim_mjd_data -f 13060 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13060.txt
+./skim_mjd_data -f 13061 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13061.txt
+./skim_mjd_data -f 13062 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13062.txt
+./skim_mjd_data -f 13063 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13063.txt
+./skim_mjd_data -f 13064 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13064.txt
+./skim_mjd_data -f 13139 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13139.txt
+./skim_mjd_data -f 13140 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13140.txt
+./skim_mjd_data -f 13141 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13141.txt
+./skim_mjd_data -f 13142 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13142.txt
+./skim_mjd_data -f 13143 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13143.txt
+./skim_mjd_data -f 13144 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13144.txt
+./skim_mjd_data -f 13145 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13145.txt
+./skim_mjd_data -f 13146 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13146.txt
+./skim_mjd_data -f 13353 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13353.txt
+./skim_mjd_data -f 13354 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13354.txt
+./skim_mjd_data -f 13355 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13355.txt
+./skim_mjd_data -f 13356 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13356.txt
+./skim_mjd_data -f 13357 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13357.txt
+./skim_mjd_data -f 13358 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13358.txt
+./skim_mjd_data -f 13359 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13359.txt
+./skim_mjd_data -f 13360 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13360.txt
+./skim_mjd_data -f 13385 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13385.txt
+./skim_mjd_data -f 13386 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13386.txt
+./skim_mjd_data -f 13387 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13387.txt
+./skim_mjd_data -f 13388 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13388.txt
+./skim_mjd_data -f 13389 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13389.txt
+./skim_mjd_data -f 13390 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13390.txt
+./skim_mjd_data -f 13391 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13391.txt
+./skim_mjd_data -f 13392 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13392.txt
+./skim_mjd_data -f 13420 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13420.txt
+./skim_mjd_data -f 13421 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13421.txt
+./skim_mjd_data -f 13422 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13422.txt
+./skim_mjd_data -f 13423 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13423.txt
+./skim_mjd_data -f 13424 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13424.txt
+./skim_mjd_data -f 13425 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13425.txt
+./skim_mjd_data -f 13426 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13426.txt
+./skim_mjd_data -f 13427 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13427.txt
+./skim_mjd_data -f 13550 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13550.txt
+./skim_mjd_data -f 13551 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13551.txt
+./skim_mjd_data -f 13552 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13552.txt
+./skim_mjd_data -f 13553 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13553.txt
+./skim_mjd_data -f 13554 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13554.txt
+./skim_mjd_data -f 13555 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13555.txt
+./skim_mjd_data -f 13556 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13556.txt
+./skim_mjd_data -f 13690 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13690.txt
+./skim_mjd_data -f 13691 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13691.txt
+./skim_mjd_data -f 13692 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13692.txt
+./skim_mjd_data -f 13693 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13693.txt
+./skim_mjd_data -f 13694 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13694.txt
+./skim_mjd_data -f 13695 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13695.txt
+./skim_mjd_data -f 13696 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13696.txt
+./skim_mjd_data -f 13697 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13697.txt
+./skim_mjd_data -f 13706 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13706.txt
+./skim_mjd_data -f 13707 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13707.txt
+./skim_mjd_data -f 13708 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13708.txt
+./skim_mjd_data -f 13709 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13709.txt
+./skim_mjd_data -f 13710 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13710.txt
+./skim_mjd_data -f 13711 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13711.txt
+./skim_mjd_data -f 13712 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13712.txt
+./skim_mjd_data -f 13713 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13713.txt
+./skim_mjd_data -f 13740 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13740.txt
+./skim_mjd_data -f 13741 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13741.txt
+./skim_mjd_data -f 13742 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13742.txt
+./skim_mjd_data -f 13743 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13743.txt
+./skim_mjd_data -f 13744 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13744.txt
+./skim_mjd_data -f 13745 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13745.txt
+./skim_mjd_data -f 13746 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13746.txt
+./skim_mjd_data -f 13747 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13747.txt
+./skim_mjd_data -f 13773 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13773.txt
+./skim_mjd_data -f 13774 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13774.txt
+./skim_mjd_data -f 13775 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13775.txt
+./skim_mjd_data -f 13776 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13776.txt
+./skim_mjd_data -f 13777 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13777.txt
+./skim_mjd_data -f 13778 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13778.txt
+./skim_mjd_data -f 13779 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13779.txt
+./skim_mjd_data -f 13780 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13780.txt
+./skim_mjd_data -f 13905 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13905.txt
+./skim_mjd_data -f 13906 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13906.txt
+./skim_mjd_data -f 13907 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13907.txt
+./skim_mjd_data -f 13908 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13908.txt
+./skim_mjd_data -f 13909 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13909.txt
+./skim_mjd_data -f 13910 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13910.txt
+./skim_mjd_data -f 13911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13911.txt
+./skim_mjd_data -f 13912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13912.txt
+./skim_mjd_data -f 13954 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13954.txt
+./skim_mjd_data -f 13955 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13955.txt
+./skim_mjd_data -f 13956 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13956.txt
+./skim_mjd_data -f 13957 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13957.txt
+./skim_mjd_data -f 13958 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13958.txt
+./skim_mjd_data -f 13959 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13959.txt
+./skim_mjd_data -f 13960 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13960.txt
+./skim_mjd_data -f 13961 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13961.txt
+./skim_mjd_data -f 13962 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13962.txt
+./skim_mjd_data -f 13964 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13964.txt
+./skim_mjd_data -f 13965 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13965.txt
+./skim_mjd_data -f 13987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13987.txt
+./skim_mjd_data -f 13988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13988.txt
+./skim_mjd_data -f 13989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13989.txt
+./skim_mjd_data -f 13990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13990.txt
+./skim_mjd_data -f 13991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13991.txt
+./skim_mjd_data -f 13992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13992.txt
+./skim_mjd_data -f 13993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13993.txt
+./skim_mjd_data -f 13994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run13994.txt
+./skim_mjd_data -f 14093 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14093.txt
+./skim_mjd_data -f 14094 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14094.txt
+./skim_mjd_data -f 14095 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14095.txt
+./skim_mjd_data -f 14096 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14096.txt
+./skim_mjd_data -f 14097 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14097.txt
+./skim_mjd_data -f 14098 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14098.txt
+./skim_mjd_data -f 14099 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14099.txt
+./skim_mjd_data -f 14100 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14100.txt
+./skim_mjd_data -f 14149 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14149.txt
+./skim_mjd_data -f 14150 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14150.txt
+./skim_mjd_data -f 14151 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14151.txt
+./skim_mjd_data -f 14152 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14152.txt
+./skim_mjd_data -f 14153 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14153.txt
+./skim_mjd_data -f 14154 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14154.txt
+./skim_mjd_data -f 14155 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14155.txt
+./skim_mjd_data -f 14156 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14156.txt
+./skim_mjd_data -f 14180 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14180.txt
+./skim_mjd_data -f 14181 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14181.txt
+./skim_mjd_data -f 14182 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14182.txt
+./skim_mjd_data -f 14183 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14183.txt
+./skim_mjd_data -f 14184 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14184.txt
+./skim_mjd_data -f 14185 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14185.txt
+./skim_mjd_data -f 14186 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14186.txt
+./skim_mjd_data -f 14187 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14187.txt
+./skim_mjd_data -f 14188 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14188.txt
+./skim_mjd_data -f 14274 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14274.txt
+./skim_mjd_data -f 14275 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14275.txt
+./skim_mjd_data -f 14276 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14276.txt
+./skim_mjd_data -f 14277 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14277.txt
+./skim_mjd_data -f 14278 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14278.txt
+./skim_mjd_data -f 14279 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14279.txt
+./skim_mjd_data -f 14280 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14280.txt
+./skim_mjd_data -f 14281 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14281.txt
+./skim_mjd_data -f 14282 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14282.txt
+./skim_mjd_data -f 14317 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14317.txt
+./skim_mjd_data -f 14318 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14318.txt
+./skim_mjd_data -f 14319 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14319.txt
+./skim_mjd_data -f 14320 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14320.txt
+./skim_mjd_data -f 14321 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14321.txt
+./skim_mjd_data -f 14322 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14322.txt
+./skim_mjd_data -f 14323 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14323.txt
+./skim_mjd_data -f 14324 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14324.txt
+./skim_mjd_data -f 14325 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14325.txt
+./skim_mjd_data -f 14376 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14376.txt
+./skim_mjd_data -f 14377 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14377.txt
+./skim_mjd_data -f 14378 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14378.txt
+./skim_mjd_data -f 14379 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14379.txt
+./skim_mjd_data -f 14380 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14380.txt
+./skim_mjd_data -f 14381 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14381.txt
+./skim_mjd_data -f 14382 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14382.txt
+./skim_mjd_data -f 14383 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14383.txt
+./skim_mjd_data -f 14384 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds1-run14384.txt
+./skim_mjd_data -f 14699 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14699.txt
+./skim_mjd_data -f 14700 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14700.txt
+./skim_mjd_data -f 14701 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14701.txt
+./skim_mjd_data -f 14702 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14702.txt
+./skim_mjd_data -f 14703 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14703.txt
+./skim_mjd_data -f 14704 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14704.txt
+./skim_mjd_data -f 14705 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14705.txt
+./skim_mjd_data -f 14706 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14706.txt
+./skim_mjd_data -f 14855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14855.txt
+./skim_mjd_data -f 14856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14856.txt
+./skim_mjd_data -f 14857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14857.txt
+./skim_mjd_data -f 14858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14858.txt
+./skim_mjd_data -f 14859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14859.txt
+./skim_mjd_data -f 14860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14860.txt
+./skim_mjd_data -f 14861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14861.txt
+./skim_mjd_data -f 14927 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14927.txt
+./skim_mjd_data -f 14928 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14928.txt
+./skim_mjd_data -f 14929 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14929.txt
+./skim_mjd_data -f 14930 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14930.txt
+./skim_mjd_data -f 14931 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14931.txt
+./skim_mjd_data -f 14932 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14932.txt
+./skim_mjd_data -f 14933 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run14933.txt
+./skim_mjd_data -f 15054 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15054.txt
+./skim_mjd_data -f 15055 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15055.txt
+./skim_mjd_data -f 15056 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15056.txt
+./skim_mjd_data -f 15057 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15057.txt
+./skim_mjd_data -f 15058 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15058.txt
+./skim_mjd_data -f 15059 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15059.txt
+./skim_mjd_data -f 15060 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15060.txt
+./skim_mjd_data -f 15248 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15248.txt
+./skim_mjd_data -f 15249 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15249.txt
+./skim_mjd_data -f 15250 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15250.txt
+./skim_mjd_data -f 15251 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15251.txt
+./skim_mjd_data -f 15252 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15252.txt
+./skim_mjd_data -f 15253 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15253.txt
+./skim_mjd_data -f 15254 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15254.txt
+./skim_mjd_data -f 15330 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15330.txt
+./skim_mjd_data -f 15331 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15331.txt
+./skim_mjd_data -f 15332 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15332.txt
+./skim_mjd_data -f 15333 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15333.txt
+./skim_mjd_data -f 15334 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15334.txt
+./skim_mjd_data -f 15335 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15335.txt
+./skim_mjd_data -f 15336 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15336.txt
+./skim_mjd_data -f 15490 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15490.txt
+./skim_mjd_data -f 15491 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15491.txt
+./skim_mjd_data -f 15492 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15492.txt
+./skim_mjd_data -f 15493 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15493.txt
+./skim_mjd_data -f 15494 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15494.txt
+./skim_mjd_data -f 15495 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15495.txt
+./skim_mjd_data -f 15496 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15496.txt
+./skim_mjd_data -f 15497 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15497.txt
+./skim_mjd_data -f 15498 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15498.txt
+./skim_mjd_data -f 15499 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15499.txt
+./skim_mjd_data -f 15500 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15500.txt
+./skim_mjd_data -f 15501 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15501.txt
+./skim_mjd_data -f 15502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15502.txt
+./skim_mjd_data -f 15503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15503.txt
+./skim_mjd_data -f 15504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15504.txt
+./skim_mjd_data -f 15505 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15505.txt
+./skim_mjd_data -f 15506 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15506.txt
+./skim_mjd_data -f 15627 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15627.txt
+./skim_mjd_data -f 15628 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15628.txt
+./skim_mjd_data -f 15629 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15629.txt
+./skim_mjd_data -f 15630 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15630.txt
+./skim_mjd_data -f 15631 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15631.txt
+./skim_mjd_data -f 15632 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15632.txt
+./skim_mjd_data -f 15707 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15707.txt
+./skim_mjd_data -f 15708 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15708.txt
+./skim_mjd_data -f 15709 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15709.txt
+./skim_mjd_data -f 15710 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15710.txt
+./skim_mjd_data -f 15711 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15711.txt
+./skim_mjd_data -f 15712 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15712.txt
+./skim_mjd_data -f 15713 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15713.txt
+./skim_mjd_data -f 15789 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15789.txt
+./skim_mjd_data -f 15790 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15790.txt
+./skim_mjd_data -f 15791 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15791.txt
+./skim_mjd_data -f 15792 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15792.txt
+./skim_mjd_data -f 15793 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15793.txt
+./skim_mjd_data -f 15794 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15794.txt
+./skim_mjd_data -f 15795 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15795.txt
+./skim_mjd_data -f 15845 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15845.txt
+./skim_mjd_data -f 15846 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15846.txt
+./skim_mjd_data -f 15847 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15847.txt
+./skim_mjd_data -f 15848 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15848.txt
+./skim_mjd_data -f 15849 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15849.txt
+./skim_mjd_data -f 15850 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15850.txt
+./skim_mjd_data -f 15851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15851.txt
+./skim_mjd_data -f 15852 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15852.txt
+./skim_mjd_data -f 15853 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15853.txt
+./skim_mjd_data -f 15854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15854.txt
+./skim_mjd_data -f 15855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15855.txt
+./skim_mjd_data -f 15856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15856.txt
+./skim_mjd_data -f 15857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15857.txt
+./skim_mjd_data -f 15858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds2-run15858.txt
+./skim_mjd_data -f 16836 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16836.txt
+./skim_mjd_data -f 16837 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16837.txt
+./skim_mjd_data -f 16838 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16838.txt
+./skim_mjd_data -f 16839 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16839.txt
+./skim_mjd_data -f 16840 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16840.txt
+./skim_mjd_data -f 16841 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16841.txt
+./skim_mjd_data -f 16842 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16842.txt
+./skim_mjd_data -f 16843 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16843.txt
+./skim_mjd_data -f 16844 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16844.txt
+./skim_mjd_data -f 16845 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16845.txt
+./skim_mjd_data -f 16846 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16846.txt
+./skim_mjd_data -f 16847 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16847.txt
+./skim_mjd_data -f 16848 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16848.txt
+./skim_mjd_data -f 16849 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16849.txt
+./skim_mjd_data -f 16850 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16850.txt
+./skim_mjd_data -f 16851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16851.txt
+./skim_mjd_data -f 16852 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16852.txt
+./skim_mjd_data -f 16853 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16853.txt
+./skim_mjd_data -f 16854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16854.txt
+./skim_mjd_data -f 16911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16911.txt
+./skim_mjd_data -f 16912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16912.txt
+./skim_mjd_data -f 16913 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16913.txt
+./skim_mjd_data -f 16914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16914.txt
+./skim_mjd_data -f 16915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16915.txt
+./skim_mjd_data -f 16916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16916.txt
+./skim_mjd_data -f 16917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16917.txt
+./skim_mjd_data -f 16918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16918.txt
+./skim_mjd_data -f 16919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16919.txt
+./skim_mjd_data -f 16920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16920.txt
+./skim_mjd_data -f 16921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16921.txt
+./skim_mjd_data -f 16922 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16922.txt
+./skim_mjd_data -f 16923 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16923.txt
+./skim_mjd_data -f 16924 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16924.txt
+./skim_mjd_data -f 16925 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16925.txt
+./skim_mjd_data -f 16926 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16926.txt
+./skim_mjd_data -f 16927 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16927.txt
+./skim_mjd_data -f 16928 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16928.txt
+./skim_mjd_data -f 16929 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run16929.txt
+./skim_mjd_data -f 17017 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17017.txt
+./skim_mjd_data -f 17018 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17018.txt
+./skim_mjd_data -f 17019 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17019.txt
+./skim_mjd_data -f 17020 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17020.txt
+./skim_mjd_data -f 17021 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17021.txt
+./skim_mjd_data -f 17022 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17022.txt
+./skim_mjd_data -f 17023 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17023.txt
+./skim_mjd_data -f 17024 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17024.txt
+./skim_mjd_data -f 17025 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17025.txt
+./skim_mjd_data -f 17026 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17026.txt
+./skim_mjd_data -f 17027 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17027.txt
+./skim_mjd_data -f 17028 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17028.txt
+./skim_mjd_data -f 17029 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17029.txt
+./skim_mjd_data -f 17030 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17030.txt
+./skim_mjd_data -f 17031 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17031.txt
+./skim_mjd_data -f 17032 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17032.txt
+./skim_mjd_data -f 17033 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17033.txt
+./skim_mjd_data -f 17183 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17183.txt
+./skim_mjd_data -f 17184 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17184.txt
+./skim_mjd_data -f 17185 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17185.txt
+./skim_mjd_data -f 17186 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17186.txt
+./skim_mjd_data -f 17187 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17187.txt
+./skim_mjd_data -f 17188 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17188.txt
+./skim_mjd_data -f 17189 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17189.txt
+./skim_mjd_data -f 17190 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17190.txt
+./skim_mjd_data -f 17191 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17191.txt
+./skim_mjd_data -f 17192 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17192.txt
+./skim_mjd_data -f 17193 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17193.txt
+./skim_mjd_data -f 17194 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17194.txt
+./skim_mjd_data -f 17195 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17195.txt
+./skim_mjd_data -f 17196 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17196.txt
+./skim_mjd_data -f 17197 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17197.txt
+./skim_mjd_data -f 17198 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17198.txt
+./skim_mjd_data -f 17199 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17199.txt
+./skim_mjd_data -f 17200 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17200.txt
+./skim_mjd_data -f 17201 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17201.txt
+./skim_mjd_data -f 17202 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17202.txt
+./skim_mjd_data -f 17203 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17203.txt
+./skim_mjd_data -f 17423 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17423.txt
+./skim_mjd_data -f 17424 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17424.txt
+./skim_mjd_data -f 17425 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17425.txt
+./skim_mjd_data -f 17426 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17426.txt
+./skim_mjd_data -f 17427 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17427.txt
+./skim_mjd_data -f 17428 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17428.txt
+./skim_mjd_data -f 17429 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17429.txt
+./skim_mjd_data -f 17430 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17430.txt
+./skim_mjd_data -f 17431 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17431.txt
+./skim_mjd_data -f 17432 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17432.txt
+./skim_mjd_data -f 17433 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17433.txt
+./skim_mjd_data -f 17434 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17434.txt
+./skim_mjd_data -f 17435 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17435.txt
+./skim_mjd_data -f 17436 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17436.txt
+./skim_mjd_data -f 17437 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17437.txt
+./skim_mjd_data -f 17438 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17438.txt
+./skim_mjd_data -f 17439 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17439.txt
+./skim_mjd_data -f 17440 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17440.txt
+./skim_mjd_data -f 17521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17521.txt
+./skim_mjd_data -f 17522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17522.txt
+./skim_mjd_data -f 17523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17523.txt
+./skim_mjd_data -f 17524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17524.txt
+./skim_mjd_data -f 17525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17525.txt
+./skim_mjd_data -f 17526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17526.txt
+./skim_mjd_data -f 17527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17527.txt
+./skim_mjd_data -f 17528 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17528.txt
+./skim_mjd_data -f 17529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17529.txt
+./skim_mjd_data -f 17688 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17688.txt
+./skim_mjd_data -f 17689 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17689.txt
+./skim_mjd_data -f 17690 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17690.txt
+./skim_mjd_data -f 17691 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17691.txt
+./skim_mjd_data -f 17692 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17692.txt
+./skim_mjd_data -f 17693 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17693.txt
+./skim_mjd_data -f 17694 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17694.txt
+./skim_mjd_data -f 17695 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17695.txt
+./skim_mjd_data -f 17696 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17696.txt
+./skim_mjd_data -f 17957 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17957.txt
+./skim_mjd_data -f 17958 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17958.txt
+./skim_mjd_data -f 17959 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17959.txt
+./skim_mjd_data -f 17960 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17960.txt
+./skim_mjd_data -f 17961 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17961.txt
+./skim_mjd_data -f 17962 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17962.txt
+./skim_mjd_data -f 17963 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17963.txt
+./skim_mjd_data -f 17964 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17964.txt
+./skim_mjd_data -f 17965 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run17965.txt
+./skim_mjd_data -f 18328 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18328.txt
+./skim_mjd_data -f 18329 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18329.txt
+./skim_mjd_data -f 18330 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18330.txt
+./skim_mjd_data -f 18331 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18331.txt
+./skim_mjd_data -f 18332 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18332.txt
+./skim_mjd_data -f 18333 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18333.txt
+./skim_mjd_data -f 18334 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18334.txt
+./skim_mjd_data -f 18335 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18335.txt
+./skim_mjd_data -f 18336 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18336.txt
+./skim_mjd_data -f 18337 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18337.txt
+./skim_mjd_data -f 18338 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18338.txt
+./skim_mjd_data -f 18339 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18339.txt
+./skim_mjd_data -f 18340 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18340.txt
+./skim_mjd_data -f 18341 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18341.txt
+./skim_mjd_data -f 18342 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18342.txt
+./skim_mjd_data -f 18343 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds3-run18343.txt
+./skim_mjd_data -f 18713 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18713.txt
+./skim_mjd_data -f 18714 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18714.txt
+./skim_mjd_data -f 18715 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18715.txt
+./skim_mjd_data -f 18716 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18716.txt
+./skim_mjd_data -f 18717 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18717.txt
+./skim_mjd_data -f 18718 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18718.txt
+./skim_mjd_data -f 18719 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18719.txt
+./skim_mjd_data -f 18720 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18720.txt
+./skim_mjd_data -f 18721 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18721.txt
+./skim_mjd_data -f 18722 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18722.txt
+./skim_mjd_data -f 18723 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18723.txt
+./skim_mjd_data -f 18724 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18724.txt
+./skim_mjd_data -f 18725 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18725.txt
+./skim_mjd_data -f 18726 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18726.txt
+./skim_mjd_data -f 18727 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18727.txt
+./skim_mjd_data -f 18728 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18728.txt
+./skim_mjd_data -f 18729 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18729.txt
+./skim_mjd_data -f 18730 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18730.txt
+./skim_mjd_data -f 18731 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18731.txt
+./skim_mjd_data -f 18732 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18732.txt
+./skim_mjd_data -f 18746 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18746.txt
+./skim_mjd_data -f 18747 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18747.txt
+./skim_mjd_data -f 18748 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18748.txt
+./skim_mjd_data -f 18749 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18749.txt
+./skim_mjd_data -f 18750 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18750.txt
+./skim_mjd_data -f 18753 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18753.txt
+./skim_mjd_data -f 18754 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18754.txt
+./skim_mjd_data -f 18755 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18755.txt
+./skim_mjd_data -f 18756 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18756.txt
+./skim_mjd_data -f 18759 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run18759.txt
+./skim_mjd_data -f 19055 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19055.txt
+./skim_mjd_data -f 19056 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19056.txt
+./skim_mjd_data -f 19057 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19057.txt
+./skim_mjd_data -f 19058 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19058.txt
+./skim_mjd_data -f 19059 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19059.txt
+./skim_mjd_data -f 19060 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19060.txt
+./skim_mjd_data -f 19061 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19061.txt
+./skim_mjd_data -f 19062 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19062.txt
+./skim_mjd_data -f 19063 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19063.txt
+./skim_mjd_data -f 19064 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19064.txt
+./skim_mjd_data -f 19065 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19065.txt
+./skim_mjd_data -f 19066 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19066.txt
+./skim_mjd_data -f 19067 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19067.txt
+./skim_mjd_data -f 19068 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19068.txt
+./skim_mjd_data -f 19069 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19069.txt
+./skim_mjd_data -f 19094 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19094.txt
+./skim_mjd_data -f 19095 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19095.txt
+./skim_mjd_data -f 19096 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19096.txt
+./skim_mjd_data -f 19097 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19097.txt
+./skim_mjd_data -f 19098 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19098.txt
+./skim_mjd_data -f 19099 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19099.txt
+./skim_mjd_data -f 19100 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19100.txt
+./skim_mjd_data -f 19101 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19101.txt
+./skim_mjd_data -f 19102 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19102.txt
+./skim_mjd_data -f 19103 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19103.txt
+./skim_mjd_data -f 19104 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19104.txt
+./skim_mjd_data -f 19105 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19105.txt
+./skim_mjd_data -f 19106 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19106.txt
+./skim_mjd_data -f 19107 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19107.txt
+./skim_mjd_data -f 19108 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19108.txt
+./skim_mjd_data -f 19109 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19109.txt
+./skim_mjd_data -f 19243 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19243.txt
+./skim_mjd_data -f 19244 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19244.txt
+./skim_mjd_data -f 19245 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19245.txt
+./skim_mjd_data -f 19246 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19246.txt
+./skim_mjd_data -f 19247 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19247.txt
+./skim_mjd_data -f 19248 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19248.txt
+./skim_mjd_data -f 19249 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19249.txt
+./skim_mjd_data -f 19250 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19250.txt
+./skim_mjd_data -f 19251 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19251.txt
+./skim_mjd_data -f 19252 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19252.txt
+./skim_mjd_data -f 19253 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19253.txt
+./skim_mjd_data -f 19254 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19254.txt
+./skim_mjd_data -f 19255 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19255.txt
+./skim_mjd_data -f 19256 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19256.txt
+./skim_mjd_data -f 19257 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19257.txt
+./skim_mjd_data -f 19258 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19258.txt
+./skim_mjd_data -f 19520 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19520.txt
+./skim_mjd_data -f 19521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19521.txt
+./skim_mjd_data -f 19522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19522.txt
+./skim_mjd_data -f 19523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19523.txt
+./skim_mjd_data -f 19524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19524.txt
+./skim_mjd_data -f 19525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19525.txt
+./skim_mjd_data -f 19526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19526.txt
+./skim_mjd_data -f 19527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19527.txt
+./skim_mjd_data -f 19528 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19528.txt
+./skim_mjd_data -f 19529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19529.txt
+./skim_mjd_data -f 19530 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19530.txt
+./skim_mjd_data -f 19531 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19531.txt
+./skim_mjd_data -f 19532 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19532.txt
+./skim_mjd_data -f 19533 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19533.txt
+./skim_mjd_data -f 19534 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19534.txt
+./skim_mjd_data -f 19535 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19535.txt
+./skim_mjd_data -f 19536 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19536.txt
+./skim_mjd_data -f 19537 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19537.txt
+./skim_mjd_data -f 19538 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19538.txt
+./skim_mjd_data -f 19539 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19539.txt
+./skim_mjd_data -f 19540 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19540.txt
+./skim_mjd_data -f 19541 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19541.txt
+./skim_mjd_data -f 19542 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19542.txt
+./skim_mjd_data -f 19586 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19586.txt
+./skim_mjd_data -f 19587 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19587.txt
+./skim_mjd_data -f 19588 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19588.txt
+./skim_mjd_data -f 19589 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19589.txt
+./skim_mjd_data -f 19590 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19590.txt
+./skim_mjd_data -f 19591 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19591.txt
+./skim_mjd_data -f 19592 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19592.txt
+./skim_mjd_data -f 19593 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19593.txt
+./skim_mjd_data -f 19594 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19594.txt
+./skim_mjd_data -f 19595 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19595.txt
+./skim_mjd_data -f 19596 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19596.txt
+./skim_mjd_data -f 19597 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19597.txt
+./skim_mjd_data -f 19751 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19751.txt
+./skim_mjd_data -f 19752 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19752.txt
+./skim_mjd_data -f 19753 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19753.txt
+./skim_mjd_data -f 19754 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19754.txt
+./skim_mjd_data -f 19755 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19755.txt
+./skim_mjd_data -f 19756 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19756.txt
+./skim_mjd_data -f 19757 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19757.txt
+./skim_mjd_data -f 19758 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19758.txt
+./skim_mjd_data -f 19759 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19759.txt
+./skim_mjd_data -f 19760 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19760.txt
+./skim_mjd_data -f 19761 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19761.txt
+./skim_mjd_data -f 19762 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19762.txt
+./skim_mjd_data -f 19763 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19763.txt
+./skim_mjd_data -f 19764 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19764.txt
+./skim_mjd_data -f 19765 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19765.txt
+./skim_mjd_data -f 19766 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19766.txt
+./skim_mjd_data -f 19767 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19767.txt
+./skim_mjd_data -f 19768 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19768.txt
+./skim_mjd_data -f 19769 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run19769.txt
+./skim_mjd_data -f 20042 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20042.txt
+./skim_mjd_data -f 20043 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20043.txt
+./skim_mjd_data -f 20044 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20044.txt
+./skim_mjd_data -f 20045 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20045.txt
+./skim_mjd_data -f 20046 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20046.txt
+./skim_mjd_data -f 20047 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20047.txt
+./skim_mjd_data -f 20048 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20048.txt
+./skim_mjd_data -f 20049 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20049.txt
+./skim_mjd_data -f 20050 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20050.txt
+./skim_mjd_data -f 20051 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20051.txt
+./skim_mjd_data -f 20052 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20052.txt
+./skim_mjd_data -f 20053 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20053.txt
+./skim_mjd_data -f 20054 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20054.txt
+./skim_mjd_data -f 20055 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20055.txt
+./skim_mjd_data -f 20056 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20056.txt
+./skim_mjd_data -f 20065 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20065.txt
+./skim_mjd_data -f 20066 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20066.txt
+./skim_mjd_data -f 20067 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20067.txt
+./skim_mjd_data -f 20068 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20068.txt
+./skim_mjd_data -f 20069 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20069.txt
+./skim_mjd_data -f 20070 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20070.txt
+./skim_mjd_data -f 20071 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20071.txt
+./skim_mjd_data -f 20072 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20072.txt
+./skim_mjd_data -f 20201 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20201.txt
+./skim_mjd_data -f 20202 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20202.txt
+./skim_mjd_data -f 20203 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20203.txt
+./skim_mjd_data -f 20204 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20204.txt
+./skim_mjd_data -f 20205 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20205.txt
+./skim_mjd_data -f 20206 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20206.txt
+./skim_mjd_data -f 20207 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20207.txt
+./skim_mjd_data -f 20208 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20208.txt
+./skim_mjd_data -f 20209 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20209.txt
+./skim_mjd_data -f 20210 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20210.txt
+./skim_mjd_data -f 20211 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20211.txt
+./skim_mjd_data -f 20212 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20212.txt
+./skim_mjd_data -f 20213 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20213.txt
+./skim_mjd_data -f 20214 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20214.txt
+./skim_mjd_data -f 20215 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20215.txt
+./skim_mjd_data -f 20216 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20216.txt
+./skim_mjd_data -f 20447 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20447.txt
+./skim_mjd_data -f 20448 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20448.txt
+./skim_mjd_data -f 20449 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20449.txt
+./skim_mjd_data -f 20450 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20450.txt
+./skim_mjd_data -f 20451 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20451.txt
+./skim_mjd_data -f 20452 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20452.txt
+./skim_mjd_data -f 20453 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20453.txt
+./skim_mjd_data -f 20454 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20454.txt
+./skim_mjd_data -f 20455 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20455.txt
+./skim_mjd_data -f 20456 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20456.txt
+./skim_mjd_data -f 20457 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20457.txt
+./skim_mjd_data -f 20458 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20458.txt
+./skim_mjd_data -f 20459 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20459.txt
+./skim_mjd_data -f 20460 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20460.txt
+./skim_mjd_data -f 20461 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20461.txt
+./skim_mjd_data -f 20462 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20462.txt
+./skim_mjd_data -f 20463 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20463.txt
+./skim_mjd_data -f 20464 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20464.txt
+./skim_mjd_data -f 20466 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20466.txt
+./skim_mjd_data -f 20467 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20467.txt
+./skim_mjd_data -f 20468 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20468.txt
+./skim_mjd_data -f 20469 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20469.txt
+./skim_mjd_data -f 20470 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20470.txt
+./skim_mjd_data -f 20471 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20471.txt
+./skim_mjd_data -f 20472 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20472.txt
+./skim_mjd_data -f 20473 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20473.txt
+./skim_mjd_data -f 20474 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20474.txt
+./skim_mjd_data -f 20475 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20475.txt
+./skim_mjd_data -f 20476 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20476.txt
+./skim_mjd_data -f 20477 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20477.txt
+./skim_mjd_data -f 20478 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20478.txt
+./skim_mjd_data -f 20479 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20479.txt
+./skim_mjd_data -f 20480 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20480.txt
+./skim_mjd_data -f 20481 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20481.txt
+./skim_mjd_data -f 20556 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20556.txt
+./skim_mjd_data -f 20557 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20557.txt
+./skim_mjd_data -f 20558 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20558.txt
+./skim_mjd_data -f 20559 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20559.txt
+./skim_mjd_data -f 20560 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20560.txt
+./skim_mjd_data -f 20562 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20562.txt
+./skim_mjd_data -f 20563 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20563.txt
+./skim_mjd_data -f 20565 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20565.txt
+./skim_mjd_data -f 20566 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20566.txt
+./skim_mjd_data -f 20567 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20567.txt
+./skim_mjd_data -f 20568 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20568.txt
+./skim_mjd_data -f 20569 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20569.txt
+./skim_mjd_data -f 20571 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20571.txt
+./skim_mjd_data -f 20572 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20572.txt
+./skim_mjd_data -f 20574 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20574.txt
+./skim_mjd_data -f 20575 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20575.txt
+./skim_mjd_data -f 20576 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20576.txt
+./skim_mjd_data -f 20577 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20577.txt
+./skim_mjd_data -f 20578 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20578.txt
+./skim_mjd_data -f 20580 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20580.txt
+./skim_mjd_data -f 20581 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20581.txt
+./skim_mjd_data -f 20583 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run20583.txt
+./skim_mjd_data -f 21180 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21180.txt
+./skim_mjd_data -f 21181 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21181.txt
+./skim_mjd_data -f 21182 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21182.txt
+./skim_mjd_data -f 21183 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21183.txt
+./skim_mjd_data -f 21184 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21184.txt
+./skim_mjd_data -f 21185 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21185.txt
+./skim_mjd_data -f 21186 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21186.txt
+./skim_mjd_data -f 21187 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21187.txt
+./skim_mjd_data -f 21188 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21188.txt
+./skim_mjd_data -f 21189 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21189.txt
+./skim_mjd_data -f 21190 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21190.txt
+./skim_mjd_data -f 21191 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21191.txt
+./skim_mjd_data -f 21192 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21192.txt
+./skim_mjd_data -f 21193 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21193.txt
+./skim_mjd_data -f 21203 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21203.txt
+./skim_mjd_data -f 21204 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21204.txt
+./skim_mjd_data -f 21205 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21205.txt
+./skim_mjd_data -f 21206 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21206.txt
+./skim_mjd_data -f 21207 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21207.txt
+./skim_mjd_data -f 21208 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21208.txt
+./skim_mjd_data -f 21209 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21209.txt
+./skim_mjd_data -f 21210 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21210.txt
+./skim_mjd_data -f 21211 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21211.txt
+./skim_mjd_data -f 21212 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21212.txt
+./skim_mjd_data -f 21213 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21213.txt
+./skim_mjd_data -f 21214 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21214.txt
+./skim_mjd_data -f 21437 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21437.txt
+./skim_mjd_data -f 21438 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21438.txt
+./skim_mjd_data -f 21439 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21439.txt
+./skim_mjd_data -f 21440 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21440.txt
+./skim_mjd_data -f 21441 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21441.txt
+./skim_mjd_data -f 21442 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21442.txt
+./skim_mjd_data -f 21443 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21443.txt
+./skim_mjd_data -f 21444 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21444.txt
+./skim_mjd_data -f 21445 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21445.txt
+./skim_mjd_data -f 21446 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21446.txt
+./skim_mjd_data -f 21447 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21447.txt
+./skim_mjd_data -f 21448 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21448.txt
+./skim_mjd_data -f 21449 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21449.txt
+./skim_mjd_data -f 21450 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21450.txt
+./skim_mjd_data -f 21451 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21451.txt
+./skim_mjd_data -f 21454 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21454.txt
+./skim_mjd_data -f 21455 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21455.txt
+./skim_mjd_data -f 21456 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21456.txt
+./skim_mjd_data -f 21457 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21457.txt
+./skim_mjd_data -f 21458 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21458.txt
+./skim_mjd_data -f 21459 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21459.txt
+./skim_mjd_data -f 21460 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21460.txt
+./skim_mjd_data -f 21461 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21461.txt
+./skim_mjd_data -f 21462 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21462.txt
+./skim_mjd_data -f 21463 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21463.txt
+./skim_mjd_data -f 21464 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21464.txt
+./skim_mjd_data -f 21465 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21465.txt
+./skim_mjd_data -f 21466 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21466.txt
+./skim_mjd_data -f 21467 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21467.txt
+./skim_mjd_data -f 21802 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21802.txt
+./skim_mjd_data -f 21803 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21803.txt
+./skim_mjd_data -f 21804 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21804.txt
+./skim_mjd_data -f 21805 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21805.txt
+./skim_mjd_data -f 21806 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21806.txt
+./skim_mjd_data -f 21807 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21807.txt
+./skim_mjd_data -f 21808 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21808.txt
+./skim_mjd_data -f 21809 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21809.txt
+./skim_mjd_data -f 21810 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21810.txt
+./skim_mjd_data -f 21811 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21811.txt
+./skim_mjd_data -f 21812 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21812.txt
+./skim_mjd_data -f 21813 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21813.txt
+./skim_mjd_data -f 21814 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21814.txt
+./skim_mjd_data -f 21815 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21815.txt
+./skim_mjd_data -f 21816 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21816.txt
+./skim_mjd_data -f 21817 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21817.txt
+./skim_mjd_data -f 21819 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21819.txt
+./skim_mjd_data -f 21820 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21820.txt
+./skim_mjd_data -f 21821 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21821.txt
+./skim_mjd_data -f 21822 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21822.txt
+./skim_mjd_data -f 21823 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21823.txt
+./skim_mjd_data -f 21824 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21824.txt
+./skim_mjd_data -f 21825 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21825.txt
+./skim_mjd_data -f 21826 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21826.txt
+./skim_mjd_data -f 21827 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21827.txt
+./skim_mjd_data -f 21828 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21828.txt
+./skim_mjd_data -f 21829 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21829.txt
+./skim_mjd_data -f 21830 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21830.txt
+./skim_mjd_data -f 21831 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21831.txt
+./skim_mjd_data -f 21970 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21970.txt
+./skim_mjd_data -f 21971 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21971.txt
+./skim_mjd_data -f 21972 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21972.txt
+./skim_mjd_data -f 21973 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21973.txt
+./skim_mjd_data -f 21974 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21974.txt
+./skim_mjd_data -f 21975 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21975.txt
+./skim_mjd_data -f 21976 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21976.txt
+./skim_mjd_data -f 21977 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21977.txt
+./skim_mjd_data -f 21978 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21978.txt
+./skim_mjd_data -f 21979 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21979.txt
+./skim_mjd_data -f 21980 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21980.txt
+./skim_mjd_data -f 21981 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21981.txt
+./skim_mjd_data -f 21982 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21982.txt
+./skim_mjd_data -f 21983 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21983.txt
+./skim_mjd_data -f 21984 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21984.txt
+./skim_mjd_data -f 21985 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21985.txt
+./skim_mjd_data -f 21986 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21986.txt
+./skim_mjd_data -f 21987 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21987.txt
+./skim_mjd_data -f 21988 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21988.txt
+./skim_mjd_data -f 21989 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21989.txt
+./skim_mjd_data -f 21990 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21990.txt
+./skim_mjd_data -f 21991 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21991.txt
+./skim_mjd_data -f 21992 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21992.txt
+./skim_mjd_data -f 21993 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21993.txt
+./skim_mjd_data -f 21994 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21994.txt
+./skim_mjd_data -f 21995 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21995.txt
+./skim_mjd_data -f 21996 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21996.txt
+./skim_mjd_data -f 21997 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21997.txt
+./skim_mjd_data -f 21998 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run21998.txt
+./skim_mjd_data -f 22282 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22282.txt
+./skim_mjd_data -f 22283 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22283.txt
+./skim_mjd_data -f 22284 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22284.txt
+./skim_mjd_data -f 22285 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22285.txt
+./skim_mjd_data -f 22286 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22286.txt
+./skim_mjd_data -f 22287 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22287.txt
+./skim_mjd_data -f 22288 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22288.txt
+./skim_mjd_data -f 22289 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22289.txt
+./skim_mjd_data -f 22290 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22290.txt
+./skim_mjd_data -f 22291 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22291.txt
+./skim_mjd_data -f 22292 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22292.txt
+./skim_mjd_data -f 22294 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22294.txt
+./skim_mjd_data -f 22295 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22295.txt
+./skim_mjd_data -f 22296 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22296.txt
+./skim_mjd_data -f 22297 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22297.txt
+./skim_mjd_data -f 22298 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22298.txt
+./skim_mjd_data -f 22299 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22299.txt
+./skim_mjd_data -f 22300 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22300.txt
+./skim_mjd_data -f 22301 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22301.txt
+./skim_mjd_data -f 22302 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22302.txt
+./skim_mjd_data -f 22513 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22513.txt
+./skim_mjd_data -f 22514 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22514.txt
+./skim_mjd_data -f 22515 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22515.txt
+./skim_mjd_data -f 22516 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22516.txt
+./skim_mjd_data -f 22517 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22517.txt
+./skim_mjd_data -f 22518 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22518.txt
+./skim_mjd_data -f 22519 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22519.txt
+./skim_mjd_data -f 22520 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22520.txt
+./skim_mjd_data -f 22521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22521.txt
+./skim_mjd_data -f 22522 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22522.txt
+./skim_mjd_data -f 22523 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22523.txt
+./skim_mjd_data -f 22524 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22524.txt
+./skim_mjd_data -f 22525 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22525.txt
+./skim_mjd_data -f 22526 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22526.txt
+./skim_mjd_data -f 22527 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22527.txt
+./skim_mjd_data -f 22528 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22528.txt
+./skim_mjd_data -f 22529 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22529.txt
+./skim_mjd_data -f 22530 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22530.txt
+./skim_mjd_data -f 22531 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22531.txt
+./skim_mjd_data -f 22532 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22532.txt
+./skim_mjd_data -f 22533 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22533.txt
+./skim_mjd_data -f 22534 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22534.txt
+./skim_mjd_data -f 22535 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22535.txt
+./skim_mjd_data -f 22536 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22536.txt
+./skim_mjd_data -f 22537 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22537.txt
+./skim_mjd_data -f 22538 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22538.txt
+./skim_mjd_data -f 22539 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22539.txt
+./skim_mjd_data -f 22540 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22540.txt
+./skim_mjd_data -f 22541 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22541.txt
+./skim_mjd_data -f 22542 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22542.txt
+./skim_mjd_data -f 22543 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22543.txt
+./skim_mjd_data -f 22544 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22544.txt
+./skim_mjd_data -f 22545 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22545.txt
+./skim_mjd_data -f 22546 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22546.txt
+./skim_mjd_data -f 22547 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22547.txt
+./skim_mjd_data -f 22548 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22548.txt
+./skim_mjd_data -f 22549 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22549.txt
+./skim_mjd_data -f 22550 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22550.txt
+./skim_mjd_data -f 22551 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22551.txt
+./skim_mjd_data -f 22552 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22552.txt
+./skim_mjd_data -f 22553 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22553.txt
+./skim_mjd_data -f 22554 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22554.txt
+./skim_mjd_data -f 22555 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22555.txt
+./skim_mjd_data -f 22556 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22556.txt
+./skim_mjd_data -f 22557 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22557.txt
+./skim_mjd_data -f 22558 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22558.txt
+./skim_mjd_data -f 22559 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22559.txt
+./skim_mjd_data -f 22560 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22560.txt
+./skim_mjd_data -f 22561 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22561.txt
+./skim_mjd_data -f 22562 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22562.txt
+./skim_mjd_data -f 22563 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22563.txt
+./skim_mjd_data -f 22564 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22564.txt
+./skim_mjd_data -f 22565 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22565.txt
+./skim_mjd_data -f 22566 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22566.txt
+./skim_mjd_data -f 22568 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22568.txt
+./skim_mjd_data -f 22569 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22569.txt
+./skim_mjd_data -f 22570 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22570.txt
+./skim_mjd_data -f 22571 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22571.txt
+./skim_mjd_data -f 22572 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22572.txt
+./skim_mjd_data -f 22573 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22573.txt
+./skim_mjd_data -f 22574 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22574.txt
+./skim_mjd_data -f 22575 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22575.txt
+./skim_mjd_data -f 22576 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22576.txt
+./skim_mjd_data -f 22577 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22577.txt
+./skim_mjd_data -f 22578 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22578.txt
+./skim_mjd_data -f 22579 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22579.txt
+./skim_mjd_data -f 22580 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22580.txt
+./skim_mjd_data -f 22581 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22581.txt
+./skim_mjd_data -f 22582 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22582.txt
+./skim_mjd_data -f 22583 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22583.txt
+./skim_mjd_data -f 22584 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22584.txt
+./skim_mjd_data -f 22585 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22585.txt
+./skim_mjd_data -f 22586 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22586.txt
+./skim_mjd_data -f 22587 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22587.txt
+./skim_mjd_data -f 22588 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22588.txt
+./skim_mjd_data -f 22589 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22589.txt
+./skim_mjd_data -f 22590 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22590.txt
+./skim_mjd_data -f 22591 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22591.txt
+./skim_mjd_data -f 22592 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22592.txt
+./skim_mjd_data -f 22593 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22593.txt
+./skim_mjd_data -f 22594 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22594.txt
+./skim_mjd_data -f 22595 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22595.txt
+./skim_mjd_data -f 22596 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22596.txt
+./skim_mjd_data -f 22597 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22597.txt
+./skim_mjd_data -f 22598 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22598.txt
+./skim_mjd_data -f 22599 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22599.txt
+./skim_mjd_data -f 22600 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22600.txt
+./skim_mjd_data -f 22601 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22601.txt
+./skim_mjd_data -f 22602 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22602.txt
+./skim_mjd_data -f 22603 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22603.txt
+./skim_mjd_data -f 22604 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22604.txt
+./skim_mjd_data -f 22605 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22605.txt
+./skim_mjd_data -f 22606 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22606.txt
+./skim_mjd_data -f 22607 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22607.txt
+./skim_mjd_data -f 22608 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22608.txt
+./skim_mjd_data -f 22609 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22609.txt
+./skim_mjd_data -f 22610 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22610.txt
+./skim_mjd_data -f 22611 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22611.txt
+./skim_mjd_data -f 22612 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22612.txt
+./skim_mjd_data -f 22613 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22613.txt
+./skim_mjd_data -f 22614 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22614.txt
+./skim_mjd_data -f 22615 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22615.txt
+./skim_mjd_data -f 22616 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22616.txt
+./skim_mjd_data -f 22617 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22617.txt
+./skim_mjd_data -f 22618 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22618.txt
+./skim_mjd_data -f 22619 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22619.txt
+./skim_mjd_data -f 22620 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22620.txt
+./skim_mjd_data -f 22621 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22621.txt
+./skim_mjd_data -f 22622 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22622.txt
+./skim_mjd_data -f 22623 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22623.txt
+./skim_mjd_data -f 22624 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22624.txt
+./skim_mjd_data -f 22625 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22625.txt
+./skim_mjd_data -f 22626 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22626.txt
+./skim_mjd_data -f 22627 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22627.txt
+./skim_mjd_data -f 22628 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22628.txt
+./skim_mjd_data -f 22629 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22629.txt
+./skim_mjd_data -f 22630 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22630.txt
+./skim_mjd_data -f 22631 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22631.txt
+./skim_mjd_data -f 22632 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22632.txt
+./skim_mjd_data -f 22633 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22633.txt
+./skim_mjd_data -f 22634 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22634.txt
+./skim_mjd_data -f 22635 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22635.txt
+./skim_mjd_data -f 22842 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22842.txt
+./skim_mjd_data -f 22843 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22843.txt
+./skim_mjd_data -f 22844 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22844.txt
+./skim_mjd_data -f 22845 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22845.txt
+./skim_mjd_data -f 22846 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22846.txt
+./skim_mjd_data -f 22847 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22847.txt
+./skim_mjd_data -f 22848 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22848.txt
+./skim_mjd_data -f 22849 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22849.txt
+./skim_mjd_data -f 22850 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22850.txt
+./skim_mjd_data -f 22851 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22851.txt
+./skim_mjd_data -f 22854 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22854.txt
+./skim_mjd_data -f 22855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22855.txt
+./skim_mjd_data -f 22856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22856.txt
+./skim_mjd_data -f 22857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22857.txt
+./skim_mjd_data -f 22858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22858.txt
+./skim_mjd_data -f 22859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22859.txt
+./skim_mjd_data -f 22860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22860.txt
+./skim_mjd_data -f 22861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22861.txt
+./skim_mjd_data -f 22862 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22862.txt
+./skim_mjd_data -f 22863 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22863.txt
+./skim_mjd_data -f 22864 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22864.txt
+./skim_mjd_data -f 22865 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run22865.txt
+./skim_mjd_data -f 23482 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23482.txt
+./skim_mjd_data -f 23483 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23483.txt
+./skim_mjd_data -f 23484 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23484.txt
+./skim_mjd_data -f 23485 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23485.txt
+./skim_mjd_data -f 23486 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23486.txt
+./skim_mjd_data -f 23487 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23487.txt
+./skim_mjd_data -f 23488 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23488.txt
+./skim_mjd_data -f 23489 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23489.txt
+./skim_mjd_data -f 23490 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23490.txt
+./skim_mjd_data -f 23491 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23491.txt
+./skim_mjd_data -f 23492 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23492.txt
+./skim_mjd_data -f 23493 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23493.txt
+./skim_mjd_data -f 23494 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23494.txt
+./skim_mjd_data -f 23495 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23495.txt
+./skim_mjd_data -f 23496 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23496.txt
+./skim_mjd_data -f 23498 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23498.txt
+./skim_mjd_data -f 23499 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23499.txt
+./skim_mjd_data -f 23500 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23500.txt
+./skim_mjd_data -f 23501 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23501.txt
+./skim_mjd_data -f 23502 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23502.txt
+./skim_mjd_data -f 23503 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23503.txt
+./skim_mjd_data -f 23504 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23504.txt
+./skim_mjd_data -f 23505 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23505.txt
+./skim_mjd_data -f 23506 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23506.txt
+./skim_mjd_data -f 23507 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23507.txt
+./skim_mjd_data -f 23508 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23508.txt
+./skim_mjd_data -f 23509 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23509.txt
+./skim_mjd_data -f 23887 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23887.txt
+./skim_mjd_data -f 23889 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23889.txt
+./skim_mjd_data -f 23891 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23891.txt
+./skim_mjd_data -f 23892 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23892.txt
+./skim_mjd_data -f 23893 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23893.txt
+./skim_mjd_data -f 23894 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23894.txt
+./skim_mjd_data -f 23895 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23895.txt
+./skim_mjd_data -f 23896 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23896.txt
+./skim_mjd_data -f 23897 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23897.txt
+./skim_mjd_data -f 23898 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23898.txt
+./skim_mjd_data -f 23899 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23899.txt
+./skim_mjd_data -f 23900 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23900.txt
+./skim_mjd_data -f 23901 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23901.txt
+./skim_mjd_data -f 23902 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23902.txt
+./skim_mjd_data -f 23903 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23903.txt
+./skim_mjd_data -f 23904 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23904.txt
+./skim_mjd_data -f 23905 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23905.txt
+./skim_mjd_data -f 23906 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23906.txt
+./skim_mjd_data -f 23907 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23907.txt
+./skim_mjd_data -f 23909 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23909.txt
+./skim_mjd_data -f 23910 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23910.txt
+./skim_mjd_data -f 23911 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23911.txt
+./skim_mjd_data -f 23912 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23912.txt
+./skim_mjd_data -f 23913 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23913.txt
+./skim_mjd_data -f 23914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23914.txt
+./skim_mjd_data -f 23915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23915.txt
+./skim_mjd_data -f 23916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23916.txt
+./skim_mjd_data -f 23917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23917.txt
+./skim_mjd_data -f 23918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23918.txt
+./skim_mjd_data -f 23919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23919.txt
+./skim_mjd_data -f 23920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23920.txt
+./skim_mjd_data -f 23921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23921.txt
+./skim_mjd_data -f 23922 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23922.txt
+./skim_mjd_data -f 23923 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23923.txt
+./skim_mjd_data -f 23924 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23924.txt
+./skim_mjd_data -f 23925 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23925.txt
+./skim_mjd_data -f 23926 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23926.txt
+./skim_mjd_data -f 23927 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23927.txt
+./skim_mjd_data -f 23928 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23928.txt
+./skim_mjd_data -f 23960 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23960.txt
+./skim_mjd_data -f 23961 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23961.txt
+./skim_mjd_data -f 23962 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23962.txt
+./skim_mjd_data -f 23963 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23963.txt
+./skim_mjd_data -f 23964 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23964.txt
+./skim_mjd_data -f 23965 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23965.txt
+./skim_mjd_data -f 23966 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23966.txt
+./skim_mjd_data -f 23967 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23967.txt
+./skim_mjd_data -f 23968 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23968.txt
+./skim_mjd_data -f 23969 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23969.txt
+./skim_mjd_data -f 23970 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run23970.txt
+./skim_mjd_data -f 24305 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24305.txt
+./skim_mjd_data -f 24306 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24306.txt
+./skim_mjd_data -f 24307 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24307.txt
+./skim_mjd_data -f 24308 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24308.txt
+./skim_mjd_data -f 24309 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24309.txt
+./skim_mjd_data -f 24310 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24310.txt
+./skim_mjd_data -f 24311 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24311.txt
+./skim_mjd_data -f 24312 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24312.txt
+./skim_mjd_data -f 24313 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24313.txt
+./skim_mjd_data -f 24314 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24314.txt
+./skim_mjd_data -f 24315 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24315.txt
+./skim_mjd_data -f 24316 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24316.txt
+./skim_mjd_data -f 24317 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24317.txt
+./skim_mjd_data -f 24318 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24318.txt
+./skim_mjd_data -f 24322 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24322.txt
+./skim_mjd_data -f 24323 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24323.txt
+./skim_mjd_data -f 24324 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24324.txt
+./skim_mjd_data -f 24325 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24325.txt
+./skim_mjd_data -f 24326 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24326.txt
+./skim_mjd_data -f 24327 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24327.txt
+./skim_mjd_data -f 24328 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24328.txt
+./skim_mjd_data -f 24329 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24329.txt
+./skim_mjd_data -f 24330 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24330.txt
+./skim_mjd_data -f 24331 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24331.txt
+./skim_mjd_data -f 24332 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24332.txt
+./skim_mjd_data -f 24539 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24539.txt
+./skim_mjd_data -f 24540 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24540.txt
+./skim_mjd_data -f 24541 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24541.txt
+./skim_mjd_data -f 24542 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24542.txt
+./skim_mjd_data -f 24543 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24543.txt
+./skim_mjd_data -f 24544 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24544.txt
+./skim_mjd_data -f 24545 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24545.txt
+./skim_mjd_data -f 24546 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24546.txt
+./skim_mjd_data -f 24547 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24547.txt
+./skim_mjd_data -f 24548 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24548.txt
+./skim_mjd_data -f 24549 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24549.txt
+./skim_mjd_data -f 24550 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24550.txt
+./skim_mjd_data -f 24551 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24551.txt
+./skim_mjd_data -f 24552 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24552.txt
+./skim_mjd_data -f 24556 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24556.txt
+./skim_mjd_data -f 24557 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24557.txt
+./skim_mjd_data -f 24558 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24558.txt
+./skim_mjd_data -f 24559 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24559.txt
+./skim_mjd_data -f 24560 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24560.txt
+./skim_mjd_data -f 24561 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24561.txt
+./skim_mjd_data -f 24562 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24562.txt
+./skim_mjd_data -f 24563 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24563.txt
+./skim_mjd_data -f 24564 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24564.txt
+./skim_mjd_data -f 24565 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24565.txt
+./skim_mjd_data -f 24566 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24566.txt
+./skim_mjd_data -f 24761 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24761.txt
+./skim_mjd_data -f 24762 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24762.txt
+./skim_mjd_data -f 24763 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24763.txt
+./skim_mjd_data -f 24764 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24764.txt
+./skim_mjd_data -f 24765 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24765.txt
+./skim_mjd_data -f 24766 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24766.txt
+./skim_mjd_data -f 24767 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24767.txt
+./skim_mjd_data -f 24768 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24768.txt
+./skim_mjd_data -f 24769 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24769.txt
+./skim_mjd_data -f 24770 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24770.txt
+./skim_mjd_data -f 24771 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24771.txt
+./skim_mjd_data -f 24772 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24772.txt
+./skim_mjd_data -f 24773 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24773.txt
+./skim_mjd_data -f 24774 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24774.txt
+./skim_mjd_data -f 24775 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24775.txt
+./skim_mjd_data -f 24779 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24779.txt
+./skim_mjd_data -f 24780 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24780.txt
+./skim_mjd_data -f 24781 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24781.txt
+./skim_mjd_data -f 24782 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24782.txt
+./skim_mjd_data -f 24783 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24783.txt
+./skim_mjd_data -f 24784 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24784.txt
+./skim_mjd_data -f 24785 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24785.txt
+./skim_mjd_data -f 24786 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24786.txt
+./skim_mjd_data -f 24787 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24787.txt
+./skim_mjd_data -f 24788 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24788.txt
+./skim_mjd_data -f 24789 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24789.txt
+./skim_mjd_data -f 24971 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24971.txt
+./skim_mjd_data -f 24972 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24972.txt
+./skim_mjd_data -f 24973 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24973.txt
+./skim_mjd_data -f 24974 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24974.txt
+./skim_mjd_data -f 24975 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24975.txt
+./skim_mjd_data -f 24976 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24976.txt
+./skim_mjd_data -f 24977 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24977.txt
+./skim_mjd_data -f 24978 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24978.txt
+./skim_mjd_data -f 24979 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24979.txt
+./skim_mjd_data -f 24980 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24980.txt
+./skim_mjd_data -f 24981 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24981.txt
+./skim_mjd_data -f 24982 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24982.txt
+./skim_mjd_data -f 24983 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24983.txt
+./skim_mjd_data -f 24984 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24984.txt
+./skim_mjd_data -f 24988 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24988.txt
+./skim_mjd_data -f 24989 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24989.txt
+./skim_mjd_data -f 24990 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24990.txt
+./skim_mjd_data -f 24991 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24991.txt
+./skim_mjd_data -f 24992 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24992.txt
+./skim_mjd_data -f 24993 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24993.txt
+./skim_mjd_data -f 24994 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24994.txt
+./skim_mjd_data -f 24995 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24995.txt
+./skim_mjd_data -f 24996 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24996.txt
+./skim_mjd_data -f 24997 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24997.txt
+./skim_mjd_data -f 24998 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run24998.txt
+./skim_mjd_data -f 25248 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25248.txt
+./skim_mjd_data -f 25249 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25249.txt
+./skim_mjd_data -f 25250 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25250.txt
+./skim_mjd_data -f 25251 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25251.txt
+./skim_mjd_data -f 25252 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25252.txt
+./skim_mjd_data -f 25253 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25253.txt
+./skim_mjd_data -f 25254 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25254.txt
+./skim_mjd_data -f 25255 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25255.txt
+./skim_mjd_data -f 25256 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25256.txt
+./skim_mjd_data -f 25257 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25257.txt
+./skim_mjd_data -f 25258 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25258.txt
+./skim_mjd_data -f 25259 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25259.txt
+./skim_mjd_data -f 25260 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25260.txt
+./skim_mjd_data -f 25261 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25261.txt
+./skim_mjd_data -f 25265 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25265.txt
+./skim_mjd_data -f 25266 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25266.txt
+./skim_mjd_data -f 25267 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25267.txt
+./skim_mjd_data -f 25268 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25268.txt
+./skim_mjd_data -f 25269 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25269.txt
+./skim_mjd_data -f 25270 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25270.txt
+./skim_mjd_data -f 25271 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25271.txt
+./skim_mjd_data -f 25272 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25272.txt
+./skim_mjd_data -f 25273 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25273.txt
+./skim_mjd_data -f 25274 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25274.txt
+./skim_mjd_data -f 25275 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25275.txt
+./skim_mjd_data -f 25479 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25479.txt
+./skim_mjd_data -f 25480 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25480.txt
+./skim_mjd_data -f 25481 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25481.txt
+./skim_mjd_data -f 25482 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25482.txt
+./skim_mjd_data -f 25483 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25483.txt
+./skim_mjd_data -f 25484 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25484.txt
+./skim_mjd_data -f 25485 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25485.txt
+./skim_mjd_data -f 25486 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25486.txt
+./skim_mjd_data -f 25487 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25487.txt
+./skim_mjd_data -f 25488 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25488.txt
+./skim_mjd_data -f 25489 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25489.txt
+./skim_mjd_data -f 25490 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25490.txt
+./skim_mjd_data -f 25491 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25491.txt
+./skim_mjd_data -f 25492 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25492.txt
+./skim_mjd_data -f 25496 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25496.txt
+./skim_mjd_data -f 25497 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25497.txt
+./skim_mjd_data -f 25498 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25498.txt
+./skim_mjd_data -f 25499 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25499.txt
+./skim_mjd_data -f 25500 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25500.txt
+./skim_mjd_data -f 25501 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25501.txt
+./skim_mjd_data -f 25502 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25502.txt
+./skim_mjd_data -f 25503 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25503.txt
+./skim_mjd_data -f 25504 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25504.txt
+./skim_mjd_data -f 25505 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25505.txt
+./skim_mjd_data -f 25506 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds5-run25506.txt
+./skim_mjd_data -f 60000791 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000791.txt
+./skim_mjd_data -f 60000792 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000792.txt
+./skim_mjd_data -f 60000793 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000793.txt
+./skim_mjd_data -f 60000794 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000794.txt
+./skim_mjd_data -f 60000795 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000795.txt
+./skim_mjd_data -f 60000796 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000796.txt
+./skim_mjd_data -f 60000797 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000797.txt
+./skim_mjd_data -f 60000798 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000798.txt
+./skim_mjd_data -f 60000799 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000799.txt
+./skim_mjd_data -f 60000800 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60000800.txt
+./skim_mjd_data -f 60001014 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001014.txt
+./skim_mjd_data -f 60001015 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001015.txt
+./skim_mjd_data -f 60001016 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001016.txt
+./skim_mjd_data -f 60001017 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001017.txt
+./skim_mjd_data -f 60001018 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001018.txt
+./skim_mjd_data -f 60001019 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001019.txt
+./skim_mjd_data -f 60001020 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001020.txt
+./skim_mjd_data -f 60001021 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001021.txt
+./skim_mjd_data -f 60001022 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001022.txt
+./skim_mjd_data -f 60001023 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001023.txt
+./skim_mjd_data -f 60001024 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001024.txt
+./skim_mjd_data -f 60001025 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001025.txt
+./skim_mjd_data -f 60001026 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001026.txt
+./skim_mjd_data -f 60001027 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001027.txt
+./skim_mjd_data -f 60001028 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001028.txt
+./skim_mjd_data -f 60001148 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001148.txt
+./skim_mjd_data -f 60001149 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001149.txt
+./skim_mjd_data -f 60001150 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001150.txt
+./skim_mjd_data -f 60001151 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001151.txt
+./skim_mjd_data -f 60001152 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001152.txt
+./skim_mjd_data -f 60001153 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001153.txt
+./skim_mjd_data -f 60001154 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001154.txt
+./skim_mjd_data -f 60001155 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001155.txt
+./skim_mjd_data -f 60001156 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001156.txt
+./skim_mjd_data -f 60001157 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001157.txt
+./skim_mjd_data -f 60001158 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001158.txt
+./skim_mjd_data -f 60001159 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001159.txt
+./skim_mjd_data -f 60001160 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001160.txt
+./skim_mjd_data -f 60001161 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001161.txt
+./skim_mjd_data -f 60001207 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001207.txt
+./skim_mjd_data -f 60001208 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001208.txt
+./skim_mjd_data -f 60001209 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001209.txt
+./skim_mjd_data -f 60001210 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001210.txt
+./skim_mjd_data -f 60001211 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001211.txt
+./skim_mjd_data -f 60001212 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001212.txt
+./skim_mjd_data -f 60001213 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001213.txt
+./skim_mjd_data -f 60001214 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001214.txt
+./skim_mjd_data -f 60001215 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001215.txt
+./skim_mjd_data -f 60001216 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001216.txt
+./skim_mjd_data -f 60001217 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001217.txt
+./skim_mjd_data -f 60001218 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001218.txt
+./skim_mjd_data -f 60001219 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001219.txt
+./skim_mjd_data -f 60001220 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001220.txt
+./skim_mjd_data -f 60001221 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001221.txt
+./skim_mjd_data -f 60001222 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001222.txt
+./skim_mjd_data -f 60001223 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001223.txt
+./skim_mjd_data -f 60001224 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001224.txt
+./skim_mjd_data -f 60001225 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001225.txt
+./skim_mjd_data -f 60001226 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001226.txt
+./skim_mjd_data -f 60001227 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001227.txt
+./skim_mjd_data -f 60001228 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001228.txt
+./skim_mjd_data -f 60001229 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001229.txt
+./skim_mjd_data -f 60001230 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001230.txt
+./skim_mjd_data -f 60001231 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001231.txt
+./skim_mjd_data -f 60001232 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001232.txt
+./skim_mjd_data -f 60001233 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001233.txt
+./skim_mjd_data -f 60001234 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001234.txt
+./skim_mjd_data -f 60001235 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001235.txt
+./skim_mjd_data -f 60001236 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001236.txt
+./skim_mjd_data -f 60001237 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001237.txt
+./skim_mjd_data -f 60001352 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001352.txt
+./skim_mjd_data -f 60001353 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001353.txt
+./skim_mjd_data -f 60001354 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001354.txt
+./skim_mjd_data -f 60001355 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001355.txt
+./skim_mjd_data -f 60001356 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001356.txt
+./skim_mjd_data -f 60001357 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001357.txt
+./skim_mjd_data -f 60001358 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001358.txt
+./skim_mjd_data -f 60001359 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001359.txt
+./skim_mjd_data -f 60001360 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001360.txt
+./skim_mjd_data -f 60001361 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001361.txt
+./skim_mjd_data -f 60001362 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001362.txt
+./skim_mjd_data -f 60001363 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001363.txt
+./skim_mjd_data -f 60001364 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001364.txt
+./skim_mjd_data -f 60001365 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001365.txt
+./skim_mjd_data -f 60001446 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001446.txt
+./skim_mjd_data -f 60001447 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001447.txt
+./skim_mjd_data -f 60001448 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001448.txt
+./skim_mjd_data -f 60001449 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001449.txt
+./skim_mjd_data -f 60001450 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001450.txt
+./skim_mjd_data -f 60001451 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001451.txt
+./skim_mjd_data -f 60001452 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001452.txt
+./skim_mjd_data -f 60001453 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001453.txt
+./skim_mjd_data -f 60001454 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001454.txt
+./skim_mjd_data -f 60001455 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001455.txt
+./skim_mjd_data -f 60001456 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001456.txt
+./skim_mjd_data -f 60001457 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001457.txt
+./skim_mjd_data -f 60001458 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001458.txt
+./skim_mjd_data -f 60001459 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001459.txt
+./skim_mjd_data -f 60001460 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001460.txt
+./skim_mjd_data -f 60001461 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001461.txt
+./skim_mjd_data -f 60001508 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001508.txt
+./skim_mjd_data -f 60001509 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001509.txt
+./skim_mjd_data -f 60001510 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001510.txt
+./skim_mjd_data -f 60001511 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001511.txt
+./skim_mjd_data -f 60001512 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001512.txt
+./skim_mjd_data -f 60001513 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001513.txt
+./skim_mjd_data -f 60001514 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001514.txt
+./skim_mjd_data -f 60001515 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001515.txt
+./skim_mjd_data -f 60001516 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001516.txt
+./skim_mjd_data -f 60001517 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001517.txt
+./skim_mjd_data -f 60001518 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001518.txt
+./skim_mjd_data -f 60001519 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001519.txt
+./skim_mjd_data -f 60001520 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001520.txt
+./skim_mjd_data -f 60001521 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001521.txt
+./skim_mjd_data -f 60001578 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001578.txt
+./skim_mjd_data -f 60001579 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001579.txt
+./skim_mjd_data -f 60001580 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001580.txt
+./skim_mjd_data -f 60001581 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001581.txt
+./skim_mjd_data -f 60001582 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001582.txt
+./skim_mjd_data -f 60001583 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001583.txt
+./skim_mjd_data -f 60001584 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001584.txt
+./skim_mjd_data -f 60001585 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001585.txt
+./skim_mjd_data -f 60001586 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001586.txt
+./skim_mjd_data -f 60001587 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001587.txt
+./skim_mjd_data -f 60001588 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001588.txt
+./skim_mjd_data -f 60001589 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001589.txt
+./skim_mjd_data -f 60001590 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001590.txt
+./skim_mjd_data -f 60001591 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001591.txt
+./skim_mjd_data -f 60001592 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001592.txt
+./skim_mjd_data -f 60001720 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001720.txt
+./skim_mjd_data -f 60001721 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001721.txt
+./skim_mjd_data -f 60001722 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001722.txt
+./skim_mjd_data -f 60001723 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001723.txt
+./skim_mjd_data -f 60001724 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001724.txt
+./skim_mjd_data -f 60001725 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001725.txt
+./skim_mjd_data -f 60001726 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001726.txt
+./skim_mjd_data -f 60001727 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001727.txt
+./skim_mjd_data -f 60001728 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001728.txt
+./skim_mjd_data -f 60001729 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001729.txt
+./skim_mjd_data -f 60001730 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001730.txt
+./skim_mjd_data -f 60001731 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001731.txt
+./skim_mjd_data -f 60001732 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001732.txt
+./skim_mjd_data -f 60001855 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001855.txt
+./skim_mjd_data -f 60001856 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001856.txt
+./skim_mjd_data -f 60001857 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001857.txt
+./skim_mjd_data -f 60001858 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001858.txt
+./skim_mjd_data -f 60001859 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001859.txt
+./skim_mjd_data -f 60001860 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001860.txt
+./skim_mjd_data -f 60001861 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001861.txt
+./skim_mjd_data -f 60001862 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001862.txt
+./skim_mjd_data -f 60001863 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001863.txt
+./skim_mjd_data -f 60001864 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001864.txt
+./skim_mjd_data -f 60001865 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001865.txt
+./skim_mjd_data -f 60001866 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001866.txt
+./skim_mjd_data -f 60001867 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001867.txt
+./skim_mjd_data -f 60001868 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001868.txt
+./skim_mjd_data -f 60001914 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001914.txt
+./skim_mjd_data -f 60001915 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001915.txt
+./skim_mjd_data -f 60001916 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001916.txt
+./skim_mjd_data -f 60001917 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001917.txt
+./skim_mjd_data -f 60001918 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001918.txt
+./skim_mjd_data -f 60001919 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001919.txt
+./skim_mjd_data -f 60001920 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001920.txt
+./skim_mjd_data -f 60001921 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001921.txt
+./skim_mjd_data -f 60001922 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001922.txt
+./skim_mjd_data -f 60001923 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001923.txt
+./skim_mjd_data -f 60001924 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001924.txt
+./skim_mjd_data -f 60001925 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001925.txt
+./skim_mjd_data -f 60001926 -l -g -d -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/cal/skim >& ./logs/skim-ds4-run60001926.txt

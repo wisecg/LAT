@@ -28,12 +28,12 @@
 
 using namespace std;
 
-void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc);
+void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc, bool useDoubles);
 void TCutSkimmer(string theCut, int dsNum);
 void diagnostic();
 void LoadNLCParameters(int ddID, int run, const MGVDigitizerData* dd, bool useTwoPass=true);
 
-// stuff for NLC.  made 'em global because fk it.
+// stuff for NLC.
 map<int, MGWFNonLinearityCorrectionMap*> NLCMaps;
 map<int, MGWFNonLinearityCorrectionMap*> NLCMaps2;
 string NLCMapDir = "/global/project/projectdirs/majorana/data/production/NLCDB";
@@ -50,25 +50,24 @@ int main(int argc, char** argv)
         << "       [-c : use calibration TCut]\n"
         << "       [-x : don't apply a data cleaning TCut]\n"
         << "       [-l : long calibration mode TCut]\n"
-        << "       [-n : do the Radford 2-pass NLC correction]\n";
+        << "       [-n : do the Radford 2-pass NLC correction]\n"
+        << "       [-d : use doubles in channel branches]\n";
    return 1;
   }
   string inPath=".", outPath=".";
   int dsNum=-1, subNum=0, run=0;
-  bool sw=0, tcs=0, fil=0, cal=0, longCal=0, nlc=0, noCut=0;
+  bool sw=0, tcs=0, fil=0, cal=0, longCal=0, nlc=0, noCut=0, useDoubles=0;
   vector<string> opt(argv, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
     if (opt[i] == "-s") { sw=0; tcs=1; }
     if (opt[i] == "-f") { sw=1; fil=1; dsNum = stoi(opt[i+1]); run = stoi(opt[i+2]); }
     if (opt[i] == "-r") { sw=1; dsNum = stoi(opt[i+1]); subNum = stoi(opt[i+2]); }
     if (opt[i] == "-p") { inPath = opt[i+1]; outPath = opt[i+2]; }
-    if (opt[i] == "-c") { cal=1; }
-    if (opt[i] == "-l") { longCal=1; }
-    if (opt[i] == "-x") { noCut=1; }
-    if (opt[i] == "-n") {
-     cout << "Performing Pass-2 Nonlinearity Correction ...\n";
-     nlc=1;
-    }
+    if (opt[i] == "-c") { cal=1;         cout << "Using calibration TCut ...\n"; }
+    if (opt[i] == "-l") { longCal=1;     cout << "Using Long cal TCut ...\n"; }
+    if (opt[i] == "-x") { noCut=1;       cout << "Not using any TCut ...\n"; }
+    if (opt[i] == "-d") { useDoubles=1;  cout << "Using doubles in channel branches ...\n"; }
+    if (opt[i] == "-n") { nlc=1;         cout << "Performing Pass-2 Nonlinearity Correction ...\n"; }
   }
 
   // 0nBB DS0-5 PRL standard bkg data cut (for reference)
@@ -78,7 +77,7 @@ int main(int argc, char** argv)
   string theCut = "!(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0 && isGood && !muVeto && mH==1 && gain==0 && trapENFCal > 0.7";
 
   // DS0-5 calibration data cut
-  if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && (mH==1 || mH==2) && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
+  if (cal) theCut = "trapENFCal > 0.7 && trapENFCal < 250 && gain==0 && isGood && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
 
   // Long calibration run cut
   if (longCal) theCut = "trapENFCal > 0.7 && isGood && gain==0 && !muVeto && !(C==1&&isLNFill1) && !(C==2&&isLNFill2) && C!=0 && P!=0 && D!=0";
@@ -103,11 +102,11 @@ int main(int argc, char** argv)
   // diagnostic();
   cout << "Scanning DS-" << dsNum << endl;
   if (tcs) TCutSkimmer(theCut, dsNum);
-  if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile, nlc);
+  if (!tcs && sw) SkimWaveforms(theCut, inFile, outFile, nlc, useDoubles);
 }
 
 
-void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
+void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc, bool useDoubles)
 {
  // Take an input skim file, copy it with a waveform branch appended.
  // NOTE: The copied vectors are NOT resized to contain only entries passing cuts.
@@ -147,10 +146,16 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
 
  // Add waveforms to the cut tree, keeping only one run in memory at a time
  int run=0, iEvent=0;
- vector<double> *channel=0;
  cutTree->SetBranchAddress("run",&run);
  cutTree->SetBranchAddress("iEvent",&iEvent);
- cutTree->SetBranchAddress("channel",&channel);
+
+ // we do this so we can print channel for diagnostics
+ vector<double> *channelD=0;
+ vector<int> *channel=0;
+ if (useDoubles)
+  cutTree->SetBranchAddress("channel",&channelD);
+ else
+  cutTree->SetBranchAddress("channel",&channel);
 
  vector<MGTWaveform*> *waveVector=0;
  stack<MGTWaveform*> usedPointers;
@@ -165,7 +170,18 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
  TTreeReaderValue<TClonesArray> dd(bReader,"fDigitizerData");
  TTreeReaderValue<TClonesArray> wfBranch(bReader,"fWaveforms");
  TTreeReaderValue<TClonesArray> wfAuxBranch(bReader,"fAuxWaveforms");
- TTreeReaderArray<double> wfChan(gReader,"channel");
+ // TTreeReaderArray<double> wfChan(gReader,"channel"); // this breaks when we have type int
+
+ // This is the part where we have to get int/double right
+ ROOT::Internal::TTreeReaderValueBase *wfChanIn = 0;
+ if(!useDoubles)
+   wfChanIn = new TTreeReaderValue<vector<unsigned int>>(gReader, "channel");
+ else
+   wfChanIn = new TTreeReaderValue<vector<double>>(gReader, "channel");
+
+
+
+ // Loop over the cut tree
  int prevRun=0;
  bool isMS=0, printMS=0;
  cout << "Adding waveforms to the cut tree ...\n";
@@ -203,8 +219,20 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
    // This preserves the 1-1 matching between the skim vectors and the new MGTWaveform vector
    int numPass = cutTree->Draw("channel","","GOFF",1,i);
    double *channelList = cutTree->GetV1();
-   vector<double> chanVec;
-   for (int j = 0; j < numPass; j++) chanVec.push_back(channelList[j]);
+   vector<int> chanVec;
+   for (int j = 0; j < numPass; j++) chanVec.push_back(int(channelList[j]));
+
+   // Get channel list for event as vector<int>.
+   // i hate you so much, doubles check
+   vector<int> wfChan;
+   if(useDoubles) {
+     vector<double>& chList = **static_cast<TTreeReaderValue< vector<double> >* >(wfChanIn);
+     for(double chan : chList) wfChan.push_back(int(chan));
+   }
+   else {
+     vector<unsigned int>& chList = **static_cast<TTreeReaderValue< vector<unsigned int> >* >(wfChanIn);
+     for(unsigned int chan : chList) wfChan.push_back(int(chan));
+   }
 
    // Fill the waveform branch
    for (int iWF = 0; iWF < nWF; iWF++)
@@ -262,7 +290,7 @@ void SkimWaveforms(string theCut, string inFile, string outFile, bool nlc)
          usedPointers.pop();
        }
        *(waveVector->back()) = *wave;
-       // cout << Form("   wave -> iWF %i  channel %.0f\n", iWF,wfChan[iWF]);
+       // cout << Form("   wave -> iWF %i  channel %.0f\n", iWF,(*wfChan)[iWF]);
      }
    }
    waveBranch->Fill();

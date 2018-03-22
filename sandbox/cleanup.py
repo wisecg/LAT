@@ -7,7 +7,8 @@ def main():
 
     # cleanUpLogs()
     # print("heyy")
-    checkFiles()
+    # checkFiles()
+    checkWaveSkim()
 
 def cleanUpLogs():
 
@@ -93,6 +94,34 @@ def checkFiles():
                     # print(b,nCh,val)
 
         f.Close()
+        # return
+
+
+def checkWaveSkim():
+    from ROOT import TFile, TTree
+
+    fileList = [
+        "%s/waveSkimDS5_112.root" % dsi.waveDir,
+        "../waveSkimDS5_112.root",
+        "%s/waveSkimDS5_113.root" % dsi.waveDir,
+        "../waveSkimDS5_113.root"
+    ]
+
+    for f in fileList:
+        if not os.path.isfile(f):
+            print("File not found, continuing:",f)
+
+        fName = f.split("/")[-1]
+        tf = TFile(f)
+        tt = tf.Get("skimTree")
+        print(fName,tt.GetEntries())
+
+        for iEnt in range(10):
+            tt.GetEntry(iEnt)
+            nHit = tt.channel.size()
+            nWFs = tt.MGTWaveforms.size()
+            print(nHit, nWFs)
+
         # return
 
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+""" A collection of 'useful' LAT routines.
+    C. Wiseman, B. Zhu
+"""
 import sys, pywt, random, os, glob
 import numpy as np
 import tinydb as db
@@ -8,11 +11,6 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy import signal as sg
 import scipy.special as sp
 # from pysiggen import Detector
-"""
-A collection of 'useful' crap.
-C. Wiseman, B. Zhu
-v1. 20 March 2017
-"""
 
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 homePath = os.path.expanduser('~')
