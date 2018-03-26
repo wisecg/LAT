@@ -38,14 +38,17 @@ def main():
 
 
 def compareSim():
+    plt.close(fig)
+
     inDir = os.environ['LATDIR']+'/data'
     # dfSig0 = pd.read_hdf('{}/SimPSA_sig0.h5'.format(inDir))
-    dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_low.h5'.format(inDir))
-    dfSig2 = pd.read_hdf('{}/SimPSA_sig2.h5'.format(inDir))
-    dfSig2['Distance'] = dfSig2['R']*dfSig2['R'] + dfSig2['Z']+dfSig2['Z']
+    dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_log.h5'.format(inDir))
+    # dfSig2 = pd.read_hdf('{}/SimPSA_sig2.h5'.format(inDir))
+    # dfSig2['Distance'] = dfSig2['R']*dfSig2['R'] + dfSig2['Z']+dfSig2['Z']
     dfSig2_low['Distance'] = dfSig2_low['R']*dfSig2_low['R'] + dfSig2_low['Z']+dfSig2_low['Z']
-    dfSig2_low = dfSig2_low.append(dfSig2, ignore_index=True)
-    dfCut = dfSig2_low.loc[dfSig2_low['Amp'] < 8]
+    # dfSig2_low = dfSig2_low.append(dfSig2, ignore_index=True)
+    # dfCut = dfSig2_low.loc[dfSig2_low['Amp'] < 8]
+    dfCut = dfSig2_low.loc[(dfSig2_low['Amp'] < 14) & (dfSig2_low['fitSlo'] > 2)]
 
     # g1 = sns.FacetGrid(dfCut, hue='Distance', size=7)
     # g1 = g1.map(plt.scatter, 'Amp', 'fitSlo').add_legend()
@@ -54,13 +57,20 @@ def compareSim():
     # g1 = g1.map(plt.hist, 'fitSlo', bins=np.linspace(0,2500,250), alpha=0.5).add_legend()
     # g1.set(yscale='log')
 
-    g2 = sns.FacetGrid(dfCut, hue='Amp', size=7)
-    g2 = g2.map(plt.hist, 'fitSlo', bins=np.linspace(0,2500,250), alpha=0.50).add_legend()
-    g2.set(yscale='log')
+    g1 = sns.lmplot(x='Amp', y='fitSlo', data=dfCut, hue='Distance', fit_reg=False, x_jitter=0.3, size=7, scatter_kws={'alpha':0.3}, legend_out=False)
+    g1.set(yscale='log')
+    plt.subplots_adjust(top=0.95)
+    g1.fig.suptitle('fitSlo vs Amplitude (Simulated Waveforms)')
+    g1.set_axis_labels('Amplitude (ADC)', 'fitSlo')
 
-    plt.tight_layout()
+
+    # g2 = sns.FacetGrid(dfCut, hue='Amp', size=7)
+    # g2 = g2.map(plt.hist, 'fitSlo', bins=np.linspace(0,2500,250), alpha=0.50).add_legend()
+    # g2.set(yscale='log')
+
+    # plt.tight_layout()
     plt.show()
-    # g1.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_vs_Amplitude_log2.png')
+    # g1.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_vs_Amplitude_Scatter.png')
     # g2.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_AmpComparison_log.png')
 
 def convertDF(series):
@@ -100,6 +110,7 @@ def procSim(nMax = 5000):
     # for idx in range(skimTree.GetEntries()):
     # fig1, ax1 = plt.subplots(figsize=(10,7))
     for idx in range(min(nMax,skimTree.GetEntries())):
+        # if idx != 417: continue
         if idx%100 == 0:
             print("Processed Entry ", idx)
         skimTree.GetEntry(idx)
@@ -113,7 +124,6 @@ def procSim(nMax = 5000):
         dataBL,dataNoise = signal.GetBaseNoise()
         # Generate one fake WF at each amplitude/r/z combination (30 total)
         for index, row in dfSigGen.iterrows():
-            if row['amp'] != 3: continue
             dataMap = {}
             sig = addSigToBaseline(data, row['waveform'])
             sigBL = addSigToBaseline(data_blSub, row['waveform'])
@@ -128,7 +138,7 @@ def procSim(nMax = 5000):
 
     df = pd.DataFrame.from_dict(dataList)
     print(df.head())
-    df.to_hdf('{}/SimPSA_sig2_low_ADC3Test_v3.h5'.format(inDir), 'skimTree')
+    df.to_hdf('{}/SimPSA_sig2_log.h5'.format(inDir), 'skimTree')
 
 
 def addSigToBaseline(data_blSub, sigWF):
@@ -189,12 +199,56 @@ def procEvent(data, dataTS, data_blSub, dataBL, saveStr=''):
     denoisedNoise,_,_ = wl.baselineParameters(data_wlDenoised)
     datas = [dataTS, data_wlDenoised + dataBL, denoisedNoise] # fit wavelet-denoised data w/ Bl added back in
     bnd = ((None,None),(None,None),(2.,None),(-72001.,-71999.),(None,None)) # gets caught much less often.
-    result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options=None, bounds=bnd)
+
+    # result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", options={'disp':True},  bounds=bnd)
+    result = op.minimize(lnLike, floats, args=datas, method="L-BFGS-B", bounds=bnd)
 
     amp, mu, sig, tau, bl = result["x"]
     floats = np.asarray([amp, mu, sig, tau, bl])
     fit = xgModelWF(dataTS, floats)
     fitMu, fitAmp, fitSlo, fitTau, fitBL = mu, amp, sig, tau, bl
+
+
+    if sig <= 2:
+        print('Old: fitMu {}, fitAmp {}, fitSlo {}, sig {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, sig, fitTau, fitBL))
+
+        amp, mu, sig, tau, bl = dataENM, dataTSMax, np.log(600.), -72000., dataBL
+        floats2 = np.asarray([amp, mu, np.log(sig), tau, bl])
+        bnd2 = ((None,None),(None,None),(None,None),(-72001.,-71999.),(None,None)) # gets caught much less often.
+        result2 = op.minimize(lnLike, floats2, args=datas, method='L-BFGS-B', bounds=bnd2)
+        amp, mu, sig, tau, bl = result2["x"]
+        floats2 = np.asarray([amp, mu, np.exp(sig), tau, bl])
+        fit = xgModelWF(dataTS, floats2)
+        fitMu, fitAmp, fitSlo, fitTau, fitBL = mu, amp, np.exp(sig), tau, bl
+
+        p0.cla()
+        p0.plot(dataTS,data,color='blue',label='data')
+        p0.plot(dataTS,temp,color='orange',label='xgauss guess')
+        p0.plot(dataTS,fit,color='red',label='xgauss fit')
+        p0.plot(dataTS,datas[1], color='green',label='denoised wf')
+        p0.legend(loc='best')
+        p1.cla()
+        p1.plot(dataTS,data-fit,color='blue',label='residual')
+        p1.legend(loc='best')
+        p2.cla()
+        p2.plot(ampTr[1:],label='amp',color='red')
+        p2.legend(loc='best')
+        p3.cla()
+        p3.plot(muTr[1:],label='mu',color='green')
+        p3.legend(loc='best')
+        p4.cla()
+        p4.plot(sigTr[1:],label='sig',color='blue')
+        p4.legend(loc='best')
+        p5.cla()
+        p5.plot(tauTr[1:],label='tau',color='black')
+        p5.legend(loc='best')
+        p6.cla()
+        p6.plot(blTr[1:],label='bl',color='magenta')
+        p6.legend(loc='best')
+        plt.tight_layout()
+        fig.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/ADC2/WF_{}.png'.format(saveStr))
+
+        print('Fixed: fitMu {}, fitAmp {}, fitSlo {}, sig {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, sig, fitTau, fitBL))
     # print('fitMu {}, fitAmp {}, fitSlo {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, fitTau, fitBL))
 
     # find the window of rising edge
@@ -219,37 +273,11 @@ def procEvent(data, dataTS, data_blSub, dataBL, saveStr=''):
     dataMap['riseNoise'] = riseNoise
     dataMap['fitSlo'] = fitSlo
 
-    # if fitSlo == 2 or fitSlo > 600:
-    if fitSlo > 600:
-        p0.cla()
-        p0.plot(dataTS,data,color='blue',label='data')
-        p0.plot(dataTS,temp,color='orange',label='xgauss guess')
-        p0.plot(dataTS,fit,color='red',label='xgauss fit')
-        p0.legend(loc='best')
-        p1.cla()
-        p1.plot(dataTS,data-fit,color='blue',label='residual')
-        p1.legend(loc='best')
-        p2.cla()
-        p2.plot(ampTr[1:],label='amp',color='red')
-        p2.legend(loc='best')
-        p3.cla()
-        p3.plot(muTr[1:],label='mu',color='green')
-        p3.legend(loc='best')
-        p4.cla()
-        p4.plot(sigTr[1:],label='sig',color='blue')
-        p4.legend(loc='best')
-        p5.cla()
-        p5.plot(tauTr[1:],label='tau',color='black')
-        p5.legend(loc='best')
-        p6.cla()
-        p6.plot(blTr[1:],label='bl',color='magenta')
-        p6.legend(loc='best')
-        fig.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/ADC3v3/WF_{}.png'.format(saveStr))
-
     return dataMap
 
 
 def evalGaus(x,mu,sig):
+    # return np.exp(-((x-mu)**2./2./sig**2.))
     return np.exp(-((x-mu)**2./2./sig**2.))
 
 
@@ -259,18 +287,22 @@ def evalXGaus(x,mu,sig,tau):
         Positive tau: Backwards WF, low tail
     """
     tmp = (x-mu + sig**2./2./tau)/tau
+    # tmp = (x-mu + np.log(sig)**2./2./tau)/tau
 
     # np.exp of this is 1.7964120280206387e+308, the largest python float value: sys.float_info.max
     fLimit = 709.782
 
     if all(tmp < fLimit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
+        # return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/np.log(sig) + np.log(sig))/np.sqrt(2.)/np.fabs(tau))
     else:
         # print("Exceeded limit ...")
         # Use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 
+        # den = 1./(np.log(sig) + tau*(x-mu)/np.log(sig))
+        # return np.log(sig) * evalGaus(x,mu,np.log(sig)) * den * (1.-tau**2. * den**2.)
 
 def xgModelWF(dataTS, floats):
     """ Make a model waveform: Take a timestamp vector, generate an
