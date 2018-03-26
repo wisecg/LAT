@@ -8,7 +8,7 @@ from statsmodels.stats import proportion
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
-sns.set(style='darkgrid')
+sns.set(style='darkgrid', context='talk')
 
 # load LAT libraries
 # ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
@@ -26,6 +26,7 @@ thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, par
 # load fitSlo vals for cal run range closest to the run range [22513, 22566]
 dsNum, modNum, calIdx = 5, 1, 11  # calIdx 11: [[22568,22635],22568,22841],
 
+
 def main():
 
     inDir, outDir = os.environ['LATDIR'], os.environ['LATDIR']+'/plots/CalPairs'
@@ -34,6 +35,11 @@ def main():
     # getSpecPandas()
     # getSimPandas()
     # loadSpec()
+    interceptList = loadScatter()
+    print('STD: ', np.std(interceptList))
+
+    return
+
     simMatrix, simdetLabel = loadMatrix('Sim')
     calMatrix, detLabel = loadMatrix('Cal')
 
@@ -82,6 +88,7 @@ def main():
     plt.tight_layout()
     fig2.savefig('{}/CrazyBar_C1_2.png'.format(outDir))
 
+
 def convertDF(series):
     """
         Converts a list stored in DataFrame column back into a np.array
@@ -94,6 +101,7 @@ def convertDF(series):
         print('Input is not a pandas.core.series.Series object! Returning')
         return 0
 
+
 def simtoCPD(simID):
     """
         Short helper function that converts fWaveformID to CPD
@@ -104,6 +112,7 @@ def simtoCPD(simID):
     C = (simID%100000 - P*100 - D)/10000
     return int(C*100+P*10+D)
 
+
 def simtoCh(simID):
     """
         Short helper function that converts fWaveformID to Channel
@@ -113,6 +122,7 @@ def simtoCh(simID):
         if val == CPD and key%2 == 0:
             ch = key
     return int(ch)
+
 
 def getSpecPandas():
     """
@@ -192,6 +202,7 @@ def getSpecPandas():
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
     df.to_hdf('DS{}_Cal_HitData.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
 
+
 def getSimPandas():
     """
         Get sum and hit events from simulation data
@@ -267,9 +278,9 @@ def loadSpec():
     """
         Draws various spectra plots and also performs linear regression on scatter plots
     """
-
+    from scipy import stats
     inDir = os.environ['LATDIR']
-    df = pd.read_hdf('{}/DS5_LongCal_HitData.h5'.format(inDir))
+    df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
     df['EMirror'] = 238.63 - df['trapENFCal2']
     dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
     # g1 = sns.FacetGrid(df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)], col='CPD1', hue='CPD2', col_wrap=5, size=10, aspect=1.2).set(xlim=(0, 50), ylim=(0,50))
@@ -277,20 +288,71 @@ def loadSpec():
     # g2 = sns.lmplot(x='trapENFCal1', y='EMirror', data=dfCut, col_wrap=5, size=10, col='CPD1').set(xlim=(0, 10), ylim=(0,10))
     # g1 = g1.map(plt.hist, 'trapENFCal1', bins=np.linspace(0, 50, 50)).add_legend()
 
-    # g2.savefig('CrazyPlot_2_M1_Zoomed.png')
-    from scipy import stats
+    slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
+    print(slope, intercept, r_value, p_value, std_err)
+
     g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
     g3 = g3.plot_joint(sns.regplot)
+    g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
+    plt.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
     g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
-    g3 = g3.annotate(stats.pearsonr)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
-
-    print(slope, intercept, r_value, p_value, std_err)
+    # g3 = g3.annotate(stats.pearsonr)
     # linregress = lambda x,y: stats.linregress(x,y)
     # g3 = g3.annotate(linregress, template="{stat}: {val:.2f}")
     # g3.set('C1P3D2')
     # g3.savefig('CrazyPlot_3_C1P2D3.png')
-    # plt.show()
+    plt.show()
+
+def loadScatter():
+    """
+        Draws various spectra plots and also performs linear regression on scatter plots
+    """
+    from scipy import stats
+    inDir = os.environ['LATDIR']
+    df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
+    df['EMirror'] = 238.63 - df['trapENFCal2']
+    # Make Energy cut on 238 peak
+    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
+
+    detList1 = np.unique(dfCut['CPD1'])
+    fig1, ax1 = plt.subplots(figsize=(10,7))
+
+    interceptList = []
+
+    for CPD in detList1:
+        dfCh = dfCut.loc[dfCut['CPD1']==CPD]
+
+        x = dfCh['trapENFCal1'].values
+        y = dfCh['EMirror'].values
+
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        mx = x.mean()
+        sx2 = ((x-mx)**2).sum()
+        sd_intercept = std_err * np.sqrt(1./len(x) + mx*mx/sx2)
+        sd_slope = std_err * np.sqrt(1./sx2)
+
+        print('{} - Slope: {:.3f} +/- {:.3f} Y-int: {:.3f} +/- {:.3f}, std_err: {:.3f}'.format(str(CPD), slope, sd_slope, intercept, sd_intercept, std_err))
+
+        ax1.cla()
+        sns.regplot(x='trapENFCal1', y='EMirror', data=dfCh, ax=ax1)
+        ax1.set_xlabel('Low Energy Hit (keV)')
+        ax1.set_ylabel('238.63 - Pair Hit (keV)')
+        ax1.set_xlim(200,240)
+        ax1.set_ylim(200,240)
+        ax1.set_title('C{}P{}D{} Energy Calibration Check'.format(*str(CPD)))
+        ax1.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
+        plt.tight_layout()
+        fig1.savefig('{}/plots/CalPairs/CalCheck/CalCheck_C{}P{}D{}_High.png'.format(inDir, *str(CPD)))
+
+        # For fancy JointGrid... not sure it adds much here
+        # g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
+        # g3 = g3.plot_joint(sns.regplot)
+        # g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
+        # g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
+
+        # plt.show()
+        interceptList.append(intercept)
+    return interceptList
 
 def loadMatrix(dType = 'Cal'):
     """
@@ -340,6 +402,7 @@ def loadMatrix(dType = 'Cal'):
             countMatrix[idx2, idx1] += 1
 
     return countMatrix, detLabel
+
 
 if __name__=="__main__":
     main()
