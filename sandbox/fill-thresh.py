@@ -12,9 +12,10 @@
 
 """
 
-import os, imp, ROOT
+import os, imp, itertools, ROOT
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+
 
 def main():
     dsNum = 5
@@ -34,15 +35,14 @@ def findGood(threshDictList, dsNum, subDS, ch, searchStyle = 0):
     searchMin = min(5, subDS)
     if searchStyle == 0:
         # Build alternating idx list
-        searchList = [None]*(searchMax + searchMin)
-        searchList[::2] = [subDS+i for i in range(searchMax)]
-        searchList[1::2] = [subDS-i for i in range(searchMin)]
+        iters = [iter([subDS+i for i in range(1,searchMax+1)]), iter([subDS-i for i in range(1,searchMin+1)])]
+        searchList = list(it.next() for it in itertools.cycle(iters))
     elif searchStyle == -1:
         # Backward only
-        searchList = [subDS-i for i in range(searchMin)]
+        searchList = [subDS-i for i in range(1, searchMin+1)]
     elif searchStyle == 1:
         # Forward only
-        searchList = [subDS+i for i in range(searchMax)]
+        searchList = [subDS+i for i in range(1, searchMax+1)]
     else:
         print('Search style not valid!')
         return
@@ -55,7 +55,8 @@ def findGood(threshDictList, dsNum, subDS, ch, searchStyle = 0):
             elif values[0] < 0:
                 continue
             else:
-                goodIdx = subDS+idx
+                goodIdx = idx
+                break
         # If ch doesn't exist in the dictionary keys, continue to next
         except:
             continue
@@ -109,7 +110,6 @@ def generateThreshDict(dsNum = 1, inDir = '', fillDb = False):
         keyList.append(key)
         dictList.append(threshDict)
 
-
     # This way is slow but it's careful and we don't make any mistakes
     # Solve issues with missing parameters by looping through lists
     for idx, tDict in enumerate(dictList):
@@ -118,59 +118,21 @@ def generateThreshDict(dsNum = 1, inDir = '', fillDb = False):
             # If the index is 0, can't fill with the previous index so must fill with the next
             if idx == 0 and (99999.0 in values or 999999.0 in values or values[0] < 0):
                 goodIdx = findGood(dictList, dsNum, idx, ch, 1)
-                print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[goodIdx][ch]
+                print "Filling idx{:d} ch{:d}({:.3f},{:.3f}) with goodIDX{:d}:".format(idx, ch, values[0], values[1], goodIdx), dictList[goodIdx][ch]
                 dictList[idx][ch] = dictList[goodIdx][ch]
-                # print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[idx+1][ch]
-                # dictList[idx][ch] = dictList[idx+1][ch]
+            # If index is between 1 and the last index, we can use the alternating search method to find the closest good subDS
             elif idx < len(dictList)-1 and idx!= 0 and (99999.0 in values or 999999.0 in values or values[0] < 0):
                 goodIdx = findGood(dictList, dsNum, idx, ch, 0)
-                print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[goodIdx][ch]
+                print "Filling idx{:d} ch{:d}({:.3f},{:.3f}) with goodIDX{:d}:".format(idx, ch, values[0], values[1], goodIdx), dictList[goodIdx][ch]
                 dictList[idx][ch] = dictList[goodIdx][ch]
-
-                # if ch in dictList[idx-1].keys() and (99999.0 not in dictList[idx-1][ch] or 999999.0 not in dictList[idx-1][ch]):
-                #     print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[idx-1][ch]
-                #     dictList[idx][ch] = dictList[idx-1][ch]
-                # elif ch in dictList[idx+1].keys() and (99999.0 not in dictList[idx+1][ch] or 999999.0 not in dictList[idx+1][ch]):
-                #     print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[idx+1][ch]
-                #     dictList[idx][ch] = dictList[idx+1][ch]
             # If index is the last one, must fill with previous
             elif idx == len(dictList)-1 and (99999.0 in values or 999999.0 in values or values[0] < 0):
                 goodIdx = findGood(dictList, dsNum, idx, ch, -1)
-                print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[goodIdx][ch]
+                print "Filling idx{:d} ch{:d}({:.3f},{:.3f}) with goodIDX{:d}:".format(idx, ch, values[0], values[1], goodIdx), dictList[goodIdx][ch]
                 dictList[idx][ch] = dictList[goodIdx][ch]
 
-                # print "Filling idx{:d} ch{:d} with".format(idx, ch), dictList[idx-1][ch]
-                # dictList[idx][ch] = dictList[idx-1][ch]
-
-
-    # Loop again to check for negative threshold values
-    # print "Second Loop for Negative values"
-    # for idx, tDict in enumerate(dictList):
-    #     for ch, values in tDict.items():
-    #         if idx == 0 and values[0] < 0:
-    #             print "Filling Negative idx{:d} ch{:d} with".format(idx, ch), dictList[idx+1][ch]
-    #             dictList[idx][ch] = dictList[idx+1][ch]
-    #         elif idx < len(dictList)-1 and idx!=0 and values[0] < 0:
-    #             if ch in dictList[idx-1].keys() and dictList[idx-1][ch][0] > 0:
-    #                 print "Filling Negative idx{:d} ch{:d} with".format(idx, ch), dictList[idx-1][ch]
-    #                 dictList[idx][ch] = dictList[idx-1][ch]
-    #             elif ch in dictList[idx+1].keys() and dictList[idx+1][ch][0] > 0:
-    #                 print "Filling Negative idx{:d} ch{:d} with".format(idx, ch), dictList[idx+1][ch]
-    #                 dictList[idx][ch] = dictList[idx+1][ch]
-    #         elif idx == len(dictList)-1 and values[0] < 0:
-    #             print "Filling Negative idx{:d} ch{:d} with".format(idx, ch), dictList[idx-1][ch]
-    #             dictList[idx][ch] = dictList[idx-1][ch]
-
-    # For DS5 -- channel 1302 had bad values for a series of subDS early on
-    # Manually filling in here with a good value
-    # if dsNum == 5:
-    #     print("DS5, manually filling in some values because of bad runs")
-    #     dictList[13][1302] = dictList[16][1302]
-    #     dictList[14][1302] = dictList[16][1302]
-    #     dictList[15][1302] = dictList[16][1302]
-
     # Final check
-    print "Third Loop for final checks"
+    print "Final Checks"
     for idx, tDict in enumerate(dictList):
         for ch, values in tDict.items():
             if 99999.0 in values or 999999.0 in values:
