@@ -33,20 +33,20 @@ p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
 
 
 def main():
-    procSim(5000)
-    # compareSim()
+    # procSim(5000)
+    compareSim()
 
 
 def compareSim():
     plt.close(fig)
 
     inDir = os.environ['LATDIR']+'/data'
-    # dfSig0 = pd.read_hdf('{}/SimPSA_sig0.h5'.format(inDir))
-    dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_log.h5'.format(inDir))
-    # dfSig2 = pd.read_hdf('{}/SimPSA_sig2.h5'.format(inDir))
-    # dfSig2['Distance'] = dfSig2['R']*dfSig2['R'] + dfSig2['Z']+dfSig2['Z']
+    # dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_log.h5'.format(inDir))
+    dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_low.h5'.format(inDir))
+    dfSig2 = pd.read_hdf('{}/SimPSA_sig2.h5'.format(inDir))
+    dfSig2['Distance'] = dfSig2['R']*dfSig2['R'] + dfSig2['Z']+dfSig2['Z']
     dfSig2_low['Distance'] = dfSig2_low['R']*dfSig2_low['R'] + dfSig2_low['Z']+dfSig2_low['Z']
-    # dfSig2_low = dfSig2_low.append(dfSig2, ignore_index=True)
+    dfSig2_low = dfSig2_low.append(dfSig2, ignore_index=True)
     # dfCut = dfSig2_low.loc[dfSig2_low['Amp'] < 8]
     dfCut = dfSig2_low.loc[(dfSig2_low['Amp'] < 14) & (dfSig2_low['fitSlo'] > 2)]
 
@@ -277,7 +277,6 @@ def procEvent(data, dataTS, data_blSub, dataBL, saveStr=''):
 
 
 def evalGaus(x,mu,sig):
-    # return np.exp(-((x-mu)**2./2./sig**2.))
     return np.exp(-((x-mu)**2./2./sig**2.))
 
 
