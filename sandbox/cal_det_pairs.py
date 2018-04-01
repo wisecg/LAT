@@ -11,8 +11,7 @@ import seaborn as sns
 sns.set(style='darkgrid', context='talk')
 
 # load LAT libraries
-# ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
-import DataSetInfo as ds
+ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 calInfo = ds.CalInfo()
 
@@ -311,8 +310,10 @@ def loadScatter():
     inDir = os.environ['LATDIR']
     df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
     df['EMirror'] = 238.63 - df['trapENFCal2']
-    # Make Energy cut on 238 peak
+    # df['EMirror'] = 2614.533 - df['trapENFCal2']
+    # Make Energy cut
     dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
+    # dfCut = df.loc[(df['sumET'] > 2610) & (df['sumET'] < 2620) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
 
     detList1 = np.unique(dfCut['CPD1'])
     fig1, ax1 = plt.subplots(figsize=(10,7))
@@ -337,19 +338,19 @@ def loadScatter():
         sns.regplot(x='trapENFCal1', y='EMirror', data=dfCh, ax=ax1)
         ax1.set_xlabel('Low Energy Hit (keV)')
         ax1.set_ylabel('238.63 - Pair Hit (keV)')
-        ax1.set_xlim(200,240)
-        ax1.set_ylim(200,240)
+        # ax1.set_ylabel('2614.53 - Pair Hit (keV)')
+        ax1.set_xlim(0, 10)
+        ax1.set_ylim(0, 10)
         ax1.set_title('C{}P{}D{} Energy Calibration Check'.format(*str(CPD)))
         ax1.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
         plt.tight_layout()
-        fig1.savefig('{}/plots/CalPairs/CalCheck/CalCheck_C{}P{}D{}_High.png'.format(inDir, *str(CPD)))
+        fig1.savefig('{}/plots/CalPairs/CalCheck/2615keV_CalCheck_C{}P{}D{}.png'.format(inDir, *str(CPD)))
 
         # For fancy JointGrid... not sure it adds much here
         # g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
         # g3 = g3.plot_joint(sns.regplot)
         # g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
         # g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
-
         # plt.show()
         interceptList.append(intercept)
     return interceptList
