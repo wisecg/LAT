@@ -18,41 +18,44 @@ def main():
     dsNum = 5
     pdfArrDict, pdfFlatDict = {}, {}
 
+
     # ReduceData(dsNum)
     # Load Background data and bin exactly as PDF
-    startTime = 148557598
+    startTime = 1485575988
     endTime = 1489762153
+
+    # Build Axion PDF -- Use low edges of PDF to generate bins
+    pdfArrDict['Axion'], nTimeBins, timeBinLowEdge = convertaxionPDF(startTime, endTime)
+    print(nTimeBins)
+    print(len(timeBinLowEdge))
+
+    print("Using {} time bins".format(nTimeBins))
 
     inDir = os.environ['LATDIR']+'/data/MCMC'
     df = pd.read_hdf('{}/DS{}_Spectrum.h5'.format(inDir, dsNum))
     df.sort_values(by=['UnixTime'], inplace=True)
     dataArr = df.loc[:, ['Energy','UnixTime']].values
-    # timeBins = np.linspace(startTime, endTime, (endTime-startTime)/300)
-    # nTimeBins = 105120
-    nTimeBins = 7008
-    timeBins = np.linspace(startTime, endTime, nTimeBins)
     energyBins = np.arange(0,20.1,0.1)
-    pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, nTimeBins])
+    pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
+    print(yedges.shape)
+    return
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
     dfTrit = pd.read_hdf('{}/TritSpec.h5'.format(inDir))
     tritEnergy = dfTrit['Energy'].values
     tritSpec = dfTrit['Tritium'].values
-    tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec])
+    tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec]) # Get rid of negative values
     tritInterp = interp1d(tritEnergy, tritSpec, fill_value='extrapolate')
     tritList = [tritInterp(x) for x in energyBins[:-1]]
     pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T
-
-    # Build Axion PDF
-    pdfArrDict['Axion'] = convertaxionPDF()
-
-    print('Generated all PDFs')
 
     meansDict = {'Fe55':6.54, 'Zn65':8.98, 'Ge68':10.37}
     gausDict = generateGaus(energyBins[:-1], meansDict)
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
+
+    print('Generated all PDFs')
 
     # Draw PDFs
     # drawPDFs(pdfArrDict)
@@ -71,10 +74,10 @@ def main():
     print('Built model')
 
     with model:
-        trace = pm.sample(draws=1000, chains=1, n_init=100)
+        trace = pm.sample(draws=5000, chains=1, n_init=500, progressbar=False)
     dfTrace = pm.trace_to_dataframe(trace, include_transformed=True)
     dfTrace.to_hdf('{}/AxionFitTrace_DS{}.h5'.format(inDir, dsNum), "skimTree", mode='w', format='table')
-    pm.traceplot(trace)
+    # pm.traceplot(trace)
     print(pm.summary(trace))
 
 
@@ -98,22 +101,36 @@ def constructModel(pdfDict):
     return model
 
 
-def convertaxionPDF():
+def convertaxionPDF(startTime, endTime):
     """
         Converts 2D histogram PDF for axion into numpy array
     """
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
-    fAxion  = ROOT.TFile('{}/Axion_plot_v5_INT_phi_det9.00_Elow0.0_Ehi20.0_Esig4.00_NE200_Time525600_for_SunTreeUTC_Neg_hist_minutes1.root'.format(inDir))
+    fAxion  = ROOT.TFile('{}/Axion_plot_v5_INT_phi_det9.00_Elow0.0_Ehi20.0_Esig4.00_NE200_1Minutes_for_SunTreeUTC_Full_hist_minutes1.root'.format(inDir))
 
     hday = fAxion.Get('hday')
-    hday.RebinX(15) # Every 15 minutes
+    hday.RebinX(5) # 5 minute bins
+    # Find bins to cut off PDF at
+    startBin = hday.GetXaxis().FindBin(startTime)
+    endBin = hday.GetXaxis().FindBin(endTime)
+    nTimeBins = endBin - startBin + 1
     AxionList = []
+    timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(time)
+                        for time in range(hday.GetNbinsX())
+                        if time >= startBin and time <= endBin]
     for energy in range(hday.GetNbinsY()):
-        AxionList.append([hday.GetBinContent(time, energy) for time in range(hday.GetNbinsX())])
-
+        AxionList.append([hday.GetBinContent(time, energy)
+                            for time in range(hday.GetNbinsX())
+                            if time >= startBin and time <= endBin])
     fAxion.Close()
-    return np.array(AxionList)
+
+    timeMask = GenerateLivetimeMask(GenerateLivetimeMask)
+
+    AxionArr = np.array(AxionList)
+    # Roughly normalize so the axion scale is the same as the other PDFs
+    NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)
+    return NormAxionArr, nTimeBins, timeBinLowEdge
 
 
 def generateGaus(energyList, meansDict):
@@ -151,14 +168,19 @@ def drawPDFs(pdfArrDict):
         Helper function to draw PDFs
         pdfArrDict contains
     """
-
+    energyLabels = np.linspace(0, 20, 5)
+    startTime = 1485575988
+    endTime = 1489762153
+    timeLabels = np.linspace(startTime, endTime, 5, dtype='datetime64[s]')
+    timeLabels = np.array(timeLabels, dtype='datetime64[D]')
     fig1, ax1 = plt.subplots(ncols=3, nrows=2, figsize=(15,8))
     sns.heatmap(pdfArrDict['Data'], ax=ax1[0,0])
     ax1[0,0].set_title('DS5 Data')
     ax1[0,0].set_ylabel('Energy')
     ax1[0,0].set_xlabel('Time')
     ax1[0,0].invert_yaxis()
-    ax1[0,0].set_yticklabels([])
+    ax1[0,0].locator_params(nbins=5)
+    ax1[0,0].set_yticklabels(energyLabels, rotation=0)
     ax1[0,0].set_xticklabels([])
 
     sns.heatmap(pdfArrDict['Tritium'], ax=ax1[0,1])
@@ -180,31 +202,58 @@ def drawPDFs(pdfArrDict):
     ax1[1,0].set_ylabel('Energy')
     ax1[1,0].set_xlabel('Time')
     ax1[1,0].invert_yaxis()
-    ax1[1,0].set_yticklabels([])
-    ax1[1,0].set_xticklabels([])
+    ax1[1,0].locator_params(nbins=5)
+    ax1[1,0].set_yticklabels(energyLabels, rotation=0)
+    ax1[1,0].set_xticklabels(timeLabels, rotation=50)
 
     sns.heatmap(pdfArrDict['Zn65'], ax=ax1[1,1])
     ax1[1,1].set_title('Zn65 PDF')
     ax1[1,1].set_xlabel('Time')
     ax1[1,1].invert_yaxis()
+    ax1[1,1].locator_params(nbins=5)
     ax1[1,1].set_yticklabels([])
-    ax1[1,1].set_xticklabels([])
+    ax1[1,1].set_xticklabels(timeLabels, rotation=50)
 
     sns.heatmap(pdfArrDict['Ge68'], ax=ax1[1,2])
     ax1[1,2].set_title('Ge68 PDF')
     ax1[1,2].set_xlabel('Time')
     ax1[1,2].invert_yaxis()
+    ax1[1,2].locator_params(nbins=5)
     ax1[1,2].set_yticklabels([])
-    ax1[1,2].set_xticklabels([])
+    ax1[1,2].set_xticklabels(timeLabels, rotation=50)
 
     plt.tight_layout()
-    plt.show()
-    # fig1.savefig('{}/BraggFitPDF.png'.format(inDir))
+    # plt.show()
+    fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
 
+
+def GenerateLivetimeMask(timeBinLowEdge):
+    """
+        Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
+
+    """
+    inFile = os.environ['LATDIR']+'/data/MCMC/DS5b_RunTimes.txt'
+    # livetimeMask = {}
+    gapMatrix = {}
+    prevStart = 0
+    prevEnd = 0
+    try:
+        f = open(inFile)
+    except:
+        print("File doesn't exist!")
+    for line in f:
+        currentArr = np.array(line.split('\t'), dtype=np.int)
+        if currentArr[1] != prevEnd:
+            gapMatrix.setdefault(currentArr[0], [prevEnd, currentArr[1], currentArr[1]-prevEnd])
+            prevStart, prevEnd = currentArr[1], currentArr[2]
+        else:
+            prevStart, prevEnd = currentArr[1], currentArr[2]
+
+    print (gapMatrix)
+    return gapMatrix
 
 def GetSigma(energy, dsNum=1):
     p0,p1,p2 = 0., 0., 0.
-
     if dsNum==0:
         p0 = 0.147; p1=0.0173; p2=0.0003
     elif dsNum==1:
