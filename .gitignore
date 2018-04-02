@@ -15,4 +15,4 @@ data/mucal
 cron.log
 job.q
 data/parse*
-jobs/*
+jobs/*/

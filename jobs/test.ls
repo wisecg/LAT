@@ -1,0 +1,9 @@
+./job-panda.py -sub 4 10 -split >& ./logs/split-ds4-10.txt
+./job-panda.py -sub 4 11 -split >& ./logs/split-ds4-11.txt
+./job-panda.py -sub 4 12 -split >& ./logs/split-ds4-12.txt
+./job-panda.py -sub 4 13 -split >& ./logs/split-ds4-13.txt
+./job-panda.py -sub 4 14 -split >& ./logs/split-ds4-14.txt
+./job-panda.py -sub 4 15 -split >& ./logs/split-ds4-15.txt
+./job-panda.py -sub 4 16 -split >& ./logs/split-ds4-16.txt
+./job-panda.py -sub 4 17 -split >& ./logs/split-ds4-17.txt
+./job-panda.py -sub 4 18 -split >& ./logs/split-ds4-18.txt
