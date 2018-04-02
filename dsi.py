@@ -382,6 +382,104 @@ def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
     return expDict
 
 
+# TODO: get rid of this object or put it into a class
+DetID = [0,1]
+PMon = [0,1]
+DetID[1] = {
+    578:1425380, 579:1425380, 580:1426612, 581:1426612, 582:1425750, 583:1425750, 592:1425370, 593:1425370,
+    594:1426621, 595:1426621, 596:0, 598:1425741, 599:1425741, 600:28482, 601:28482, 608:1425381, 609:1425381,
+    610:1426980, 611:1426980, 612:0, 614:28469, 615:28469, 616:28480, 617:28480, 624:28455, 625:28455, 626:1425740,
+    627:1425740, 628:28470, 629:28470, 632:1425742, 633:1425742, 640:1426650, 641:1426650, 644:0, 648:1426640,
+    649:1426640, 664:1425730, 665:1425730, 672:1426610, 673:1426610, 674:0, 675:0, 676:0, 677:0, 678:1425751,
+    679:1425751, 690:1426620, 691:1426620, 692:28474, 693:28474, 694:28465, 695:28465
+    }
+PMon[1] = [644, 612, 596, 676, 674, 675, 677] # 674,675,677 are not in the MJTChannelMap's due to a bug.
+
+
+def LoadBadDetectorMap(dsNum):
+    """ TODO: vet this with chan-sel.py """
+
+    detIDIsBad = []
+    if dsNum==0: detIDIsBad = [28474, 1426622, 28480, 1426980, 1426620, 1425370]
+    if dsNum==1: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425751, 1425731, 1426611]
+    if dsNum==2: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425731, 1426611]
+    if dsNum==3: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611]
+    if dsNum==4: detIDIsBad = [28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619]
+    if dsNum==5: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+    if dsNum==6: detIDIsBad = [1426981, 28474, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+    return detIDIsBad
+
+
+def LoadVetoDetectorMap(dsNum):
+    """ TODO: vet this with chan-sel.py """
+
+    detIDIsVetoOnly = []
+    if dsNum == 0: detIDIsVetoOnly = [1425381, 1425742]
+    if dsNum == 1: detIDIsVetoOnly = [28480]
+    if dsNum == 2: detIDIsVetoOnly = [28480, 1425751, 1426621]
+    if dsNum == 3: detIDIsVetoOnly = [28480, 28470, 28463]
+    if dsNum == 4: detIDIsVetoOnly = [28459, 1426641, 1427481, 28456, 1427120, 1427121]
+    if dsNum == 5: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    if dsNum == 6: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    return detIDIsVetoOnly
+
+
+def GetGoodChanList(dsNum, dType=None):
+    """ TODO: vet this with chan-sel.py """
+
+    badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
+
+    # make a list of the channels corresponding to the bad IDs.
+    badChans = []
+    for badID in badIDs:
+        for ch, detID in DetID[dsNum].items():
+            if badID == detID: badChans.append(ch)
+
+    # high-gain channels, without pulser monitors, without bad+veto channels.
+    goodList = []
+    if dType is None:
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    elif dType is 'Enr':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
+    elif dType is 'Nat':
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
+    else:
+        print('Type not found, returning all channels')
+        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    return sorted(goodList)
+
+
+
+def getDBRecord(key, verbose=False, calDB=None, pars=None):
+    """ View a particular database record. """
+    import tinydb as db
+
+    if calDB is None: calDB = db.TinyDB('calDB.json')
+    if pars is None: pars = db.Query()
+
+    recList = calDB.search(pars.key == key)
+    nRec = len(recList)
+    if nRec == 0:
+        if verbose: print("Record %s doesn't exist" % key)
+        return 0
+    elif nRec == 1:
+        if verbose: print("Found record:\n%s" % key)
+        rec = recList[0]['vals']  # whole record
+
+        # sort the TinyDB string keys numerically (obvs only works for integer keys)
+        result = {}
+        for key in sorted([int(k) for k in rec]):
+            if verbose: print(key, rec[u'%d' % key])
+            result[key] = rec[u'%d' % key]
+        return result
+    else:
+        print("WARNING: Found multiple records for key: %s.  Need to do some cleanup!" % key)
+        for rec in recList:
+            for key in sorted([int(k) for k in rec]):
+                print(key, rec[u'%d' % key])
+            print(" ")
+
+
 def test():
     print("testing...")
 

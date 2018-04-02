@@ -11,7 +11,7 @@ plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
 
 # load LAT libraries
-ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
+ds = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 calInfo = ds.CalInfo()
 
@@ -49,11 +49,13 @@ def main():
     # plotSpecTest()
 
     # plotFitSlo()
+    plotFitSloHist()
 
     # getSimDataEvtLoop()
     # plotSimDataLoop()
 
-    compareDataSim()
+    # compareDataSim()
+
 
 def getSpecTest():
     from ROOT import TFile, TTree
@@ -821,33 +823,150 @@ def plotFitSlo():
     plt.savefig("../plots/mult4-fitSlo-hist.png")
 
 
+    # plt.cla()
+    # xLo, xHi, xpb = 0, 240, 1
+    #
+    # hitESlow = [hitE[i] for i in range(len(hitE)) if fSloShift[i] > 30]
+    # x, hSlo = wl.GetHisto(hitESlow,xLo,xHi,xpb)
+    #
+    # hitEFast = [hitE[i] for i in range(len(hitE)) if fSloShift[i] < 30]
+    # x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
+    #
+    # fs = np.load("../plots/mult4-evtTrans.npz")
+    # evtTotal, evtBulk, evtTrans = fs['arr_0'], fs['arr_1'], fs['arr_2']
+    # eneTotal, eneBulk, eneTrans = fs['arr_3'], fs['arr_4'], fs['arr_5']
+    #
+    # x, hTotal = wl.GetHisto(evtTotal, xLo, xHi, xpb)
+    # x, hBulk = wl.GetHisto(evtBulk, xLo, xHi, xpb)
+    # x, hTrans = wl.GetHisto(evtTrans, xLo, xHi, xpb)
+    #
+    # x, hETotal = wl.GetHisto(eneTotal, xLo, xHi, xpb)
+    # x, hEBulk = wl.GetHisto(eneBulk, xLo, xHi, xpb)
+    # x, hETrans = wl.GetHisto(eneTrans, xLo, xHi, xpb)
+    #
+    # plt.plot(x, hETotal/np.sum(hETotal), ls='steps', c='r', lw=2., label='sim total')
+    # plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
+    # plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    #
+    # plt.legend(loc=1,fontsize=12)
+    # plt.savefig("../plots/mult4-hitSlow.png")
+
+
+def plotFitSloHist():
+    """ hitData : [mHT, sumET, dt[mHT]]
+        hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
+    """
+
+    # fitSlo results from tuneFitSlo.
+    fsVals = {
+        584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
+        626: 81.5, 628: 102.5, 632: 81.5, 640: 73.5, 648: 74.5, 658: 75.5,
+        660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
+        690: 80.5, 694: 80.5
+        }
+
+    chList = list(fsVals.keys())
+
+    # peak fit results from mult2.  could retune, but it shouldn't matter much
+    mHT = 2
+    sumPks = [
+        (2,238,237.28,239.46), (2,583,581.26,584.46), (2,2615,2610.57,2618.01),
+        (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
+        ]
+
+    # f1 = np.load("../plots/mult4-hitE.npz")
+    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
+
+    hitE, chan, fSlo = [], [], []
+    for i in range(len(hitData)):
+        if hitData[i][0]==mHT and 237.28 < hitData[i][1] < 239.46:
+            hitE.extend(hitList[i][0])
+            chan.extend(hitList[i][1])
+            fSlo.extend(hitList[i][2])
+    n = len(hitE)
+    hitE = [hitE[i] for i in range(n) if chan[i] in fsVals.keys()]
+    fSloShift = [fSlo[i]-fsVals[chan[i]] for i in range(n) if chan[i] in chList]
+    print("peak evts:",n)
+
+    # plt.cla()
+    # plt.plot(hitE, fSloShift, '.', c='k', ms=1.)
+
+    fig = plt.figure()
+
+    xLo, xHi, xpb = 0, 250, 1
+    nbx = int((xHi-xLo)/xpb)
+    yLo, yHi, ypb = -50, 400, 1
+    nby = int((yHi-yLo)/ypb)
+    _,_,_,im = plt.hist2d(hitE, fSloShift, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet', label='m=2, sumE=238 hits')
+    cb = plt.colorbar()
+    plt.xlabel("Energy (keV)", ha='right', x=1.)
+    plt.ylabel("fitSlo", ha='right', y=1.)
+    plt.tight_layout()
+    plt.savefig("../plots/mult4-fitSlo-shift-hist.png")
+
+    cLo, cHi = 0, 230
+
+    hitE2, chan2, fSlo2 = [], [], []
+    for i in range(len(hitData)):
+        if hitData[i][0]==mHT and cLo < hitData[i][1] < cHi:
+            hitE2.extend(hitList[i][0])
+            chan2.extend(hitList[i][1])
+            fSlo2.extend(hitList[i][2])
+    n = len(hitE2)
+    hitE2 = [hitE2[i] for i in range(n) if chan2[i] in fsVals.keys()]
+    fSloShift2 = [fSlo2[i]-fsVals[chan2[i]] for i in range(n) if chan2[i] in chList]
+    print("cont evts:",n)
+
+    cb.remove()
     plt.cla()
-    xLo, xHi, xpb = 0, 240, 1
 
-    hitESlow = [hitE[i] for i in range(len(hitE)) if fSloShift[i] > 30]
-    x, hSlo = wl.GetHisto(hitESlow,xLo,xHi,xpb)
+    # plt.plot(hitE2, fSloShift2, '.', c='k', ms=1.)
+    _,_,_,im = plt.hist2d(hitE2, fSloShift2, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet', label='m=2, hits 0-230 keV')
+    cb = plt.colorbar()
+    plt.xlabel("Energy (keV)", ha='right', x=1.)
+    plt.ylabel("fitSlo", ha='right', y=1.)
+    plt.tight_layout()
+    plt.savefig("../plots/mult4-fitSlo-shift2-hist.png")
 
-    hitEFast = [hitE[i] for i in range(len(hitE)) if fSloShift[i] < 30]
-    x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
 
-    fs = np.load("../plots/mult4-evtTrans.npz")
-    evtTotal, evtBulk, evtTrans = fs['arr_0'], fs['arr_1'], fs['arr_2']
-    eneTotal, eneBulk, eneTrans = fs['arr_3'], fs['arr_4'], fs['arr_5']
+    cb.remove()
+    plt.cla()
+    xLo, xHi, xpb = -50, 300, 1
 
-    x, hTotal = wl.GetHisto(evtTotal, xLo, xHi, xpb)
-    x, hBulk = wl.GetHisto(evtBulk, xLo, xHi, xpb)
-    x, hTrans = wl.GetHisto(evtTrans, xLo, xHi, xpb)
+    x, y238 = wl.GetHisto(fSloShift,xLo,xHi,xpb)
+    x, yCon = wl.GetHisto(fSloShift2,xLo,xHi,xpb)
 
-    x, hETotal = wl.GetHisto(eneTotal, xLo, xHi, xpb)
-    x, hEBulk = wl.GetHisto(eneBulk, xLo, xHi, xpb)
-    x, hETrans = wl.GetHisto(eneTrans, xLo, xHi, xpb)
+    # integral238
+    tot238 = np.sum(y238)
+    int238, x238 = 0, 0
+    for i in range(len(y238)):
+        int238 += y238[i]
+        if int238/tot238 > 0.95:
+            x238 = x[i]
+            break
 
-    plt.plot(x, hETotal/np.sum(hETotal), ls='steps', c='r', lw=2., label='sim total')
-    plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
-    plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    # integralCon
+    totCon = np.sum(yCon)
+    intCon, xCon = 0, 0
+    for i in range(len(yCon)):
+        intCon += yCon[i]
+        if intCon/totCon > 0.95:
+            xCon = x[i]
+            break
 
-    plt.legend(loc=1,fontsize=12)
-    plt.savefig("../plots/mult4-hitSlow.png")
+    plt.semilogy(x, y238/np.sum(y238),'b',lw=2.,ls='steps',label='m=2 238 pk')
+    plt.semilogy(x, yCon/np.sum(yCon),'r',lw=2.,ls='steps',label='%d - %d kev' % (cLo, cHi))
+
+    plt.axvline(xCon, c='m', label='95% m=2')
+    plt.axvline(x238, c='g', label='95% m=2,s=238')
+
+    plt.xlabel("fitSlo", ha='right', x=1.)
+    plt.ylabel("Counts", ha='right', y=1.)
+
+    plt.legend(loc=1)
+    plt.savefig("../plots/mult4-fitSlo-hist.png")
+
 
 
 def getSimDataEvtLoop():

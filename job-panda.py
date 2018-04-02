@@ -92,7 +92,7 @@ def sh(cmd):
             f.write(cmd + "\n")
 
 
-def getSBatch(opt, getCores=True):
+def getSBatch(opt, getCores=True, nArr=1):
     """
     http://www.nersc.gov/users/computational-systems/cori/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
@@ -147,8 +147,8 @@ def getSBatch(opt, getCores=True):
             "--image=wisecg/mjsw:v2",
             # "-t 00:10:00",
             # "--qos=debug"
-            "--array=0-49",
-            "-t 48:00:00",
+            " --array=0-%d" % nArr,
+            "-t 24:00:00",
             "--qos=regular",
             "-N 1"
         ],
@@ -159,7 +159,7 @@ def getSBatch(opt, getCores=True):
             # "-p shared",
             "-p short",
             "-t 00:20:00",
-            "--array=1-3"
+            "--array=0-%d" % nArr
         ]
     }
     sbStr = "sbatch "+' '.join(batchOpts[opt])
@@ -197,8 +197,8 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("cori"))
 
     # EX. 5: Run a job array (note: slurm task id matches the integer given by the --array option)
-    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/test/test_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr"))
-    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/test/test_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("pdsf-arr"))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/test/test_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=2))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/test/test_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("pdsf-arr",nArr=2))
 
     # EX. 5: Long calibration
     # sh("%s slurm.slr './job-pump.sh jobs/longSkim.ls skim_mjd_data %d %d'" % getSBatch("edison"))
@@ -219,16 +219,25 @@ def runBatch():
     # EX. 8: PROCESS BKG DATA
     # sh("%s slurm.slr './job-pump.sh jobs/bkgSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/bkgWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/bkgWave_ds5c6.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/bkgSplit.ls python3 %d %d'" % getSBatch("pdsf-pump"))
-    # sh("%s slurm.slr './job-pump.sh jobs/bkgSplit_3.ls python3 %d %d'" % getSBatch("pdsf-pump")) # DO AFTER FIXING DS5C6 WAVE-SKIM
-    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr"))
+    # sh("%s slurm.slr './job-pump.sh jobs/bkgSplit_ds5c6.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/bkgLAT_ds4.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=49))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT_ds5c6/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=14))
 
     # EX. 9: PROCESS CAL DATA
     # sh("%s slurm.slr './job-pump.sh jobs/calSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
-    # sh("%s slurm.slr './job-pump.sh jobs/calSkim_ds6.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobs/calSkim_ds6.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/calWave_ds5c.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calWave_ds6.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calSplit.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/calSplit_2.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/calSplit_ds5c.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=99))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT_ds5c/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=11))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -299,11 +308,13 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
                 else: sh("%s '%s'" % (jobStr, job))
         # -sub
         elif runNum==None:
+            if dsNum==5 and i >= 113: dub = ""
             job = "./skim_mjd_data %d %d -l -g %s -t 0.7 %s" % (dsNum, subNum, dub, dsi.skimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-%d.txt" % (job, dsNum, subNum))
             else: sh("%s '%s'" % (jobStr, job))
         # -run
         elif subNum==None:
+            dub = "-d" if run < 23959 or run > 6000000 else ""
             job = "./skim_mjd_data -f %d -l -g %s -t 0.7 %s" % (runNum, dub, dsi.skimDir)
             if useJobQueue: sh("%s >& ./logs/skim-ds%d-run%d.txt" % (job, bkg.GetDSNum(run), run))
             else: sh("%s '%s'" % (jobStr, job))
@@ -324,27 +335,32 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
 
     # bkg
     if not calList:
+        dub = "-d" if dsNum < 6 else ""
         dsMap = bkg.dsMap()
         # -ds
         if subNum==None and runNum==None:
             for i in range(dsMap[dsNum]+1):
-                job = "./wave-skim -n -r %d %d -p %s %s" % (dsNum, i, dsi.skimDir, dsi.waveDir)
+                if dsNum==5 and i >= 113: dub = ""
+                job = "./wave-skim -n %s -r %d %d -p %s %s" % (dub, dsNum, i, dsi.skimDir, dsi.waveDir)
                 if useJobQueue: sh("%s >& ./logs/wave-ds%d-%d.txt" % (job, dsNum, i))
                 else: sh("%s '%s'" % (jobStr, job))
         # -sub
         elif runNum==None:
-            job = "./wave-skim -n -r %d %d -p %s %s" % (dsNum, subNum, dsi.skimDir, dsi.waveDir)
+            if dsNum==5 and i >= 113: dub = ""
+            job = "./wave-skim -n %s -r %d %d -p %s %s" % (dub, dsNum, subNum, dsi.skimDir, dsi.waveDir)
             if useJobQueue: sh("%s >& ./logs/wave-ds%d-%d.txt" % (job, dsNum, subNum))
             else: sh("%s '%s'" % (jobStr, job))
         # -run
         elif subNum==None:
-            job = "./wave-skim -n -f %d %d -p %s %s" % (dsNum, dsNum, runNum, dsi.skimDir, dsi.waveDir)
+            dub = "-d" if run < 23959 or run > 6000000 else ""
+            job = "./wave-skim -n %s -f %d %d -p %s %s" % (dub, dsNum, runNum, dsi.skimDir, dsi.waveDir)
             if useJobQueue: sh("%s >& ./logs/wave-ds%d-run%d.txt" % (job, dsNum, runNum))
             else: sh("%s '%s'" % (jobStr, job))
     # cal
     else:
         for run in calList:
-            job = "./wave-skim -n -c -f %d %d -p %s %s" % (bkg.GetDSNum(run), run, dsi.calSkimDir, dsi.calWaveDir)
+            dub = "-d" if run < 23959 or run > 6000000 else ""
+            job = "./wave-skim -n %s -c -f %d %d -p %s %s" % (dub, bkg.GetDSNum(run), run, dsi.calSkimDir, dsi.calWaveDir)
             if useJobQueue: sh("%s >& ./logs/wave-ds%d-run%d.txt" % (job, bkg.GetDSNum(run), run))
             else: sh("%s '%s'" % (jobStr, job))
 
@@ -464,10 +480,10 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
     """
     from ROOT import TFile, TNamed, TObject
     fileList = []
+    bkg = dsi.BkgInfo()
 
     # bg
     if not calList:
-        bkg = dsi.BkgInfo()
         dsMap = bkg.dsMap()
         # -ds
         if subNum==None and runNum==None:
@@ -484,9 +500,10 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
             fileList.extend(sorted(glob.glob(inPath)))
     # cal
     else:
+        dsRanges = bkg.dsRanges()
         for run in calList:
-            for key in dsi.dsRanges:
-                if dsi.dsRanges[key][0] <= run <= dsi.dsRanges[key][1]:
+            for key in dsRanges:
+                if dsRanges[key][0] <= run <= dsRanges[key][1]:
                     dsNum=key
             inPath = "%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir,dsNum,run)
             fileList.extend(sorted(glob.glob(inPath)))
@@ -510,9 +527,10 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
     """ ./job-panda.py [-q] -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Runs LAT on splitSkim output.  Does not combine output files back together.
     """
+    bkg = dsi.BkgInfo()
+
     # bg
     if not calList:
-        bkg = dsi.BkgInfo()
         dsMap = bkg.dsMap()
         # -ds
         if subNum==None and runNum==None:
@@ -545,15 +563,16 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                 else: sh("""%s '%s'""" % (jobStr, job))
     # cal
     else:
+        dsRanges = bkg.dsRanges()
         for run in calList:
-            for key in dsi.dsRanges:
-                if dsi.dsRanges[key][0] <= run <= dsi.dsRanges[key][1]:
+            for key in dsRanges:
+                if dsRanges[key][0] <= run <= dsRanges[key][1]:
                     dsNum=key
             files = dsi.getFileList("%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir,dsNum,run),run)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (dsi.calLatDir,dsNum,run,idx)
                 job = "./lat.py -b -f %d %d -p %s %s" % (dsNum,run,inFile,outFile)
-                if useJobQueue: sh("%s >& ./logs/lat-ds%d-run%d.txt" % (job, dsNum, i))
+                if useJobQueue: sh("%s >& ./logs/lat-ds%d-run%d.txt" % (job, dsNum, run))
                 else: sh("""%s '%s'""" % (jobStr, job))
 
 
@@ -923,25 +942,36 @@ def specialBuild():
 
 def chunkJobList():
     """ ./job-panda.py -chunk
-    Split the huge LAT job lists into chunks. """
+    Split the huge LAT job lists into chunks.
+    NOTE:  Edison has 48 cores/node, PDSF has 30, Cori has 60.
+    It's probably good to have at least that many jobs in a chunk.
+    """
 
-    with open("%s/jobs/bkgLAT.ls" % dsi.latSWDir) as f:
+    # with open("%s/jobs/bkgLAT.ls" % dsi.latSWDir) as f:
+    # with open("%s/jobs/bkgLAT_3.ls" % dsi.latSWDir) as f:
     # with open("%s/jobs/calLAT.ls" % dsi.latSWDir) as f:
+    with open("%s/jobs/calLAT_ds5c.ls" % dsi.latSWDir) as f:
         jobList = [line.rstrip('\n') for line in f]
 
-    nChunks = 50
+    # nChunks = 50 # full lat BG process
+    # nChunks = 15 # ds5c & ds6
+    # nChunks = 100 # DS0-5c cal process
+    nChunks = 11 # DS5c cal
     jobsInChunk = int(len(jobList)/nChunks)
+    print("nChunks %d  jobs in chunk %d" % (nChunks, jobsInChunk))
 
     for iCh in range(nChunks):
         cLo, cHi = iCh*jobsInChunk, (iCh+1) * jobsInChunk - 1
         if iCh == nChunks-1: cHi = len(jobList)-1
-        jobFile = "%s/jobs/bkgLAT/bkgLAT_%d.ls" % (dsi.latSWDir, iCh)
+        # jobFile = "%s/jobs/bkgLAT/bkgLAT_%d.ls" % (dsi.latSWDir, iCh)
+        # jobFile = "%s/jobs/bkgLAT_ds5c6/bkgLAT_%d.ls" % (dsi.latSWDir, iCh)
         # jobFile = "%s/jobs/calLAT/calLAT_%d.ls" % (dsi.latSWDir, iCh)
+        jobFile = "%s/jobs/calLAT_ds5c/calLAT_%d.ls" % (dsi.latSWDir, iCh)
         with open(jobFile,"w") as f:
-            print(jobFile)
+            # print(jobFile)
             for job in jobList[cLo:cHi]:
                 f.write(job+"\n")
-                print(job)
+                # print(job)
 
 
 def quickTest():

@@ -17,7 +17,7 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
-def GetHisto(npArr,xLo, xHi, xpb, nb=None, shift=True):
+def GetHisto(npArr, xLo, xHi, xpb, nb=None, shift=True):
     """ This returns a histogram w/ shifted bins.  For use with: plt.plot(x, y, ls='steps')"""
     if nb is None: nb = int((xHi-xLo)/xpb)
     y, x = np.histogram(npArr, bins=nb, range=(xLo, xHi))

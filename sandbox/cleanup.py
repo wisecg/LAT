@@ -6,9 +6,9 @@ import dsi
 def main():
 
     # cleanUpLogs()
-    # print("heyy")
     # checkFiles()
-    checkWaveSkim()
+    checkDS5CWaveSkim()
+    # checkWaveSkim()
 
 def cleanUpLogs():
 
@@ -95,6 +95,47 @@ def checkFiles():
 
         f.Close()
         # return
+
+
+def checkDS5CWaveSkim():
+    from ROOT import TFile, TTree
+
+    runList = []
+    calInfo = dsi.CalInfo()
+    calKeys = calInfo.GetKeys()
+    for key in calKeys:
+        print("key:",key)
+        if key!="ds5c": continue
+        for idx in range(calInfo.GetIdxs(key)):
+            lst = calInfo.GetCalList(key,idx)
+            print(lst)
+            runList += lst
+
+    for run in runList:
+
+        # check waveSkim files
+        # inPath = "%s/waveSkimDS%d_run%d.root" % (dsi.calWaveDir,5,run)
+        # tf = TFile(inPath)
+        # tt = tf.Get("skimTree")
+        # chType = ""
+        # for br in tt.GetListOfBranches():
+        #     if br.GetName()!="channel": continue
+        #     chType = br.GetClassName()
+        # print(inPath.split("/")[-1], tt.GetEntries(), chType)
+        # return
+
+        # delete splitSkim files
+        print(run)
+        fWave = glob.glob("%s/waveSkimDS%d_run%d.root" % (dsi.calWaveDir,5,run))
+        fList = glob.glob("%s/splitSkimDS%d_run%d_*.root" % (dsi.calSplitDir,5,run))
+        print(fWave)
+        # print(fList)
+        # for f in fList: os.remove(f)
+
+
+
+
+
 
 
 def checkWaveSkim():
