@@ -449,7 +449,6 @@ def GetGoodChanList(dsNum, dType=None):
     return sorted(goodList)
 
 
-
 def getDBRecord(key, verbose=False, calDB=None, pars=None):
     """ View a particular database record. """
     import tinydb as db
@@ -478,6 +477,33 @@ def getDBRecord(key, verbose=False, calDB=None, pars=None):
             for key in sorted([int(k) for k in rec]):
                 print(key, rec[u'%d' % key])
             print(" ")
+
+
+def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=None):
+    """ Adds entries to the DB. Checks for duplicate records.
+    The format of 'entry' should be a nested dict:
+    myEntry = {"key":key, "vals":vals}
+    """
+    import tinydb as db
+    if calDB is None:
+        calDB = db.TinyDB(dbFile)
+        pars = db.Query()
+
+    key, vals = entry["key"], entry["vals"]
+    recList = calDB.search(pars.key==key)
+    nRec = len(recList)
+    if nRec == 0:
+        print("Record '%s' doesn't exist in the DB  Adding it ..." % key)
+        calDB.insert(entry)
+    elif nRec == 1:
+        prevRec = recList[0]['vals']
+        if prevRec!=vals:
+            print("An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate))
+            if forceUpdate:
+                print("Updating record: ",key)
+                calDB.update(entry, pars.key==key)
+    else:
+        print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
 
 
 def test():
