@@ -147,8 +147,8 @@ def generateThreshDict(dsNum = 1, inDir = '', fillDb = False):
                 numErr += 1
         # Finally fill DB here if all values look good
         if fillDb:
-            wl.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=False)
-            wl.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=True)
+            ds.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=False)
+            # ds.setDBRecord({"key":keyList[idx],"vals":dictList[idx]}, forceUpdate=True)
     print("Finished final checks, found {} errors".format(numErr))
     return dictList
 

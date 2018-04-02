@@ -18,14 +18,13 @@ def main():
     dsNum = 5
     pdfArrDict, pdfFlatDict = {}, {}
 
-
     # ReduceData(dsNum)
     # Load Background data and bin exactly as PDF
     startTime = 1485575988
     endTime = 1489762153
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    pdfArrDict['Axion'], nTimeBins, timeBinLowEdge = convertaxionPDF(startTime, endTime)
+    pdfArrDict['Axion'], nTimeBins, timeBinLowEdge, removeMask = convertaxionPDF(startTime, endTime)
     print(nTimeBins)
     print(len(timeBinLowEdge))
 
@@ -37,9 +36,6 @@ def main():
     dataArr = df.loc[:, ['Energy','UnixTime']].values
     energyBins = np.arange(0,20.1,0.1)
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
-
-    print(yedges.shape)
-    return
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
     dfTrit = pd.read_hdf('{}/TritSpec.h5'.format(inDir))
@@ -55,10 +51,20 @@ def main():
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
 
+
+    # Remove columns with zeros
+    pdfArrDict['Axion'] = np.delete(pdfArrDict['Axion'], removeMask, axis=1)
+    pdfArrDict['Data'] = np.delete(pdfArrDict['Data'], removeMask, axis=1)
+    pdfArrDict['Tritium'] = np.delete(pdfArrDict['Tritium'], removeMask, axis=1)
+    pdfArrDict['Fe55'] = np.delete(pdfArrDict['Fe55'], removeMask, axis=1)
+    pdfArrDict['Zn65'] = np.delete(pdfArrDict['Zn65'], removeMask, axis=1)
+    pdfArrDict['Ge68'] = np.delete(pdfArrDict['Ge68'], removeMask, axis=1)
+    print('Axion Reduced Shape:', pdfArrDict['Axion'].shape)
     print('Generated all PDFs')
 
     # Draw PDFs
-    # drawPDFs(pdfArrDict)
+    drawPDFs(pdfArrDict)
+    return
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
@@ -125,12 +131,15 @@ def convertaxionPDF(startTime, endTime):
                             if time >= startBin and time <= endBin])
     fAxion.Close()
 
-    timeMask = GenerateLivetimeMask(GenerateLivetimeMask)
-
     AxionArr = np.array(AxionList)
+
+    timeMask = GenerateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
+    # AxionArr = AxionArr*timeMask
     # Roughly normalize so the axion scale is the same as the other PDFs
-    NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)
-    return NormAxionArr, nTimeBins, timeBinLowEdge
+    NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
+
+    removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
+    return NormAxionArr, nTimeBins, timeBinLowEdge, removeMask
 
 
 def generateGaus(energyList, meansDict):
@@ -223,20 +232,20 @@ def drawPDFs(pdfArrDict):
     ax1[1,2].set_xticklabels(timeLabels, rotation=50)
 
     plt.tight_layout()
-    # plt.show()
-    fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    plt.show()
+    # fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
 
 
-def GenerateLivetimeMask(timeBinLowEdge):
+def GenerateLivetimeMask(timeBinLowEdge, AxionShape):
     """
         Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
 
     """
     inFile = os.environ['LATDIR']+'/data/MCMC/DS5b_RunTimes.txt'
-    # livetimeMask = {}
+    livetimeMask = np.ones(AxionShape)
     gapMatrix = {}
-    prevStart = 0
-    prevEnd = 0
+    prevEnd = 1485575988 # Start time of DS5b
+    totalGap = 0
     try:
         f = open(inFile)
     except:
@@ -244,13 +253,18 @@ def GenerateLivetimeMask(timeBinLowEdge):
     for line in f:
         currentArr = np.array(line.split('\t'), dtype=np.int)
         if currentArr[1] != prevEnd:
+            # Fills in gapMatrix with livetime gaps, run: end, start, gap size (s)
             gapMatrix.setdefault(currentArr[0], [prevEnd, currentArr[1], currentArr[1]-prevEnd])
-            prevStart, prevEnd = currentArr[1], currentArr[2]
+            startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
+            stopIndex = np.where(timeBinLowEdge >= currentArr[1])[0][0]
+            livetimeMask[:, startIndex:stopIndex] = 0
+            totalGap += currentArr[1]-prevEnd
+            prevEnd = currentArr[2]
         else:
-            prevStart, prevEnd = currentArr[1], currentArr[2]
+            prevEnd = currentArr[2]
 
-    print (gapMatrix)
-    return gapMatrix
+    print(gapMatrix)
+    return livetimeMask
 
 def GetSigma(energy, dsNum=1):
     p0,p1,p2 = 0., 0., 0.
