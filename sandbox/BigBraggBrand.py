@@ -18,7 +18,7 @@ def main():
     dsNum = 5
     pdfArrDict, pdfFlatDict = {}, {}
 
-    # ReduceData(dsNum)
+    # reduceData(dsNum)
     # Load Background data and bin exactly as PDF
     startTime = 1485575988
     endTime = 1489762153
@@ -56,11 +56,12 @@ def main():
     pdfArrDict['Zn65'] = np.delete(pdfArrDict['Zn65'], removeMask, axis=1)
     pdfArrDict['Ge68'] = np.delete(pdfArrDict['Ge68'], removeMask, axis=1)
     pdfArrDict['Bkg'] = np.ones(pdfArrDict['Data'].shape)
+    pdfArrDict['Time'] = np.delete(timeBinLowEdge, removeMask)
     print('Generated all PDFs')
 
     # Draw PDFs
     # drawPDFs(pdfArrDict)
-    dftrace = pd.read_hdf('{}/AxionFitTrace_DS{}.h5'.format(inDir, dsNum))
+    dftrace = pd.read_hdf('{}/AxionFitTrace_DS{}_2.h5'.format(inDir, dsNum))
     drawFinalSpectra(pdfArrDict, dftrace)
     return
 
@@ -136,43 +137,79 @@ def convertaxionPDF(startTime, endTime):
 
     AxionArr = np.array(AxionList)
 
-    timeMask = GenerateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
+    timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
     # AxionArr = AxionArr*timeMask
     # Roughly normalize so the axion scale is the same as the other PDFs
     NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
 
+    # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
-    return NormAxionArr, nTimeBins, timeBinLowEdge, removeMask
+    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask
 
 
-def generateGaus(energyList, meansDict):
+def drawFinalSpectra(pdfDict, trace):
     """
-        Generates Gaussian PDFs for X-ray peaks based off of energy array
+        Draws final spectra using mean of posterior
+        Also draws time spectra as well
     """
-    outDict = {}
-    for name, mean in meansDict.items():
-        outDict.setdefault(name, norm.pdf(energyList, loc=mean, scale=GetSigma(mean, 5)))
-    return outDict
+    pdfSpecDict = {}
+    pdfTimeDict = {}
 
+    energyBins = np.linspace(0,20,201)
+    # Convert unix time to date with seconds
+    timeBins = np.array(pdfDict['Time'], dtype='datetime64[s]')
+    # Then cast again to only days
+    timeBins = np.array(timeBins, dtype='datetime64[D]')
 
-def ReduceData(dsNum):
-    import ROOT
-    inDir, outDir = '/Users/brianzhu/project/cuts/corrfs_rn2', os.environ['LATDIR']+'/data/MCMC'
-    skimTree = ROOT.TChain("skimTree")
-    skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
-    theCut = "trapENFCal > 0.8 && trapENFCal < 50"
-    nPass = skimTree.Draw('trapENFCal:channel:globalTime', theCut, 'goff')
-    print ("{} events passed all cuts".format(nPass))
-    nEnergy = skimTree.GetV1()
-    nCh = skimTree.GetV2()
-    nTime = skimTree.GetV3()
-    nChList = list(int(nCh[n]) for n in range(nPass))
-    nEnergyList = list(float(nEnergy[n]) for n in range(nPass))
-    nTimeList = list(int(nTime[n]) for n in range(nPass))
+    figSpec, axSpec = plt.subplots(figsize=(10,7))
+    figTime, axTime = plt.subplots(figsize=(10,7))
 
-    df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList})
-    print(df.head(10))
-    df.to_hdf('{}/DS{}_Spectrum.h5'.format(outDir, dsNum), 'skimTree', mode='w', format='table')
+    DataSpec = pdfDict['Data'].sum(axis=1)
+    DataSpecErr = np.sqrt(DataSpec)
+    TimeSpec = pdfDict['Data'].sum(axis=0)
+    TimeSpecErr = np.sqrt(TimeSpec)
+
+    axSpec.errorbar(energyBins[:-1], DataSpec, yerr=DataSpecErr, color='black', fmt='o', label='Data')
+    axTime.errorbar(timeBins[:-1], TimeSpec, yerr=TimeSpecErr, color='black', fmt='o', label='Data')
+
+    # Create a dummy for the total spectrum
+    totalSpec = np.zeros(DataSpec.shape)
+    totalTime = np.zeros(TimeSpec.shape)
+
+    # Take all the pdfs and flatten time axis
+    for key in pdfDict.keys():
+        if key == 'Data' or key == 'Time':
+            continue
+        tempSpec = trace[key].mean()*pdfDict[key].sum(axis=1)
+        tempTime = trace[key].mean()*pdfDict[key].sum(axis=0)
+
+        pdfSpecDict.setdefault(key, tempSpec)
+        pdfTimeDict.setdefault(key, tempTime)
+
+        axSpec.plot(energyBins[:-1], tempSpec, label=key, linestyle='--')
+        axTime.plot(timeBins[:-1], tempTime, label=key, linestyle='--')
+
+        totalSpec += tempSpec
+        totalTime += tempTime
+
+    axSpec.plot(energyBins[:-1], totalSpec, label='Total Model')
+    axSpec.set_title('DS5b Enriched + Natural')
+    axSpec.set_ylabel('Counts/0.1 keV')
+    axSpec.set_xlabel('Energy (keV)')
+    axSpec.legend()
+    plt.tight_layout()
+
+    axTime.plot(timeBins[:-1], totalTime, label='Total Model')
+    axTime.set_title('DS5b Enriched + Natural')
+    axTime.set_ylabel('Counts/5 minutes')
+    axTime.set_xlabel('Time')
+    axTime.locator_params(axis='x', nbins=len(timeBins[:-1])/100) # Draw fewer ticks
+    axTime.legend()
+
+    plt.tight_layout()
+    # figSpec.savefig('{}/AxionFitResult_Spectrum.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    figTime.savefig('{}/AxionFitResult_Time.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    plt.show()
 
 
 def drawPDFs(pdfArrDict):
@@ -239,35 +276,7 @@ def drawPDFs(pdfArrDict):
     # fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
 
 
-def drawFinalSpectra(pdfDict, trace):
-    """
-        Draws final spectra using mode of posterior
-    """
-    pdfSpecDict = {}
-    figSpec, axSpec = plt.subplots(figsize=(10,7))
-
-    DataSpec = pdfDict['Data'].sum(axis=1)
-    axSpec.plot(DataSpec, label='Data', color='black')
-
-    # Create a dummy for the total spectrum
-    totalSpec = np.zeros(DataSpec.shape)
-
-    # Take all the pdfs and flatten time axis
-    for key in pdfDict.keys():
-        if key == 'Data':
-            continue
-        tempSpec = trace[key].mean()*pdfDict[key].sum(axis=1)
-        pdfSpecDict.setdefault(key, tempSpec)
-        axSpec.plot(tempSpec, label=key, alpha=0.5, linestyle='--')
-        totalSpec += tempSpec
-
-    axSpec.plot(totalSpec, label='Total Model')
-    axSpec.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def GenerateLivetimeMask(timeBinLowEdge, AxionShape):
+def generateLivetimeMask(timeBinLowEdge, AxionShape):
     """
         Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
 
@@ -296,7 +305,8 @@ def GenerateLivetimeMask(timeBinLowEdge, AxionShape):
 
     return livetimeMask
 
-def GetSigma(energy, dsNum=1):
+
+def getSigma(energy, dsNum=1):
     p0,p1,p2 = 0., 0., 0.
     if dsNum==0:
         p0 = 0.147; p1=0.0173; p2=0.0003
@@ -311,6 +321,49 @@ def GetSigma(energy, dsNum=1):
     else:
         p0 = 0.2121; p1=0.01838; p2=0.00031137
     return np.sqrt(p0*p0 + p1*p1*energy + p2*p2*energy*energy)
+
+
+def generateGaus(energyList, meansDict):
+    """
+        Generates Gaussian PDFs for X-ray peaks based off of energy array
+    """
+    outDict = {}
+    for name, mean in meansDict.items():
+        outDict.setdefault(name, norm.pdf(energyList, loc=mean, scale=getSigma(mean, 5)))
+    return outDict
+
+
+def posteriorChecks(model, trace):
+    """
+        Performs various posterior checks
+    """
+    # Widely-applicable Information Criterion (WAIC)
+    model_waic = pm.waic(trace, model)
+
+
+    # Leave-out-one Cross-validation (LOO)
+    model_loo = pm.loo(trace, model)
+
+
+
+def reduceData(dsNum):
+    import ROOT
+    inDir, outDir = '/Users/brianzhu/project/cuts/corrfs_rn2', os.environ['LATDIR']+'/data/MCMC'
+    skimTree = ROOT.TChain("skimTree")
+    skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
+    theCut = "trapENFCal > 0.8 && trapENFCal < 50"
+    nPass = skimTree.Draw('trapENFCal:channel:globalTime', theCut, 'goff')
+    print ("{} events passed all cuts".format(nPass))
+    nEnergy = skimTree.GetV1()
+    nCh = skimTree.GetV2()
+    nTime = skimTree.GetV3()
+    nChList = list(int(nCh[n]) for n in range(nPass))
+    nEnergyList = list(float(nEnergy[n]) for n in range(nPass))
+    nTimeList = list(int(nTime[n]) for n in range(nPass))
+
+    df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList})
+    print(df.head(10))
+    df.to_hdf('{}/DS{}_Spectrum.h5'.format(outDir, dsNum), 'skimTree', mode='w', format='table')
 
 
 if __name__ == '__main__':
