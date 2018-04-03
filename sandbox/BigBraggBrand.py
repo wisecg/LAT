@@ -25,10 +25,7 @@ def main():
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
     pdfArrDict['Axion'], nTimeBins, timeBinLowEdge, removeMask = convertaxionPDF(startTime, endTime)
-    print(nTimeBins)
-    print(len(timeBinLowEdge))
-
-    print("Using {} time bins".format(nTimeBins))
+    # print("Using {} time bins".format(nTimeBins))
 
     inDir = os.environ['LATDIR']+'/data/MCMC'
     df = pd.read_hdf('{}/DS{}_Spectrum.h5'.format(inDir, dsNum))
@@ -51,7 +48,6 @@ def main():
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
 
-
     # Remove columns with zeros
     pdfArrDict['Axion'] = np.delete(pdfArrDict['Axion'], removeMask, axis=1)
     pdfArrDict['Data'] = np.delete(pdfArrDict['Data'], removeMask, axis=1)
@@ -59,18 +55,20 @@ def main():
     pdfArrDict['Fe55'] = np.delete(pdfArrDict['Fe55'], removeMask, axis=1)
     pdfArrDict['Zn65'] = np.delete(pdfArrDict['Zn65'], removeMask, axis=1)
     pdfArrDict['Ge68'] = np.delete(pdfArrDict['Ge68'], removeMask, axis=1)
-    print('Axion Reduced Shape:', pdfArrDict['Axion'].shape)
+    pdfArrDict['Bkg'] = np.ones(pdfArrDict['Data'].shape)
     print('Generated all PDFs')
 
     # Draw PDFs
-    drawPDFs(pdfArrDict)
+    # drawPDFs(pdfArrDict)
+    dftrace = pd.read_hdf('{}/AxionFitTrace_DS{}.h5'.format(inDir, dsNum))
+    drawFinalSpectra(pdfArrDict, dftrace)
     return
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
     pdfFlatDict['Tritium'] = pdfArrDict['Tritium'].flatten()
     pdfFlatDict['Axion'] = pdfArrDict['Axion'].flatten()
-    pdfFlatDict['Bkg'] = np.ones(pdfFlatDict['Data'].shape)
+    pdfFlatDict['Bkg'] = pdfArrDict['Bkg'].flatten()
     pdfFlatDict['Fe55'] = pdfArrDict['Fe55'].flatten()
     pdfFlatDict['Zn65'] = pdfArrDict['Zn65'].flatten()
     pdfFlatDict['Ge68'] = pdfArrDict['Ge68'].flatten()
@@ -80,11 +78,16 @@ def main():
     print('Built model')
 
     with model:
-        trace = pm.sample(draws=5000, chains=1, n_init=500, progressbar=False)
+        trace = pm.sample(draws=75000, chains=1, n_init=1500, progressbar=True)
     dfTrace = pm.trace_to_dataframe(trace, include_transformed=True)
-    dfTrace.to_hdf('{}/AxionFitTrace_DS{}.h5'.format(inDir, dsNum), "skimTree", mode='w', format='table')
-    # pm.traceplot(trace)
+    dfTrace.to_hdf('{}/AxionFitTrace_DS{}_2.h5'.format(inDir, dsNum), "skimTree", mode='w', format='table')
     print(pm.summary(trace))
+    fig, axs = plt.subplots(6,2, figsize=(12,12))
+    pm.traceplot(trace, ax=axs)
+    fig.savefig('{}/AxionFit_TracePlot.png'.format(inDir))
+
+    # drawFinalSpectra(pdfArrDict)
+    # plt.show()
 
 
 def constructModel(pdfDict):
@@ -124,7 +127,7 @@ def convertaxionPDF(startTime, endTime):
     AxionList = []
     timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(time)
                         for time in range(hday.GetNbinsX())
-                        if time >= startBin and time <= endBin]
+                        if time >= startBin and time <= endBin+1]
     for energy in range(hday.GetNbinsY()):
         AxionList.append([hday.GetBinContent(time, energy)
                             for time in range(hday.GetNbinsX())
@@ -236,6 +239,34 @@ def drawPDFs(pdfArrDict):
     # fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
 
 
+def drawFinalSpectra(pdfDict, trace):
+    """
+        Draws final spectra using mode of posterior
+    """
+    pdfSpecDict = {}
+    figSpec, axSpec = plt.subplots(figsize=(10,7))
+
+    DataSpec = pdfDict['Data'].sum(axis=1)
+    axSpec.plot(DataSpec, label='Data', color='black')
+
+    # Create a dummy for the total spectrum
+    totalSpec = np.zeros(DataSpec.shape)
+
+    # Take all the pdfs and flatten time axis
+    for key in pdfDict.keys():
+        if key == 'Data':
+            continue
+        tempSpec = trace[key].mean()*pdfDict[key].sum(axis=1)
+        pdfSpecDict.setdefault(key, tempSpec)
+        axSpec.plot(tempSpec, label=key, alpha=0.5, linestyle='--')
+        totalSpec += tempSpec
+
+    axSpec.plot(totalSpec, label='Total Model')
+    axSpec.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 def GenerateLivetimeMask(timeBinLowEdge, AxionShape):
     """
         Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
@@ -263,7 +294,6 @@ def GenerateLivetimeMask(timeBinLowEdge, AxionShape):
         else:
             prevEnd = currentArr[2]
 
-    print(gapMatrix)
     return livetimeMask
 
 def GetSigma(energy, dsNum=1):
