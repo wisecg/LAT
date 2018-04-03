@@ -45,6 +45,34 @@ class BkgInfo:
             6:[25672,100000]
         }
 
+    def getRanges(self, key):
+        if key=="5A":
+            return {i:self.master[5][i] for i in range(0,79+1)}
+        elif key=="5B":
+            return {i:self.master[5][i] for i in range(80,112+1)}
+        elif key=="5C":
+            return {i:self.master[5][i] for i in range(113,121+1)}
+        else:
+            return self.master[int(key)]
+
+    def getRunList(self, key, sub=None):
+        bkgRanges = self.getRanges(key)
+        runList = []
+        if sub is None:
+            for key in sorted(bkgRanges.keys()):
+                subRange = bkgRanges[key]
+                for i in range(0,len(subRange),2):
+                    runLo, runHi = subRange[i], subRange[i+1]
+                    for r in range(runLo, runHi+1):
+                        runList.append(r)
+        else:
+            subRange = bkgRanges[sub]
+            for i in range(0,len(subRange),2):
+                runLo, runHi = subRange[i], subRange[i+1]
+                for r in range(runLo, runHi+1):
+                    runList.append(r)
+        return runList
+
     def GetDSNum(self,run):
         ranges = self.dsRanges()
         for ids in range(len(ranges)):
@@ -287,7 +315,7 @@ def scrubDict(myDict,opt=''):
         return makeIntKeys
 
 
-def getFileList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
+def getSplitList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
     """ Creates a dict of files w/ the format {'DSX_X_X':filePath.}
         Used to combine and split apart files during the LAT processing.
         Used in place of sorted(glob.glob(myPath)).
@@ -513,11 +541,13 @@ def test():
     # runsCal = cal.GetSpecialList()
     # print(runsCal)
 
-    ds = BkgInfo()
-    print(ds.dsMap())
-    # print(ds.dsRanges())
-    # print(ds.GetDSNum(18588))
-    # print(ds.GetBkgIdx(6,27065))
+    bkg = BkgInfo()
+    print(bkg.dsMap())
+    # print(bkg.dsRanges())
+    # print(bkg.GetDSNum(18588))
+    # print(bkg.GetBkgIdx(6,27065))
+
+    print(bkg.getRanges(4))
 
 
 if __name__=="__main__":

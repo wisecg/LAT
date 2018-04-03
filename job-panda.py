@@ -119,7 +119,7 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--image=wisecg/mjsw:v2",
             "-p shared",
             "-n30", # match nCores for pdsf below
-            "-t 12:00:00",
+            "-t 24:00:00",
         ],
         "cori": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -226,10 +226,11 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/bkgLAT_ds4.ls python3 %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=49))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT_ds5c6/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=14))
+    # sh("%s slurm.slr './job-pump.sh jobs/bkgLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 9: PROCESS CAL DATA
     # sh("%s slurm.slr './job-pump.sh jobs/calSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
-    sh("%s slurm.slr './job-pump.sh jobs/calSkim_ds6.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/calSkim_ds6.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calWave.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calWave_ds5c.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/calWave_ds6.ls wave-skim %d %d'" % getSBatch("pdsf-pump"))
@@ -238,6 +239,11 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/calSplit_ds5c.ls python3 %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=99))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT_ds5c/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=11))
+    # sh("%s slurm.slr './job-pump.sh jobs/calLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+
+    # EX. 10: file integrity checks
+    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
+    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -c -all"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -535,7 +541,7 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
         # -ds
         if subNum==None and runNum==None:
             for subNum in range(dsMap[dsNum]+1):
-                files = dsi.getFileList("%s/splitSkimDS%d_%d*" % (dsi.splitDir,dsNum,subNum),subNum)
+                files = dsi.getSplitList("%s/splitSkimDS%d_%d*" % (dsi.splitDir,dsNum,subNum),subNum)
                 for idx, inFile in sorted(files.items()):
                     outFile = "%s/latSkimDS%d_%d_%d.root" % (dsi.latDir,dsNum,subNum,idx)
                     job = "./lat.py -b -r %d %d -p %s %s" % (dsNum,subNum,inFile,outFile)
@@ -547,7 +553,7 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                     else: sh("""%s '%s'""" % (jobStr, job))
         # -sub
         elif runNum==None:
-            files = dsi.getFileList("%s/splitSkimDS%d_%d*" % (dsi.splitDir,dsNum,subNum),subNum)
+            files = dsi.getSplitList("%s/splitSkimDS%d_%d*" % (dsi.splitDir,dsNum,subNum),subNum)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_%d_%d.root" % (dsi.latDir,dsNum,subNum,idx)
                 job = "./lat.py -b -r %d %d -p %s %s" % (dsNum,subNum,inFile,outFile)
@@ -555,7 +561,7 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
                 else: sh("""%s '%s'""" % (jobStr, job))
         # -run
         elif subNum==None:
-            files = dsi.getFileList("%s/splitSkimDS%d_run%d*" % (dsi.splitDir,dsNum,runNum),runNum)
+            files = dsi.getSplitList("%s/splitSkimDS%d_run%d*" % (dsi.splitDir,dsNum,runNum),runNum)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (dsi.latDir,dsNum,runNum,idx)
                 job = "./lat.py -b -r %d %d -p %s %s" % (dsNum,runNum,inFile,outFile)
@@ -568,11 +574,11 @@ def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
             for key in dsRanges:
                 if dsRanges[key][0] <= run <= dsRanges[key][1]:
                     dsNum=key
-            files = dsi.getFileList("%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir,dsNum,run),run)
+            files = dsi.getSplitList("%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir,dsNum,run),run)
             for idx, inFile in sorted(files.items()):
                 outFile = "%s/latSkimDS%d_run%d_%d.root" % (dsi.calLatDir,dsNum,run,idx)
                 job = "./lat.py -b -f %d %d -p %s %s" % (dsNum,run,inFile,outFile)
-                if useJobQueue: sh("%s >& ./logs/lat-ds%d-run%d.txt" % (job, dsNum, run))
+                if useJobQueue: sh("%s >& ./logs/lat-ds%d-run%d-%d.txt" % (job, dsNum, run, idx))
                 else: sh("""%s '%s'""" % (jobStr, job))
 
 

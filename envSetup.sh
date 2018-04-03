@@ -92,6 +92,7 @@ fi
 # we're on pdsf (slurm job)
 if [ "$NERSC_HOST" = "pdsf" ] && [ -n "$SLURM_JOB_ID" ]; then
   sourceEnvClint
+  sourceEnvMJD
 fi
 
 # do for cron jobs
