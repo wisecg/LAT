@@ -34,8 +34,9 @@ def main():
     # getSpecPandas()
     # getSimPandas()
     # loadSpec()
-    interceptList = loadScatter()
-    print('STD: ', np.std(interceptList))
+    interceptList, distList = loadScatter()
+    print('STD (intercept): ', np.std(interceptList))
+    print('STD (distance): ', np.std(distList))
 
     return
 
@@ -305,6 +306,7 @@ def loadSpec():
 def loadScatter():
     """
         Draws various spectra plots and also performs linear regression on scatter plots
+
     """
     from scipy import stats
     inDir = os.environ['LATDIR']
@@ -319,12 +321,19 @@ def loadScatter():
     fig1, ax1 = plt.subplots(figsize=(10,7))
 
     interceptList = []
+    distList = []
 
     for CPD in detList1:
         dfCh = dfCut.loc[dfCut['CPD1']==CPD]
 
         x = dfCh['trapENFCal1'].values
         y = dfCh['EMirror'].values
+
+        # Find distance between (x,y) and x = y
+        xCut = dfCh['trapENFCal1'].loc[dfCh['trapENFCal1'] < 10].values
+        yCut = dfCh['EMirror'].loc[dfCh['trapENFCal1'] < 10].values
+        distance = abs(xCut-yCut)
+        distList.append(distance.sum()/len(distance))
 
         slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
         mx = x.mean()
@@ -353,7 +362,7 @@ def loadScatter():
         # g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
         # plt.show()
         interceptList.append(intercept)
-    return interceptList
+    return interceptList, distList
 
 def loadMatrix(dType = 'Cal'):
     """
