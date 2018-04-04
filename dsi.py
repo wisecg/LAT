@@ -235,6 +235,95 @@ class CalInfo:
         return self.special
 
 
+class DetInfo:
+    def __init__(self):
+        self.dets = {}
+        self.dets["M1"] = [
+            '111', '112', '113', '114',
+            '121', '122', '123', '124',
+            '131', '132', '133', '134',
+            '141', '142', '143', '144', '145',
+            '151', '152', '153', '154',
+            '161', '162', '163', '164',
+            '171', '172', '173', '174'
+            ]
+        self.dets["M2"] = [
+            '211', '212', '213', '214',
+            '221', '222', '223', '224', '225',
+            '231', '232', '233',
+            '241', '242', '243', '244', '245',
+            '251', '252', '253', '254',
+            '261', '262', '263', '264',
+            '271', '272', '273', '274'
+            ]
+        self.allDets = self.dets["M1"] + self.dets["M2"]
+
+    # # TODO: get rid of this object or put it into a class
+    # DetID = [0,1]
+    # PMon = [0,1]
+    # DetID[1] = {
+    #     578:1425380, 579:1425380, 580:1426612, 581:1426612, 582:1425750, 583:1425750, 592:1425370, 593:1425370,
+    #     594:1426621, 595:1426621, 596:0, 598:1425741, 599:1425741, 600:28482, 601:28482, 608:1425381, 609:1425381,
+    #     610:1426980, 611:1426980, 612:0, 614:28469, 615:28469, 616:28480, 617:28480, 624:28455, 625:28455, 626:1425740,
+    #     627:1425740, 628:28470, 629:28470, 632:1425742, 633:1425742, 640:1426650, 641:1426650, 644:0, 648:1426640,
+    #     649:1426640, 664:1425730, 665:1425730, 672:1426610, 673:1426610, 674:0, 675:0, 676:0, 677:0, 678:1425751,
+    #     679:1425751, 690:1426620, 691:1426620, 692:28474, 693:28474, 694:28465, 695:28465
+    #     }
+    # PMon[1] = [644, 612, 596, 676, 674, 675, 677] # 674,675,677 are not in the MJTChannelMap's due to a bug.
+
+    # def LoadBadDetectorMap(dsNum):
+    #     """ TODO: vet this with chan-sel.py """
+    #
+    #     detIDIsBad = []
+    #     if dsNum==0: detIDIsBad = [28474, 1426622, 28480, 1426980, 1426620, 1425370]
+    #     if dsNum==1: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425751, 1425731, 1426611]
+    #     if dsNum==2: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425731, 1426611]
+    #     if dsNum==3: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611]
+    #     if dsNum==4: detIDIsBad = [28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619]
+    #     if dsNum==5: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+    #     if dsNum==6: detIDIsBad = [1426981, 28474, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+    #     return detIDIsBad
+    #
+    #
+    # def LoadVetoDetectorMap(dsNum):
+    #     """ TODO: vet this with chan-sel.py """
+    #
+    #     detIDIsVetoOnly = []
+    #     if dsNum == 0: detIDIsVetoOnly = [1425381, 1425742]
+    #     if dsNum == 1: detIDIsVetoOnly = [28480]
+    #     if dsNum == 2: detIDIsVetoOnly = [28480, 1425751, 1426621]
+    #     if dsNum == 3: detIDIsVetoOnly = [28480, 28470, 28463]
+    #     if dsNum == 4: detIDIsVetoOnly = [28459, 1426641, 1427481, 28456, 1427120, 1427121]
+    #     if dsNum == 5: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    #     if dsNum == 6: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
+    #     return detIDIsVetoOnly
+    #
+    #
+    # def GetGoodChanList(dsNum, dType=None):
+    #     """ TODO: vet this with chan-sel.py """
+    #
+    #     badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
+    #
+    #     # make a list of the channels corresponding to the bad IDs.
+    #     badChans = []
+    #     for badID in badIDs:
+    #         for ch, detID in DetID[dsNum].items():
+    #             if badID == detID: badChans.append(ch)
+    #
+    #     # high-gain channels, without pulser monitors, without bad+veto channels.
+    #     goodList = []
+    #     if dType is None:
+    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    #     elif dType is 'Enr':
+    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
+    #     elif dType is 'Nat':
+    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
+    #     else:
+    #         print('Type not found, returning all channels')
+    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
+    #     return sorted(goodList)
+
+
 class SimInfo:
     """ Adapted from ~mjdsim/analysisScriptsV2/analysisUtilities.py """
     dets = {}
@@ -335,6 +424,7 @@ def getSplitList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
 
 
 def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
+    """ Parse granular exposure output from ds_livetime.cc """
 
     chList = GetGoodChanList(dsNum)
     if dsNum==5 and modNum==1: chList = [ch for ch in chList if ch < 1000 and ch!=692]
@@ -408,73 +498,6 @@ def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
             print("%d   %.4f   %-8.4f    %-8.4f    %-8.4f" % (ch, aMass, mySum, ltResult, diff))
 
     return expDict
-
-
-# TODO: get rid of this object or put it into a class
-DetID = [0,1]
-PMon = [0,1]
-DetID[1] = {
-    578:1425380, 579:1425380, 580:1426612, 581:1426612, 582:1425750, 583:1425750, 592:1425370, 593:1425370,
-    594:1426621, 595:1426621, 596:0, 598:1425741, 599:1425741, 600:28482, 601:28482, 608:1425381, 609:1425381,
-    610:1426980, 611:1426980, 612:0, 614:28469, 615:28469, 616:28480, 617:28480, 624:28455, 625:28455, 626:1425740,
-    627:1425740, 628:28470, 629:28470, 632:1425742, 633:1425742, 640:1426650, 641:1426650, 644:0, 648:1426640,
-    649:1426640, 664:1425730, 665:1425730, 672:1426610, 673:1426610, 674:0, 675:0, 676:0, 677:0, 678:1425751,
-    679:1425751, 690:1426620, 691:1426620, 692:28474, 693:28474, 694:28465, 695:28465
-    }
-PMon[1] = [644, 612, 596, 676, 674, 675, 677] # 674,675,677 are not in the MJTChannelMap's due to a bug.
-
-
-def LoadBadDetectorMap(dsNum):
-    """ TODO: vet this with chan-sel.py """
-
-    detIDIsBad = []
-    if dsNum==0: detIDIsBad = [28474, 1426622, 28480, 1426980, 1426620, 1425370]
-    if dsNum==1: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425751, 1425731, 1426611]
-    if dsNum==2: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425731, 1426611]
-    if dsNum==3: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611]
-    if dsNum==4: detIDIsBad = [28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619]
-    if dsNum==5: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
-    if dsNum==6: detIDIsBad = [1426981, 28474, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
-    return detIDIsBad
-
-
-def LoadVetoDetectorMap(dsNum):
-    """ TODO: vet this with chan-sel.py """
-
-    detIDIsVetoOnly = []
-    if dsNum == 0: detIDIsVetoOnly = [1425381, 1425742]
-    if dsNum == 1: detIDIsVetoOnly = [28480]
-    if dsNum == 2: detIDIsVetoOnly = [28480, 1425751, 1426621]
-    if dsNum == 3: detIDIsVetoOnly = [28480, 28470, 28463]
-    if dsNum == 4: detIDIsVetoOnly = [28459, 1426641, 1427481, 28456, 1427120, 1427121]
-    if dsNum == 5: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
-    if dsNum == 6: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
-    return detIDIsVetoOnly
-
-
-def GetGoodChanList(dsNum, dType=None):
-    """ TODO: vet this with chan-sel.py """
-
-    badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
-
-    # make a list of the channels corresponding to the bad IDs.
-    badChans = []
-    for badID in badIDs:
-        for ch, detID in DetID[dsNum].items():
-            if badID == detID: badChans.append(ch)
-
-    # high-gain channels, without pulser monitors, without bad+veto channels.
-    goodList = []
-    if dType is None:
-        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    elif dType is 'Enr':
-        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
-    elif dType is 'Nat':
-        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
-    else:
-        print('Type not found, returning all channels')
-        goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    return sorted(goodList)
 
 
 def getDBRecord(key, verbose=False, calDB=None, pars=None):
