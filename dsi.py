@@ -45,22 +45,23 @@ class BkgInfo:
             6:[25672,100000]
         }
 
-    def getRanges(self, key):
-        if key=="5A":
+    def getRanges(self, ds):
+        """ {sub:[runLo1,runHi1, runLo2,runHi2 ...]}"""
+        if ds=="5A":
             return {i:self.master[5][i] for i in range(0,79+1)}
-        elif key=="5B":
+        elif ds=="5B":
             return {i:self.master[5][i] for i in range(80,112+1)}
-        elif key=="5C":
+        elif ds=="5C":
             return {i:self.master[5][i] for i in range(113,121+1)}
         else:
-            return self.master[int(key)]
+            return self.master[int(ds)]
 
-    def getRunList(self, key, sub=None):
-        bkgRanges = self.getRanges(key)
+    def getRunList(self, ds, sub=None):
+        bkgRanges = self.getRanges(ds)
         runList = []
         if sub is None:
-            for key in sorted(bkgRanges.keys()):
-                subRange = bkgRanges[key]
+            for ds in sorted(bkgRanges.keys()):
+                subRange = bkgRanges[ds]
                 for i in range(0,len(subRange),2):
                     runLo, runHi = subRange[i], subRange[i+1]
                     for r in range(runLo, runHi+1):
@@ -311,6 +312,39 @@ class DetInfo:
         else:
             return self.detHV[ds][cpd]
 
+    def getHVAtRun(self,ds,run,opt="cpd"):
+        """ {cpd : HV} or {chan : HV} depending on option.
+        Sets detectors w/ no entry to 0V (which is true).
+        """
+        hv = self.detHV[ds] # {cpd : [(run1,hv1),(run2,hv2),...] }
+        # for h in sorted(hv): print(h, hv[h])
+        # return
+
+        out = {}
+        for cpd in sorted(hv):
+
+            if len(hv[cpd]) == 0:
+                chanHV = 0
+            else:
+                hvInit = hv[cpd][0][1]
+                runInit = hv[cpd][0][0]
+                if run < runInit:
+                    # print("Run not covered in this DS! run:%d, runInit %d" % (run, runInit))
+                    chanHV = 0
+
+                # find the HV setting for this run
+                for r,h in hv[cpd]:
+                    if run < r: continue
+                    if run >= r: chanHV = h
+                    if r > run: break
+                # print("run:",run,"cpd:",cpd,"chanHV:",chanHV)
+
+                if opt == "cpd":
+                    out[cpd] = chanHV
+                if opt == "chan":
+                    out[self.getCPDChan(ds,cpd)] = chanHV
+        return out
+
     def getTH(self,ds=None,cpd=None):
         """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
         TRAP threshold settings for the first run they apply to. Same caveat as 'getHV' above.
@@ -321,6 +355,39 @@ class DetInfo:
             return self.detTH[ds]
         else:
             return self.detTH[ds][cpd]
+
+    def getTrapThreshAtRun(self,ds,run,opt="cpd"):
+        """ {cpd : trap thresh} or {chan : trap thresh} depending on option.
+        Sets detectors w/ no thresh value (not active in this DS) to -1.
+        """
+        th = self.detTH[ds] # {cpd : [(run1,trap1),(run2,trap2),...]}
+        # for t in sorted(th): print(t, th[t])
+        # return
+
+        out = {}
+        for cpd in sorted(th):
+
+            if len(th[cpd]) == 0:
+                chanTH = -1
+            else:
+                thInit = th[cpd][0][1]
+                runInit = th[cpd][0][0]
+                if run < runInit:
+                    # print("Run not covered in this DS! run:%d, runInit %d" % (run, runInit))
+                    chanTH = -1
+
+                # find the HV setting for this run
+                for r,t in th[cpd]:
+                    if run < r: continue
+                    if run >= r: chanTH = t
+                    if r > run: break
+                # print("run:",run,"cpd:",cpd,"chanTH:",chanTH)
+
+                if opt == "cpd":
+                    out[cpd] = chanTH
+                if opt == "chan":
+                    out[self.getCPDChan(ds,cpd)] = chanTH
+        return out
 
     def getCH(self,ds=None,cpd=None):
         """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
@@ -340,10 +407,21 @@ class DetInfo:
     def getChanCPD(self,ds,chan):
         """ Get the CPD of a channel """
         cpd = {val[0][1]:cpd for cpd, val in self.detCH[ds].items() if len(val)>0}
-        return cpd[chan]
+        if chan in cpd.keys():
+            return cpd[chan]
+        else:
+            return None
+
+    def getCPDChan(self,ds,cpd):
+        """ Get the channel of a cpd """
+        chan = {cpd:val[0][1] for cpd, val in self.detCH[ds].items() if len(val)>0}
+        if cpd in chan.keys():
+            return chan[cpd]
+        else:
+            return None
 
     def getChanDetID(self,ds,detID):
-        """ Given a detID, get its channel.
+        """ Given a detID (ex. 1426641), get its channel.
         Returns nothing if the detector isn't enabled in this DS.
         """
         cpdToChan = {cpd:chan[0][1] for cpd, chan in self.detCH[ds].items() if len(chan)>0}
@@ -351,6 +429,8 @@ class DetInfo:
 
         if detIDtoCPD[detID] in cpdToChan.keys(): # i.e. it's active at some point in the DS
             return cpdToChan[detIDtoCPD[detID]]
+        else:
+            return None
 
     def getDetIDChan(self,ds,chan):
         """ Given a channel, return a detID. """
@@ -645,7 +725,7 @@ def test():
     # runsCal = cal.GetSpecialList()
     # print(runsCal)
 
-    # bkg = BkgInfo()
+    bkg = BkgInfo()
     # print(bkg.dsMap())
     # print(bkg.dsRanges())
     # print(bkg.GetDSNum(18588))
@@ -661,10 +741,22 @@ def test():
         # goodChans = det.getGoodChanList(ds)
         # goodDets = det.getDetectorList(ds, goodChans)
         # print(goodDets)
+    # det = DetInfo()
+    # goodChans = det.getGoodChanList(2)
+    # print(goodChans)
 
-    det = DetInfo()
-    goodChans = det.getGoodChanList(2)
-    print(goodChans)
+    ds = 1
+    run0 = bkg.getRunList(ds,42)[0]
+    # print(det.getHVAtRun(ds,run0))
+    # print(det.getHVAtRun(ds,run0,"chan"))
+    # print(det.getTrapThreshAtRun(ds,run0))
+    th1 = det.getTrapThreshAtRun(ds,run0)
+    th2 = det.getTrapThreshAtRun(ds,14343)
+    hv1 = det.getHVAtRun(ds,run0)
+    hv2 = det.getHVAtRun(ds,14343)
+    for cpd in sorted(det.allDetIDs):
+        if cpd not in list(th1.keys())+list(th2.keys()): continue
+        print("cpd %s run1: %d th %d hv %d , run2: %d th %d  hv %d" % (cpd,run0,th1[cpd],hv1[cpd],14343,th2[cpd],hv2[cpd]))
 
 
 if __name__=="__main__":
