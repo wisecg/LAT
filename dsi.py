@@ -258,70 +258,151 @@ class DetInfo:
             ]
         self.allDets = self.dets["M1"] + self.dets["M2"]
 
-    # # TODO: get rid of this object or put it into a class
-    # DetID = [0,1]
-    # PMon = [0,1]
-    # DetID[1] = {
-    #     578:1425380, 579:1425380, 580:1426612, 581:1426612, 582:1425750, 583:1425750, 592:1425370, 593:1425370,
-    #     594:1426621, 595:1426621, 596:0, 598:1425741, 599:1425741, 600:28482, 601:28482, 608:1425381, 609:1425381,
-    #     610:1426980, 611:1426980, 612:0, 614:28469, 615:28469, 616:28480, 617:28480, 624:28455, 625:28455, 626:1425740,
-    #     627:1425740, 628:28470, 629:28470, 632:1425742, 633:1425742, 640:1426650, 641:1426650, 644:0, 648:1426640,
-    #     649:1426640, 664:1425730, 665:1425730, 672:1426610, 673:1426610, 674:0, 675:0, 676:0, 677:0, 678:1425751,
-    #     679:1425751, 690:1426620, 691:1426620, 692:28474, 693:28474, 694:28465, 695:28465
-    #     }
-    # PMon[1] = [644, 612, 596, 676, 674, 675, 677] # 674,675,677 are not in the MJTChannelMap's due to a bug.
+        self.detIDs = {}
+        self.detIDs["M1"] = {
+            '111':1426981, '112':1425750, '113':1426612, '114':1425380,
+            '121':28474, '122':1426640, '123':1426650, '124':1426622,
+            '131':28480, '132':1426980, '133':1425381, '134':1425730,
+            '141':28455, '142':28470, '143':28463, '144':28465, '145':28469,
+            '151':28477, '152':1425751, '153':1426610, '154':1425731,
+            '161':1425742, '162':1426611, '163':1425740, '164':1426620,
+            '171':28482, '172':1425741, '173':1426621, '174':1425370
+        }
+        self.detIDs["M2"] = {
+            '211':28459, '212':1426641, '213':1427481, '214':1427480,
+            '221':28481, '222':28576, '223':28594, '224':28595, '225':28461,
+            '231':1427490, '232':1427491, '233':1428530,
+            '241':28607, '242':28456, '243':28621, '244':28466, '245':28473,
+            '251':28487, '252':1426651, '253':1428531, '254':1427120,
+            '261':1235170, '262':1429091, '263':1429092, '264':1426652,
+            '271':28619, '272':1427121, '273':1429090, '274':28717
+        }
+        self.allDetIDs = {}
+        self.allDetIDs.update(self.detIDs["M1"])
+        self.allDetIDs.update(self.detIDs["M2"])
 
-    # def LoadBadDetectorMap(dsNum):
-    #     """ TODO: vet this with chan-sel.py """
-    #
-    #     detIDIsBad = []
-    #     if dsNum==0: detIDIsBad = [28474, 1426622, 28480, 1426980, 1426620, 1425370]
-    #     if dsNum==1: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425751, 1425731, 1426611]
-    #     if dsNum==2: detIDIsBad = [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425731, 1426611]
-    #     if dsNum==3: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611]
-    #     if dsNum==4: detIDIsBad = [28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619]
-    #     if dsNum==5: detIDIsBad = [1426981, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
-    #     if dsNum==6: detIDIsBad = [1426981, 28474, 1426622, 28477, 1425731, 1426611, 28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
-    #     return detIDIsBad
-    #
-    #
-    # def LoadVetoDetectorMap(dsNum):
-    #     """ TODO: vet this with chan-sel.py """
-    #
-    #     detIDIsVetoOnly = []
-    #     if dsNum == 0: detIDIsVetoOnly = [1425381, 1425742]
-    #     if dsNum == 1: detIDIsVetoOnly = [28480]
-    #     if dsNum == 2: detIDIsVetoOnly = [28480, 1425751, 1426621]
-    #     if dsNum == 3: detIDIsVetoOnly = [28480, 28470, 28463]
-    #     if dsNum == 4: detIDIsVetoOnly = [28459, 1426641, 1427481, 28456, 1427120, 1427121]
-    #     if dsNum == 5: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
-    #     if dsNum == 6: detIDIsVetoOnly = [28480, 1426641, 1427481, 1235170]
-    #     return detIDIsVetoOnly
-    #
-    #
-    # def GetGoodChanList(dsNum, dType=None):
-    #     """ TODO: vet this with chan-sel.py """
-    #
-    #     badIDs = LoadBadDetectorMap(dsNum) + LoadVetoDetectorMap(dsNum)
-    #
-    #     # make a list of the channels corresponding to the bad IDs.
-    #     badChans = []
-    #     for badID in badIDs:
-    #         for ch, detID in DetID[dsNum].items():
-    #             if badID == detID: badChans.append(ch)
-    #
-    #     # high-gain channels, without pulser monitors, without bad+veto channels.
-    #     goodList = []
-    #     if dType is None:
-    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    #     elif dType is 'Enr':
-    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==1]
-    #     elif dType is 'Nat':
-    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans and EnrNatMap[DetID[dsNum][key]]==0]
-    #     else:
-    #         print('Type not found, returning all channels')
-    #         goodList = [key for key in DetID[dsNum] if key%2==0 and key not in PMon[dsNum] and key not in badChans]
-    #     return sorted(goodList)
+        # Generated with LAT/chan-sel.py::getRunSettings
+        # Used BKG ranges, DS0-6 in LAT/data/runsBkg.json
+        # (verified to 100% match DataSetInfo.cc, (4 Apr 2018 CGW))
+        f = np.load("%s/data/runSettings.npz" % os.environ['LATDIR'])
+        self.detHV = f['arr_0'].item()
+        self.detTH = f['arr_1'].item()
+        self.detCH = f['arr_2'].item()
+        self.pMons = f['arr_3'].item()
+
+    def getPMon(self,ds=None):
+        """ {ds : [chan1, chan2 ...] }
+        Analysis channel numbers of 'special' channels.
+        """
+        if ds is None: return self.pMons
+        else: return self.pMons[ds]
+
+    def getHV(self,ds=None,cpd=None):
+        """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
+        HV settings for the first run they apply to.
+        If there are multiple entries in the list, HV was changed
+        at run number 'run2' to 'val2', and so on.
+        (Caveat: actual run that HV changed may be BETWEEN bkg run indexes.)
+        """
+        if ds is None and cpd is None:
+            return self.detHV
+        elif cpd is None:
+            return self.detHV[ds]
+        else:
+            return self.detHV[ds][cpd]
+
+    def getTH(self,ds=None,cpd=None):
+        """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
+        TRAP threshold settings for the first run they apply to. Same caveat as 'getHV' above.
+        """
+        if ds is None and cpd is None:
+            return self.detTH
+        elif cpd is None:
+            return self.detTH[ds]
+        else:
+            return self.detTH[ds][cpd]
+
+    def getCH(self,ds=None,cpd=None):
+        """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
+        Value of the HG analysis channel for a particular detector. Same caveat as 'getHV' above.
+        """
+        if ds is None and cpd is None:
+            return self.detCH
+        elif cpd is None:
+            return self.detCH[ds]
+        else:
+            return self.detCH[ds][cpd]
+
+    def getChanList(self,ds):
+        """In DS0-6, the channel number does NOT change in the DS."""
+        return sorted([ch[0][1] for ch in self.detCH[ds].values() if len(ch)>0])
+
+    def getChanCPD(self,ds,chan):
+        """ Get the CPD of a channel """
+        cpd = {val[0][1]:cpd for cpd, val in self.detCH[ds].items() if len(val)>0}
+        return cpd[chan]
+
+    def getChanDetID(self,ds,detID):
+        """ Given a detID, get its channel.
+        Returns nothing if the detector isn't enabled in this DS.
+        """
+        cpdToChan = {cpd:chan[0][1] for cpd, chan in self.detCH[ds].items() if len(chan)>0}
+        detIDtoCPD = {id:cpd for cpd, id in self.allDetIDs.items()}
+
+        if detIDtoCPD[detID] in cpdToChan.keys(): # i.e. it's active at some point in the DS
+            return cpdToChan[detIDtoCPD[detID]]
+
+    def getDetIDChan(self,ds,chan):
+        """ Given a channel, return a detID. """
+        return self.allDetIDs[getChanCPD(ds,chan)]
+
+    def getBadDetIDList(self, ds):
+        """ Matches DataSetInfo.cc::LoadBadDetectorMap, 4 Apr 2018, CGW """
+        if ds==0: return [28474, 1426622, 28480, 1426980, 1426620, 1425370]
+        if ds==1: return [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425751, 1425731, 1426611]
+        if ds==2: return [1426981, 1426622, 28455, 28470, 28463, 28465, 28469, 28477, 1425731, 1426611]
+        if ds==3: return [1426981, 1426622, 28477, 1425731, 1426611]
+        if ds==4: return [28595, 28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619]
+        if ds==5: return [1426981, 1426622, 28477, 1425731, 1426611, 28595, 28461,
+            1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+        if ds==6: return [1426981, 28474, 1426622, 28477, 1425731, 1426611, 28595,
+            28461, 1428530, 28621, 28473, 1426651, 1429092, 1426652, 28619, 1427121]
+
+    def getVetoDetIDList(self, ds):
+        """ Matches DataSetInfo.cc::LoadVetoDetectorMap, 4 Apr 2018, CGW """
+        if ds==0: return [1425381, 1425742]
+        if ds==1: return [28480]
+        if ds==2: return [28480, 1425751, 1426621]
+        if ds==3: return [28480, 28470, 28463]
+        if ds==4: return [28459, 1426641, 1427481, 28456, 1427120, 1427121]
+        if ds==5: return [28480, 1426641, 1427481, 1235170]
+        if ds==6: return [28480, 1426641, 1427481, 1235170]
+
+    def getBadChanList(self, ds):
+        """ Return a list of bad and veto-only HG channels for a DS """
+        badIDs = self.getBadDetIDList(ds) + self.getVetoDetIDList(ds)
+        badChans = [self.getChanDetID(ds, id) for id in badIDs if self.getChanDetID(ds,id) is not None]
+        return badChans
+
+    def getGoodChanList(self, ds, detType=None):
+        """ Return a list of good HG channels for a DS.  No bad, no veto-only, no pulser monitors. """
+        chList = self.getChanList(ds)
+        badList = self.getBadChanList(ds)
+        goodList = [ch for ch in chList if ch not in badList and ch not in self.pMons[ds]]
+
+        if detType is None:
+            return goodList
+        elif detType == "Enr":
+            return [ch for ch in goodList if self.getDetIDChan(ds,ch) > 1000000]
+        elif detType == "Nat":
+            return [ch for ch in goodList if self.getDetIDChan(ds,ch) < 1000000]
+        else:
+            print("IDK what that detType is.")
+            return None
+
+    def getDetectorList(self, ds, chanList):
+        """ Convert a list of channels into a list of detector CPDs. """
+        return[self.getChanCPD(ds,ch) for ch in chanList]
 
 
 class SimInfo:
@@ -564,13 +645,26 @@ def test():
     # runsCal = cal.GetSpecialList()
     # print(runsCal)
 
-    bkg = BkgInfo()
-    print(bkg.dsMap())
+    # bkg = BkgInfo()
+    # print(bkg.dsMap())
     # print(bkg.dsRanges())
     # print(bkg.GetDSNum(18588))
     # print(bkg.GetBkgIdx(6,27065))
+    # print(bkg.getRanges(4))
 
-    print(bkg.getRanges(4))
+    det = DetInfo()
+    # print("ds1", det.getChanList(1))
+    # chan = det.getChanList(1)[0]
+    # for ch in det.getChanList(1):
+        # print(ch, det.getChanCPD(1,ch))
+    # for ds in range(0,7):
+        # goodChans = det.getGoodChanList(ds)
+        # goodDets = det.getDetectorList(ds, goodChans)
+        # print(goodDets)
+
+    det = DetInfo()
+    goodChans = det.getGoodChanList(2)
+    print(goodChans)
 
 
 if __name__=="__main__":

@@ -38,7 +38,10 @@ def main(argv):
         # if opt == "-c": checkCal = True
 
     # getRunSettings()
-    checkRunSettings()
+    # dumpRunSettings()
+    getDetIDs()
+
+    # checkRunRanges()
 
 
 def getRunSettings():
@@ -150,7 +153,7 @@ def getRunSettings():
     np.savez("./data/runSettings.npz",detHV,detTH,detCH,pMons)
 
 
-def checkRunSettings():
+def dumpRunSettings():
 
     f = np.load("./data/runSettings.npz")
     detHV = f['arr_0'].item()
@@ -159,11 +162,11 @@ def checkRunSettings():
     pMons = f['arr_3'].item()
 
     # print summary
-    print("HV settings:")
-    for ds in sorted(detHV):
-        print("DS",ds)
-        for det in sorted(detHV[ds]):
-            print(det, detHV[ds][det])
+    # print("HV settings:")
+    # for ds in sorted(detHV):
+    #     print("DS",ds)
+    #     for det in sorted(detHV[ds]):
+    #         print(det, detHV[ds][det])
 
     print("HG Threshold settings:")
     for ds in sorted(detTH):
@@ -171,14 +174,51 @@ def checkRunSettings():
         for det in sorted(detTH[ds]):
             print(det, detTH[ds][det])
 
-    print("HG Channel settings:")
-    for ds in sorted(detCH):
-        print("DS",ds)
-        for det in sorted(detCH[ds]):
-            print(det, detCH[ds][det])
+    # print("HG Channel settings:")
+    # for ds in sorted(detCH):
+    #     print("DS",ds)
+    #     for det in sorted(detCH[ds]):
+    #         print(det, detCH[ds][det])
+    #
+    # print("Pulser monitors:")
+    # print(pMons)
 
-    print("Pulser monitors:")
-    print(pMons)
+
+def getDetIDs():
+    """ Since the detector CPD position - detector serial number
+    mapping has never changed, load a channel map and print it out. """
+    from ROOT import TFile, GATDataSet, MJTChannelMap
+    run = bkg.getRunList(5,1)[0]
+    gds = GATDataSet(run)
+    chMap = gds.GetChannelMap()
+    # chMap.DumpDetectorNames()
+
+    dets = det.allDets
+    for d in dets:
+        detName = chMap.GetDetectorName(int(d[0]), int(d[1]), int(d[2]))
+
+        # now match it to the IDs used in DataSetInfo.cc::Load(X)DetectorMap
+        detID = '1' if detName[0]=="P" else '2'
+        detID += detName[1:]
+        tmp = list(detID)
+        if detID[0] == '1':
+            if tmp[-1] == "A": tmp[-1] = '0'
+            if tmp[-1] == "B": tmp[-1] = '1'
+            if tmp[-1] == "C": tmp[-1] = '2'
+            detID = ''.join(tmp)
+
+        # transcribe this into DetInfo::detID
+        print("'%s':%s," % (d, detID))
+
+
+def checkRunRanges():
+    """ Detect periods where:
+        1) HV changed - identify bkgIdx and calIdx
+        2) TH changed - identify bkgIdx
+    Use the result to make some decisions about
+    data periods to reject.
+    """
+    print("hi")
 
 
 
