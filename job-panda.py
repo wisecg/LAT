@@ -41,6 +41,7 @@ def main(argv):
         # main skim routines
         if opt == "-skim":      runSkimmer(dsNum, subNum, runNum, calList=calList)
         if opt == "-wave":      runWaveSkim(dsNum, subNum, runNum, calList=calList)
+        if opt == "-thresh":    runAutoThresh(dsNum)
         if opt == "-batchSplit": batchSplit(dsNum, subNum, runNum, calList=calList)
         if opt == "-writeCut":  writeCut(dsNum, subNum, runNum, calList=calList)
         if opt == "-lat":       runLAT(dsNum, subNum, runNum, calList=calList)
@@ -74,6 +75,7 @@ def main(argv):
         if opt == "-test":      quickTest()
         if opt == "-b":         runBatch()
         if opt == "-chunk":     chunkJobList()
+
 
 
 # =============================================================
@@ -369,6 +371,29 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
             job = "./wave-skim -n %s -c -f %d %d -p %s %s" % (dub, bkg.GetDSNum(run), run, dsi.calSkimDir, dsi.calWaveDir)
             if useJobQueue: sh("%s >& ./logs/wave-ds%d-run%d.txt" % (job, bkg.GetDSNum(run), run))
             else: sh("%s '%s'" % (jobStr, job))
+
+
+def runAutoThresh(ds=None):
+    """./job-panda.py [-q] [-ds dsNum] -thr
+    Generates auto-thresh jobs.  Default is to do it for all datasets.
+    """
+    bkg = dsi.BkgInfo()
+    dsList = [ds] if ds is not None else [0,1,2,3,4,"5A","5B","5C",6]
+    for ds in dsList:
+        dsNum = ds if isinstance(ds, int) else 5
+        dub = "-d" if dsNum < 6 else ""
+        for sub in bkg.getRanges(ds):
+            if dsNum==5 and sub >= 113: dub = ""
+            subr = bkg.GetSubRanges(ds,sub)
+            if len(subr) > 0:
+                for runLo, runHi in subr:
+                    job = "./auto-thresh %d %d -s %d %d %s -o %s" % (dsNum, sub, runLo, runHi, dub, dsi.threshDir)
+                    if useJobQueue: sh("%s >& ./logs/thresh-ds%d-%d-%d-%d.txt" % (job, dsNum, sub, runLo, runHi))
+                    else: sh("%s '%s'" % (jobStr, job))
+            else:
+                job = "./auto-thresh %d %d %s -o %s" % (dsNum, sub, dub, dsi.threshDir)
+                if useJobQueue: sh("%s >& ./logs/thresh-ds%d-%d.txt" % (job, dsNum, sub))
+                else: sh("%s '%s'" % (jobStr, job))
 
 
 def splitTree(dsNum, subNum=None, runNum=None):
@@ -999,6 +1024,7 @@ def quickTest():
     #     for f in inFiles:
     #         print(f)
     #         # tf = TFile()
+
 
 
 if __name__ == "__main__":

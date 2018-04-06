@@ -5,6 +5,7 @@
 // B. Zhu, C. Wiseman
 // v1. 2017/2/28
 // v2. 2017/6/01 - changed to run over data subsets (as defined in DataSetInfo.hh)
+// v3. 2018/4/06 - changed to run over specific runs.  Output goes into ~/project/bkg/thresh .
 
 #include <iostream>
 #include <vector>
@@ -33,25 +34,57 @@
 using namespace std;
 using namespace MJDB;
 
-void FindThresholds(int dsNum, int subNum);
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles);
 vector<double> ThreshTrapezoidalFilter( const vector<double>& anInput, double RampTime, double FlatTime, double DecayTime );
 
 int main(int argc, char** argv)
 {
   if (argc < 3) {
-    cout << "Usage: ./auto-thresh [dsNum] [subNum] \n";
+    cout << "Usage: ./auto-thresh [ds] [sub]\n"
+         << "   [-s [runLo] [runHi] : run limit mode (used to match TF boundaries)]\n"
+         << "   [-d : use doubles in channel branches]\n";
     return 1;
   }
   int dsNum = stoi(argv[1]);
   int subNum = stoi(argv[2]);
-  FindThresholds(dsNum, subNum);
+  int runLo=-1, runHi=-1;
+  bool useDoubles=0;
+
+  vector<string> opt(argv + 1, argv + argc);
+  for (size_t i = 0; i < opt.size(); i++) {
+    if (opt[i]=="-s") {
+      runLo = stoi(opt[i+1]);
+      runHi = stoi(opt[i+2]);
+      cout << Form("Run limit mode active.  DS:%i Sub:%i runLo:%i runHi:%i\n",dsNum,subNum,runLo,runHi);
+    }
+    if (opt[i] == "-d") { useDoubles=1;  cout << "Using doubles in channel branches ...\n"; }
+  }
+
+  // main routine
+  FindThresholds(dsNum, subNum, runLo, runHi, useDoubles);
 }
 
-void FindThresholds(int dsNum, int subNum)
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles)
 {
-  string outputFile = Form("./threshDS%d_%d.root", dsNum, subNum);
+  string outputFile = "";
+
   GATDataSet ds;
-  LoadDataSet(ds, dsNum, subNum);
+  if (runLo < 0 && runHi < 0) {
+    LoadDataSet(ds, dsNum, subNum);
+    outputFile = Form("~/project/bkg/thresh/threshDS%d_%d.root", dsNum, subNum);
+  }
+  else {
+    GATDataSet tmp;
+    LoadDataSet(tmp, dsNum, subNum);
+    for (size_t i = 0; i < tmp.GetNRuns(); i++) {
+      int run = tmp.GetRunNumber(i);
+      if (run >= runLo && run <= runHi) {
+        // cout << "Adding run " << run << endl;
+        ds.AddRunNumber(run);
+      }
+    }
+    outputFile = Form("~/project/bkg/thresh/threshDS%d_%d_%d_%d.root", dsNum, subNum, runLo, runHi);
+  }
 
   // Set up output file
   TFile *fOutput = new TFile(outputFile.c_str(), "RECREATE");
@@ -108,8 +141,16 @@ void FindThresholds(int dsNum, int subNum)
   TChain *gatChain = ds.GetGatifiedChain(false);
   TTreeReader gReader(gatChain);
   TTreeReaderValue<double> runIn(gReader, "run");
-  TTreeReaderArray<double> wfChan(gReader,"channel");
   TTreeReaderArray<double> wfENF(gReader,"trapENM");
+  // TTreeReaderArray<double> wfChan(gReader,"channel"); // this breaks when we have type int
+
+  // This is the part where we have to get int/double right
+  ROOT::Internal::TTreeReaderValueBase *wfChanIn = 0;
+  if(!useDoubles)
+    wfChanIn = new TTreeReaderValue<vector<unsigned int>>(gReader, "channel");
+  else
+    wfChanIn = new TTreeReaderValue<vector<double>>(gReader, "channel");
+  
   int nEntries = gatChain->GetEntries();
   cout << "Scanning DS " << dsNum << " subNum " << subNum << " , " << nEntries << " entries.\n";
 

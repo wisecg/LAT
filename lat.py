@@ -92,6 +92,8 @@ def main(argv):
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import matplotlib.ticker as mtick
+    plt.style.use('pltTalks.mplstyle')
+    from matplotlib.colors import LogNorm, Normalize
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
@@ -140,9 +142,9 @@ def main(argv):
     if cutMode:
         # theCut += customPar
         # theCut = "(channel==672 || channel==674) && mH==2" # sync chan: 672, extp chan: 674
-        # theCut = "channel==674 && mH==2"
         # theCut += " && fitSlo < 10"
-        theCut = "Entry$ < 10"
+        # theCut = "trapENFCal > 1 && trapENFCal < 10 && riseNoise > 2"
+        theCut = "trapENFCal > 20 && trapENFCal < 100 && riseNoise > 2"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -224,7 +226,8 @@ def main(argv):
     }
 
     # Make a figure (-i option: select different plots)
-    fig = plt.figure(figsize=(12,7), facecolor='w')
+    # fig = plt.figure(figsize=(12,9), facecolor='w')
+    fig = plt.figure()
     if plotNum==0 or plotNum==7 or plotNum==8:
         p0 = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
     elif plotNum==1 or plotNum==2:
@@ -682,22 +685,28 @@ def main(argv):
                 p0.cla()
                 p0.plot(dataTS,data,'b')
                 p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f" % (run,iList,chan,dataENFCal))
+                p0.set_xlabel("Time (ns)", ha='right', x=1.)
+                p0.set_ylabel("Voltage (ADC)", ha='right', y=1.)
 
             if plotNum==1: # wavelet plot
                 p0.cla()
                 p0.margins(x=0)
-                p0.plot(dataTS,data_blSub,color='blue',label='data')
+                p0.plot(dataTS,data_blSub,color='blue',label='data (%.2f keV)' % dataENFCal)
                 p0.plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
                 p0.axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
                 p0.plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
-                p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
+                # p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
                 p0.legend(loc='best')
+                p0.set_xlabel("Time (ns)", ha='right', x=1.)
+                p0.set_ylabel("Voltage (ADC)", ha='right', y=1.)
 
                 p1.cla()
                 p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
                 p1.axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
                 p1.axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
-                p1.set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
+                # p1.set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
+                # p1.set_xlabel("Time (%wf)", ha='right', x=1.)
+                p1.set_ylabel("WPT Coefficients", ha='right', y=1.)
 
             if plotNum==2: # time points, bandpass filters, tail slope
                 p0.cla()
