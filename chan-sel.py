@@ -41,7 +41,6 @@ def main(argv):
     # getRunSettings()
     # dumpRunSettings()
     # getDetIDs()
-
     # checkSubRanges()
     loadSubRanges()
 
@@ -188,7 +187,9 @@ def dumpRunSettings():
 
 def getDetIDs():
     """ Since the detector CPD position - detector serial number
-    mapping has never changed, load a channel map and print it out. """
+    mapping has never changed, load a channel map and print it out.
+    ==> copied this output into DetInfo::detID
+    """
     from ROOT import TFile, GATDataSet, MJTChannelMap
     run = bkg.getRunList(5,1)[0]
     gds = GATDataSet(run)
@@ -209,7 +210,6 @@ def getDetIDs():
             if tmp[-1] == "C": tmp[-1] = '2'
             detID = ''.join(tmp)
 
-        # transcribe this into DetInfo::detID
         print("'%s':%s," % (d, detID))
 
 
@@ -351,14 +351,10 @@ def checkSubRanges():
 
 
 def loadSubRanges():
-    f = np.load("./data/thrHV_subRanges.npz")
 
+    f = np.load("./data/thrHV_subRanges.npz")
     thRanges = f['arr_0']
     hvRanges = f['arr_1']
-
-    # for val in thRanges:
-    #     # print(type(val),len(val), type(val[0]), type(val[1]), *val)
-    #     print(*val)
 
     for val in hvRanges:
         print(*val)

@@ -18,6 +18,8 @@ def main():
     # scrapeData()
     # plotData()
     plotData2()
+    # getData3()
+    # plotData3()
 
 
 def scrapeData():
@@ -225,42 +227,107 @@ def plotData2():
     fsCut, thMu, thSig = f['arr_4'], f['arr_5'], f['arr_6']
     rise, riseCut = f['arr_7'], f['arr_8']
 
-    hitPass, rnPass, hitFail, rnFail = [], [], [], []
+    # hitPass, rnPass, hitFail, rnFail = [], [], [], []
+    # for i in range(len(hitE)):
+    #     if chans[i] in [610, 690, 692, 600, 598, 578, 592]:
+    #         continue
+    #     # if rise[i] < riseCut[i] and fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #     # if fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #     # eThresh = thMu[i]+3*thSig[i]
+    #     # if hitE[i] > (eThresh):
+    #         # print("%d  e %.2f  t %.2f" % (chans[i], hitE[i],eThresh))
+    #     if rise[i] < riseCut[i]:
+    #         hitPass.append(hitE[i])
+    #         rnPass.append(rise[i])
+    #     else:
+    #         hitFail.append(hitE[i])
+    #         rnFail.append(rise[i])
 
-    for i in range(len(hitE)):
-        if chans[i] in [610, 690, 692, 600, 598, 578, 592]:
-            continue
-        # if rise[i] < riseCut[i] and fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
-        # if fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
-        # eThresh = thMu[i]+3*thSig[i]
-        # if hitE[i] > (eThresh):
-            # print("%d  e %.2f  t %.2f" % (chans[i], hitE[i],eThresh))
-        if rise[i] < riseCut[i]:
-            hitPass.append(hitE[i])
-            rnPass.append(rise[i])
-        else:
-            hitFail.append(hitE[i])
-            rnFail.append(rise[i])
+    # hitPass, rnPass = [], []
+    # for i in range(len(hitE)):
+    #     if chans[i] in [610, 690, 692, 600, 598, 578, 592]:
+    #         continue
+    #     if rise[i] < riseCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #         rnPass.append(rise[i])
+    #         hitPass.append(hitE[i])
+
 
     fig = plt.figure()
     xLo, xHi, xpb = 0.5, 20, 0.1
+    # plt.semilogy(hitE,rise,".b",ms=5,label='all') # this shows the untagged pulser evts.  whew.
 
-    # x, yAll = wl.GetHisto(hitE, xLo, xHi, xpb)
-    # x, yPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
-    # plt.semilogy(x, yAll, lw=2, ls='steps', c='k', label='all')
-    # plt.semilogy(x, yPass, lw=2, ls='steps', c='b', label='pass thresh cut')
-    # plt.axvline(1.0, color='g', label='1 keV')
-    # plt.axvline(1.5, color='m', label='1.5 keV')
-    # plt.legend()
-    # plt.savefig("../plots/sea-rise-2.png")
+    # for the purposes of the talk, why not just draw a line at 10?
+    n = len(hitE)
+    hitPass = [hitE[i] for i in range(n) if rise[i] < 10]
+    rnPass = [rise[i] for i in range(n) if rise[i] < 10]
+    hitFail = [hitE[i] for i in range(n) if rise[i] > 10]
+    rnFail = [rise[i] for i in range(n) if rise[i] > 10]
 
-    plt.plot(hitPass,rnPass,".k", ms=5, label='pass')
-    plt.plot(hitFail,rnFail,".r", ms=5, label='fail')
-    # plt.ylim(0, 30)
-    plt.xlim(0, 20)
+    plt.semilogy(hitPass,rnPass,".b", ms=5, label='pass')
+    plt.semilogy(hitFail,rnFail,".r", ms=5, label='fail')
+    plt.axhline(10,color='red')
+
+    plt.ylim(0.5, 3e2)
+    plt.xlim(0, 30)
+    plt.xlabel("Energy (keV)",ha='right',x=1.)
+    plt.ylabel("riseNoise",ha='right',y=1.)
     plt.legend(loc=1)
-    plt.savefig("../plots/sea-rise-2.png")
+    plt.savefig("../plots/sea-rn-simpleCut.png")
 
+
+def getData3():
+    from ROOT import TChain
+
+    # fCut = sorted(glob.glob("%s/results_v1/fs/fitSlo-DS%d-*.root" % (dsi.dataDir, dsNum)))
+    # fCut = sorted(glob.glob("%s/results_v1/fs/fitSlo-DS%d-*.root" % (dsi.dataDir, dsNum)))
+
+    print("drawing LAT files ...")
+    ch = TChain("skimTree")
+    ds = 1
+    fileList = []
+    bkg = dsi.BkgInfo()
+    det = dsi.DetInfo()
+    goodChans = det.getGoodChanList(ds)
+    dsMap = bkg.dsMap()
+    for sub in range(dsMap[ds]+1):
+        # if 38 < sub < 45: continue
+        # if 33 < sub < 51: continue
+        print("Sub:",sub)
+        latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, ds, sub), sub)
+        tmpList = [f for idx, f in sorted(latList.items())]
+        for f in tmpList: ch.Add(f)
+    print(ch.GetEntries())
+    n = ch.Draw("trapENFCal:riseNoise:channel","trapENFCal < 250","goff")
+    t1, t2, t3 = ch.GetV1(), ch.GetV2(), ch.GetV3()
+    t1 = np.asarray([t1[i] for i in range(n) if t3[i] in goodChans])
+    t2 = np.asarray([t2[i] for i in range(n) if t3[i] in goodChans])
+
+    # passing v1 of riseNoise cut
+    print("drawing v1 files ...")
+    ch2 = TChain("skimTree")
+    ch2.Add("~/project/results_v1/rn/riseNoise-DS1-*.root")
+    n = ch2.Draw("trapENFCal:riseNoise:channel","trapENFCal < 250","goff")
+    t4, t5, t6 = ch2.GetV1(), ch2.GetV2(), ch2.GetV3()
+    t4 = np.asarray([t4[i] for i in range(n) if t6[i] in goodChans])
+    t5 = np.asarray([t5[i] for i in range(n) if t6[i] in goodChans])
+
+    np.savez("../plots/sea-data3.npz",t1,t2,t4,t5)
+
+def plotData3():
+
+    f = np.load("../plots/sea-data3.npz")
+    t1 = f['arr_0']
+    t2 = f['arr_1']
+    t4 = f['arr_2']
+    t5 = f['arr_3']
+
+    fig = plt.figure()
+    plt.semilogy(t1, t2, ".r", ms=2)
+    plt.semilogy(t4, t5, ".b", ms=3)
+    plt.ylim(0.5, 3e2)
+    plt.xlim(0, 50)
+
+    plt.savefig("../plots/sea-riseNoise.png")
 
 
 if __name__=="__main__":

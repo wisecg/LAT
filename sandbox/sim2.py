@@ -3,14 +3,15 @@ import sys, os, shlex, glob, imp
 import subprocess as sp
 
 # load LAT libraries
-ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
+import dsi
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
-cal = ds.CalInfo()
+cal = dsi.CalInfo()
 
 def main():
 
     # processSims()
-    testData()
+    # testData()
+    processTritSim()
 
 
 def processSims():
@@ -96,6 +97,25 @@ def testData():
             print("Event %d  mH %d  totE %.2f  sumE %.2f  sumEA %.2f\n" % (iEnt, mH, totE, sumE, sumEA))
 
         tf.Close()
+
+
+def processTritSim():
+    """ Special job for the tritium spectrum """
+
+    outDir = "~/project/sims/trit"
+    gatDir = os.environ['GATDIR']
+    app = "%s/Apps/process_MJD_as_built_mage_results" % gatDir
+    config = "/global/projecta/projectdirs/majorana/users/mbuuck/sim/mageScripts/det_config_for_GAT_pp_by_det_v2.json"
+
+    # best fit to DS3 long cal
+    dlThickness = 3.0
+    transPoint = 0.95
+    transLevel = 0.4
+
+    inFile = "/global/projecta/projectdirs/majorana/users/bxyzhu/MaGe/Raw/Tritium_p001.root"
+    cmd = "%s -o %s -c %s -t %.1f %.2f %.1f %s" % (app,outDir,config,dlThickness,transPoint,transLevel,inFile)
+    # print(cmd)
+    sp.call(shlex.split(cmd))
 
 
 if __name__=="__main__":

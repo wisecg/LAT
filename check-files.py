@@ -8,6 +8,7 @@ import waveLibs as wl
 import dsi
 bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
+det = dsi.DetInfo()
 
 from ROOT import TFile, TTree, MGTWaveform
 
@@ -41,6 +42,7 @@ def main(argv):
             checkSplit()
             checkLAT()
         if opt == "-m": makeJobList()
+        if opt == "-t": testDraw()
 
 
 def checkSkim():
@@ -520,6 +522,55 @@ def makeJobList():
                             job = [s for s in latJobs if fname in s][0]
                             fOut.write(job+"\n")
         fOut.close()
+
+
+def testDraw():
+    """ ./check-files.py -t
+    Make sure we can actually do a Draw on the final product! """
+    from ROOT import TChain
+
+    # don't have this pkg in the shifter image
+    # import psutil
+    # process = psutil.Process(os.getpid())
+
+    # METHOD 1: load massive chainz dawg.
+    # this segfaults on Draw() if the chain's boot too big (not enough mem available)
+    # the default batch options can't handle this for most of the datasets. (login node can ...)
+    # ds = 1
+    # dsMap = bkg.dsMap()
+    # ch = TChain("skimTree")
+    # for sub in range(dsMap[ds]+1):
+    #     latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, ds, sub), sub)
+    #     tmpList = [f for idx, f in sorted(latList.items())]
+    #     for f in tmpList: ch.Add(f)
+    # nEnt = ch.GetEntries()
+    # print("nEnt",nEnt)
+    # n = ch.Draw("trapENFCal:riseNoise:fitSlo","trapENFCal < 250","goff")
+    # t1, t2, t3 = ch.GetV1(), ch.GetV2(), ch.GetV3()
+    # t1 = np.asarray([t1[i] for i in range(n)])
+    # t2 = np.asarray([t2[i] for i in range(n)])
+    # print("nEnt %-8d nDraw %-8d  mem: %d MB" % (nEnt, n, process.memory_info().rss/1e6))
+
+    # METHOD 2: file-by-file, to save memory
+    fileList = []
+    dsMap = bkg.dsMap()
+    # for ds in dsMap:
+    for ds in [1]:
+        for sub in range(dsMap[ds]+1):
+            latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, ds, sub), sub)
+            tmpList = [f for idx, f in sorted(latList.items())]
+            fileList.extend(tmpList)
+    for f in fileList:
+        tf = TFile(f)
+        tt = tf.Get("skimTree")
+        nEnt = tt.GetEntries()
+        n = tt.Draw("trapENFCal:riseNoise:fitSlo","trapENFCal < 250","goff")
+        t1, t2, t3 = tt.GetV1(), tt.GetV2(), tt.GetV3()
+        t1 = np.asarray([t1[i] for i in range(n)])
+        t2 = np.asarray([t2[i] for i in range(n)])
+        # print("%s: nEnt %-8d nDraw %-8d  mem: %d MB" % (f.split("/")[-1], nEnt, n, process.memory_info().rss/1e6))
+        print("%s: nEnt %-8d nDraw %-8d" % (f.split("/")[-1], nEnt, n))
+        tf.Close()
 
 
 if __name__=="__main__":
