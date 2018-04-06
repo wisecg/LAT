@@ -1,9 +1,0 @@
-./skim_mjd_data 5 113 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-113.txt
-./skim_mjd_data 5 114 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-114.txt
-./skim_mjd_data 5 115 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-115.txt
-./skim_mjd_data 5 116 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-116.txt
-./skim_mjd_data 5 117 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-117.txt
-./skim_mjd_data 5 118 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-118.txt
-./skim_mjd_data 5 119 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-119.txt
-./skim_mjd_data 5 120 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-120.txt
-./skim_mjd_data 5 121 -l -g  -t 0.7 /global/projecta/projectdirs/majorana/users/wisecg/bkg/skim >& ./logs/skim-ds5-121.txt
