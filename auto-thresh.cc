@@ -5,7 +5,7 @@
 // B. Zhu, C. Wiseman
 // v1. 2017/2/28
 // v2. 2017/6/01 - changed to run over data subsets (as defined in DataSetInfo.hh)
-// v3. 2018/4/06 - changed to run over specific runs.  Output goes into ~/project/bkg/thresh .
+// v3. 2018/4/06 - changed to run over specific runs.
 
 #include <iostream>
 #include <vector>
@@ -34,7 +34,7 @@
 using namespace std;
 using namespace MJDB;
 
-void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles);
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir);
 vector<double> ThreshTrapezoidalFilter( const vector<double>& anInput, double RampTime, double FlatTime, double DecayTime );
 
 int main(int argc, char** argv)
@@ -42,13 +42,15 @@ int main(int argc, char** argv)
   if (argc < 3) {
     cout << "Usage: ./auto-thresh [ds] [sub]\n"
          << "   [-s [runLo] [runHi] : run limit mode (used to match TF boundaries)]\n"
-         << "   [-d : use doubles in channel branches]\n";
+         << "   [-d : use doubles in channel branches]\n"
+         << "   [-o : specify output directory]\n";
     return 1;
   }
   int dsNum = stoi(argv[1]);
   int subNum = stoi(argv[2]);
   int runLo=-1, runHi=-1;
   bool useDoubles=0;
+  string outDir = ".";
 
   vector<string> opt(argv + 1, argv + argc);
   for (size_t i = 0; i < opt.size(); i++) {
@@ -57,21 +59,22 @@ int main(int argc, char** argv)
       runHi = stoi(opt[i+2]);
       cout << Form("Run limit mode active.  DS:%i Sub:%i runLo:%i runHi:%i\n",dsNum,subNum,runLo,runHi);
     }
-    if (opt[i] == "-d") { useDoubles=1;  cout << "Using doubles in channel branches ...\n"; }
+    if (opt[i] == "-d") { useDoubles=1;    cout << "Using doubles in channel branches ...\n"; }
+    if (opt[i] == "-o") { outDir=opt[i+1]; cout << "Writing to output directory: " << outDir << endl; }
   }
 
   // main routine
-  FindThresholds(dsNum, subNum, runLo, runHi, useDoubles);
+  FindThresholds(dsNum, subNum, runLo, runHi, useDoubles, outDir);
 }
 
-void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles)
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir)
 {
   string outputFile = "";
 
   GATDataSet ds;
   if (runLo < 0 && runHi < 0) {
     LoadDataSet(ds, dsNum, subNum);
-    outputFile = Form("~/project/bkg/thresh/threshDS%d_%d.root", dsNum, subNum);
+    outputFile = Form("%s/threshDS%d_%d.root", outDir.c_str(), dsNum, subNum);
   }
   else {
     GATDataSet tmp;
@@ -83,7 +86,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         ds.AddRunNumber(run);
       }
     }
-    outputFile = Form("~/project/bkg/thresh/threshDS%d_%d_%d_%d.root", dsNum, subNum, runLo, runHi);
+    outputFile = Form("%s/threshDS%d_%d_%d_%d.root", outDir.c_str(), dsNum, subNum, runLo, runHi);
   }
 
   // Set up output file
@@ -140,17 +143,23 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   // Get channel and energy estimator
   TChain *gatChain = ds.GetGatifiedChain(false);
   TTreeReader gReader(gatChain);
-  TTreeReaderValue<double> runIn(gReader, "run");
   TTreeReaderArray<double> wfENF(gReader,"trapENM");
-  // TTreeReaderArray<double> wfChan(gReader,"channel"); // this breaks when we have type int
 
-  // This is the part where we have to get int/double right
+  // We have to get int/double right
+  // you suck so much, doubles check.
+  // TTreeReaderValue<double> runIn(gReader, "run");
+  // TTreeReaderValue<vector<double>> wfChanIn(gReader, "channel");
   ROOT::Internal::TTreeReaderValueBase *wfChanIn = 0;
-  if(!useDoubles)
+  ROOT::Internal::TTreeReaderValueBase *runIn = 0;
+  if(!useDoubles) {
     wfChanIn = new TTreeReaderValue<vector<unsigned int>>(gReader, "channel");
-  else
+    runIn = new TTreeReaderValue<int>(gReader,"run");
+  }
+  else {
     wfChanIn = new TTreeReaderValue<vector<double>>(gReader, "channel");
-  
+    runIn = new TTreeReaderValue<double>(gReader,"run");
+  }
+
   int nEntries = gatChain->GetEntries();
   cout << "Scanning DS " << dsNum << " subNum " << subNum << " , " << nEntries << " entries.\n";
 
@@ -175,15 +184,38 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   vector<double> TrapFilter;
   vector<double> Waveform;
   cout << "Sampling from waveforms ...\n";
+
   // Set minimum run as run from the first entry
   gReader.SetEntry(0);
-  runMin = *runIn;
+
+  if (!useDoubles)
+    runMin = **static_cast<TTreeReaderValue<int>*>(runIn);
+  else
+    runMin = (int)**static_cast<TTreeReaderValue<double>*>(runIn);
+
+
   for(int i = 0; i < nEntries; i++)
   {
     bReader.SetEntry(i);
     gReader.SetEntry(i);
     int nWF = (*wfBranch).GetEntriesFast();
-    int nCh = wfChan.GetSize();
+
+    if (fmod(100*(double)i/nEntries, 10.0) < 0.00001)
+      cout << 100*(double)i/nEntries << " % done.\n";
+
+    // Get channel list for event as vector<int>.
+    // i hate you so much, doubles check
+    vector<int> wfChan;
+    if(useDoubles) {
+      vector<double>& chList = **static_cast<TTreeReaderValue< vector<double> >* >(wfChanIn);
+      for(double chan : chList) wfChan.push_back(int(chan));
+    }
+    else {
+      vector<unsigned int>& chList = **static_cast<TTreeReaderValue< vector<unsigned int> >* >(wfChanIn);
+      for(unsigned int chan : chList) wfChan.push_back(int(chan));
+    }
+
+    int nCh = wfChan.size();
     if (nWF != nCh) {
       cout << "Skipped entry " << i << endl;
       continue;
@@ -220,7 +252,13 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
 
   // Set maximum run as run from the last entry
   gReader.SetEntry(nEntries-1);
-  runMax = *runIn;
+  if (!useDoubles)
+    runMax = **static_cast<TTreeReaderValue<int>*>(runIn);
+  else
+    runMax = (int)**static_cast<TTreeReaderValue<double>*>(runIn);
+
+
+
   // Query database to get calibration parameters for enabled channels.
   // (The DB is only accessed for the first channel, then saves the run info in a buffer.)
   // Have you run MkCookie?
@@ -285,9 +323,9 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       threshCal[i] = 99999;
       sigmaCal[i] = 99999;
     }
-    // cout << Form("Ch %i  keV %.3f +/- %-8.3f   ADC %.2e +/- %-8.2e   Noise %.2e +/- %-8.2e  nADC %-5i  nNoise %-5i  Fit %i %i\n",
-      // channelList[i], threshCal[i], sigmaCal[i], threshADC[i], threshADCErr[i], sigmaADC[i], sigmaADCErr[i],
-      // nTrigger[i], nNoise[i], threshFitStatus[i], sigmaFitStatus[i]); //, CalScale[i], CalOffset[i]);
+    cout << Form("Ch %i  keV %.3f +/- %-8.3f   ADC %.2e +/- %-8.2e   Noise %.2e +/- %-8.2e  nADC %-5i  nNoise %-5i  Fit %i %i\n",
+      channelList[i], threshCal[i], sigmaCal[i], threshADC[i], threshADCErr[i], sigmaADC[i], sigmaADCErr[i],
+      nTrigger[i], nNoise[i], threshFitStatus[i], sigmaFitStatus[i]); //, CalScale[i], CalOffset[i]);
   }
   fThreshTree->Fill();
   fThreshTree->Write("",TObject::kOverwrite);
