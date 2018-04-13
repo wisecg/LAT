@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # import seaborn as sns
 
 # load LAT libraries
-ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
+ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 cal = ds.CalInfo()
 
@@ -23,9 +23,9 @@ def main():
 
     # compare1DHistos()
     # plotDLSimSpec()
-    # plotResiduals()
+    plotResiduals()
     # testSimData()
-    testNewSimData()
+    # testNewSimData()
 
 
 def getSimData():
@@ -258,6 +258,14 @@ def plotResiduals():
     tSim, tData = f2.Get("hSim_All"), f2.Get("hData_All")
     x,hSim2,_ = wl.npTH1D(tSim,'ctr')
     hRes2 = hSim2 - hData
+
+    # brian asked for nCounts from 0-5 kev between sim1 and sim2
+
+    idx = np.where((x > 7) & (x < 10))
+    nCts1 = sum(hSim1[idx])
+    nCts2 = sum(hSim2[idx])
+    nCtsD = sum(hData[idx])
+    print('nCts1',nCts1,'nCts2',nCts2,'nData',nCtsD)
 
     f3 = TFile("../data/hists_5.0_TDL_0.90_transition_point_0.25_transition_level.root")
     tSim, tData = f3.Get("hSim_All"), f3.Get("hData_All")

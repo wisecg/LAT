@@ -10,8 +10,31 @@ import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
 
-dsi = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
+# dsi = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
+dsi = imp.load_source('dsi',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+
+# load threshold data
+import tinydb as db
+dsNum, bkgIdx = 5, 83
+calDB = db.TinyDB('../calDB.json')
+pars = db.Query()
+thD = dsi.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
+
+# load threshold data
+import tinydb as db
+dsNum, bkgIdx = 5, 83
+calDB = db.TinyDB('../calDB.json')
+pars = db.Query()
+thD = dsi.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
+
+# load fitSlo vals for cal run range closest to the run range [22513, 22566]
+dsNum, modNum, calIdx = 5, 1, 11  # calIdx 11: [[22568,22635],22568,22841],
+fsD = dsi.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (dsNum, calIdx, modNum), False, calDB, pars)
+
+# load riseNoise vals
+rnSD = dsi.getDBRecord("riseNoise_ds%d_idx%d_m%d_SoftPlus" % (dsNum, calIdx, modNum), False, calDB, pars)
+rnCD = dsi.getDBRecord("riseNoise_ds%d_idx%d_m%d_Continuum" % (dsNum, calIdx, modNum), False, calDB, pars)
 
 def main():
 
@@ -20,6 +43,11 @@ def main():
     plotData2()
     # getData3()
     # plotData3()
+
+    # plotThreshCut()
+
+    # getCalData()
+    # plotCalSlowness()
 
 
 def scrapeData():
@@ -263,7 +291,7 @@ def plotData2():
     hitFail = [hitE[i] for i in range(n) if rise[i] > 10]
     rnFail = [rise[i] for i in range(n) if rise[i] > 10]
 
-    plt.semilogy(hitPass,rnPass,".b", ms=5, label='pass')
+    plt.semilogy(hitPass,rnPass,".k", ms=5, label='pass')
     plt.semilogy(hitFail,rnFail,".r", ms=5, label='fail')
     plt.axhline(10,color='red')
 
@@ -313,6 +341,7 @@ def getData3():
 
     np.savez("../plots/sea-data3.npz",t1,t2,t4,t5)
 
+
 def plotData3():
 
     f = np.load("../plots/sea-data3.npz")
@@ -328,6 +357,183 @@ def plotData3():
     plt.xlim(0, 50)
 
     plt.savefig("../plots/sea-riseNoise.png")
+
+
+def plotThreshCut():
+    """ Adapted from LAT/sandbox/mult2.py, and dependent on input:
+    "../plots/mult2-dtVals-ene.npz"
+    """
+    f = np.load("../plots/mult2-dtVals-ene.npz")
+    dtVals = f['arr_0'].item()
+    mH = 1
+    n = len(dtVals[mH])
+
+    # plot 1: all hits under 10 keV
+    # chan = [dtVals[mH][i][1][0] for i in range(n) if dtVals[mH][i][2][0]<10]
+    # hitE = [dtVals[mH][i][2][0] for i in range(n) if dtVals[mH][i][2][0]<10]
+    chan = [dtVals[mH][i][1][0] for i in range(n) if dtVals[mH][i][1][0] not in [598,1172] and dtVals[mH][i][2][0]<10]
+    hitE = [dtVals[mH][i][2][0] for i in range(n) if dtVals[mH][i][1][0] not in [598,1172] and dtVals[mH][i][2][0]<10]
+
+    # plot 2: only take hits above the detector threshold.
+    n = len(hitE)
+    chanTh, hitETh = [], []
+    for i in range(n):
+        if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3*thD[chan[i]][1]:
+            chanTh.append(chan[i])
+            hitETh.append(hitE[i])
+
+    # make the figure
+
+    f = plt.figure(figsize=(20,8))
+    p1 = plt.subplot(121)
+    p2 = plt.subplot(122)
+
+    chMap = list(sorted(set(chan)))
+    chDict = {chMap[i]:i for i in range(len(chMap))}
+    chan = [chDict[chan] for chan in chan]
+    chanTh = [chDict[chan] for chan in chanTh]
+
+    xLo, xHi, xpb = 0.5, 5., 0.1
+    yLo, yHi = 0, len(chMap)
+    nbx, nby = int((xHi-xLo)/xpb), len(chMap)
+
+
+    h1,xedg1,yedg1 = np.histogram2d(hitE,chan,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+    h2,xedg2,yedg2 = np.histogram2d(hitETh,chanTh,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+    h1, h2 = h1.T, h2.T
+    hMin, hMax = np.amin(h1), np.amax(h2)
+    hMin, hMax = 2, hMax*1.3
+
+    # arr[arr > 255] = x
+    h1[h1 < 0.1] = -1 # avoid LogNorm? set zeros to white?
+    h2[h2 < 0.1] = -1
+
+    im1 = p1.imshow(h1,cmap='jet',vmin=hMin,vmax=hMax)#,norm=LogNorm())
+    xticklabels = ["%.1f" % t for t in np.arange(0, 5.5, 0.5)]
+    yticks = np.arange(0, len(chMap))
+
+    p1.set_xlabel("Energy (keV)", ha='right', x=1.)
+    p1.set_xticklabels(xticklabels)
+    p1.set_ylabel("channel", ha='right', y=1.)
+    p1.set_yticks(yticks)
+    p1.set_yticklabels(chMap, fontsize=12)
+    f.colorbar(im1, ax=p1, fraction=0.037, pad=0.04)
+
+    im2 = p2.imshow(h2,cmap='jet',vmin=hMin,vmax=hMax)#,norm=LogNorm())
+    p2.set_xlabel("Energy (keV)", ha='right', x=1.)
+    p2.set_xticklabels(xticklabels)
+    p2.set_ylabel("channel", ha='right', y=1.)
+    p2.set_yticks(yticks)
+    p2.set_yticklabels(chMap, fontsize=12)
+    f.colorbar(im2, ax=p2, fraction=0.037, pad=0.04)
+
+    plt.tight_layout()
+
+    plt.savefig("../plots/sea-dtm1-thresh.png")
+
+
+def getCalData():
+    """ load a small subset of the long calibration files
+        and apply v1 of the fitSlo and threshold cuts to the hits.
+        also uses the old DataSetInfo (see top of this file)
+    """
+    from ROOT import TFile, TTree
+    fileList = []
+    calInfo = dsi.CalInfo()
+    runList = calInfo.GetSpecialRuns("longCal",5) # 54 total
+    runList = runList[:2]
+    # runList = runList[:] # histats file, see filename below
+    for run in runList: fileList.extend(dsi.getLATRunList([run],"%s/lat" % (dsi.specialDir)))
+    nFiles = len(fileList)
+    chList = dsi.GetGoodChanListNew(dsNum=5)
+
+    chan, hitE, fSlo, rise = [], [], [], []
+
+    for f in fileList:
+        print(f)
+        tf = TFile("%s/longCal/%s" % (dsi.specialDir,f))
+        tt = tf.Get("skimTree")
+        n = tt.Draw("channel:trapENFCal:fitSlo:riseNoise","trapENFCal < 250","goff")
+        ch, he, fs, rn = tt.GetV1(), tt.GetV2(), tt.GetV3(), tt.GetV4()
+        ch = np.asarray([ch[i] for i in range(n)])
+        he = np.asarray([he[i] for i in range(n)])
+        fs = np.asarray([fs[i] for i in range(n)])
+        rn = np.asarray([rn[i] for i in range(n)])
+        chan.extend(ch)
+        hitE.extend(he)
+        fSlo.extend(fs)
+        rise.extend(rn)
+        tf.Close()
+
+    np.savez("../plots/sea-cal.npz",chan,hitE,fSlo,rise)
+
+
+def plotCalSlowness():
+
+    f = np.load('../plots/sea-cal.npz')
+    chanIn, hitEIn, fSloIn, riseIn = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
+
+    # average slowness values
+    fsVals = {
+        584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
+        626: 81.5, 628: 102.5, 632: 81.5, 640: 73.5, 648: 74.5, 658: 75.5,
+        660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
+        690: 80.5, 694: 80.5
+        }
+
+    # only plot channels we have fitSlo and threshold cuts for
+    chList = []
+    for ch in (list(fsD.keys())+list(thD.keys())+list(fsVals.keys())):
+        if ch in fsD.keys() and ch in thD.keys() and ch in fsVals.keys():
+            chList.append(ch)
+    chList = sorted(list(set(chList)))
+
+    # fill all hits and hits passing fitSlo and 3sig threshold cuts
+    hitE, hitEPass, hitEFail = [], [], []
+    fSlo, fSloPass, fSloFail = [], [], []
+    for i in range(len(chanIn)):
+        if chanIn[i] not in chList: continue
+        hitE.append(hitEIn[i])
+        fSlo.append(fSloIn[i])
+
+        fsCut = fsD[chanIn[i]][2] # [1%, 5%, 90%, 95%, 99%]
+        thCut = thD[chanIn[i]][0] + 3*thD[chanIn[i]][1]
+
+        # calculate the shifted fitSlo value to make the plot more clear
+        fSloShift = fSloIn[i] - fsVals[chanIn[i]]
+
+        if fSloIn[i] < fsCut and hitEIn[i] > thCut:
+            hitEPass.append(hitEIn[i])
+            fSloPass.append(fSloShift)
+        else:
+            hitEFail.append(hitEIn[i])
+            fSloFail.append(fSloShift)
+
+    plt.cla()
+    fig = plt.figure()
+    xLo, xHi, xpb = 0, 250, 1
+
+    x, y1 = wl.GetHisto(hitE,xLo,xHi,xpb)
+    plt.semilogy(x, y1, 'r',lw=2.,ls='steps',label='all hits')
+
+    x, y2 = wl.GetHisto(hitEPass,xLo,xHi,xpb)
+    plt.semilogy(x, y2, 'b',lw=2.,ls='steps',label='hits passing cuts')
+
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts", ha='right', y=1)
+    plt.legend(loc=1)
+    plt.savefig("../plots/sea-cal-fsCut.png")
+
+    plt.cla()
+    plt.plot(hitEFail,fSloFail,".r",ms=5,label='fail')
+    plt.plot(hitEPass,fSloPass,".k",ms=5,label='pass')
+    plt.axvline(1.0,color='b',label='1 keV')
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("fitSlo (channel-shifted)", ha='right', y=1)
+    plt.legend(loc=1)
+    plt.xlim(0,20)
+    plt.ylim(-50,500)
+    plt.savefig("../plots/sea-cal-fsThrScatter.png")
 
 
 if __name__=="__main__":

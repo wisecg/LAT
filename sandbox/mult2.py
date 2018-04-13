@@ -11,7 +11,7 @@ plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
 
 # load LAT libraries
-ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
+ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 calInfo = ds.CalInfo()
 
@@ -37,8 +37,8 @@ def main():
 
     # getDT() # <- use this one
     # plotFitRates()
-    # plotDT_mH1Ene()
-    # plotDT_mH1Ene_wThr()
+    plotDT_mH1Ene()
+    plotDT_mH1Ene_wThr()
     # plotDT_mH1Low()
     # plotThreshFunc()
     # plotDT_mH1Low_wThr()

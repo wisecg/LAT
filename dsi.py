@@ -344,6 +344,9 @@ class DetInfo:
     def getHVAtRun(self,ds,run,opt="cpd"):
         """ {cpd : HV} or {chan : HV} depending on option.
         Sets detectors w/ no entry to 0V (which is true).
+
+        TODO: this needs to use the result from chan-sel::checkAllRunsHV
+
         """
         hv = self.detHV[ds] # {cpd : [(run1,hv1),(run2,hv2),...] }
         # for h in sorted(hv): print(h, hv[h])
@@ -750,7 +753,7 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
 def test():
     print("testing...")
 
-    # cal = CalInfo()
+    cal = CalInfo()
     # runsCal = cal.GetSpecialList()
     # print(runsCal)
 
@@ -774,18 +777,31 @@ def test():
     # goodChans = det.getGoodChanList(2)
     # print(goodChans)
 
-    ds = 1
-    run0 = bkg.getRunList(ds,42)[0]
+    # print(692, det.getChanCPD(0,692))
+    # print(det.getPMon(ds=0))
+
+    # ds = 1
+    # run0 = bkg.getRunList(ds,42)[0]
     # print(det.getHVAtRun(ds,run0))
     # print(det.getHVAtRun(ds,run0,"chan"))
     # print(det.getTrapThreshAtRun(ds,run0))
-    th1 = det.getTrapThreshAtRun(ds,run0)
-    th2 = det.getTrapThreshAtRun(ds,14343)
-    hv1 = det.getHVAtRun(ds,run0)
-    hv2 = det.getHVAtRun(ds,14343)
-    for cpd in sorted(det.allDetIDs):
-        if cpd not in list(th1.keys())+list(th2.keys()): continue
-        print("cpd %s run1: %d th %d hv %d , run2: %d th %d  hv %d" % (cpd,run0,th1[cpd],hv1[cpd],14343,th2[cpd],hv2[cpd]))
+    # th1 = det.getTrapThreshAtRun(ds,run0)
+    # th2 = det.getTrapThreshAtRun(ds,14343)
+    # hv1 = det.getHVAtRun(ds,run0)
+    # hv2 = det.getHVAtRun(ds,14343)
+    # for cpd in sorted(det.allDetIDs):
+        # if cpd not in list(th1.keys())+list(th2.keys()): continue
+        # print("cpd %s run1: %d th %d hv %d , run2: %d th %d  hv %d" % (cpd,run0,th1[cpd],hv1[cpd],14343,th2[cpd],hv2[cpd]))
+
+    # search the db
+    import tinydb as db
+    calDB = db.TinyDB("%s/calDB-v2.json" % latSWDir)
+    pars = db.Query()
+    recList = calDB.search(pars.key.matches("thresh"))
+    for idx in range(len(recList)):
+        key = recList[idx]['key']
+        # vals = recList[idx]['vals']
+        print(key)
 
 
 if __name__=="__main__":

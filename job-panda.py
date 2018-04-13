@@ -12,7 +12,6 @@ starting from running skim_mjd_data.
 import sys, shlex, glob, os, re, time
 import subprocess as sp
 import dsi
-
 jobQueue = dsi.latSWDir+"/job.q"
 
 # =============================================================
@@ -76,8 +75,6 @@ def main(argv):
         if opt == "-b":         runBatch()
         if opt == "-chunk":     chunkJobList()
 
-
-
 # =============================================================
 
 def sh(cmd):
@@ -123,6 +120,14 @@ def getSBatch(opt, getCores=True, nArr=1):
             "-n30", # match nCores for pdsf below
             "-t 24:00:00",
         ],
+        "pdsf-test": [
+            "--workdir=%s" % (dsi.latSWDir),
+            "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
+            "--image=wisecg/mjsw:v2",
+            "-p shared",
+            # "-n30", # match nCores for pdsf below
+            "-t 00:20:00",
+        ],
         "cori": [
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/cori-%%j.txt" % (dsi.latSWDir),
@@ -141,7 +146,7 @@ def getSBatch(opt, getCores=True, nArr=1):
             "-t 24:00:00",
             # "-t 00:10:00",
             # "--qos=debug"
-            "--qos=regular"
+            "--qos=shared"
         ],
         "edison-arr": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -229,6 +234,8 @@ def runBatch():
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=49))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgLAT_ds5c6/bkgLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr", nArr=14))
     # sh("%s slurm.slr './job-pump.sh jobs/bkgLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr 'eval ./job-pump.sh jobs/bkgThresh/bkgThresh_${SLURM_ARRAY_TASK_ID}.ls auto-thresh %d %d'" % getSBatch("edison-arr", nArr=10))
+    # sh("%s slurm.slr './job-pump.sh jobs/bkgThresh_cleanup.ls auto-thresh %d %d'" % getSBatch("edison"))
 
     # EX. 9: PROCESS CAL DATA
     # sh("%s slurm.slr './job-pump.sh jobs/calSkim.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
@@ -244,8 +251,12 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/calLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 10: file integrity checks
-    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
-    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -c -all"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -c -all"))
+
+    # EX. 11: raw threshold, channel, and HV settings
+    # sh("%s slurm.slr %s" % (getSBatch("edison",False),"./chan-sel.py -t -v"))
+    # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-test"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -973,36 +984,39 @@ def specialBuild():
 
 def chunkJobList():
     """ ./job-panda.py -chunk
-    Split the huge LAT job lists into chunks.
+    Split huge job lists into chunks.
     NOTE:  Edison has 48 cores/node, PDSF has 30, Cori has 60.
     It's probably good to have at least that many jobs in a chunk.
     """
-
     # with open("%s/jobs/bkgLAT.ls" % dsi.latSWDir) as f:
     # with open("%s/jobs/bkgLAT_3.ls" % dsi.latSWDir) as f:
     # with open("%s/jobs/calLAT.ls" % dsi.latSWDir) as f:
-    with open("%s/jobs/calLAT_ds5c.ls" % dsi.latSWDir) as f:
+    # with open("%s/jobs/calLAT_ds5c.ls" % dsi.latSWDir) as f:
+    with open("%s/jobs/bkgThresh.ls" % dsi.latSWDir) as f:
         jobList = [line.rstrip('\n') for line in f]
 
     # nChunks = 50 # full lat BG process
     # nChunks = 15 # ds5c & ds6
     # nChunks = 100 # DS0-5c cal process
-    nChunks = 11 # DS5c cal
+    # nChunks = 11 # DS5c cal
+    nChunks = 10 # auto-thresh calculation
     jobsInChunk = int(len(jobList)/nChunks)
     print("nChunks %d  jobs in chunk %d" % (nChunks, jobsInChunk))
 
     for iCh in range(nChunks):
         cLo, cHi = iCh*jobsInChunk, (iCh+1) * jobsInChunk - 1
         if iCh == nChunks-1: cHi = len(jobList)-1
+        print("cLo, cHi:",cLo, cHi)
         # jobFile = "%s/jobs/bkgLAT/bkgLAT_%d.ls" % (dsi.latSWDir, iCh)
         # jobFile = "%s/jobs/bkgLAT_ds5c6/bkgLAT_%d.ls" % (dsi.latSWDir, iCh)
         # jobFile = "%s/jobs/calLAT/calLAT_%d.ls" % (dsi.latSWDir, iCh)
-        jobFile = "%s/jobs/calLAT_ds5c/calLAT_%d.ls" % (dsi.latSWDir, iCh)
+        # jobFile = "%s/jobs/calLAT_ds5c/calLAT_%d.ls" % (dsi.latSWDir, iCh)
+        jobFile = "%s/jobs/bkgThresh/bkgThresh_%d.ls" % (dsi.latSWDir, iCh)
         with open(jobFile,"w") as f:
-            # print(jobFile)
-            for job in jobList[cLo:cHi]:
+            print(jobFile)
+            for idx, job in enumerate(jobList[cLo:cHi+1]):
                 f.write(job+"\n")
-                # print(job)
+                print(idx, job)
 
 
 def quickTest():
