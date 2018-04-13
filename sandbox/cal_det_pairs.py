@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯ ¯\_(ツ)_/¯
 #!/usr/bin/env python
 import sys, os, imp, pathlib, itertools
 import numpy as np
@@ -8,7 +6,7 @@ from statsmodels.stats import proportion
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
-sns.set(style='darkgrid', context='talk')
+sns.set(style='darkgrid')
 
 # load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
@@ -31,47 +29,67 @@ def main():
     inDir, outDir = os.environ['LATDIR'], os.environ['LATDIR']+'/plots/CalPairs'
     energyCut = 10
 
+    # Create files with hits
     # getSpecPandas()
     # getSimPandas()
-    # loadSpec()
-    interceptList, distList = loadScatter()
-    print('STD (intercept): ', np.std(interceptList))
-    print('STD (distance): ', np.std(distList))
 
-    return
+    # loadSpec()
+    # interceptList, distList, absdistList = loadScatter()
+    # print('Mean intercept: ', sum(interceptList)/len(interceptList))
+    # print('Mean Distance: ', sum(distList)/len(distList))
+    # print('Absolute Distance: ', sum(absdistList)/len(absdistList))
 
     simMatrix, simdetLabel = loadMatrix('Sim')
     calMatrix, detLabel = loadMatrix('Cal')
 
+    # Get Total Counts
+    totCounts = np.sum(calMatrix)
+    totCountsSim = np.sum(simMatrix)
+    print('Total Counts (Calibration): ', totCounts)
+    print('Total Counts (Simulation): ', totCountsSim)
+
     # Draw heatmap
     # fig1, ax1 = plt.subplots(figsize=(10,8))
-    # sns.heatmap(calMatrix, cmap="YlGnBu", xticklabels=detLabel, yticklabels=detLabel, ax=ax1)
-    # ax1.set_title('DS5 Sim Calibration -- M2 Sum 238 Peak -- Counts <{} keV'.format(energyCut))
+    # sns.heatmap(np.round(calMatrix/totCounts*100., 1), cmap="YlGnBu", xticklabels=detLabel, yticklabels=detLabel, annot=True, ax=ax1)
+    # ax1.set_title('DS5 Sim Calibration -- M2 Sum 238 Peak -- Percentage of Counts <{} keV'.format(energyCut))
     # ax1.set_xlabel('Low Energy Hit')
     # ax1.set_ylabel('High Energy Hit')
     # plt.xticks(rotation=90)
     # plt.yticks(rotation=0)
     # plt.tight_layout()
-    # fig1.savefig('{}/CrazyMatrix_Cal_C1.png'.format(outDir))
+    # fig1.savefig('{}/CrazyMatrix_Cal_C1_Percent.png'.format(outDir))
+    #
+    # fig2, ax2 = plt.subplots(figsize=(10,8))
+    # sns.heatmap(np.round(simMatrix/totCountsSim*100.,1), cmap="YlGnBu", xticklabels=simdetLabel, yticklabels=simdetLabel, annot=True, ax=ax2)
+    # ax2.set_title('DS5 Sim Calibration -- M2 Sum 238 Peak -- Percentage of Counts <{} keV'.format(energyCut))
+    # ax2.set_xlabel('Low Energy Hit')
+    # ax2.set_ylabel('High Energy Hit')
+    # plt.xticks(rotation=90)
+    # plt.yticks(rotation=0)
+    # plt.tight_layout()
+    # fig2.savefig('{}/CrazyMatrix_Sim_C1_Percent.png'.format(outDir))
+    # plt.show()
+
+
+
 
     # Bar plot showing fractions for each detector
-    totCounts = np.sum(calMatrix)
-    chCounts = np.sum(calMatrix, axis=1)
+    chCounts = np.sum(calMatrix, axis=0)
     chFrac = chCounts/float(totCounts)
     errLo, errHi = proportion.proportion_confint(chCounts, np.full(chCounts.shape[0], totCounts), alpha=0.1, method='beta')
 
     simtotCounts = np.sum(simMatrix)
-    simchCounts = np.sum(simMatrix, axis=1)
+    simchCounts = np.sum(simMatrix, axis=0)
     simchFrac = simchCounts/float(simtotCounts)
     simerrLo, simerrHi = proportion.proportion_confint(simchCounts, np.full(simchCounts.shape[0], simtotCounts), alpha=0.1, method='beta')
 
     xList = np.linspace(1, len(detLabel), len(detLabel))
     bar_width = 0.35
-    # fig2, ax2 = plt.subplots(figsize=(12,7))
-    fig2 = plt.figure(figsize=(15,12))
-    gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
-    ax2 = plt.subplot(gs[0])
-    ax3 = plt.subplot(gs[1])
+    fig2, ax2 = plt.subplots(figsize=(12,7))
+    # fig2 = plt.figure(figsize=(15,12))
+    # gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
+    # ax2 = plt.subplot(gs[0])
+    # ax3 = plt.subplot(gs[1])
     # Add 0.5 to each width to shift to the center of the grid
     ax2.bar(xList, chFrac, bar_width, yerr=[chFrac - errLo, errHi - chFrac], label='Calibration Data')
     ax2.bar(xList+bar_width, simchFrac, bar_width, yerr=[simchFrac - simerrLo, simerrHi - simchFrac], label='Calibration Simulation')
@@ -81,12 +99,13 @@ def main():
     ax2.set_title('DS5 Calibration -- M2 Sum 238 Peak -- Fraction of Events <{} keV'.format(energyCut))
     ax2.set_ylabel("Fraction of Events")
     ax2.legend()
-    sns.regplot(xList + bar_width/2, simchFrac/chFrac, ax=ax3)
-    ax3.set_ylabel('Ration (Sim/Cal)')
-    ax3.set_xticks(xList + bar_width/2)
-    ax3.set_xticklabels(detLabel, rotation=50)
+    # sns.regplot(xList + bar_width/2, simchFrac/chFrac, ax=ax3)
+    # ax3.set_ylabel('Ration (Sim/Cal)')
+    # ax3.set_xticks(xList + bar_width/2)
+    # ax3.set_xticklabels(detLabel, rotation=50)
     plt.tight_layout()
-    fig2.savefig('{}/CrazyBar_C1_2.png'.format(outDir))
+    fig2.savefig('{}/CrazyBar_C1_3.png'.format(outDir))
+
 
 
 def convertDF(series):
@@ -322,18 +341,12 @@ def loadScatter():
 
     interceptList = []
     distList = []
-
+    absdistList = []
     for CPD in detList1:
         dfCh = dfCut.loc[dfCut['CPD1']==CPD]
 
         x = dfCh['trapENFCal1'].values
         y = dfCh['EMirror'].values
-
-        # Find distance between (x,y) and x = y
-        xCut = dfCh['trapENFCal1'].loc[dfCh['trapENFCal1'] < 10].values
-        yCut = dfCh['EMirror'].loc[dfCh['trapENFCal1'] < 10].values
-        distance = abs(xCut-yCut)
-        distList.append(distance.sum()/len(distance))
 
         slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
         mx = x.mean()
@@ -353,16 +366,19 @@ def loadScatter():
         ax1.set_title('C{}P{}D{} Energy Calibration Check'.format(*str(CPD)))
         ax1.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
         plt.tight_layout()
-        fig1.savefig('{}/plots/CalPairs/CalCheck/2615keV_CalCheck_C{}P{}D{}.png'.format(inDir, *str(CPD)))
-
-        # For fancy JointGrid... not sure it adds much here
-        # g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
-        # g3 = g3.plot_joint(sns.regplot)
-        # g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
-        # g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
-        # plt.show()
+        # fig1.savefig('{}/plots/CalPairs/CalCheck/2615keV_CalCheck_C{}P{}D{}.png'.format(inDir, *str(CPD)))
         interceptList.append(intercept)
-    return interceptList, distList
+
+        # Find distance between (x,y) and x = y
+        xCut = dfCh['trapENFCal1'].loc[dfCh['trapENFCal1'] < 10].values
+        yCut = dfCh['EMirror'].loc[dfCh['trapENFCal1'] < 10].values
+        absdistance = abs(xCut-yCut)
+        distance = xCut-yCut
+        if len(distance) > 0:
+            distList.append(distance.sum()/len(distance))
+            absdistList.append(absdistance.sum()/len(absdistance))
+            print('{} - Distance {:.3f} - Absolute Distance {:.3f}'.format(str(CPD), distance.sum()/len(distance), absdistance.sum()/len(absdistance)))
+    return interceptList, distList, absdistList
 
 def loadMatrix(dType = 'Cal'):
     """
