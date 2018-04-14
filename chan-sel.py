@@ -20,7 +20,7 @@ def main(argv):
     ds, cIdx, mod = None, None, None
     writeDB = False
 
-    #
+    # NOTE: the options also outline a rough 'procedure' to use this code.
     for i, opt in enumerate(argv):
 
         # set dataset and options
@@ -49,9 +49,50 @@ def main(argv):
         if opt=="-detID":
             getDetIDs()
 
+    compareCoverage()
     # getSubRanges()
     # loadSubRanges()
     # fillThreshDB()
+
+def compareCoverage():
+    # seeing some discrepancies between the old version of getSettings (just used bkg lists)
+    # and the new version, which uses cal ranges.
+    # w/o accessing the data itself, make sure that we're covering all the runs we THINK we're covering.
+
+    # new method (by calIdx)
+    coveredRunsNew = []
+    for ds in [0,1,2,3,4,5,6]:
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                dbKeyTH = "trapThr_%s_c%d" % (key, cIdx)
+                runList = []
+                calLo, calHi = cal.GetCalRunCoverage(key,cIdx)
+                for run in bkg.getRunList(ds):
+                    if (calLo <= run <= calHi):
+                        runList.append(run)
+                        coveredRunsNew.append(run)
+                # calList = cal.GetCalList(key,cIdx)
+                # runList.append(calList[0])
+                # runList = sorted(runList)
+
+    coveredRunsOld = []
+    for ds in [0,1,2,3,4,5,6]:
+        runList = bkg.getRunList(ds)
+        for run in runList:
+            coveredRunsOld.append(run)
+
+    # find runs that are in one list but not the other
+    allRuns = list(set(coveredRunsOld+coveredRunsNew))
+
+    for run in allRuns:
+        if run not in coveredRunsOld:
+            print("run %d not in old run list!" % run)
+        if run not in coveredRunsNew:
+            print("run %d not in new run list!" % run)
+
 
 
 def settingsMgr(dsIn=None, subIn=None, modIn=None, writeDB=False):
