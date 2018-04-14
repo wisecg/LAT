@@ -85,14 +85,15 @@ def compareCoverage():
             coveredRunsOld.append(run)
 
     # find runs that are in one list but not the other
-    allRuns = list(set(coveredRunsOld+coveredRunsNew))
-
-    for run in allRuns:
+    for run in list(set(coveredRunsOld+coveredRunsNew)):
         if run not in coveredRunsOld:
             print("run %d not in old run list!" % run)
+            break
         if run not in coveredRunsNew:
             print("run %d not in new run list!" % run)
+            break
 
+    print("Run lists match!")
 
 
 def settingsMgr(dsIn=None, subIn=None, modIn=None, writeDB=False):
@@ -162,7 +163,7 @@ def getSettings(ds, key, mod, cIdx, writeDB=False):
             runList.append(run)
     calList = cal.GetCalList(key,cIdx)
     runList.append(calList[0])
-    runList = sorted(runList)
+    runList = sorted(runList) # if the cal run isn't before the bkg runs, it's not the first run in this list
 
     print("\nDS%d M%d (%s) cIdx %d (%d runs) %s %s" % (ds,mod,key,cIdx,len(runList),dbKeyTH,dbKeyHV))
     # return
