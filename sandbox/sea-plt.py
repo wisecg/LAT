@@ -40,7 +40,7 @@ def main():
 
     # scrapeData()
     # plotData()
-    plotData2()
+    # plotData2()
     # getData3()
     # plotData3()
 
@@ -48,6 +48,9 @@ def main():
 
     # getCalData()
     # plotCalSlowness()
+    plotSlowness2()
+
+    # plotSloHits()
 
 
 def scrapeData():
@@ -534,6 +537,195 @@ def plotCalSlowness():
     plt.xlim(0,20)
     plt.ylim(-50,500)
     plt.savefig("../plots/sea-cal-fsThrScatter.png")
+
+
+def plotSlowness2():
+
+    # fitSlo results from tuneFitSlo.
+    fsVals = {
+        584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
+        626: 81.5, 628: 102.5, 632: 81.5, 640: 73.5, 648: 74.5, 658: 75.5,
+        660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
+        690: 80.5, 694: 80.5
+        }
+
+    chList = list(fsVals.keys())
+
+    # peak fit results from mult2.  could retune, but it shouldn't matter much
+    mHT = 2
+    sumPks = [
+        (2,238,237.28,239.46), (2,583,581.26,584.46), (2,2615,2610.57,2618.01),
+        (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
+        ]
+
+    # f1 = np.load("../plots/mult4-hitE.npz")
+    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
+
+    hitE, chan, fSlo = [], [], []
+    for i in range(len(hitData)):
+        if hitData[i][0]==mHT and 237.28 < hitData[i][1] < 239.46:
+            hitE.extend(hitList[i][0])
+            chan.extend(hitList[i][1])
+            fSlo.extend(hitList[i][2])
+    n = len(hitE)
+    hitE = [hitE[i] for i in range(n) if chan[i] in fsVals.keys()]
+    fSloShift = [fSlo[i]-fsVals[chan[i]] for i in range(n) if chan[i] in chList]
+    print("peak evts:",n)
+
+    # plt.cla()
+    # plt.plot(hitE, fSloShift, '.', c='k', ms=1.)
+    # plt.ylim(-50, 400)
+    # plt.savefig("../plots/mult4-fitSlo-shift.png")
+
+    cLo, cHi = 0, 230
+
+    hitE2, chan2, fSlo2 = [], [], []
+    for i in range(len(hitData)):
+        # if hitData[i][0]==mHT and cLo < hitData[i][1] < cHi:
+        if hitData[i][1] < 230:
+            hitE2.extend(hitList[i][0])
+            chan2.extend(hitList[i][1])
+            fSlo2.extend(hitList[i][2])
+    n = len(hitE2)
+    hitE2 = [hitE2[i] for i in range(n) if chan2[i] in fsVals.keys()]
+    fSloShift2 = [fSlo2[i]-fsVals[chan2[i]] for i in range(n) if chan2[i] in chList]
+    print("cont evts:",n)
+
+    # plt.cla()
+    # plt.plot(hitE2, fSloShift2, '.', c='k', ms=1.)
+    # plt.ylim(-50, 400)
+    # plt.savefig("../plots/mult4-fitSlo-shift2.png")
+
+    plt.cla()
+    xLo, xHi, xpb = -50, 300, 1
+
+    x, y238 = wl.GetHisto(fSloShift,xLo,xHi,xpb)
+    x, yCon = wl.GetHisto(fSloShift2,xLo,xHi,xpb)
+
+    plt.semilogy(x, y238/np.sum(y238),'b',lw=2.,ls='steps',label='hits m=2,s=238 pk')
+    plt.semilogy(x, yCon/np.sum(yCon),'r',lw=2.,ls='steps',label='all hits %d - %d keV' % (cLo, cHi))
+    plt.xlabel("fitSlo (shifted)",ha='right',x=1)
+    plt.ylabel("Counts (arb)",ha='right',y=1)
+    plt.legend()
+    plt.savefig("../plots/sea-fitSlo-hist.png")
+
+
+def plotSloHits():
+    """ adapted from mult2::plotSloHits
+    Fixes the bug I found 14 Apr 18, where mult2::plotSloHits was looking
+    at the wrong values for fSlo and erroneously seeing a flat distribution.
+    """
+    # average slowness values
+    fsVals = {
+        584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
+        626: 81.5, 628: 102.5, 632: 81.5, 640: 73.5, 648: 74.5, 658: 75.5,
+        660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
+        690: 80.5, 694: 80.5
+        }
+    # load a unique channel list
+    chList = []
+    for ch in list(fsVals.keys())+list(thD.keys())+list(fsD.keys()):
+        if ch in fsVals.keys() and ch in fsD.keys() and ch in thD.keys():
+            chList.append(ch)
+    chList = sorted(list(set(chList)))
+
+    # load data (from mult2::getSumEvents)
+    # f = np.load("../plots/mult2-sumLoEvts.npz")
+    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    runTime, sumEvts = f['arr_0'], f['arr_1'].item()
+    mH, pk = 2, 238
+    evts = sumEvts[mH][pk]
+
+    # fill arrays
+    hitE, fSlo, fSloShift = [], [], []
+    ePass, sPass = [], []
+    eCut, sCut = [], []
+
+    for i in range(len(evts)):
+        chanIn = evts[i][0]
+        if chanIn not in chList: continue
+        hitEIn = evts[i][2]
+        if hitEIn < 0.7 or hitEIn < thD[chanIn][0] + 3*thD[chanIn][1]: continue
+
+        fSloIn = evts[i][4]
+        fShift = fSloIn - fsVals[chanIn]
+
+        fCut = 1.5 * fsD[chanIn][2] # v1 fitSlo vals look too tight.
+
+        hitE.append(hitEIn)
+        fSlo.append(fSloIn)
+        fSloShift.append(fShift)
+
+        if fSloIn < fCut:
+            ePass.append(hitEIn)
+            # sPass.append(fSloIn)
+            sPass.append(fShift)
+        else:
+            eCut.append(hitEIn)
+            # sCut.append(fSloIn)
+            sCut.append(fShift)
+
+    # ========================================================================================
+    # -- plot 1: 2d scatter plot, fSlo vs hitE, hits passing/failing v1 of fitSlo cut.
+    fig = plt.figure()
+
+    plt.cla()
+    # plt.plot(hitE, fSlo, ".k", ms=1., label='all')
+    # plt.plot(hitE, fSloShift, ".k", ms=1., label='all')
+    plt.plot(ePass, sPass, ".k", ms=0.5, label='pass')
+    plt.plot(eCut, sCut, '.r', ms=1.0, label='cut')
+
+    plt.ylim(-100, 300)
+    plt.xlim(0, 30)
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("fitSlo", ha='right', y=1.)
+    plt.legend(loc=1)
+    plt.savefig("../plots/sea-fitSloScatter.png")
+
+    # -- plot 2: 1-d energy histo, hits passing/failing
+    plt.cla()
+
+    xLo, xHi, xpb = 0, 15, 0.2
+    x, hTot = wl.GetHisto(hitE, xLo, xHi, xpb)
+    x, hPass = wl.GetHisto(ePass, xLo, xHi, xpb)
+    x, hCut = wl.GetHisto(eCut, xLo, xHi, xpb)
+
+    plt.plot(x, hTot, c='b', lw=1.5, ls='steps', label='m=%d, pk %d' % (mH, pk))
+    plt.plot(x, hPass, c='g', lw=1.5, ls='steps', label='fitSlo pass')
+    plt.plot(x, hCut, c='r', lw=1.5, ls='steps', label='fitSlo cut')
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts / %.1f kev" % xpb, ha='right', y=1.)
+    plt.legend(loc=1)
+    plt.savefig("../plots/sea-m2s238-hitE.png")
+
+    # -- plot 3: efficiency of v1 slowness cut, assuming all m2s238 hits are fast.
+    plt.cla()
+
+    from statsmodels.stats import proportion
+    idx = np.where((hTot > 0) & (hPass > 0))
+    ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
+    sloEff = hPass[idx] / hTot[idx]
+
+    nPad = len(hPass)-len(hPass[idx])
+    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+
+    plt.plot(x, sloEff, '.b', ms=10., label='efficiency')
+    plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+    idx = np.where(np.abs(ci_upp) > 0)
+    xCut = x[6]
+    plt.axvline(xCut,color='g',label='cutoff: %.2f keV' % xCut)
+
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Efficiency", ha='right', y=1.)
+    plt.legend(loc=4)
+
+    plt.savefig("../plots/sea-m2s238-eff.png")
 
 
 if __name__=="__main__":

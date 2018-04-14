@@ -4,6 +4,7 @@
 """
 import os, json, glob, re
 import numpy as np
+import tinydb as db
 
 latSWDir    = os.environ['LATDIR']
 dataDir     = "/global/projecta/projectdirs/majorana/users/wisecg"
@@ -35,7 +36,9 @@ class BkgInfo:
         return numSubDS
 
     def dsRanges(self):
-        """ Manual edit.  Must cover BG list and cal runs. """
+        """ Manual edit.  Cover all runs in BG list and also cal runs.
+        Verified, 12 Apr 2018 CGW. (DS6 is incomplete)
+        """
         return {
             0:[2571,7614],
             1:[9407,14502],
@@ -311,10 +314,11 @@ class DetInfo:
         self.allDetIDs.update(self.detIDs["M1"])
         self.allDetIDs.update(self.detIDs["M2"])
 
-        # Generated with LAT/chan-sel.py::getRunSettings
+        # -- Load outputs from LAT/chan-sel.py --
+        # Generated with LAT/chan-sel.py::fillDetInfo
         # Used BKG ranges, DS0-6 in LAT/data/runsBkg.json
-        # (verified to 100% match DataSetInfo.cc, (4 Apr 2018 CGW))
-        f = np.load("%s/data/runSettings.npz" % os.environ['LATDIR'])
+        # (verified to 100% match DataSetInfo.cc, (14 Apr 2018 CGW))
+        f = np.load("%s/data/runSettings-v2.npz" % os.environ['LATDIR'])
         self.detHV = f['arr_0'].item()
         self.detTH = f['arr_1'].item()
         self.detCH = f['arr_2'].item()
@@ -372,9 +376,9 @@ class DetInfo:
                 # print("run:",run,"cpd:",cpd,"chanHV:",chanHV)
 
                 if opt == "cpd":
-                    out[cpd] = chanHV
+                    out[str(cpd)] = chanHV
                 if opt == "chan":
-                    out[self.getCPDChan(ds,cpd)] = chanHV
+                    out[self.getCPDChan(ds,str(cpd))] = chanHV
         return out
 
     def getTH(self,ds=None,cpd=None):
@@ -408,7 +412,7 @@ class DetInfo:
                     # print("Run not covered in this DS! run:%d, runInit %d" % (run, runInit))
                     chanTH = -1
 
-                # find the HV setting for this run
+                # find the trap threshold setting for this run
                 for r,t in th[cpd]:
                     if run < r: continue
                     if run >= r: chanTH = t
@@ -416,14 +420,15 @@ class DetInfo:
                 # print("run:",run,"cpd:",cpd,"chanTH:",chanTH)
 
                 if opt == "cpd":
-                    out[cpd] = chanTH
+                    out[str(cpd)] = chanTH
                 if opt == "chan":
-                    out[self.getCPDChan(ds,cpd)] = chanTH
+                    out[self.getCPDChan(ds,str(cpd))] = chanTH
         return out
 
     def getCH(self,ds=None,cpd=None):
         """ {ds : {'det' : [(run1,val1),(run2,val2)...]} }
-        Value of the HG analysis channel for a particular detector. Same caveat as 'getHV' above.
+        Value of the HG analysis channel for a particular detector.
+        Uses results from LAT/chan-sel.py::getSettings.
         """
         if ds is None and cpd is None:
             return self.detCH
@@ -723,7 +728,7 @@ def getDBRecord(key, verbose=False, calDB=None, pars=None):
             print(" ")
 
 
-def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=None):
+def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=None, verbose=False):
     """ Adds entries to the DB. Checks for duplicate records.
     The format of 'entry' should be a nested dict:
     myEntry = {"key":key, "vals":vals}
@@ -737,14 +742,16 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
     recList = calDB.search(pars.key==key)
     nRec = len(recList)
     if nRec == 0:
-        print("Record '%s' doesn't exist in the DB  Adding it ..." % key)
+        if verbose: print("Record '%s' doesn't exist in the DB  Adding it ..." % key)
         calDB.insert(entry)
     elif nRec == 1:
         prevRec = recList[0]['vals']
         if prevRec!=vals:
-            print("An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate))
+            if verbose:
+                print("An old version of record '%s' exists.  It DOES NOT match the new version.  forceUpdate? %r" % (key, forceUpdate))
             if forceUpdate:
-                print("Updating record: ",key)
+                if verbose:
+                    print("Updating record: ",key)
                 calDB.update(entry, pars.key==key)
     else:
         print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
@@ -783,25 +790,40 @@ def test():
     # ds = 1
     # run0 = bkg.getRunList(ds,42)[0]
     # print(det.getHVAtRun(ds,run0))
-    # print(det.getHVAtRun(ds,run0,"chan"))
+    # print(det.getHVAtRun(ds,run0,"chan")) # problematic
     # print(det.getTrapThreshAtRun(ds,run0))
     # th1 = det.getTrapThreshAtRun(ds,run0)
     # th2 = det.getTrapThreshAtRun(ds,14343)
     # hv1 = det.getHVAtRun(ds,run0)
     # hv2 = det.getHVAtRun(ds,14343)
+
+    # verify that we pick up the change in p5d2
+    # chanList = list(th1.keys())+list(th2.keys())
     # for cpd in sorted(det.allDetIDs):
-        # if cpd not in list(th1.keys())+list(th2.keys()): continue
-        # print("cpd %s run1: %d th %d hv %d , run2: %d th %d  hv %d" % (cpd,run0,th1[cpd],hv1[cpd],14343,th2[cpd],hv2[cpd]))
+    #     if cpd not in chanList: continue
+    #     print("cpd %s run1: %d th %d hv %d , run2: %d th %d  hv %d" % (str(cpd),run0,th1[cpd],hv1[cpd],14343,th2[cpd],hv2[cpd]))
 
     # search the db
-    import tinydb as db
-    calDB = db.TinyDB("%s/calDB-v2.json" % latSWDir)
-    pars = db.Query()
-    recList = calDB.search(pars.key.matches("thresh"))
-    for idx in range(len(recList)):
-        key = recList[idx]['key']
+    # import tinydb as db
+    # calDB = db.TinyDB("%s/calDB-v2.json" % latSWDir)
+    # pars = db.Query()
+    # recList = calDB.search(pars.key.matches("thresh"))
+    # for idx in range(len(recList)):
+        # key = recList[idx]['key']
         # vals = recList[idx]['vals']
-        print(key)
+        # print(key)
+
+    # print(det.getPMon())
+    # print(det.getCH())
+    # for ds in det.getCH():
+    #     print("DS",ds)
+    #     for d in sorted(det.getCH(ds)):
+    #         tmp = det.getCH(ds)[d]
+    #         if len(tmp) > 0:
+    #             print("cpd:",d, "(run,ch):", det.getCH(ds)[d])
+
+    # now check the threshold and HV objects
+
 
 
 if __name__=="__main__":

@@ -37,8 +37,8 @@ def main():
 
     # getDT() # <- use this one
     # plotFitRates()
-    plotDT_mH1Ene()
-    plotDT_mH1Ene_wThr()
+    # plotDT_mH1Ene()
+    # plotDT_mH1Ene_wThr()
     # plotDT_mH1Low()
     # plotThreshFunc()
     # plotDT_mH1Low_wThr()
@@ -56,11 +56,11 @@ def main():
     # getSumEvents()
     # plotComptonEdge()
     # plotLoHits()
-    # plotSloHits()
+    plotSloHits()
     # plotChannelEff()
 
     # getExtPulser()
-    plotExtPulser()
+    # plotExtPulser()
 
 
 # def unpackData():
@@ -1533,12 +1533,13 @@ def plotLoHits():
 
 
 def plotSloHits():
+    """ This is the original plot that got us excited about 85% efficiency of slowness.
+        **** BUG, DO NOT USE ***
+    """
 
     # f = np.load("../plots/mult2-sumLoEvts.npz")
     f = np.load("../plots/mult2-sumLoEvts-histats.npz")
     runTime, sumEvts = f['arr_0'], f['arr_1'].item()
-
-    f = plt.figure()
 
     mH, pk = 2, 238
 
@@ -1555,6 +1556,8 @@ def plotSloHits():
     n = len(hitE)
 
     # # apply threshold cut
+    # **** BUG, DO NOT USE ***
+    # I forgot to copy over the slowness values here, so the stuff below is looking at the wrong index.
     chanTh, hitETh = [], []
     for i in range(n):
         if chan[i] in thD.keys() and hitE[i] > thD[chan[i]][0] + 3 * thD[chan[i]][1]:
@@ -1572,6 +1575,10 @@ def plotSloHits():
     fSloCut = [fSlo[i] for i in range(nTot) if fSlo[i] > fsDict[chan[i]][2]]
     nCut = len(hitECut)
 
+    # -- plot 1: 2d scatter plot, fSlo vs hitE, hits passing/failing v1 of fitSlo cut.
+    fig = plt.figure()
+    plt.cla()
+
     plt.plot(hitEPass, fSloPass, ".", ms=0.5, c='k', label='pass')
     plt.plot(hitECut, fSloCut, '.', ms=1.0, c='r', label='cut')
 
@@ -1580,30 +1587,28 @@ def plotSloHits():
 
     plt.xlabel("hitE (keV)", ha='right', x=1.)
     plt.ylabel("fitSlo", ha='right', y=1.)
-    plt.legend()
+    plt.legend(loc=1)
     plt.savefig("../plots/mult2-fitSloScatter.png")
 
-
+    # -- plot 2: 1-d energy histo, hits passing/failing
     plt.cla()
-    fig = plt.figure(figsize=(9,12))
-    p1 = plt.subplot(211)
-    p2 = plt.subplot(212)
 
     xLo, xHi, xpb = 0, 15, 0.2
-
     x, hTot = wl.GetHisto(hitE, xLo, xHi, xpb)
     x, hPass = wl.GetHisto(hitEPass, xLo, xHi, xpb)
     x, hCut = wl.GetHisto(hitECut, xLo, xHi, xpb)
 
-    p1.plot(x, hTot, c='b', lw=1.5, ls='steps', label='m=%d, pk %d, w/thresh cuts' % (mH, pk))
-    p1.plot(x, hPass, c='g', lw=1.5, ls='steps', label='fitSlo pass')
-    p1.plot(x, hCut, c='r', lw=1.5, ls='steps', label='fitSlo cut')
+    plt.plot(x, hTot, c='b', lw=1.5, ls='steps', label='m=%d, pk %d' % (mH, pk))
+    plt.plot(x, hPass, c='g', lw=1.5, ls='steps', label='fitSlo pass')
+    plt.plot(x, hCut, c='r', lw=1.5, ls='steps', label='fitSlo cut')
 
-    p1.set_xlabel("hitE (keV)", ha='right', x=1.)
-    p1.set_ylabel("Counts / %.1f kev" % xpb, ha='right', y=1.)
-    p1.legend()
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Counts / %.1f kev" % xpb, ha='right', y=1.)
+    plt.legend(loc=1)
+    plt.savefig("../plots/mult2-m2s238-hitE.png")
 
-    # --------------------------------------------------
+    # -- plot 3: efficiency of v1 slowness cut, assuming all m2s238 hits are fast.
+    plt.cla()
 
     from statsmodels.stats import proportion
     idx = np.where((hTot > 0) & (hPass > 0))
@@ -1615,17 +1620,17 @@ def plotSloHits():
     ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
 
-    p2.plot(x, sloEff, '.b', ms=10., label='efficiency')
-    p2.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    plt.plot(x, sloEff, '.b', ms=10., label='efficiency')
+    plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
 
     idx = np.where(np.abs(ci_upp) > 0)
     xCut = x[6]
-    p2.axvline(xCut,color='g',label='cutoff: %.2f keV' % xCut)
+    plt.axvline(xCut,color='g',label='cutoff: %.2f keV' % xCut)
 
-    p2.set_xlabel("hitE (keV)", ha='right', x=1.)
-    p2.set_ylabel("Efficiency", ha='right', y=1.)
-    p2.legend()
-    plt.savefig("../plots/mult2-fitSloHitSpec.png")
+    plt.xlabel("hitE (keV)", ha='right', x=1.)
+    plt.ylabel("Efficiency", ha='right', y=1.)
+    plt.legend(loc=1)
+    plt.savefig("../plots/mult2-m2s238-eff.png")
 
 
 def plotChannelEff():

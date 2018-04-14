@@ -322,6 +322,5 @@ def channelSelection():
         plt.savefig("../plots/dc-results-DS%d-M%d.pdf" % (dsNum,modNum))
 
 
-
 if __name__=="__main__":
     main()
