@@ -385,7 +385,7 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runAutoThresh(ds=None):
-    """./job-panda.py [-q] [-ds dsNum] -thr
+    """./job-panda.py [-q] [-ds dsNum] -thresh
     Generates auto-thresh jobs.  Default is to do it for all datasets.
     """
     bkg = dsi.BkgInfo()

@@ -42,17 +42,24 @@ def main(argv):
             dumpSettings(ds)
 
         # create the settings dicts used by the DetInfo object.
-        if opt=="-fill":
+        if opt=="-fillDetInfo":
             fillDetInfo()
 
         # since the CPD/detectorSN never changes, print a list for DetInfo.
         if opt=="-detID":
             getDetIDs()
 
-    compareCoverage()
-    # getSubRanges()
+        # make a list of sub-ranges, usable by job-panda::runAutoThresh
+        if opt=="-sub":
+            getSubRanges()
+
+        # fill the DB with threshold values for each bkgIdx/sub index
+        if opt=="-fillThreshDB":
+            fillThreshDB()
+
+    # compareCoverage()
+    # spotCheckThresh()
     # loadSubRanges()
-    # fillThreshDB()
 
 def compareCoverage():
     # seeing some discrepancies between the old version of getSettings (just used bkg lists)
@@ -94,6 +101,35 @@ def compareCoverage():
             break
 
     print("Run lists match!")
+
+
+def spotCheckThresh():
+    from ROOT import GATDataSet, TFile, MJTChannelMap, MJTChannelSettings
+
+    run, ds, sub, cIdx = 5889, 0, 70, 23
+    checkDet = 122
+
+    gds = GATDataSet()
+    runPath = gds.GetPathToRun(run,GATDataSet.kGatified)
+    tf = TFile(runPath)
+    chSet = tf.Get("ChannelSettings")
+    chMap = tf.Get("ChannelMap")
+    for ch in chSet.GetEnabledIDList():
+
+        detName = chMap.GetString(ch, "kDetectorName")
+        detCPD = chMap.GetString(ch,"kStringName")+"D"+str(chMap.GetInt(ch,"kDetectorPosition"))
+        detID = ''.join(i for i in detCPD if i.isdigit())
+
+        # access threshold and HV settings
+        gretCrate = chMap.GetInt(ch,"kVME")
+        gretCard = chMap.GetInt(ch,"kCardSlot")
+        gretHG = chMap.GetInt(ch,"kChanHi")
+        gretLG = chMap.GetInt(ch,"kChanLo")
+        threshHG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretHG,"ORGretina4MModel")
+        threshLG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretLG,"ORGretina4MModel")
+
+        if detCPD=='C1P2D2':
+            print(ch, detCPD, detID, threshHG)
 
 
 def settingsMgr(dsIn=None, subIn=None, modIn=None, writeDB=False):
@@ -166,7 +202,6 @@ def getSettings(ds, key, mod, cIdx, writeDB=False):
     runList = sorted(runList) # if the cal run isn't before the bkg runs, it's not the first run in this list
 
     print("\nDS%d M%d (%s) cIdx %d (%d runs) %s %s" % (ds,mod,key,cIdx,len(runList),dbKeyTH,dbKeyHV))
-    # return
 
     # use GDS once just to pull out the path.
     gds = GATDataSet()
@@ -232,6 +267,8 @@ def getSettings(ds, key, mod, cIdx, writeDB=False):
             threshHG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretHG,"ORGretina4MModel")
             threshLG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretLG,"ORGretina4MModel")
             # print(ch, detCPD, detID, gretCrate, gretCard, gretHG, gretLG)
+            # if detCPD=='C1P2D2':
+                # print(ch, detCPD, detID, threshHG)
 
             hvCrate = chMap.GetInt(ch,"kHVCrate")
             hvCard = chMap.GetInt(ch,"kHVCard")
@@ -285,6 +322,12 @@ def getSettings(ds, key, mod, cIdx, writeDB=False):
     timeElapsed = time.time()-start
     print("Elapsed: %.4f sec, %.4f sec/run" % (timeElapsed, timeElapsed/len(runList)))
 
+    # debug: print the values
+    # print(dbKeyTH)
+    # for val in sorted(detTH):
+    #     if len(detTH[val])>0:
+    #         print(val, detTH[val])
+
     # fill the DB
     if writeDB:
         calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
@@ -299,19 +342,19 @@ def dumpSettings(ds):
     print("Dumping settings for DS:%d" % ds)
 
     # detCH and pMons
-    f = np.load("./data/ds%d_detChans.npz" % ds)
-    detCH, pMons = f['arr_0'].item(), f['arr_1']
-
-    print("Pulser monitor channels:")
-    print(pMons)
+    # f = np.load("./data/ds%d_detChans.npz" % ds)
+    # detCH, pMons = f['arr_0'].item(), f['arr_1']
+    #
+    # print("Pulser monitor channels:")
+    # print(pMons)
 
     # print("Detector analysis channels:")
     # for key in detCH:
     #     print(key, detCH[key])
 
     # get HV and TF vals from DB with a regex
-    # calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
-    # pars = db.Query()
+    calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
+    pars = db.Query()
     #
     # print("DB Threshold values:")
     # thrList = calDB.search(pars.key.matches("trapThr_ds%d" % ds))
@@ -331,9 +374,20 @@ def dumpSettings(ds):
     #     # for d in detHV:
     #         # print(d, detHV[d])
 
+    # get a particular key
+    dbKeyTH = "trapThr_ds0_m1_c23"
+    dbValTH = dsi.getDBRecord(dbKeyTH,calDB=calDB,pars=pars)
+
+    # debug: print the values
+    for val in sorted(dbValTH):
+        if len(dbValTH[val])>0:
+            print(val, dbValTH[val])
+
+
 
 def fillDetInfo():
-    """ Summarize the results of getSettings in LAT/data/runSettings-v2.npz.
+    """ ./chan-sel.py -fill
+    Summarize the results of getSettings in LAT/data/runSettings-v2.npz.
     Create a file accessible by the DetInfo object in dsi.py
     It contains dictionaries of TRAP threshold, HV settings,
     detector/channel mapping, and pulser monitor lists,
@@ -356,8 +410,8 @@ def fillDetInfo():
     detDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
     detPars = db.Query()
     cal = dsi.CalInfo()
-    # for ds in [0,1,2,3,4,5,6]:
-    for ds in [6]:
+    for ds in [0,1,2,3,4,5,6]:
+    # for ds in [3]:
         print("scanning ds",ds)
         detTH[ds] = {}
         detHV[ds] = {}
@@ -374,8 +428,11 @@ def fillDetInfo():
                 dbKeyHV = "hvBias_%s_c%d" % (key, cIdx)
                 dbValHV = dsi.getDBRecord(dbKeyHV,calDB=detDB,pars=detPars)
 
-                print(dbKeyTH,dbValTH[274])
-                continue
+                # debug: print the record
+                # for val in sorted(dbValTH):
+                    # if len(dbValTH[val])>0:
+                        # print(val, dbValTH[val])
+                # return
 
                 # fill the first value
                 if len(detTH[ds])==0:
@@ -398,13 +455,13 @@ def fillDetInfo():
                     if nOld>0 and nNew==0:
                         continue
 
-                    # check last run/trap pair against first new one
+                    # check last run/trap pair against each new one
                     prevRun, prevTH = detTH[ds][cpd][-1][0], detTH[ds][cpd][-1][1]
-                    thisRun, thisTH = dbValTH[cpd][0][0], dbValTH[cpd][0][1]
-                    if thisTH != prevTH:
-                        # print("found TRAP diff.  cpd %d  prev %d  new %d" % (cpd, prevTH, thisTH))
-                        detTH[ds][cpd].extend(dbValTH[cpd])
-                        # print("after extending:",detTH[ds][cpd])
+                    for val in dbValTH[cpd]:
+                        thisRun, thisTH = val[0], val[1]
+                        if thisTH != prevTH:
+                            detTH[ds][cpd].append([thisRun,thisTH])
+                        prevTH = thisTH
 
                 # check for new HV values.
                 for cpd in detHV[ds]:
@@ -422,36 +479,39 @@ def fillDetInfo():
                     if nOld>0 and nNew==0:
                         continue
 
-                    # check last run/trap pair against first new one
+                    # check last run/trap pair against each new one
                     prevRun, prevHV = detHV[ds][cpd][-1][0], detHV[ds][cpd][-1][1]
-                    thisRun, thisHV = dbValHV[cpd][0][0], dbValHV[cpd][0][1]
-                    if thisHV != prevHV:
-                        print("found HV diff.  cpd %d  prev %dV (run %d)  new %dV (run %d)" % (cpd, prevHV, prevRun, thisHV, thisRun))
-                        detHV[ds][cpd].extend(dbValHV[cpd])
-                        # print("after extending:",detHV[ds][cpd])
+                    for val in dbValHV[cpd]:
+                        thisRun, thisHV = val[0], val[1]
+                        if thisHV != prevHV:
+                            print("found HV diff.  cpd %d  prev %dV (run %d)  new %dV (run %d)" % (cpd, prevHV, prevRun, thisHV, thisRun))
+                            detHV[ds][cpd].append([thisRun,thisHV])
+                        prevHV = thisHV
 
                 # return
 
-    # load the old file and compare
-    # GOAL: recreate this file.
-    # f = np.load("%s/data/runSettings.npz" % dsi.latSWDir)
-    # detHVOld = f['arr_0'].item()
-    # detTHOld = f['arr_1'].item()
-    # detCHOld = f['arr_2'].item()
-    # pMonsOld = f['arr_3'].item()
+    # # load the old file and compare
+    # # GOAL: improve on this file.
+    # # f = np.load("%s/data/runSettings.npz" % dsi.latSWDir)
+    # # detHVOld = f['arr_0'].item()
+    # # detTHOld = f['arr_1'].item()
+    # # detCHOld = f['arr_2'].item()
+    # # pMonsOld = f['arr_3'].item()
+    #
+    # ds = 3
     # print("old results, ds",ds)
     # for cpd in sorted(detTHOld[ds]):
-    #     if cpd!="161":continue
+    #     if cpd!="122":continue
     #     if len(detTHOld[ds][cpd]) > 0:
     #         print(cpd, detTHOld[ds][cpd])
+    #
+    # # for ds in [0,1,2,3,4,5,6]:
+    # print("thresh results, ds:",ds)
+    # for cpd in sorted(detTH[ds]):
+    #     # if cpd!=122:continue
+    #     if len(detTH[ds][cpd]) > 0:
+    #         print(cpd, detTH[ds][cpd])
 
-    # for ds in [0,1,2,3,4,5,6]:
-    for ds in [6]:
-        print("thresh results, ds:",ds)
-        for cpd in sorted(detTH[ds]):
-            if cpd!=274:continue
-            if len(detTH[ds][cpd]) > 0:
-                print(cpd, detTH[ds][cpd])
 
     np.savez("%s/data/runSettings-v2.npz" % dsi.latSWDir,detHV,detTH,detCH,pMons)
 
@@ -490,15 +550,15 @@ def getSubRanges():
         TODO: 2) HV changed - identify bkgIdx and calIdx
     Use the result to make some decisions about data ranges.
     """
-    verbose = True
+    verbose = False
 
     # this is what we output (for other programs)
     thRanges = [] # these will be inputs to auto-thresh (thresholds)
     hvRanges = [] # these will be inputs to PSA cut tuning (calibration)
 
     # loop over datasets
-    # for ds in [0,1,2,3,4,"5A","5B","5C",6]:
-    for ds in [6]:
+    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+    # for ds in ["5C"]:
         if ds in ["5A","5B","5C"]:
             dsNum = 5
         else:
@@ -512,9 +572,9 @@ def getSubRanges():
             # if sub!=37: continue
             runList = bkg.getRunList(ds,sub)
 
-            if verbose: print("sub:%d  runLo %d  runHi %d  nRuns %d" % (sub, runList[0], runList[-1], len(runList)))
+            # if verbose: print("sub:%d  runLo %d  runHi %d  nRuns %d" % (sub, runList[0], runList[-1], len(runList)))
 
-            continue
+            # continue
 
             # these are how we have to divide the given subset.
             thLo, thHi = runList[0], runList[-1]
@@ -621,8 +681,8 @@ def getSubRanges():
     # save to npz file
     thRanges = np.array(thRanges,dtype=object)
     hvRanges = np.array(hvRanges,dtype=object)
-    # np.savez("./data/thrHV_subRanges.npz",thRanges,hvRanges)
-    # if verbose: print("Saved file.")
+    np.savez("./data/thrHV_subRanges.npz",thRanges,hvRanges)
+    if verbose: print("Saved file.")
 
 
 def loadSubRanges():
@@ -643,18 +703,14 @@ def fillThreshDB():
     from ROOT import TFile, TTree
 
     # Do we actually want to write new values?  Or just print stuff out?
-    fillDB = False
-    forceUpdate = False # set True to overwrite existing DB values
+    fillDB = True
 
     calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
     pars = db.Query()
     bkg = dsi.BkgInfo()
 
-    # dsList = [ds] if ds is not None else [0,1,2,3,4,"5A","5B","5C",6]
-    dsList = [4]
-
     # loop over datasets and bkgIdx
-    for ds in dsList:
+    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
         dsNum = ds if isinstance(ds, int) else 5
         goodChans = det.getGoodChanList(dsNum)
 
@@ -694,7 +750,7 @@ def fillThreshDB():
                 vals = {}
                 print("")
                 print(key, runLo, runHi)
-                print("chan CPD  g  threshKeV sig      ADC    err     E=0   err     nThr     nNoise   status  note")
+                print("chan CPD  g  threshKeV sig       ADC    err     E=0   err     nThr     nNoise   status  note")
 
                 # loop over channels
                 nGood, nTot = 0, 0
@@ -744,10 +800,10 @@ def fillThreshDB():
                     nTot += 1
 
                     # pretty print the results table
-                    # if int(thrKeV) > 99998:
-                    #     print("%d  %s  %d  %-7.0f s %-7.0f  %-4.3f  %-6.3f  %.2f  %-6.2f  %-8d %-8d %d %d %d %s" % (chan, det.getChanCPD(dsNum,chan), isGood, thrKeV, thrSig, thrADC, thrADCErr, sigADC, sigADCErr, thrEvts, sigEvts, thrStatus,sigStatus, int(isBad), status))
-                    # else:
-                    #     print("%d  %s  %d  %-7.3f s %-7.3f  %-4.3f  %-6.3f  %.2f  %-6.2f  %-8d %-8d %d %d %d %s" % (chan, det.getChanCPD(dsNum,chan), isGood, thrKeV, thrSig, thrADC, thrADCErr, sigADC, sigADCErr, thrEvts, sigEvts, thrStatus, sigStatus, int(isBad), status))
+                    if int(thrKeV) > 99998:
+                        print("%d  %s  %d  %-7.0f s %-7.0f  %-4.3f  %-6.3f  %.2f  %-6.2f  %-8d %-8d %d %d %d %s" % (chan, det.getChanCPD(dsNum,chan), isGood, thrKeV, thrSig, thrADC, thrADCErr, sigADC, sigADCErr, thrEvts, sigEvts, thrStatus,sigStatus, int(isBad), status))
+                    else:
+                        print("%d  %s  %d  %-7.3f s %-7.3f  %-4.3f  %-6.3f  %.2f  %-6.2f  %-8d %-8d %d %d %d %s" % (chan, det.getChanCPD(dsNum,chan), isGood, thrKeV, thrSig, thrADC, thrADCErr, sigADC, sigADCErr, thrEvts, sigEvts, thrStatus, sigStatus, int(isBad), status))
 
                     # fill the dict vals
                     vals[chan] = [float("%.5f" % thrKeV), float("%.5f" % thrSig), int(isBad)]
@@ -756,9 +812,7 @@ def fillThreshDB():
 
                 # fill the DB
                 if fillDB:
-                    # for val in sorted(vals):
-                        # print(val, vals[val])
-                    dsi.setDBRecord({"key":key, "vals":vals}, forceUpdate, calDB=calDB, pars=pars)
+                    dsi.setDBRecord({"key":key, "vals":vals}, forceUpdate=True, calDB=calDB, pars=pars)
 
                 tf.Close()
                 # return
