@@ -86,6 +86,7 @@ def ReduceData(dsNum, dType):
     print(df.head(10))
     df.to_hdf('{}/DS{}_Spectrum_{}.h5'.format(outDir, dsNum, dType), 'skimTree', mode='w', format='table')
 
+
 def ExposureEfficiency(dsNum, dType):
     """ Saves efficiency into dataframe -- not done... I forget where I was going with this """
     import ROOT
@@ -108,6 +109,23 @@ def ExposureEfficiency(dsNum, dType):
     print(df.head(10))
     # df.to_hdf('{}/DS{}_Spectrum_{}.h5'.format(outDir, dsNum, dType), 'skimTree', mode='w', format='table')
 
+
+class ErrorFnc(pm.Continuous):
+    """
+        Custom Error Function distribution for pymc3
+    """
+    def __init__(self, mu, sd, *args, **kwargs):
+        self._mu = tt.as_tensor_variable(mu)
+        self._sd = tt.as_tensor_variable(sd)
+        super(ErrorFnc, self).__init__(*args, **kwargs)
+
+    def logp(self, value):
+        """ Log-likelihood of Erf efficiency """
+        mu = self._mu
+        sigma = self._sd
+        return tt.log( 0.5 + (1.+ tt.erf(value-mu)/(sigma*tt.sqrt(2))))
+
+
 def SaveTrit():
     import ROOT
     """ Saves tritium spectrum into a pandas dataframe """
@@ -121,6 +139,7 @@ def SaveTrit():
     df = pd.DataFrame({"Energy":energy, "Tritium":val})
     print(df.head(10))
     df.to_hdf('{}/TritSpec.h5'.format(outDir), 'TritSpec', mode='w', format='table')
+
 
 def GetSigma(energy, dsNum=1):
     p0, p1, p2 = 0.,0.,0.
