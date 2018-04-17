@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-============== lat2.py: (L)ANL (A)nalysis (T)oolkit ==============
-
-Tunes cut values for LAT files.
-Usage: ./lat2.py [options]
-
-================ C. Wiseman (USC), B. Zhu (LANL) ================
+====== LAT2.py =======
+Tunes cut parameters,
+calculates cut efficiencies.
+C. Wiseman, USC
+v1. 17 Apr 2018
+======================
 """
 import sys
 import tinydb as db
@@ -13,98 +13,68 @@ import tinydb as db
 import dsi
 bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
+det = dsi.DetInfo()
 
 skipDS6Cal = True # ignore DS6 cal runs until they're processed
 
 def main(argv):
 
-    getCalStats()
+    ds, cIdx, mod = None, None, None
+
+    for i, opt in enumerate(argv):
+
+        # set dataset and options
+        if opt=="-ds":
+            ds = int(argv[i+1])
+        if opt=="-cidx":
+            ds = int(argv[i+1])
+            cIdx = int(argv[i+2])
+        if opt=="-m":
+            mod = int(argv[i+1])
+
+        # scan cal runs and make some outputs
+        if opt=="-scan":
+            loadRuns(ds,cIdx,mod)
 
 
-def getCalStats():
-    """ Load HV changes to see which cal ranges we can chain together.
-        Get an idea of statistics in each file.
-        Need 100 counts / keV / bin - gives sqrt(100) error.
+def loadRuns(dsIn=None,subIn=None,modIn=None):
 
-        If this counts as channel selection, should i move it to chan-sel.py ?
-    """
-    ds = "5A"
+    # loop over datasets, skipping DS6 cal runs till they're processed
+    for ds in [0,1,2,3,4,5,6]:
+        if skipDS6Cal is True and ds==6:
+            continue
 
-    # load dataset background run list
-    # set up a list of HV-change run boundaries
+        if dsIn is not None and ds!=dsIn:
+            continue
 
-    runList = bkg.getRunList(ds)
-    print("DS:",ds,"  first run: %d  last run: %d" % (runList[0], runList[-1]))
+        # loop over keys in this DS
+        for key in cal.GetKeys(ds):
 
-    subRanges = bkg.GetSubRanges(ds,opt='hv')
-    for sub in subRanges:
-        print(sub)
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
 
-    hvBounds = []
-    if len(subRanges) == 0:
-        print("No HV changes in this DS.")
-        hvBounds.append((runList[0], runList[-1]))
-    else:
-        runLo = runList[0]
+            # loop over cIdx's for this key
+            for cIdx in range(cal.GetIdxs(key)):
+                if subIn is not None and cIdx!=subIn:
+                    continue
+                if modIn is not None and mod!=modIn:
+                    continue
 
-        # damn.  i really need to know the exact run number
-        # the hv changed, not just as it applies to the bkg idx.
-        # ---> chan-sel.py
-
-        # for sub in subRanges:
-        #     runChg = sub[2]
-        #
-        #     runBeforeChg = -1
-        #     for run in runList:
-        #         if run < runChg:
-        #             runBeforeChg = run
-        #     if runBeforeChg == -1:
-        #         print("No runs before change")
-        #     runHi = runBeforeChg
-        #
-        #     hvBounds.append((runLo, runHi))
-        #     runLo = runChg
-
-    # for runLo, runHi in hvBounds:
-        # print(runLo, runHi)
-
-    # load calibration sub-ranges
-    # dsList = [0,1,2,3,4,"5A","5B","5C"]
-    # for ds in dsList:
-    #     subr = bkg.GetSubRanges(ds,opt='hv')
-    #     for s in subr:
-    #         print(s)
-        # [1 51 14342 14372 31 56]
-        # [1 51 14386 14387 2 56] <---- huh, probably just remove this one?
-        # [4 1 60000970 60000991 22 0]
-        # [4 1 60000992 60001000 9 0]
-        # ['5A' 16 19733 19747 15 (4, 3, True, True)]
-        # ['5A' 16 19771 19773 3 (4, 3, True, True)]
-        # ['5A' 61 21565 21567 3 (9, 8, True, False)]
-        # ['5A' 61 21568 21587 19 (9, 8, True, False)]
-        # ['5A' 78 22248 22304 19 (12, 10, True, False)]
-        # ['5A' 78 22316 22333 18 (12, 10, True, False)]
-        # ['5B' 91 22944 22946 3 (14, 12, True, False)]
-        # ['5B' 91 22952 22986 29 (14, 12, True, False)]
+                # now that ds, cIdx, and module are determined, we can call scanRuns
+                scanRuns(ds, key, mod, cIdx)
 
 
-    # load calibration files
-    # fileList = []
-    # dsMap = cal.GetKeys()
-    # for key in dsMap:
-    #     ds = int(key[2])
-    #     if skipDS6Cal and ds==6: continue
-    #     for sub in range(cal.GetIdxs(key)):
-    #         cRuns = cal.GetCalList(key, sub)
-    #         covLo, covHi = GetCalRunCoverage(self,key,idx)
-    #         for run in cRuns:
-    #             latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
-    #             tmpList = [f for idx, f in sorted(latList.items())]
-    #             fileList.extend(tmpList)
+def scanRuns(ds, key, mod, cIdx):
 
+    fileList = []
+    calRuns = cal.GetCalList(key,cIdx)
+    for run in calRuns:
+        latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
+        tmpList = [f for idx, f in sorted(latList.items())]
+        fileList.extend(tmpList)
 
-
-
+    print(ds,key,mod,cIdx,"nfiles:",len(fileList))
 
 
 if __name__=="__main__":

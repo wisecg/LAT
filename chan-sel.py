@@ -57,9 +57,13 @@ def main(argv):
         if opt=="-fillThreshDB":
             fillThreshDB()
 
+        if opt=="-getThreshDB":
+            getThreshDB()
+
     # compareCoverage()
     # spotCheckThresh()
     # loadSubRanges()
+
 
 def compareCoverage():
     # seeing some discrepancies between the old version of getSettings (just used bkg lists)
@@ -382,7 +386,6 @@ def dumpSettings(ds):
     for val in sorted(dbValTH):
         if len(dbValTH[val])>0:
             print(val, dbValTH[val])
-
 
 
 def fillDetInfo():
@@ -816,6 +819,30 @@ def fillThreshDB():
 
                 tf.Close()
                 # return
+
+
+def getThreshDB():
+    calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
+    pars = db.Query()
+    bkg = dsi.BkgInfo()
+
+    # loop over datasets
+    for ds in [0,1,2,3,4,5,6]:
+        dsNum = ds if isinstance(ds, int) else 5
+        goodChans = det.getGoodChanList(dsNum)
+
+        for bkgIdx in bkg.getRanges(ds):
+
+            # ==== loop over sub-ranges (when TF was run) ====
+            rFirst, rLast = bkg.getRanges(ds)[bkgIdx][0], bkg.getRanges(ds)[bkgIdx][-1]
+
+            subRanges = bkg.GetSubRanges(ds,bkgIdx)
+            if len(subRanges) == 0: subRanges.append((rFirst, rLast))
+
+            for subIdx, (runLo, runHi) in enumerate(subRanges):
+
+                key = "thresh_ds%d_bkg%d_sub%d" % (dsNum, bkgIdx, subIdx)
+                print(key)
 
 
 if __name__=="__main__":
