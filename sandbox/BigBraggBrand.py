@@ -16,10 +16,12 @@ sns.set(style='darkgrid')
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-seedNum, dsNum = 1, 5
+seedNum, dsNum = 2, 5
 # Energy range (also fitting range!)
-energyThresh = 2.4
-energyThreshMax = 18.0 # I am using 18 because the endpoint of tritium is 18
+# Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
+# Scanned from 12 to 19.8
+energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
+energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
 # This start and end time are for DS5b
 startTime = 1485575988
 endTime = 1489762153
@@ -45,10 +47,8 @@ def main():
     df.sort_values(by=['UnixTime'], inplace=True)
     dataArr = df.loc[:, ['Energy','UnixTime']].values
 
-    # Extend data by mirroring it one year later -- this is convoluted but whatever
+    #NOTE: Extend data by mirroring it one year later -- this is convoluted but whatever
     # dataArr = np.append(dataArr, np.array([dataArr[:,0], np.add(dataArr[:,1], yearInSec)]).T, axis=0)
-
-    energyBins = np.arange(energyThresh,energyThreshMax+0.1,0.1)
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
@@ -66,6 +66,10 @@ def main():
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
 
+    # Create a matrix for energy bin center values
+    pdfArrDict.setdefault('Energy', np.array((energyBins[:-1]+binSize/2).tolist()*nTimeBins).reshape(nTimeBins, len(energyBins[:-1]) ).T)
+
+
     # Remove columns with zeros
     pdfArrDict['Axion'] = np.delete(pdfArrDict['Axion'], removeMask, axis=1)
     pdfArrDict['Data'] = np.delete(pdfArrDict['Data'], removeMask, axis=1)
@@ -75,12 +79,12 @@ def main():
     pdfArrDict['Ge68'] = np.delete(pdfArrDict['Ge68'], removeMask, axis=1)
     pdfArrDict['Bkg'] = np.ones(pdfArrDict['Data'].shape)
     pdfArrDict['Time'] = np.delete(timeBinLowEdge, removeMask)
+    pdfArrDict['Energy'] = np.delete(pdfArrDict['Energy'], removeMask, axis=1)
     print('Generated all PDFs')
     # Draw PDFs
     # drawPDFs(pdfArrDict)
     print("Data Shape", pdfArrDict['Data'].shape)
     print("Axion Shape", pdfArrDict['Axion'].shape)
-    print("Tritium Shape", pdfArrDict['Tritium'].shape)
     # return
 
     # Flatten 2D arrays into 1D
@@ -91,62 +95,69 @@ def main():
     pdfFlatDict['Fe55'] = pdfArrDict['Fe55'].flatten()
     pdfFlatDict['Zn65'] = pdfArrDict['Zn65'].flatten()
     pdfFlatDict['Ge68'] = pdfArrDict['Ge68'].flatten()
+    pdfFlatDict['Energy'] = pdfArrDict['Energy'].flatten()
+
+    # 1D plot only
+    # pdfFlatDict['Data'] = pdfArrDict['Data'].sum(axis=1)
+    # pdfFlatDict['Tritium'] = pdfArrDict['Tritium'][:,0]
+    # pdfFlatDict['Axion'] = pdfArrDict['Axion'][:,0]
+    # pdfFlatDict['Bkg'] = pdfArrDict['Bkg'][:,0]
+    # pdfFlatDict['Fe55'] = pdfArrDict['Fe55'][:,0]
+    # pdfFlatDict['Zn65'] = pdfArrDict['Zn65'][:,0]
+    # pdfFlatDict['Ge68'] = pdfArrDict['Ge68'][:,0]
+    # pdfFlatDict['Energy'] = pdfArrDict['Energy'][:,0]
+
     print('Flattened Data Size:', pdfFlatDict['Data'].shape)
+    print('Energy Size', pdfFlatDict['Energy'].shape)
     print('Flattened all PDFs')
 
-    model = constructModel(pdfFlatDict)
+    model = constructModel(pdfFlatDict, energyBins)
     # modelBasic = constructBasicModel(pdfFlatDict)
     print('Built model(s)')
 
     # return
-    print('Calculating Integrals: ')
-    print('Data Integral: ',pdfArrDict['Data'].sum())
-    print('Tritium Integral: ', pdfArrDict['Tritium'].sum())
-    print('Axion Integral: ', pdfArrDict['Axion'].sum())
-    print('Bkg Integral: ', pdfArrDict['Bkg'].sum())
-    print('Fe55 Integral: ', pdfArrDict['Fe55'].sum())
-    print('Zn65 Integral: ', pdfArrDict['Zn65'].sum())
-    print('Ge68 Integral: ', pdfArrDict['Ge68'].sum())
 
-    # trace = pm.backends.text.load(inDir+'/AveragedAxion', model)
+    # trace = pm.backends.text.load(inDir+'/AveragedAxion_18keV', model)
     # print(pm.summary(trace[nBurn:]))
+
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
-
-    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=inDir+'/AveragedAxion')
+    # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
+    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
+    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_20keV'.format(inDir))
 
     # Sample Here
-    # with model:
-        # db = pm.backends.Text('{}/AveragedAxion'.format(inDir))
-        # db = pm.backends.Text('{}/Benchmark'.format(inDir))
-        # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
-        # trace = pm.sample(draws=1000, init='auto', chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True)
+    with model:
+        # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
+        db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
+        trace = pm.sample(draws=5000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
     # with modelBasic:
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
 
-    # ppc = pm.sample_ppc(trace[nBurn:], samples=500, model=model)
-    # print(np.asarray(ppc['L'].shape), ppc.keys())
-    # _, axppc = plt.subplots(figsize=(12, 6))
-    # axppc.hist([n.mean() for n in ppc['L']], bins=19, alpha=0.5)
-    # axppc.set(title='Posterior predictive for L', xlabel='L(x)', ylabel='Frequency');
-    # plt.show()
+    pm.traceplot(trace)
+    plt.show()
 
-    # df_comp_WAIC = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]])
-    # df_comp_WAIC.head()
-    # pm.compareplot(df_comp_WAIC)
-    # df_comp_LOO = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]], ic='LOO')
-    # df_comp_LOO.head()
-    # pm.compareplot(df_comp_LOO)
 
-    # LOO results
-    # LOO  pLOO   dLOO weight      SE   dSE warning
-    # 0  61479.8  5.68      0   0.94  798.63     0       1
-    # 1    61502  4.95  22.12   0.06  798.47  10.2       1
-    # plt.show()
+class ErrorFnc(pm.Continuous):
+    """
+        Custom Error Function distribution for pymc3
+    """
+    def __init__(self, mu, sd, *args, **kwargs):
+        self._mu = tt.as_tensor_variable(mu)
+        self._sd = tt.as_tensor_variable(sd)
+        super(ErrorFnc, self).__init__(*args, **kwargs)
 
-def constructModel(pdfDict):
+    def logp(self, value):
+        """ Log-likelihood of Erf efficiency """
+        mu = self._mu
+        sigma = self._sd
+        return tt.log( 0.5 + (1.+ tt.erf(value-mu)/(sigma*tt.sqrt(2))))
+
+
+
+def constructModel(pdfDict, energyBins):
     """
         Construct pymc3 model
     """
@@ -159,8 +170,19 @@ def constructModel(pdfDict):
         Zn65 = pm.HalfFlat("Zn65")
         Ge68 = pm.HalfFlat("Ge68")
 
+        # Create the detector efficiency deterministic
+        # NOTE: Problem with
+        # Mu = pm.Normal('Mu', mu = 0.36, sd = 0.5)
+        # Sig = pm.Normal('Sig', mu = 1.26, sd = 0.5)
+        # eff = 0.5*(1+tt.erf((pdfDict['Energy'] - Mu)/(tt.sqrt(2)*Sig)))
+
+        # Reparameterize efficiency as logistic function
+        Mu = pm.Normal('Mu', mu = 0.77, sd = 0.2)
+        Sig = pm.Normal('Sig', mu = 0.56, sd = 0.1)
+        eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
+
         # Generate array of deterministic variables (per bin)
-        det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
+        det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
 
         L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
     return model
@@ -188,6 +210,13 @@ def constructBasicModel(pdfDict):
 def convertaxionPDF(startTime, endTime):
     """
         Converts 2D histogram PDF for axion into numpy array
+
+        Wenqin's Axion PDF is generated for Lambda = 1.
+        To convert a result to a lambda:
+            1) Take the integral of the pdf and scale by 3600*24 (per day)
+            2) Re-scale with any artificial normalizations
+            3) Lambda = Limit/Re-scaled Integral
+
     """
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
@@ -204,7 +233,7 @@ def convertaxionPDF(startTime, endTime):
                         for time in range(hday.GetNbinsX())
                         if time >= startBin and time <= endBin+1]
 
-    # Double the time bins!
+    #NOTE: Double the time bins for tests!
     # timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(time)+yearInSec
     #                     for time in range(hday.GetNbinsX())
     #                     if time >= startBin and time <= endBin])
@@ -212,21 +241,23 @@ def convertaxionPDF(startTime, endTime):
     # Total bins is 1 less
     nTimeBins = len(timeBinLowEdge)-1
     for energyBin in range(hday.GetNbinsY()):
-        # Apply energy cuts
-        if hday.GetYaxis().GetBinLowEdge(energyBin) < energyThresh-0.1: continue
-        if hday.GetYaxis().GetBinLowEdge(energyBin) > energyThreshMax-0.1: continue
+        # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
+        if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) < energyThresh: continue
+        if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) > energyThreshMax-0.1: continue
+        # print("Axion Energy Bin: ", round(hday.GetYaxis().GetBinLowEdge(energyBin),1))
         AxionList.append([hday.GetBinContent(time, energyBin)
                             for time in range(hday.GetNbinsX())
                             if time >= startBin and time <= endBin])
 
     fAxion.Close()
     AxionArr = np.array(AxionList)
-    # AxionArr = np.append(AxionArr, AxionArr, axis=1) # Extend for tests
+    # AxionArr = np.append(AxionArr, AxionArr, axis=1) #NOTE: Debug -- extend pdf for tests
     timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
 
     # Roughly normalize so the axion scale is the same as the other PDFs
     NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
-    # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)
+    print('Axion Normalization Constant:', (np.amax(AxionArr)/2.))
+    # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.) #NOTE: Debug, remove time mask for tests
 
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
@@ -244,8 +275,6 @@ def drawFinalSpectra(pdfDict, trace):
     # Rebin time axis by 28 bins (140 minute bins)
     rebinSize = 28
     rebinShape = (pdfDict['Data'].shape[0], pdfDict['Data'].shape[1]/rebinSize)
-    # energyBins = np.linspace(0,20,201)
-    energyBins = np.arange(energyThresh, energyThreshMax+0.1,0.1)
     # Convert unix time to date with seconds
     timeBins = np.array(pdfDict['Time'][:-1], dtype='datetime64[s]')
     timeBinsD = np.array(timeBins, dtype='datetime64[D]')
@@ -350,7 +379,6 @@ def drawPDFs(pdfArrDict):
         Helper function to draw PDFs
         pdfArrDict contains all of the PDFs as well as the Data
     """
-    energyLabels = np.arange(energyThresh, energyThreshMax+0.1,0.1)
     timeLabels = np.linspace(startTime, endTime, 5, dtype='datetime64[s]')
     timeLabels = np.array(timeLabels, dtype='datetime64[D]')
     fig1, ax1 = plt.subplots(ncols=3, nrows=2, figsize=(15,8))
@@ -359,8 +387,8 @@ def drawPDFs(pdfArrDict):
     ax1[0,0].set_ylabel('Energy')
     ax1[0,0].set_xlabel('Time')
     ax1[0,0].invert_yaxis()
-    ax1[0,0].locator_params(axis='y', nbins=len(energyLabels[::50]))
-    ax1[0,0].set_yticklabels([round(x,1) for x in energyLabels[::50]], rotation=0)
+    ax1[0,0].locator_params(axis='y', nbins=len(energyBins[::50]))
+    ax1[0,0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
     ax1[0,0].set_xticklabels([])
 
     sns.heatmap(pdfArrDict['Tritium'], ax=ax1[0,1])
@@ -382,9 +410,9 @@ def drawPDFs(pdfArrDict):
     ax1[1,0].set_ylabel('Energy')
     ax1[1,0].set_xlabel('Time')
     ax1[1,0].invert_yaxis()
-    ax1[1,0].locator_params(axis='y', nbins=len(energyLabels[::50]))
+    ax1[1,0].locator_params(axis='y', nbins=len(energyBins[::50]))
     ax1[1,0].locator_params(axis='x', nbins=5)
-    ax1[1,0].set_yticklabels([round(x,1) for x in energyLabels[::50]], rotation=0)
+    ax1[1,0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
     ax1[1,0].set_xticklabels(timeLabels, rotation=50)
 
     sns.heatmap(pdfArrDict['Zn65'], ax=ax1[1,1])
@@ -468,47 +496,56 @@ def generateGaus(energyList, meansDict):
 def modelDiagnostics(model, pdfArrDict, backendDir):
     """
         Loads saved traces, draws plots, performs diagnostics on models
+        Brian's notes on diagnostics:
 
-        Auto-correlation measures how linearly dependent the current value of the chain is to past values
+        Gelman-Rubin (Rhat) -- tests for lack of convergence by comparing the variance between multiple chains to the variance within one chain.
+        If the chains are converged, the variance should be the same (ratio should be 1). Needs multiple chains with differing starting points.
+
+        Auto-correlation -- measures how linearly dependent the current value of the chain is to past values
         It essentially tells us how much information is avaliable, if there is a lot of correlation,
         there's less information than sampled from stationary distribution
         The value is between -1 and 1, the lag where the autocorr is ~0 means the number of samples where the values aren't autocorrelated
-        The amount of autocorrelation determines the effective sample size, for setting a 95% credible interval 
+        The amount of autocorrelation determines the effective sample size (n_effective), for setting a 95% credible interval
+
+        Effective sample size (effective_n) -- is an estimate on the effective sample size
+
+        Highest Posterior Density (HPD) -- The HPD is an estimator that calculates the minimum width of the Bayesian credible interval (BCI).
+        If the posterior density is multimodal, the HPD does not result in an interval estimate (thankfully it's not for our case)
 
     """
-
     import corner
 
     # Load from files
     print('Loading Backend from',backendDir)
     trace = pm.backends.text.load(backendDir, model)
-    print(pm.summary(trace[nBurn:]))
+    # Get summary of trace as a dataframe
+    dfSum = pm.summary(trace[nBurn:], alpha=0.1)
+
+    print('Axion PDF Integral:', pdfArrDict['Axion'].sum())
+
+    # Loop through and calculate 90% BCI for all parameters
+    print('Calculating 90% intervals: ')
+    for par in dfSum.index:
+        parInt = pdfArrDict[par].sum()
+        print('{}, {}, {}, {}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
+
     # pm.traceplot(trace[nBurn:])
     # pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
     # pm.forestplot(trace[nBurn:], alpha=0.1)
-    traceBurn = trace[nBurn:]
+    # traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
     # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
-    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f",
-                        # labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
+    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
 
+    # Format is hpdDict[nChain][Parameter] = [lower, upper]
+    # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
+    # print(hpdDict[1])
 
-    # drawFinalSpectra(pdfArrDict, dfTrace)
-    # return
-
-    # print(pm.hpd(trace[nBurn:], alpha=0.1))
-    pm.autocorrplot(trace[nBurn:], max_lag=100)
-    print(pm.autocorr(trace[nBurn:]))
-
+    # pm.autocorrplot(trace[nBurn:], max_lag=100)
+    # print(pm.autocorr(trace[nBurn:]))
     # pm.densityplot(trace[nBurn:])
 
-    # print(dfTrace['Tritium'].mean())
-    # print(dfTrace['Axion'].mean())
-    # print(dfTrace['Bkg'].mean())
-    # print(dfTrace['Fe55'].mean())
-    # print(dfTrace['Zn65'].mean())
-    # print(dfTrace['Ge68'].mean())
-    plt.show()
+    # plt.show()
 
 
 def posteriorChecks(model, trace):
@@ -537,6 +574,25 @@ def posteriorChecks(model, trace):
 
     # Leave-one-out Cross-validation (LOO)
     model_loo = pm.loo(trace[len(trace)-100:], model, progressbar=True)
+
+    # ppc = pm.sample_ppc(trace[nBurn:], samples=500, model=model)
+    # print(np.asarray(ppc['L'].shape), ppc.keys())
+    # _, axppc = plt.subplots(figsize=(12, 6))
+    # axppc.hist([n.mean() for n in ppc['L']], bins=19, alpha=0.5)
+    # axppc.set(title='Posterior predictive for L', xlabel='L(x)', ylabel='Frequency');
+    # plt.show()
+
+    # df_comp_WAIC = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]])
+    # df_comp_WAIC.head()
+    # pm.compareplot(df_comp_WAIC)
+    # df_comp_LOO = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]], ic='LOO')
+    # df_comp_LOO.head()
+    # pm.compareplot(df_comp_LOO)
+
+    # LOO results
+    # LOO  pLOO   dLOO weight      SE   dSE warning
+    # 0  61479.8  5.68      0   0.94  798.63     0       1
+    # 1    61502  4.95  22.12   0.06  798.47  10.2       1
 
     return model_ppc, model_waic, model_loo
 
