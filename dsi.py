@@ -9,7 +9,7 @@ import tinydb as db
 latSWDir    = os.environ['LATDIR']
 dataDir     = "/global/projecta/projectdirs/majorana/users/wisecg"
 bkgDir      = dataDir+"/bkg"     # subfolders: skim waves split lat thresh
-calDir      = dataDir+"/cal"     # subfolders: skim waves split lat
+calDir      = dataDir+"/cal"     # subfolders: skim waves split lat eff
 specialDir  = dataDir+"/special" # subfolders: skim waves split lat
 skimDir     = bkgDir+"/skim"
 waveDir     = bkgDir+"/waves"
@@ -19,6 +19,7 @@ calSkimDir  = calDir+"/skim"
 calWaveDir  = calDir+"/waves"
 calSplitDir = calDir+"/split"
 calLatDir   = calDir+"/lat"
+effDir      = calDir+"/eff"
 pandaDir    = dataDir+"/pandas"
 threshDir   = bkgDir+"/thresh"
 
