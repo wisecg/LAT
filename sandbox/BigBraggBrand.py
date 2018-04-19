@@ -16,7 +16,7 @@ sns.set(style='darkgrid')
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-seedNum, dsNum = 2, 5
+seedNum, dsNum = 1, 5
 # Energy range (also fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8
@@ -117,27 +117,24 @@ def main():
 
     # return
 
-    # trace = pm.backends.text.load(inDir+'/AveragedAxion_18keV', model)
-    # print(pm.summary(trace[nBurn:]))
-
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_20keV'.format(inDir))
+    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir))
 
     # Sample Here
-    with model:
+    # with model:
         # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
-        db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
-        trace = pm.sample(draws=5000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+        # db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
+        # trace = pm.sample(draws=7500, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
     # with modelBasic:
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
 
-    pm.traceplot(trace)
-    plt.show()
+    # pm.traceplot(trace)
+    # plt.show()
 
 
 class ErrorFnc(pm.Continuous):
@@ -177,12 +174,12 @@ def constructModel(pdfDict, energyBins):
         # eff = 0.5*(1+tt.erf((pdfDict['Energy'] - Mu)/(tt.sqrt(2)*Sig)))
 
         # Reparameterize efficiency as logistic function
-        Mu = pm.Normal('Mu', mu = 0.77, sd = 0.2)
+        Mu = pm.Normal('Mu', mu = 0.77, sd = 0.1)
         Sig = pm.Normal('Sig', mu = 0.56, sd = 0.1)
         eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
-
         # Generate array of deterministic variables (per bin)
         det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
+        # det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
 
         L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
     return model
@@ -521,21 +518,31 @@ def modelDiagnostics(model, pdfArrDict, backendDir):
     # Get summary of trace as a dataframe
     dfSum = pm.summary(trace[nBurn:], alpha=0.1)
 
-    print('Axion PDF Integral:', pdfArrDict['Axion'].sum())
+    AxionIntegral = pdfArrDict['Axion'].sum()
+    # This gets printed out from "convertaxionPDF", it's the amount I artificially scale the axion PDF integral
+    AxionNorm = 11878.384765625
+    print('Axion PDF Integral:', AxionIntegral)
 
     # Loop through and calculate 90% BCI for all parameters
     print('Calculating 90% intervals: ')
+    print('Par \t Mean \t hpd_5 \t hpd_95')
     for par in dfSum.index:
+        if par == 'Mu': continue
+        if par == 'Sig': continue
         parInt = pdfArrDict[par].sum()
         print('{}, {}, {}, {}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
 
+
+    axionLambda = AxionIntegral*dfSum.loc['Axion', 'hpd_95']/(AxionIntegral/3600/24)/AxionNorm
+    print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
+
     # pm.traceplot(trace[nBurn:])
-    # pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
+    pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
     # pm.forestplot(trace[nBurn:], alpha=0.1)
     # traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
-    # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
-    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
+    # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65'], traceBurn['Mu'], traceBurn['Sig']]).T
+    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65', 'Mu', 'Sig'])
 
     # Format is hpdDict[nChain][Parameter] = [lower, upper]
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
@@ -545,7 +552,7 @@ def modelDiagnostics(model, pdfArrDict, backendDir):
     # print(pm.autocorr(trace[nBurn:]))
     # pm.densityplot(trace[nBurn:])
 
-    # plt.show()
+    plt.show()
 
 
 def posteriorChecks(model, trace):
