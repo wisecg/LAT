@@ -3,10 +3,11 @@
 # /global/project/projectdirs/majorana/setupMajorana.sh
 # Source this file in .bashrc.ext
 # Clint Wiseman, USC/Majorana
+# Edited by Joule to work for Joule April, 2018
 
 function sourceEnvMJD {
   umask "u=rwx,g=rx,o=r"
-  export HOMEDIR=/global/homes/w/wisecg
+  export HOMEDIR=/global/homes/g/gothman
   export PATH=${HOMEDIR}:${PATH} # rmate
 	export SWDIR=/global/project/projectdirs/majorana/software/sl64
 
@@ -43,7 +44,7 @@ function sourceEnvMJD {
   export PYTHONPATH=${LATDIR}:${PYTHONPATH}
 }
 
-function sourceEnvClint {
+function sourceEnvJoule {
   export PS1="\[\033[38;5;14m\]\A\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;10m\]\u@\h\[$(tput sgr0)\]\[\033[38;5;15m\]:\[$(tput bold)\]\[$(tput sgr0)\]\[\033[38;5;9m\]\W\[$(tput sgr0)\]\[$(tput sgr0)\]\[\033[38;5;15m\]\\$ \[$(tput sgr0)\]"
   alias rootmj="root -b -l"
   alias atom="rmate"
@@ -53,7 +54,7 @@ function sourceEnvClint {
 }
 
 function rpf {
-  myarr=$(ps -u wisecg | grep sshd | awk '{print $1}')
+  myarr=$(ps -u gothman | grep sshd | awk '{print $1}')
   kill $myarr
 }
 
@@ -84,14 +85,14 @@ if [ "$NERSC_HOST" = "pdsf" ] && [[ $- == *i* ]] && [ -z "$SLURM_JOB_ID" ]; then
     export CHOS=sl64
     chos
   fi
-  sourceEnvClint
+  sourceEnvJoule
   loadModulesMJD
   sourceEnvMJD
 fi
 
 # we're on pdsf (slurm job)
 if [ "$NERSC_HOST" = "pdsf" ] && [ -n "$SLURM_JOB_ID" ]; then
-  sourceEnvClint
+  sourceEnvJoule
   sourceEnvMJD
 fi
 
@@ -110,14 +111,14 @@ fi
 # we're on cori
 if [ "$NERSC_HOST" = "cori" ] && [ -z "$SLURM_JOBID" ]; then
   module load python/3.5-anaconda
-  sourceEnvClint
+  sourceEnvJoule
   sourceEnvMJD
 fi
 
 # we're on edison
 if [ "$NERSC_HOST" = "edison" ] && [ -z "$SLURM_JOBID" ]; then
   module load python/3.5-anaconda
-  sourceEnvClint
+  sourceEnvJoule
   sourceEnvMJD
 fi
 
