@@ -21,7 +21,9 @@ def main(argv):
     global jobStr, useJobQueue
     # jobStr = "sbatch slurm-job.sh" # SLURM mode
     jobStr = "sbatch pdsf.slr" # SLURM + Shifter mode
-    dsNum, subNum, runNum, argString, calList, useJobQueue = None, None, None, None, [], False
+
+    dsNum, subNum, runNum, modNum = None, None, None, None
+    argString, calList, useJobQueue = None, [], False
 
     # loop over user args
     for i,opt in enumerate(argv):
@@ -35,6 +37,7 @@ def main(argv):
         if opt == "-ds":  dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
         if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
+        if opt == "-mod": modNum = int(argv[i+1])
         if opt == "-cal": calList = getCalRunList(dsNum,subNum,runNum)
 
         # main skim routines
@@ -74,6 +77,9 @@ def main(argv):
         if opt == "-test":      quickTest()
         if opt == "-b":         runBatch()
         if opt == "-chunk":     chunkJobList()
+
+        # lat2
+        if opt == "-lat2": scanLAT2(dsNum,subNum,modNum)
 
 # =============================================================
 
@@ -118,7 +124,8 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--image=wisecg/mjsw:v2",
             "-p shared",
             "-n30", # match nCores for pdsf below
-            "-t 24:00:00",
+            # "-p long", # doesn't work w/ n30
+            "-t 12:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -146,7 +153,9 @@ def getSBatch(opt, getCores=True, nArr=1):
             "-t 24:00:00",
             # "-t 00:10:00",
             # "--qos=debug"
-            "--qos=shared"
+            # "--qos=shared"
+            "--qos=regular",
+            "-N 1"
         ],
         "edison-arr": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -257,6 +266,9 @@ def runBatch():
     # EX. 11: raw threshold, channel, and HV settings
     # sh("%s slurm.slr %s" % (getSBatch("edison",False),"./chan-sel.py -t -v"))
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-test"))
+
+    # EX. 12: run LAT2 scan
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
@@ -1038,6 +1050,40 @@ def quickTest():
     #     for f in inFiles:
     #         print(f)
     #         # tf = TFile()
+
+
+def scanLAT2(dsIn=None, subIn=None, modIn=None):
+    """ ./job-panda.py [-q] -lat2 """
+
+    skipDS6Cal = True
+    cal = dsi.CalInfo()
+
+    # loop over datasets, skipping DS6 cal runs till they're processed
+    for ds in [0,1,2,3,4,5,6]:
+        if skipDS6Cal is True and ds==6:
+            continue
+
+        if dsIn is not None and ds!=dsIn:
+            continue
+
+        # loop over keys in this DS
+        for key in cal.GetKeys(ds):
+
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+
+            # loop over cIdx's for this key
+            for cIdx in range(cal.GetIdxs(key)):
+                if subIn is not None and cIdx!=subIn:
+                    continue
+
+                if modIn is not None and mod!=modIn:
+                    continue
+
+                job = "./lat2.py -scan %d %s %d %d" % (ds, key, mod, cIdx)
+                if useJobQueue: sh("%s >& ./logs/lat2-%s-%d.txt" % (job, key, cIdx))
+                else: sh("%s '%s'" % (jobStr, job))
 
 
 

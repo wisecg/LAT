@@ -12,8 +12,8 @@ ytick.labelsize : 16
 # isn't in the default rc parameters (python >>> print(matplotlib.rcParams)).
 # maybe it could be added with some call to matplotlib.rc('stuff') but idk
 
-figure.titlesize : large        # size of the figure title (Figure.suptitle())
-figure.titleweight : normal     # weight of the figure title
+#figure.titlesize : large        # size of the figure title (Figure.suptitle())
+#figure.titleweight : normal     # weight of the figure title
 figure.figsize   : 9, 6         # figure size in inches
 figure.dpi       : 200          # figure dots per inch
 figure.facecolor : white        # figure facecolor; 0.75 is scalar gray

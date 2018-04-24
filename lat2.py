@@ -41,12 +41,17 @@ def main(argv):
         if opt=="-m":
             mod = int(argv[i+1])
 
-        # scan cal runs and make some outputs
-        if opt=="-scan":
+        # wrapper function for scanRuns
+        if opt=="-load":
             loadRuns(ds,cIdx,mod)
 
-        if opt=="-p":
-            plotHist()
+        # call scanRuns directly (used by job-panda)
+        if opt=="-scan":
+            ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
+            scanRuns(ds,key,mod,cIdx)
+
+        if opt=="-g":
+            getStats()
 
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
@@ -80,53 +85,40 @@ def loadRuns(dsIn=None,subIn=None,modIn=None):
 def scanRuns(ds, key, mod, cIdx):
     from ROOT import TFile, TTree
 
+    # load file and channel list
     fileList = []
     calRuns = cal.GetCalList(key,cIdx)
     for run in calRuns:
         latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
         tmpList = [f for idx, f in sorted(latList.items())]
         fileList.extend(tmpList)
+    chList = det.getGoodChanList(ds)
 
     print("Scanning DS:%d  calIdx %d  mod %d  key %s  nFiles:%d" % (ds, cIdx, mod, key, len(fileList)), time.strftime('%X %x %Z'))
-
-    # load good channel list for this DS
-    chList = det.getGoodChanList(ds)
+    outFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+    print("Saving output in:",outFile)
 
     # declare the output stuff
     evtIdx, evtSumET, evtHitE, evtChans = [], [], [], []
     thrCal = {ch:[] for ch in chList}
-
-    # store histograms for fitSlo in every channel,
-    # slicing on energy ranges 0-10 and 10-200 keV
-    # {channel : [hist 0-10, hist 10-200] }
-    fLo, fHi, fpb = -200, 400, 10
+    fLo, fHi, fpb = -200, 400, 1
     nbf = int((fHi-fLo)/fpb)+1
-    fSloSpec = {ch:[np.zeros(nbf) for i in range(2)] for ch in chList}
-    # fSloSpec = {ch:[] for ch in chList}
-    # fSloX = np.arange(fLo-fpb/2.,fHi,fpb)
-
-    print(nbf, len(fSloX))
-    # return
-
-    # debug: fs and ene arrays, to verify the histo slice is working
-    fsTot, enTot = [], []
-
+    fSloSpec = {ch:[np.zeros(nbf) for i in range(3)] for ch in chList} # 0-10, 10-200, 236-240
 
     # loop over LAT cal files
     scanStart = time.time()
     prevRun = 0
     evtCtr, totCtr, runTime = 0, 0, 0
-    for iF, f in enumerate(fileList[:3]):
+    for iF, f in enumerate(fileList):
 
         print("%d/%d %s" % (iF, len(fileList), f))
         tf = TFile(f)
         tt = tf.Get("skimTree")
 
-        # histogram these for each file
+        # histogram these for each file (and then add to total)
         fs10 = {ch:[] for ch in chList}
-        # en10 = {ch:[] for ch in chList}
         fs200 = {ch:[] for ch in chList}
-        # en200 = {ch:[] for ch in chList}
+        fs238 = {ch:[] for ch in chList}
 
         # increment the run time and fill the output dict of thresholds
         tt.GetEntry(0)
@@ -135,6 +127,9 @@ def scanRuns(ds, key, mod, cIdx):
             start = tt.startTime_s
             stop = tt.stopTime_s
             runTime += stop-start
+
+            # find thresholds for this run s/t we can apply them
+            # and calculate sumET and mHT in the loop.
 
             # before applying thresholds (and getting sumET and mHT)
             # save them into the output dict (so we can compare w/ DB later).
@@ -161,8 +156,6 @@ def scanRuns(ds, key, mod, cIdx):
             if tt.EventDC1Bits != 0: continue
             totCtr += 1
 
-            # calculate mHT and sumET
-
             n = tt.channel.size()
             chTmp = np.asarray([tt.channel.at(i) for i in range(n)])
             idxRaw = [i for i in range(tt.channel.size()) if tt.channel.at(i) in chList]
@@ -175,23 +168,22 @@ def scanRuns(ds, key, mod, cIdx):
                 and 0.7 < tt.trapENFCal.at(i) < 9999
                 ]
             hitE = np.asarray([tt.trapENFCal.at(i) for i in idxList])
+
+            # calculate mHT and sumET
             mHT, sumET = len(hitE), sum(hitE)
 
-            # increment histogram of fitSlo for this channel
+            # save fitSlo data for 0-10 and 10-200 kev ranges for each channel
             for i in idxList:
                 en = tt.trapENFCal.at(i)
                 ch = tt.channel.at(i)
                 fs = tt.fitSlo.at(i)
                 if fLo < fs < fHi:
-                    if ch==610:
-                        fsTot.append(fs) # TODO: remove this
-                        enTot.append(en)
                     if 0 < en < 10:
                         fs10[ch].append(fs)
-                        en10[ch].append(en)
-                    elif 10 < en < 200:
+                    if 10 < en < 200:
                         fs200[ch].append(fs)
-                        en200[ch].append(en)
+                    if 236 < en < 240:
+                        fs238[ch].append(fs)
 
             # Save m2s238 events to output, skip everything else
             if mHT!=2: continue
@@ -203,14 +195,20 @@ def scanRuns(ds, key, mod, cIdx):
             evtChans.append(hitChans)
             evtCtr += 1
 
-        # fill the fitSlo histograms w/ the events from this run
+        # fill the fitSlo histograms w/ the events from this file
         for ch in chList:
-            x1, h10 = wl.GetHisto(fs10[ch],fLo,fHi,fpb)
-            x2, h200 = wl.GetHisto(fs200[ch],fLo,fHi,fpb)
-            fSloSpec[ch][0] = np.sum([fSloSpec[ch][0], h10], axis=0)
-            fSloSpec[ch][1] = np.sum([fSloSpec[ch][1], h200], axis=0)
+            x, h1 = wl.GetHisto(fs10[ch],fLo,fHi,fpb)
+            x, h2 = wl.GetHisto(fs200[ch],fLo,fHi,fpb)
+            x, h3 = wl.GetHisto(fs238[ch],fLo,fHi,fpb)
+            fSloSpec[ch][0] = np.sum([fSloSpec[ch][0], h1], axis=0)
+            fSloSpec[ch][1] = np.sum([fSloSpec[ch][1], h2], axis=0)
+            fSloSpec[ch][2] = np.sum([fSloSpec[ch][2], h3], axis=0)
+            # n1 = np.sum(fSloSpec[ch][0])
+            # n2 = np.sum(fSloSpec[ch][1])
+            # n3 = np.sum(fSloSpec[ch][2])
+            # print("ch:%d  n10 %d  n200 %d  n238 %d" % (ch, n1, n2, n3))
 
-    # get average threshold for each channel
+    # get average threshold for each channel in this file list
     thrFinal = {cpd:[] for cpd in thrCal}
     for cpd in thrCal:
         thrVals = []
@@ -224,85 +222,125 @@ def scanRuns(ds, key, mod, cIdx):
         # print("%d  %.3f  %.3f" % (cpd, thrAvg, thrDev))
         thrFinal[cpd] = [thrAvg,thrDev]
 
+    # print to screen the final thresholds, stdev, and an error message if necessary
     print("Detector Thresholds:")
     for cpd in thrFinal:
         thKeV = thrFinal[cpd][0]
         thE = thrFinal[cpd][1]
-
         errString = ""
         if thE/thKeV > 0.5:
             errString = ">50pct error:  thE/thKeV=%.2f" % (thE/thKeV)
         if thKeV > 2:
             errString = ">2kev threshold"
-
         print("%d  %.3f  %.3f  %s" % (cpd,thKeV,thE,errString))
 
-    # TODO: calculate mu, sig of fitSlo for each channel in each slice
+    # save output
+    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, runTime, fSloSpec, x)
 
     # output stats
     print("Done:",time.strftime('%X %x %Z'),", %.2f sec/file." % ((time.time()-scanStart)/len(fileList)))
     print("  m2s238 evts:",evtCtr, "total evts:",totCtr, "runTime:",runTime)
 
-    # save output
-    outFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
-    print("Saving output in:",outFile)
-    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, runTime, fSloSpec, fSloX)
 
-    # debug output
-    np.savez("./plots/histo-tmp.npz",fsTot,enTot)
+def getHistInfo(x,h):
+    """ Computes max, mean, width, percentiles of a numpy
+    array based histogram , w/ x values 'x' and counts 'h'. """
+    if np.sum(h)==0:
+        return 0, 0, 0, [0,0,0,0], 0
+
+    max = x[np.argmax(h)]
+    avg = np.average(x, weights=h/np.sum(h))
+    std = np.sqrt(np.average((h-max)**2, weights=h)/np.sum(h))
+    pct = []
+    for p in [5, 10, 90, 95]:
+        tmp = np.cumsum(h)/np.sum(h)*100
+        idx = np.where(tmp > p)
+        pct.append(x[idx][0])
+    wid = pct[2]-pct[0]
+    return max, avg, std, pct, wid
 
 
-def plotHist():
+def getStats():
+    # calculate mu, sig of fitSlo for each channel in each slice
 
-    f1 = np.load("/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds1_m1_c1.npz")
+    makePlots = False
+
+    fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds1_m1_c1.npz"
+    key = fname.split('/')[-1].split(".")[0]
+    tmp = key.split("_")
+    ds, mod, cIdx = tmp[1], tmp[2], tmp[3]
+    print("Scanning:",key)
+
+    f1 = np.load(fname)
     fSloSpec = f1['arr_9'].item()
-    fSloX = f1['arr_10']
+    x = f1['arr_10']
 
-    print(list(fSloSpec.keys()))
+    fig = plt.figure(figsize=(18,6))
+    p1 = plt.subplot(131)
+    p2 = plt.subplot(132)
+    p3 = plt.subplot(133)
 
-    myHist1 = fSloSpec[610][0] # 0-10 keV
-    myHist2 = fSloSpec[610][1] # 10-200 keV
+    # stackoverflow trick to make list printing prettier
+    class prettyfloat(float):
+        def __repr__(self): return "%.2f" % self
 
-    # myHist1 = np.insert(myHist1, 0, 0, axis=0)
-    # myHist2 = np.insert(myHist2, 0, 0, axis=0)
+    chList = sorted(list(fSloSpec.keys()))
+    for ch in chList:
 
-    # if shift: x = x-xpb/2.
+        h1 = fSloSpec[ch][0] # 0-10 keV
+        h2 = fSloSpec[ch][1] # 10-200 keV
+        h3 = fSloSpec[ch][2] # 236-240 keV
 
-    f2 = np.load("./plots/histo-tmp.npz")
-    fsTot, enTot = f2['arr_0'], f2['arr_1']
+        max1, avg1, std1, pct1, wid1 = getHistInfo(x,h1)
+        max2, avg2, std2, pct2, wid2 = getHistInfo(x,h2)
+        max3, avg3, std3, pct3, wid3 = getHistInfo(x,h3)
 
-    fig = plt.figure()
-    plt.plot(enTot, fsTot, ".k", ms=1)
-    plt.xlim(0,250)
-    plt.ylim(-50, 400)
-    plt.xlabel("Energy",ha='right',x=1)
-    plt.ylabel("fitSlo",ha='right',y=1)
-    plt.savefig("./plots/lat2-histoTest.png")
+        print("channel",ch)
+        print("0-10:    %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max1, avg1, std1, wid1), list(map(prettyfloat, pct1)))
+        print("10-200:  %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max2, avg2, std2, wid2), list(map(prettyfloat, pct2)))
+        print("236-240: %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max3, avg3, std3, wid3), list(map(prettyfloat, pct3)))
 
-    plt.cla()
+        if not makePlots: continue
 
-    fLo, fHi, fpb = -200, 400, 10
-    idx = np.where((enTot>0) & (enTot<10))
+        # save a diagnostic plot
+        p1.cla()
+        p1.plot(x, h1,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p1.plot(np.nan,np.nan,'.w',label='0-10 keV')
+        p1.plot(np.nan,np.nan,'.w',label='max %.2f' % max1)
+        p1.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg1)
+        p1.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid1)
+        p1.axvline(pct1[0], c='g', label='pct5 %.2f' % pct1[0])
+        p1.axvline(pct1[2], c='r', label='pct90 %.2f' % pct1[2])
+        p1.set_xlabel("fitSlo",ha='right',x=1)
+        p1.legend(loc=2, fontsize=12)
 
-    print(len(fsTot[idx]), np.sum(myHist1))
+        p2.cla()
+        p2.plot(x, h2,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p2.plot(np.nan,np.nan,'.w',label='10-200 keV')
+        p2.plot(np.nan,np.nan,'.w',label='max %.2f' % max2)
+        p2.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg2)
+        p2.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid2)
+        p2.axvline(pct2[0], c='g', label='pct5 %.2f' % pct2[0])
+        p2.axvline(pct2[2], c='r', label='pct90 %.2f' % pct2[2])
+        p2.set_xlabel("fitSlo",ha='right',x=1)
+        p2.legend(loc=2, fontsize=12)
 
-    x, histLo = wl.GetHisto(fsTot[idx],fLo,fHi,fpb)
-    plt.plot(x, histLo,'b',lw=2.,ls='steps',label='fsTot 0-10')
-    plt.plot(fSloX, myHist1,'r',lw=2.,ls='steps',label='myHist 0-10')
-    plt.xlabel("fitSlo",ha='right',x=1)
-    plt.xlim(50,150)
-    plt.legend(loc=1)
-    plt.savefig('./plots/lat2-histoTest2.png')
+        p3.cla()
+        p3.plot(x, h3,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p3.plot(np.nan,np.nan,'.w',label='236-240 keV')
+        p3.plot(np.nan,np.nan,'.w',label='max %.2f' % max3)
+        p3.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg3)
+        p3.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid3)
+        p3.axvline(pct3[0], c='g', label='pct5 %.2f' % pct3[0])
+        p3.axvline(pct3[2], c='r', label='pct90 %.2f' % pct3[2])
+        p3.set_xlabel("fitSlo",ha='right',x=1)
+        p3.legend(loc=2, fontsize=12)
 
-    plt.cla()
-    idx = np.where((enTot>10) & (enTot<200))
-    x, histHi = wl.GetHisto(fsTot[idx],fLo,fHi,fpb)
-    plt.plot(x, histHi,'b',lw=2.,ls='steps',label='fsTot 10-200')
-    plt.plot(fSloX, myHist2,'r',lw=2.,ls='steps',label='myHist 10-200')
-    plt.xlim(50,150)
-    plt.xlabel("fitSlo",ha='right',x=1)
-    plt.legend(loc=1)
-    plt.savefig('./plots/lat2-histoTest3.png')
+        plt.tight_layout()
+        plt.savefig('./plots/lat2-diag-ch%d.png' % ch)
+
+        # return
+
 
 if __name__=="__main__":
     main(sys.argv[1:])
