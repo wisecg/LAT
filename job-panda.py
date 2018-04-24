@@ -35,7 +35,9 @@ def main(argv):
         if opt == "-ds":  dsNum = int(argv[i+1])
         if opt == "-sub": dsNum, subNum = int(argv[i+1]), int(argv[i+2])
         if opt == "-run": dsNum, runNum = int(argv[i+1]), int(argv[i+2])
-        if opt == "-cal": calList = getCalRunList(dsNum,subNum,runNum)
+        #if opt == "-cal": calList = getCalRunList(dsNum,subNum,runNum)
+        if opt == "-cal": calList = getCalRunList(dsNum)
+            print 'calibration list ', calList
 
         # main skim routines
         if opt == "-skim":      runSkimmer(dsNum, subNum, runNum, calList=calList)
