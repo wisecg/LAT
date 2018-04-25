@@ -6,10 +6,9 @@
 
 function sourceEnvMJD {
   umask "u=rwx,g=rx,o=r"
-  export HOMEDIR=/global/homes/w/wisecg
+
   export PATH=${HOMEDIR}:${PATH} # rmate
 	export SWDIR=/global/project/projectdirs/majorana/software/sl64
-
   export MJSWDIR=${SWDIR}/mjsw/mjsw201712Prod
   export MJHOME=/global/project/projectdirs/majorana
   export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
@@ -39,6 +38,7 @@ function sourceEnvMJD {
   export ROOT_INCLUDE_PATH=${CLHEP_INCLUDE_DIR}:${MGDODIR}/Base:${MGDODIR}/Gerda:${MGDODIR}/GerdaTransforms:${MGDODIR}/Majorana:${MGDODIR}/MJDB:${MGDODIR}/Root:${MGDODIR}/Tabree:${MGDODIR}/Tools:${MGDODIR}/Transforms:${TAMDIR}:${TAMDIR}/inc:${GATDIR}/BaseClasses:${GATDIR}/MGTEventProcessing:${GATDIR}/MGOutputMCRunProcessing:${GATDIR}/SiggenWrapper
 
   export LATDIR=${HOMEDIR}/lat
+  export LATDATADIR=${HOMEDIR}/project
   export MAGERESULTS=/global/projecta/projectdirs/majorana/sim/MJDG41003Sims
   export PYTHONPATH=${LATDIR}:${PYTHONPATH}
 }
@@ -53,7 +53,7 @@ function sourceEnvClint {
 }
 
 function rpf {
-  myarr=$(ps -u wisecg | grep sshd | awk '{print $1}')
+  myarr=$(ps -u `whoami` | grep sshd | awk '{print $1}')
   kill $myarr
 }
 
