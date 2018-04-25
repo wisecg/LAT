@@ -23,8 +23,8 @@ import dsi
 bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
 det = dsi.DetInfo()
-
 skipDS6Cal = True # ignore DS6 cal runs until they're processed
+
 
 def main(argv):
 
@@ -80,6 +80,11 @@ def loadRuns(dsIn=None,subIn=None,modIn=None):
 
                 # now that ds, cIdx, and module are determined, we can call scanRuns
                 scanRuns(ds, key, mod, cIdx)
+
+
+# stackoverflow trick to make list printing prettier
+class prettyfloat(float):
+    def __repr__(self): return "%.2f" % self
 
 
 def scanRuns(ds, key, mod, cIdx):
@@ -141,14 +146,19 @@ def scanRuns(ds, key, mod, cIdx):
                     continue
                 if chan[i] in tmpThresh.keys():
                     continue
-                thrK = thrM[i] + 3*thrS[i]
-                tmpThresh[chan[i]] = [run,thrM[i],thrS[i],thrK]
+                if thrM[i] < 9999:
+                    thrK = thrM[i] + 3*thrS[i]
+                    tmpThresh[chan[i]] = [run,thrM[i],thrS[i],thrK]
+            for ch in chList:
+                if ch not in tmpThresh.keys():
+                    tmpThresh[ch] = [-1,-1,-1,-1]
 
             # fill the output dict
             for ch in tmpThresh:
                 thrCal[ch].append(tmpThresh[ch]) # [run, thrM, thrS, thrK]
 
         prevRun = run
+        # continue
 
         # loop over tree
         for iE in range(tt.GetEntries()):
@@ -215,7 +225,8 @@ def scanRuns(ds, key, mod, cIdx):
         for iT in range(len(thrCal[cpd])):
             run, thrM, thrS, thrK = thrCal[cpd][iT]
             # print("%d  %d  %.3f  %.3f  %.3f" % (cpd,run,thrM,thrS,thrK))
-            thrVals.append(thrK)
+            if thrK > -1:
+                thrVals.append(thrK)
         thrVals = np.asarray(thrVals)
         thrAvg = np.mean(thrVals)
         thrDev = np.std(thrVals)
@@ -224,14 +235,14 @@ def scanRuns(ds, key, mod, cIdx):
 
     # print to screen the final thresholds, stdev, and an error message if necessary
     print("Detector Thresholds:")
-    for cpd in thrFinal:
+    for cpd in sorted(thrFinal):
         thKeV = thrFinal[cpd][0]
         thE = thrFinal[cpd][1]
         errString = ""
         if thE/thKeV > 0.5:
             errString = ">50pct error:  thE/thKeV=%.2f" % (thE/thKeV)
         if thKeV > 2:
-            errString = ">2kev threshold"
+            errString = ">2kev"
         print("%d  %.3f  %.3f  %s" % (cpd,thKeV,thE,errString))
 
     # save output
@@ -265,7 +276,8 @@ def getStats():
 
     makePlots = False
 
-    fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds1_m1_c1.npz"
+    # fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds1_m1_c1.npz"
+    fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds0_m1_c16.npz"
     key = fname.split('/')[-1].split(".")[0]
     tmp = key.split("_")
     ds, mod, cIdx = tmp[1], tmp[2], tmp[3]
@@ -279,10 +291,6 @@ def getStats():
     p1 = plt.subplot(131)
     p2 = plt.subplot(132)
     p3 = plt.subplot(133)
-
-    # stackoverflow trick to make list printing prettier
-    class prettyfloat(float):
-        def __repr__(self): return "%.2f" % self
 
     chList = sorted(list(fSloSpec.keys()))
     for ch in chList:

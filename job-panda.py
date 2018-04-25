@@ -2,11 +2,9 @@
 """
 ========================= job-panda.py ========================
 A cute and adorable way to do various processing tasks.
-
 The functions are arranged mostly sequentially, i.e. this file
 documents the "procedure" necessary to produce LAT data,
 starting from running skim_mjd_data.
-
 ====================== C. Wiseman, B. Zhu =====================
 """
 import sys, shlex, glob, os, re, time
