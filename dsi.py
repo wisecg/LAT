@@ -7,7 +7,7 @@ import numpy as np
 import tinydb as db
 
 latSWDir    = os.environ['LATDIR']
-dataDir     = "/global/projecta/projectdirs/majorana/users/wisecg"
+dataDir     = os.environ['LATDATADIR']
 bkgDir      = dataDir+"/bkg"     # subfolders: skim waves split lat thresh
 calDir      = dataDir+"/cal"     # subfolders: skim waves split lat eff
 specialDir  = dataDir+"/special" # subfolders: skim waves split lat
