@@ -31,29 +31,34 @@ def main():
     # XEff = dfEff['Energy'].values
     # YEff = dfEff['Efficiency'].values
 
-    # Dummy tritium spectrum
-    # Energy = np.array([0.5, 1.5, 2.5,  3.5, 4.5,  5.5,  6.5,  7.5,  8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5])
-    # Tritium = np.array([1.72e-02, 1.99e-02, 2.06e-02, 2.04e-02, 1.95e-02, 1.81e-02, 1.66e-02, 1.48e-02, 1.30e-02, 1.11e-02, 9.22e-03, 7.41e-03, 5.72e-03, 4.18e-03, 2.84e-03, 1.72e-03, 8.58e-04, 2.78e-04, 1.54e-05])
-
     # Peak means
     meansList = [6.54, 8.98, 10.37, 46.54]
     sdList = [GetSigma(mean, dsNum) for mean in meansList]
 
     with pm.Model() as model:
 
-        Fe55 = pm.Normal("Fe55", mu=meansList[0], sd=sdList[0])
-        Zn65 = pm.Normal("Zn65", mu=meansList[1], sd=sdList[1])
-        Ge68 = pm.Normal("Ge68", mu=meansList[2], sd=sdList[2])
-        Pb210 = pm.Normal("Pb210", mu=meansList[3], sd=sdList[3])
-        Bkg = pm.Uniform('Bkg',lower=2., upper=50.)
+        Fe55 = pm.Normal.dist(mu=meansList[0], sd=sdList[0])
+        Zn65 = pm.Normal.dist(mu=meansList[1], sd=sdList[1])
+        Ge68 = pm.Normal.dist(mu=meansList[2], sd=sdList[2])
+        Pb210 = pm.Normal.dist(mu=meansList[3], sd=sdList[3])
+        Bkg = pm.Uniform.dist(lower=2., upper=50.)
 
         Tritium = pm.Interpolated("Tritium", x_points=Energy, pdf_points=Tritium, testval=5.)
         weights = pm.Dirichlet('weights', a=np.ones(len(meansList)+2))
 
-        mix = pm.Mixture('mix', w=weights, comp_dists=[Fe55.distribution, Zn65.distribution, Ge68.distribution, Pb210.distribution, Tritium.distribution, Bkg.distribution], testval=5., observed=Y)
+        Mu = pm.Normal('Mu', mu = 0.77, sd = 0.1)
+        Sig = pm.Normal('Sig', mu = 0.56, sd = 0.1)
+        eff = LogisticFunc("Efficiency", mu=Mu, sd=Sig, testval=5.)
+
+        TritEff = Tritium*eff
+
+        mix = pm.Mixture('mix', w=weights, comp_dists=[Fe55, Zn65, Ge68, Pb210, TritEff, Bkg], testval=5.)
+
+
+        # mix = pm.Mixture('mix', w=weights, comp_dists=[Fe55, Zn65, Ge68, Pb210, Tritium, Bkg], testval=5., observed=Y)
 
     with model:
-        trace = pm.sample(draws=10000, n_init=5000)
+        trace = pm.sample(draws=10000, n_init=2000, tune=2000)
 
     pm.traceplot(trace)
     print(pm.summary(trace))
@@ -65,6 +70,22 @@ def main():
     # ax.axvline(df['Energy'].mean())
     # ax.set(title='Posterior predictive of the mean', xlabel='mean(x)', ylabel='Frequency');
     plt.show()
+
+
+class LogisticFunc(pm.Continuous):
+    """
+        Custom Error Function distribution for pymc3
+    """
+    def __init__(self, mu, sd, *args, **kwargs):
+        self._mu = tt.as_tensor_variable(mu)
+        self._sd = tt.as_tensor_variable(sd)
+        super(LogisticFunc, self).__init__(*args, **kwargs)
+
+    def logp(self, value):
+        """ Log-likelihood of Erf efficiency """
+        mu = self._mu
+        sigma = self._sd
+        return tt.log(1./(1.+tt.exp(-(value-mu)/sigma)))
 
 
 # Helper functions to save data
