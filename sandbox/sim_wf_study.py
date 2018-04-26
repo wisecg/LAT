@@ -2,6 +2,8 @@
 import sys, os, imp, pywt
 import scipy.optimize as op
 import scipy.special as sp
+from scipy import stats
+from scipy.ndimage.filters import gaussian_filter
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,6 +17,13 @@ sns.set(style='darkgrid')
     -- Add simulated WFs (varying amplitudes) to force trigger baselines
     -- Process with simplified version of LAT (only WF fitting and riseNoise for now)
     -- Study distributions
+
+    Second study:
+    -- Convolve SigGen waveforms with Gaussian (artificially making them slower)
+    -- Add to force-triggered baselines
+    -- Process with simplified LAT
+    -- Study distributions
+
 """
 
 
@@ -33,9 +42,9 @@ p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
 
 
 def main():
-    # procSim(5000)
-    compareSim()
-
+    # procSim(10000)
+    # compareSim()
+    compareSloSim()
 
 def compareSim():
     plt.close(fig)
@@ -73,6 +82,185 @@ def compareSim():
     # g1.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_vs_Amplitude_Scatter.png')
     # g2.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_AmpComparison_log.png')
 
+
+def compareSloSim():
+    plt.close(fig)
+
+    inDir = os.environ['LATDIR']+'/data'
+    dfSig = pd.read_hdf('{}/SimPSA_GaussianFilter_Full.h5'.format(inDir))
+    # Between 1-5 keV here
+    # ampList = [2, 3, 4]
+    ampList = [4, 3, 2, 5, 6, 7, 8, 9, 10]
+    cutPercentList = np.array([0.75, 0.77, 0.80, 0.83, 0.85, 0.87, 0.90, 0.93, 0.95])
+    amp4CutIdx = 0
+
+    resultDict = {4:{}, 3:{}, 2:{}, 5:{}, 6:{}, 7:{}, 8:{}, 9:{}, 10:{}}
+    cutIDXArr = np.zeros(len(cutPercentList), dtype=int )
+    cutValArr = np.zeros(len(cutPercentList))
+    for idx, perc in enumerate(cutPercentList):
+        for amp in ampList:
+            dfCut = dfSig.loc[(dfSig['Amp'] == amp) & (dfSig['fitSlo'] > 2.1)]
+
+            fitSlo0Arr = dfCut['fitSlo'].loc[dfCut['Sigma']==0].values
+            fitSlo10Arr = dfCut['fitSlo'].loc[dfCut['Sigma']==10].values
+            fitSlo20Arr = dfCut['fitSlo'].loc[dfCut['Sigma']==20].values
+            fitSlo30Arr = dfCut['fitSlo'].loc[dfCut['Sigma']==30].values
+            fitSlo40Arr = dfCut['fitSlo'].loc[dfCut['Sigma']==40].values
+
+            fitSlo0, fitSloBins = np.histogram(fitSlo0Arr, bins=2000, range=(0, 2000))
+            fitSlo10, _ = np.histogram(fitSlo10Arr, bins=2000, range=(0, 2000))
+            fitSlo20, _ = np.histogram(fitSlo20Arr, bins=2000, range=(0, 2000))
+            fitSlo30, _ = np.histogram(fitSlo30Arr, bins=2000, range=(0, 2000))
+            fitSlo40, _ = np.histogram(fitSlo40Arr, bins=2000, range=(0, 2000))
+            fitSloCenter = (fitSloBins[:-1] + fitSloBins[1:])/2
+
+            argCut = np.where(np.cumsum(fitSlo0, dtype=float)/np.sum(fitSlo0) > perc)[0][0]
+            if amp == 4:
+                cutIDXArr[idx] = argCut
+                cutValArr[idx] = fitSloCenter[cutIDXArr[idx]]
+                print('Cut IDX: ', cutIDXArr[idx])
+            print('Amp: {}, Max: {}'.format(amp, fitSloCenter[np.argmax(fitSlo0)]))
+            print('{:.0f} Percent -- Cut Value: {}'.format(perc*100, fitSloCenter[cutIDXArr[idx]]))
+
+            print('Sigma = 0: Kept {}, Cut {}, Cut Events Percentage: {:.3f}'.format(np.sum(fitSlo0[:cutIDXArr[idx]]), np.sum(fitSlo0[cutIDXArr[idx]:]), np.sum(fitSlo0[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo0) ))
+            print('Sigma = 10: Kept {}, Cut {}, Cut Events Percentage: {:.3f}'.format(np.sum(fitSlo10[:cutIDXArr[idx]]), np.sum(fitSlo10[cutIDXArr[idx]:]), np.sum(fitSlo10[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo10) ))
+            print('Sigma = 20: Kept {}, Cut {}, Cut Events Percentage: {:.3f}'.format(np.sum(fitSlo20[:cutIDXArr[idx]]), np.sum(fitSlo20[cutIDXArr[idx]:]), np.sum(fitSlo20[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo20) ))
+            print('Sigma = 30: Kept {}, Cut {}, Cut Events Percentage: {:.3f}'.format(np.sum(fitSlo30[:cutIDXArr[idx]]), np.sum(fitSlo30[cutIDXArr[idx]:]), np.sum(fitSlo30[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo30) ))
+            print('Sigma = 40: Kept {}, Cut {}, Cut Events Percentage: {:.3f}'.format(np.sum(fitSlo40[:cutIDXArr[idx]]), np.sum(fitSlo40[cutIDXArr[idx]:]), np.sum(fitSlo40[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo40) ))
+
+            resultDict[amp][perc] = [np.sum(fitSlo0[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo0), np.sum(fitSlo10[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo10), np.sum(fitSlo20[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo20), np.sum(fitSlo30[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo30), np.sum(fitSlo40[cutIDXArr[idx]:], dtype=float)/np.sum(fitSlo40)]
+
+    print(resultDict[2])
+    print(cutIDXArr)
+    print(cutValArr)
+
+    # fig0, ax0 = plt.subplots(figsize=(10,7))
+    # ax0.scatter(100*cutPercentList, cutValArr)
+    # ax0.set_xlabel('Cut Percentage (%)')
+    # ax0.set_ylabel('fitSlo Cut Value')
+
+
+    bar_width = 0.20
+    fig2, ax2 = plt.subplots(ncols=3, nrows=2, figsize=(15,8))
+    xList = np.linspace(1, len(cutPercentList), len(cutPercentList))
+    # ax2[0][0].bar(xList-bar_width, [100*resultDict[2][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[0][0].bar(xList, [100*resultDict[2][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[0][0].bar(xList+bar_width, [100*resultDict[2][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[0][0].plot(xList, [100*resultDict[2][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[0][0].plot(xList, [100*resultDict[2][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[0][0].plot(xList, [100*resultDict[2][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[0][0].set_xticks(xList + bar_width/2)
+    ax2[0][0].set_xticklabels(100*cutPercentList)
+    ax2[0][0].set_title('Cut Event Percentage (Amp = 2, ~0.8 keV)')
+    ax2[0][0].set_ylabel('Cut Event Percentage (%)')
+    # ax2[0][0].set_xlabel('Keep Percentage (%)')
+
+    # ax2[0][1].bar(xList-bar_width, [100*resultDict[3][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[0][1].bar(xList, [100*resultDict[3][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[0][1].bar(xList+bar_width, [100*resultDict[3][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[0][1].plot(xList, [100*resultDict[3][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[0][1].plot(xList, [100*resultDict[3][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[0][1].plot(xList, [100*resultDict[3][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[0][1].set_xticks(xList + bar_width/2)
+    ax2[0][1].set_xticklabels(100*cutPercentList)
+    ax2[0][1].set_title('Cut Event Percentage (Amp = 3, ~1.2 keV)')
+    # ax2[0][1].set_xlabel('Keep Percentage (%)')
+
+    # ax2[0][2].bar(xList-bar_width, [100*resultDict[4][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[0][2].bar(xList, [100*resultDict[4][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[0][2].bar(xList+bar_width, [100*resultDict[4][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[0][2].plot(xList, [100*resultDict[4][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[0][2].plot(xList, [100*resultDict[4][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[0][2].plot(xList, [100*resultDict[4][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[0][2].set_xticks(xList + bar_width/2)
+    ax2[0][2].set_xticklabels(100*cutPercentList)
+    ax2[0][2].set_title('Cut Event Percentage (Amp = 4, ~1.6 keV)')
+    # ax2[0][2].set_xlabel('Keep Percentage (%)')
+    ax2[0][2].legend(bbox_to_anchor=(1.02, 1.02))
+
+    # ax2[1][0].bar(xList-bar_width, [100*resultDict[6][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[1][0].bar(xList, [100*resultDict[6][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[1][0].bar(xList+bar_width, [100*resultDict[6][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[1][0].plot(xList, [100*resultDict[6][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[1][0].plot(xList, [100*resultDict[6][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[1][0].plot(xList, [100*resultDict[6][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[1][0].set_xticks(xList + bar_width/2)
+    ax2[1][0].set_xticklabels(100*cutPercentList)
+    ax2[1][0].set_title('Cut Event Percentage (Amp = 6, ~2.4 keV)')
+    ax2[1][0].set_ylabel('Cut Event Percentage (%)')
+
+    # ax2[1][1].bar(xList-bar_width, [100*resultDict[8][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[1][1].bar(xList, [100*resultDict[8][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[1][1].bar(xList+bar_width, [100*resultDict[8][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[1][1].plot(xList, [100*resultDict[8][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[1][1].plot(xList, [100*resultDict[8][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[1][1].plot(xList, [100*resultDict[8][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[1][1].set_xticks(xList + bar_width/2)
+    ax2[1][1].set_xticklabels(100*cutPercentList)
+    ax2[1][1].set_title('Cut Event Percentage (Amp = 8, ~3.2 keV)')
+    ax2[1][1].set_ylabel('Cut Event Percentage (%)')
+
+    # ax2[1][2].bar(xList-bar_width, [100*resultDict[10][p][0] for p in cutPercentList], bar_width, label='Sigma = 0')
+    # ax2[1][2].bar(xList, [100*resultDict[10][p][2] for p in cutPercentList], bar_width, label='Sigma = 20')
+    # ax2[1][2].bar(xList+bar_width, [100*resultDict[10][p][4] for p in cutPercentList], bar_width, label='Sigma = 40')
+    ax2[1][2].plot(xList, [100*resultDict[10][p][0] for p in cutPercentList], label='Sigma = 0')
+    ax2[1][2].plot(xList, [100*resultDict[10][p][2] for p in cutPercentList], label='Sigma = 20')
+    ax2[1][2].plot(xList, [100*resultDict[10][p][4] for p in cutPercentList], label='Sigma = 40')
+    ax2[1][2].set_xticks(xList + bar_width/2)
+    ax2[1][2].set_xticklabels(100*cutPercentList)
+    ax2[1][2].set_title('Cut Event Percentage (Amp = 10, ~4 keV)')
+    ax2[1][2].set_ylabel('Cut Event Percentage (%)')
+
+    # fig1, ax1 = plt.subplots(figsize=(10,7))
+    # ax1.plot(fitSloCenter, fitSlo0, ls='steps', label='Amp = {}, Sigma = 0'.format(amp))
+    # ax1.plot(fitSloCenter, fitSlo10, ls='steps', label='Sigma = 10')
+    # ax1.plot(fitSloCenter, fitSlo20, ls='steps', label='Sigma = 20')
+    # ax1.plot(fitSloCenter, fitSlo30, ls='steps', label='Sigma = 30')
+    # ax1.plot(fitSloCenter, fitSlo40, ls='steps', label='Sigma = 40')
+    # ax1.plot([fitSloCenter[amp4CutIdx],fitSloCenter[amp4CutIdx]], [0, np.max(fitSlo0)], 'k-')
+    # ax1.legend()
+
+    # print(np.argmax(fitSlo0))
+    # print(np.argmax(fitSlo10))
+    # print(np.argmax(fitSlo20))
+    # print(np.argmax(fitSlo30))
+    # print(np.argmax(fitSlo40))
+    # arg90 = np.where(np.cumsum(fitSlo0, dtype=float)/np.sum(fitSlo0) > 0.9)[0][0]
+
+    # print(np.where(np.cumsum(fitSlo0, dtype=float)/np.sum(fitSlo0) > 0.9 ))
+
+    # g1 = sns.lmplot(x='Amp', y='fitSlo', data=dfCut, hue='Sigma', fit_reg=False, size=7, scatter_kws={'alpha':0.3}, legend_out=False, aspect=1.5)
+    # g1.set(yscale='log')
+    # plt.subplots_adjust(top=0.95)
+    # g1.fig.suptitle('fitSlo vs Amplitude (Simulated Waveforms)')
+    # g1.set_axis_labels('Amplitude (ADC)', 'fitSlo')
+    # g2 = sns.FacetGrid(dfCut, hue='Sigma', size=7, aspect=1.5)
+    # g2 = g2.map(plt.hist, 'fitSlo', bins=np.linspace(-10,2000,200), alpha=0.50).add_legend()
+    # g2.set(yscale='log')
+
+    # dfSigGen = pd.read_hdf('{}/SigGen_WFs_low.h5'.format(inDir))
+    # sigList = [0, 10, 20, 30, 40]
+    # meanList = []
+    # meanList.append(dfCut['fitSlo'].loc[dfCut['Sigma']==0].mode())
+    # meanList.append(dfCut['fitSlo'].loc[dfCut['Sigma']==10].mode())
+    # meanList.append(dfCut['fitSlo'].loc[dfCut['Sigma']==20].mode())
+    # meanList.append(dfCut['fitSlo'].loc[dfCut['Sigma']==30].mode())
+    # meanList.append(dfCut['fitSlo'].loc[dfCut['Sigma']==40].mode())
+
+    # wave = dfSigGen['waveform'].loc[(dfSigGen['r']==34) & (dfSigGen['z']==50) & (dfSigGen['amp']==1)].values
+    # fig1, ax1 = plt.subplots(figsize=(10,7))
+    # for sigma, mean in zip(sigList, meanList):
+    #     if sigma == 0:
+    #         simWF = wave[0]
+    #     else:
+    #         simWF = gaussian_filter(np.array(wave[0]), sigma)
+    #     ax1.plot(simWF, label='Sigma = {} (fitSlo mean = {})'.format(sigma, mean))
+    # ax1.legend()
+
+    # plt.tight_layout()
+    plt.show()
+
+
 def convertDF(series):
     """
         Converts a list stored in DataFrame column back into a np.array
@@ -101,16 +289,13 @@ def procSim(nMax = 5000):
     skimTree = f1.Get('skimTree')
 
     dfSigGen = pd.read_hdf('{}/SigGen_WFs_low.h5'.format(inDir))
-
+    sigList = [0, 20, 40, 60]
     # Truncates to 2017 samples, cuz we in 2017
     truncLo, truncHi = 8,6
     dataList = []
-    # for idx in range(1):
+
     print('Total Entries: ', skimTree.GetEntries())
-    # for idx in range(skimTree.GetEntries()):
-    # fig1, ax1 = plt.subplots(figsize=(10,7))
     for idx in range(min(nMax,skimTree.GetEntries())):
-        # if idx != 417: continue
         if idx%100 == 0:
             print("Processed Entry ", idx)
         skimTree.GetEntry(idx)
@@ -124,21 +309,30 @@ def procSim(nMax = 5000):
         dataBL,dataNoise = signal.GetBaseNoise()
         # Generate one fake WF at each amplitude/r/z combination (30 total)
         for index, row in dfSigGen.iterrows():
-            dataMap = {}
-            sig = addSigToBaseline(data, row['waveform'])
-            sigBL = addSigToBaseline(data_blSub, row['waveform'])
-            # Dummy variables
-            # fitAmp, TSMax = row['amp'], 1200*10
-            dataMap = procEvent(sig, dataTS, sigBL, dataBL, '{}_A{}R{}Z{}'.format(idx, row['amp'], row['r'], row['z']))
-            dataMap['Amp'] = row['amp']
-            dataMap['R'] = row['r']
-            dataMap['Z'] = row['z']
-            # dataMap['waveform'] = sigBL.tolist()
-            dataList.append(dataMap)
+            # Skip the waveforms that are far
+            if row['r'] != 34.0: continue
+            if row['z'] != 50.0: continue
+            for sigma in sigList:
+                dataMap = {}
+                if sigma == 0:
+                    simWF = row['waveform']
+                else:
+                    simWF = gaussian_filter(row['waveform'], sigma)
+                sig = addSigToBaseline(data, simWF)
+                sigBL = addSigToBaseline(data_blSub, simWF)
+                # Dummy variables
+                # fitAmp, TSMax = row['amp'], 1200*10
+                dataMap = procEvent(sig, dataTS, sigBL, dataBL, '{}_A{}R{}Z{}'.format(idx, row['amp'], row['r'], row['z']))
+                dataMap['Amp'] = row['amp']
+                dataMap['R'] = row['r']
+                dataMap['Z'] = row['z']
+                dataMap['Sigma'] = sigma
+                # dataMap['waveform'] = sigBL.tolist()
+                dataList.append(dataMap)
 
     df = pd.DataFrame.from_dict(dataList)
     print(df.head())
-    df.to_hdf('{}/SimPSA_sig2_log.h5'.format(inDir), 'skimTree')
+    df.to_hdf('{}/SimPSA_GaussianFilter_Full.h5'.format(inDir), 'skimTree')
 
 
 def addSigToBaseline(data_blSub, sigWF):
@@ -208,7 +402,7 @@ def procEvent(data, dataTS, data_blSub, dataBL, saveStr=''):
     fit = xgModelWF(dataTS, floats)
     fitMu, fitAmp, fitSlo, fitTau, fitBL = mu, amp, sig, tau, bl
 
-
+    """
     if sig <= 2:
         print('Old: fitMu {}, fitAmp {}, fitSlo {}, sig {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, sig, fitTau, fitBL))
 
@@ -246,9 +440,11 @@ def procEvent(data, dataTS, data_blSub, dataBL, saveStr=''):
         p6.plot(blTr[1:],label='bl',color='magenta')
         p6.legend(loc='best')
         plt.tight_layout()
-        fig.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/ADC2/WF_{}.png'.format(saveStr))
+        # fig.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/ADC2/WF_{}.png'.format(saveStr))
 
-        print('Fixed: fitMu {}, fitAmp {}, fitSlo {}, sig {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, sig, fitTau, fitBL))
+        # print('Fixed: fitMu {}, fitAmp {}, fitSlo {}, sig {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, sig, fitTau, fitBL))
+    """
+
     # print('fitMu {}, fitAmp {}, fitSlo {}, fitTau {}, fitBL {}'.format(fitMu, fitAmp, fitSlo, fitTau, fitBL))
 
     # find the window of rising edge

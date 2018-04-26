@@ -25,7 +25,7 @@ def main():
     # amps = [2]
     # Amplitudes from 2 to 20 ADC (1 - 10 keV)
     # amps = [2*i for i in range(1,11)]
-    amps = [1,2,3,4]
+    amps = [1,2,3,4,5,6,7,8,9,10]
 
     # Secret Parameters without wiggles
     det.lp_num = [1.]
