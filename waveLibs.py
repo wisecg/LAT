@@ -17,6 +17,20 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
+
+def niceList(lst, fmt="%.2f", dtype="f"):
+    """ trick to make list printing prettier """
+    tmp = []
+    for l in lst:
+        if dtype=="f":
+            tmp.append(float(str(fmt % l)))
+        elif dtype=="i":
+            tmp.append(int(str(fmt % l)))
+        else:
+            tmp.append(str(fmt % l))
+    return tmp
+
+
 def GetHisto(npArr, xLo, xHi, xpb, nb=None, shift=True):
     """ This returns a histogram w/ shifted bins.  For use with: plt.plot(x, y, ls='steps')"""
     if nb is None: nb = int((xHi-xLo)/xpb)

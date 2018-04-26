@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, imp
+import sys, imp, os
 import tinydb as db
 import numpy as np
 
@@ -13,6 +13,8 @@ from matplotlib.colors import LogNorm, Normalize
 dsi = imp.load_source('dsi', '../dsi.py')
 bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
+det = dsi.DetInfo()
+skipDS6Cal=True
 import waveLibs as wl
 
 
@@ -20,7 +22,8 @@ def main():
 
     # testStats()
     # plotStats()
-    getCalRunTime()
+    # getCalRunTime()
+    plotEff()
 
 
 def testStats():
@@ -324,6 +327,119 @@ def getCalRunTime():
             tf.Close()
 
         print("Total cal run time, DS%d: %.2f hrs." % (ds, totCalRunTime/3600))
+
+
+def plotEff():
+
+    # arrays to plot
+    effHitE = [] # m2s238 event [hitE1, hitE2 , ...] (remove sub-list of input format)
+    effChan = [] # m2s238 event [chan1, chan2 , ...]
+
+    # load efficiency files
+    fList = []
+    for ds in [1]:
+        print("Loading DS-%d" % ds)
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                eFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+                if os.path.isfile(eFile):
+                    fList.append([ds,cIdx,mod,eFile])
+                else:
+                    print("File not found:",eFile)
+                    continue
+    for ds,ci,mod,ef in fList:
+        # print(ds,ci,mod,ef)
+        f = np.load(ef)
+        evtIdx = f['arr_0']          # m2s238 event [[run,iE] , ...]
+        evtSumET = f['arr_1']        # m2s238 event [sumET , ...]
+        evtHitE = f['arr_2']         # m2s238 event [[hitE1, hitE2] , ...]
+        evtChans = f['arr_3']        # m2s238 event [[chan1, chan2] , ...]
+        thrCal = f['arr_4'].item()   # {ch : [run,thrM,thrS,thrK] for ch in goodList(ds)}
+        thrFinal = f['arr_5'].item() # {ch : [thrAvg, thrDev] for ch in goodList(ds)}
+        evtCtr = f['arr_6']          # num m2s238 evts
+        totCtr = f['arr_7']          # num total evts
+        runTime = f['arr_8']         # cal run time (will be buggy until you run LAT2 again, Clint)
+        fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
+        x = f['arr_10']              # xVals for fitSlo histos
+
+        # remove the hit pair
+        for i in range(len(evtHitE)):
+            effHitE.extend(evtHitE[i])
+            effChan.extend(evtChans[i])
+
+    effHitE = np.asarray(effHitE)
+    effChan = np.asarray(effChan)
+
+    # -- MAKE PLOTS --
+    chList = det.getGoodChanList(ds)
+
+    fig = plt.figure()
+
+    # -- 1. hit spectrum, all channels, 0-250
+    plt.cla()
+    xLo, xHi, xpb = 0, 250, 0.2
+    x1, h1 = wl.GetHisto(effHitE,xLo,xHi,xpb)
+    plt.plot(x1, h1, ls='steps', label='ds%d' % ds)
+    plt.xlabel("Energy (keV)",ha='right',x=1.)
+    plt.ylabel("Counts",ha='right',y=1.)
+    plt.legend()
+    plt.savefig("../plots/slo-specTest.png")
+
+    # -- 2. bar plot, hits in all channels
+    plt.cla()
+    x, yAll = wl.GetHisto(effChan, chList[0], chList[-1], 1)
+    idx = np.where(yAll!=0)
+    x, yAll = x[idx]-0.5, yAll[idx]
+    x = [int(ch) for ch in x]
+    xb = np.arange(0,len(x),1)
+    plt.bar(xb, yAll, 0.95, color='b', label='ds%d all hits' % ds)
+
+    idx = np.where(effHitE < 10)
+    x, yLow = wl.GetHisto(effChan[idx], chList[0], chList[-1], 1)
+    idx = np.where(yLow!=0)
+    x, yLow = x[idx]-0.5, yLow[idx]
+    x = [int(t) for t in x]
+    plt.bar(xb, yLow, 0.95, color='r', label='ds%d < 10 keV' % ds)
+
+    plt.gca().set_ylim(1)
+    plt.gca().set_yscale('log')
+
+    plt.xticks(xb+0.5)
+    plt.gca().set_xticklabels(x, fontsize=12, rotation='vertical')
+    plt.xlabel("channel", ha='right', x=1.)
+    leg = plt.legend(fontsize=14, ncol=2)
+    leg.get_frame().set_alpha(0.6)
+    plt.savefig("../plots/slo-chans.png")
+
+    # -- 3. 2d hits vs channels, 0-20 keV (APS style)
+    plt.cla()
+
+    chDict = {chList[i]:i for i in range(len(chList))}
+    chan = [chDict[chan] for chan in effChan]
+
+    xLo, xHi, xpb = 0.5, 5., 0.1
+    yLo, yHi = 0, len(chList)
+    nbx, nby = int((xHi-xLo)/xpb), len(chList)
+    h1,xedg1,yedg1 = np.histogram2d(effHitE,chan,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+    h1 = h1.T
+    hMin, hMax = np.amin(h1), np.amax(h1)
+
+    im1 = plt.imshow(h1,cmap='jet',vmin=hMin,vmax=hMax,interpolation=None)#,norm=LogNorm())
+    xticklabels = ["%.1f" % t for t in np.arange(0, 5.5, 0.5)]
+    yticks = np.arange(0, len(chList))
+
+    plt.xlabel("Energy (keV)", ha='right', x=1.)
+    plt.gca().set_xticklabels(xticklabels)
+    plt.ylabel("channel", ha='right', y=1.)
+    plt.yticks(yticks)
+    plt.gca().set_yticklabels(chList, fontsize=12)
+    # f.colorbar(im1, ax=p1, fraction=0.037, pad=0.04)
+    #
+    plt.tight_layout()
+    plt.savefig("../plots/slo-2dHits.png")
 
 
 
