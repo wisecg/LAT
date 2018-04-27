@@ -82,11 +82,6 @@ def loadRuns(dsIn=None,subIn=None,modIn=None):
                 scanRuns(ds, key, mod, cIdx)
 
 
-# stackoverflow trick to make list printing prettier
-class prettyfloat(float):
-    def __repr__(self): return "%.2f" % self
-
-
 def scanRuns(ds, key, mod, cIdx):
     from ROOT import TFile, TTree
 
@@ -104,7 +99,7 @@ def scanRuns(ds, key, mod, cIdx):
     print("Saving output in:",outFile)
 
     # declare the output stuff
-    evtIdx, evtSumET, evtHitE, evtChans = [], [], [], []
+    evtIdx, evtSumET, evtHitE, evtChans, evtSlo, evtRise = [], [], [], [], [], []
     thrCal = {ch:[] for ch in chList}
     fLo, fHi, fpb = -200, 400, 1
     nbf = int((fHi-fLo)/fpb)+1
@@ -113,7 +108,7 @@ def scanRuns(ds, key, mod, cIdx):
     # loop over LAT cal files
     scanStart = time.time()
     prevRun = 0
-    evtCtr, totCtr, runTime = 0, 0, 0
+    evtCtr, totCtr, totRunTime = 0, 0, 0
     for iF, f in enumerate(fileList):
 
         print("%d/%d %s" % (iF, len(fileList), f))
@@ -131,13 +126,16 @@ def scanRuns(ds, key, mod, cIdx):
         if run!=prevRun:
             start = tt.startTime_s
             stop = tt.stopTime_s
-            runTime += stop-start
+            runTime = stop-start
+            if runTime < 0 or runTime > 9999:
+                print("run time error, run",run,"start",start,"stop")
+            else:
+                totRunTime += runTime
 
-            # find thresholds for this run s/t we can apply them
-            # and calculate sumET and mHT in the loop.
-
-            # before applying thresholds (and getting sumET and mHT)
+            # find thresholds for this run,
+            # to calculate sumET and mHT in the loop.
             # save them into the output dict (so we can compare w/ DB later).
+
             n = tt.Draw("channel:threshKeV:threshSigma","","goff")
             chan, thrM, thrS = tt.GetV1(), tt.GetV2(), tt.GetV3()
             tmpThresh = {}
@@ -199,10 +197,15 @@ def scanRuns(ds, key, mod, cIdx):
             if mHT!=2: continue
             if not 237.28 < sumET < 239.46: continue
             hitChans = np.asarray([tt.channel.at(i) for i in idxList])
+            hitSlo = np.asarray([tt.fitSlo.at(i) for i in idxList])
+            hitRise = np.asarray([tt.riseNoise.at(i) for i in idxList])
             evtIdx.append([run,iE])
             evtSumET.append(sumET)
             evtHitE.append(hitE)
             evtChans.append(hitChans)
+            evtSlo.append(hitSlo)
+            evtRise.append(hitRise)
+
             evtCtr += 1
 
         # fill the fitSlo histograms w/ the events from this file
@@ -219,38 +222,38 @@ def scanRuns(ds, key, mod, cIdx):
             # print("ch:%d  n10 %d  n200 %d  n238 %d" % (ch, n1, n2, n3))
 
     # get average threshold for each channel in this file list
-    thrFinal = {cpd:[] for cpd in thrCal}
-    for cpd in thrCal:
+    thrFinal = {chan:[] for chan in thrCal}
+    for chan in thrCal:
         thrVals = []
-        for iT in range(len(thrCal[cpd])):
-            run, thrM, thrS, thrK = thrCal[cpd][iT]
-            # print("%d  %d  %.3f  %.3f  %.3f" % (cpd,run,thrM,thrS,thrK))
+        for iT in range(len(thrCal[chan])):
+            run, thrM, thrS, thrK = thrCal[chan][iT]
+            # print("%d  %d  %.3f  %.3f  %.3f" % (chan,run,thrM,thrS,thrK))
             if thrK > -1:
                 thrVals.append(thrK)
         thrVals = np.asarray(thrVals)
         thrAvg = np.mean(thrVals)
         thrDev = np.std(thrVals)
-        # print("%d  %.3f  %.3f" % (cpd, thrAvg, thrDev))
-        thrFinal[cpd] = [thrAvg,thrDev]
+        # print("%d  %.3f  %.3f" % (chan, thrAvg, thrDev))
+        thrFinal[chan] = [thrAvg,thrDev]
 
     # print to screen the final thresholds, stdev, and an error message if necessary
     print("Detector Thresholds:")
-    for cpd in sorted(thrFinal):
-        thKeV = thrFinal[cpd][0]
-        thE = thrFinal[cpd][1]
+    for chan in sorted(thrFinal):
+        thKeV = thrFinal[chan][0]
+        thE = thrFinal[chan][1]
         errString = ""
         if thE/thKeV > 0.5:
             errString = ">50pct error:  thE/thKeV=%.2f" % (thE/thKeV)
         if thKeV > 2:
             errString = ">2kev"
-        print("%d  %.3f  %.3f  %s" % (cpd,thKeV,thE,errString))
+        print("%d  %.3f  %.3f  %s" % (chan,thKeV,thE,errString))
 
     # save output
-    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, runTime, fSloSpec, x)
+    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, totRunTime, fSloSpec, x, evtSlo, evtRise)
 
     # output stats
     print("Done:",time.strftime('%X %x %Z'),", %.2f sec/file." % ((time.time()-scanStart)/len(fileList)))
-    print("  m2s238 evts:",evtCtr, "total evts:",totCtr, "runTime:",runTime)
+    print("  m2s238 evts:",evtCtr, "total evts:",totCtr, "runTime:",totRunTime)
 
 
 def getHistInfo(x,h):
@@ -304,9 +307,9 @@ def getStats():
         max3, avg3, std3, pct3, wid3 = getHistInfo(x,h3)
 
         print("channel",ch)
-        print("0-10:    %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max1, avg1, std1, wid1), list(map(prettyfloat, pct1)))
-        print("10-200:  %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max2, avg2, std2, wid2), list(map(prettyfloat, pct2)))
-        print("236-240: %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max3, avg3, std3, wid3), list(map(prettyfloat, pct3)))
+        print("0-10:    %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max1, avg1, std1, wid1), wl.niceList(pct1))
+        print("10-200:  %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max2, avg2, std2, wid2), wl.niceList(pct2))
+        print("236-240: %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max3, avg3, std3, wid3), wl.niceList(pct3))
 
         if not makePlots: continue
 

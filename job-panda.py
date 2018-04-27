@@ -120,10 +120,12 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-p shared",
-            "-n30", # match nCores for pdsf below
-            # "-p long", # doesn't work w/ n30
-            "-t 12:00:00",
+            # "-p shared",
+            # "-n30", # match nCores for pdsf below
+            "-p long", # doesn't work w/ n30
+            "--mincpus=30",
+            # "-t 12:00:00",
+            "-t 4:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -148,12 +150,22 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/edison-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-t 24:00:00",
-            # "-t 00:10:00",
+            # "-t 24:00:00",
+            "-t 05:00:00",
             # "--qos=debug"
             # "--qos=shared"
             "--qos=regular",
             "-N 1"
+        ],
+        "edison-shared": [
+            "--workdir=%s" % (dsi.latSWDir),
+            "--output=%s/logs/edison-%%j.txt" % (dsi.latSWDir),
+            "--image=wisecg/mjsw:v2",
+            # "-t 24:00:00",
+            "-t 10:00:00",
+            # "--qos=debug"
+            "--qos=shared",
+            "-n 12"
         ],
         "edison-arr": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -181,6 +193,7 @@ def getSBatch(opt, getCores=True, nArr=1):
     if getCores:
         if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
         if "cori" in opt: return sbStr, 60, 66
+        if "edison-shared" in opt: return sbStr, 12, 15
         if "edison" in opt: return sbStr, 48, 52
     else:
         return sbStr
@@ -266,7 +279,8 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-test"))
 
     # EX. 12: run LAT2 scan
-    sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("edison-shared"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

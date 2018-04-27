@@ -30,7 +30,7 @@ endTime = 1489762153
 # endTime = 1514678400 # End of 2017
 # endTime = 1546300800 # End of 2018
 yearInSec = 31536000 # Number of seconds in 1 year
-nBurn = 1000
+nBurn = 1500
 
 # Save data into dataframe -- if this hasn't been done before
 # reduceData(dsNum)
@@ -40,7 +40,12 @@ def main():
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    pdfArrDict['Axion'], nTimeBins, timeBinLowEdge, removeMask = convertaxionPDF(startTime, endTime)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask = convertaxionPDF(startTime, endTime)
+
+    AxionNorm = (np.amax(AxionArr)/2.)
+    # Normalize Axion
+    print('Axion Normalization Constant:', AxionNorm)
+    pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     # Load Background data and bin exactly as PDF
     df = pd.read_hdf('{}/DS{}_Spectrum.h5'.format(inDir, dsNum))
@@ -80,6 +85,7 @@ def main():
     pdfArrDict['Bkg'] = np.ones(pdfArrDict['Data'].shape)
     pdfArrDict['Time'] = np.delete(timeBinLowEdge, removeMask)
     pdfArrDict['Energy'] = np.delete(pdfArrDict['Energy'], removeMask, axis=1)
+    AxionArr = np.delete(AxionArr, removeMask, axis=1)
     print('Generated all PDFs')
     # Draw PDFs
     # drawPDFs(pdfArrDict)
@@ -122,7 +128,7 @@ def main():
     # print(dfTrace.head())
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir))
+    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
 
     # Sample Here
     # with model:
@@ -252,9 +258,11 @@ def convertaxionPDF(startTime, endTime):
     timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
 
     # Roughly normalize so the axion scale is the same as the other PDFs
-    NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
-    print('Axion Normalization Constant:', (np.amax(AxionArr)/2.))
+    # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
+    # print('Axion Normalization Constant:', (np.amax(AxionArr)/2.))
     # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.) #NOTE: Debug, remove time mask for tests
+
+    NormAxionArr = AxionArr*timeMask
 
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
@@ -490,7 +498,7 @@ def generateGaus(energyList, meansDict):
     return outDict
 
 
-def modelDiagnostics(model, pdfArrDict, backendDir):
+def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None):
     """
         Loads saved traces, draws plots, performs diagnostics on models
         Brian's notes on diagnostics:
@@ -518,10 +526,19 @@ def modelDiagnostics(model, pdfArrDict, backendDir):
     # Get summary of trace as a dataframe
     dfSum = pm.summary(trace[nBurn:], alpha=0.1)
 
+    Mu = dfSum.loc['Mu', 'mean']
+    Sig = dfSum.loc['Sig', 'mean']
+    eff = 1./(1.+np.exp(-(pdfArrDict['Energy']-Mu)/Sig))
     AxionIntegral = pdfArrDict['Axion'].sum()
+
     # This gets printed out from "convertaxionPDF", it's the amount I artificially scale the axion PDF integral
-    AxionNorm = 11878.384765625
+    # AxionNorm = 11878.384765625
+    AxionNorm = (np.amax(unNormAxion)/2.)
+    AxionNormEff = (np.amax(unNormAxion*eff)/2.)
+    # AxionIntegralEff = (unNormAxion*eff).sum()
     print('Axion PDF Integral:', AxionIntegral)
+    # print('Efficiency Corrected Axion PDF Integral:', AxionIntegralEff)
+    print('Normalizations: {}  -- {}'.format(AxionNorm, AxionNormEff))
 
     # Loop through and calculate 90% BCI for all parameters
     print('Calculating 90% intervals: ')
@@ -533,8 +550,11 @@ def modelDiagnostics(model, pdfArrDict, backendDir):
         print('{}, {}, {}, {}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
 
 
-    axionLambda = AxionIntegral*dfSum.loc['Axion', 'hpd_95']/(AxionIntegral/3600/24)/AxionNorm
+    # Debate: when converting to lambda,
+    axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
+    axionLambdaEff = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNormEff
     print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
+    print("Axion Lambda (Eff Corrected): {} --- g_agg (E-8 GeV): {}".format(axionLambdaEff, np.power(axionLambdaEff, 0.25)))
 
     # pm.traceplot(trace[nBurn:])
     pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)

@@ -46,7 +46,7 @@ function sourceEnvMJD {
 function sourceEnvClint {
   export PS1="\[\033[38;5;14m\]\A\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;10m\]\u@\h\[$(tput sgr0)\]\[\033[38;5;15m\]:\[$(tput bold)\]\[$(tput sgr0)\]\[\033[38;5;9m\]\W\[$(tput sgr0)\]\[$(tput sgr0)\]\[\033[38;5;15m\]\\$ \[$(tput sgr0)\]"
   alias rootmj="root -b -l"
-  alias atom="rmate"
+  alias atom='rmate -p "$RMATE_PORT"'
   alias ls="ls --color"
   alias inter="salloc -t 10:00:00 -p shared"
   alias imj="shifter --image wisecg/mjsw:v2 bash"
