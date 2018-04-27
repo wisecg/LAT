@@ -337,7 +337,7 @@ def plotEff():
 
     # load efficiency files
     fList = []
-    for ds in [1]:
+    for ds in [0]:
         print("Loading DS-%d" % ds)
         for key in cal.GetKeys(ds):
             mod = -1
@@ -361,9 +361,9 @@ def plotEff():
         thrFinal = f['arr_5'].item() # {ch : [thrAvg, thrDev] for ch in goodList(ds)}
         evtCtr = f['arr_6']          # num m2s238 evts
         totCtr = f['arr_7']          # num total evts
-        runTime = f['arr_8']         # cal run time (will be buggy until you run LAT2 again, Clint)
+        runTime = f['arr_8']         # cal run time
         fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
-        x = f['arr_10']              # xVals for fitSlo histos
+        fSloX = f['arr_10']          # xVals for fitSlo histos
 
         # remove the hit pair
         for i in range(len(evtHitE)):
@@ -372,75 +372,93 @@ def plotEff():
 
     effHitE = np.asarray(effHitE)
     effChan = np.asarray(effChan)
-
-    # -- MAKE PLOTS --
     chList = det.getGoodChanList(ds)
 
-    fig = plt.figure()
+    # -- MAKE PLOTS --
+    fig = plt.figure(figsize=(9,7))
 
-    # -- 1. hit spectrum, all channels, 0-250
-    plt.cla()
-    xLo, xHi, xpb = 0, 250, 0.2
-    x1, h1 = wl.GetHisto(effHitE,xLo,xHi,xpb)
-    plt.plot(x1, h1, ls='steps', label='ds%d' % ds)
-    plt.xlabel("Energy (keV)",ha='right',x=1.)
-    plt.ylabel("Counts",ha='right',y=1.)
-    plt.legend()
-    plt.savefig("../plots/slo-specTest.png")
-
-    # -- 2. bar plot, hits in all channels
-    plt.cla()
-    x, yAll = wl.GetHisto(effChan, chList[0], chList[-1], 1)
-    idx = np.where(yAll!=0)
-    x, yAll = x[idx]-0.5, yAll[idx]
-    x = [int(ch) for ch in x]
-    xb = np.arange(0,len(x),1)
-    plt.bar(xb, yAll, 0.95, color='b', label='ds%d all hits' % ds)
-
-    idx = np.where(effHitE < 10)
-    x, yLow = wl.GetHisto(effChan[idx], chList[0], chList[-1], 1)
-    idx = np.where(yLow!=0)
-    x, yLow = x[idx]-0.5, yLow[idx]
-    x = [int(t) for t in x]
-    plt.bar(xb, yLow, 0.95, color='r', label='ds%d < 10 keV' % ds)
-
-    plt.gca().set_ylim(1)
-    plt.gca().set_yscale('log')
-
-    plt.xticks(xb+0.5)
-    plt.gca().set_xticklabels(x, fontsize=12, rotation='vertical')
-    plt.xlabel("channel", ha='right', x=1.)
-    leg = plt.legend(fontsize=14, ncol=2)
-    leg.get_frame().set_alpha(0.6)
-    plt.savefig("../plots/slo-chans.png")
-
-    # -- 3. 2d hits vs channels, 0-20 keV (APS style)
-    plt.cla()
-
-    chDict = {chList[i]:i for i in range(len(chList))}
-    chan = [chDict[chan] for chan in effChan]
-
-    xLo, xHi, xpb = 0.5, 5., 0.1
-    yLo, yHi = 0, len(chList)
-    nbx, nby = int((xHi-xLo)/xpb), len(chList)
-    h1,xedg1,yedg1 = np.histogram2d(effHitE,chan,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
-    h1 = h1.T
-    hMin, hMax = np.amin(h1), np.amax(h1)
-
-    im1 = plt.imshow(h1,cmap='jet',vmin=hMin,vmax=hMax,interpolation=None)#,norm=LogNorm())
-    xticklabels = ["%.1f" % t for t in np.arange(0, 5.5, 0.5)]
-    yticks = np.arange(0, len(chList))
-
-    plt.xlabel("Energy (keV)", ha='right', x=1.)
-    plt.gca().set_xticklabels(xticklabels)
-    plt.ylabel("channel", ha='right', y=1.)
-    plt.yticks(yticks)
-    plt.gca().set_yticklabels(chList, fontsize=12)
-    # f.colorbar(im1, ax=p1, fraction=0.037, pad=0.04)
+    # # -- 1. hit spectrum, all channels, 0-250
+    # plt.cla()
+    # xLo, xHi, xpb = 0, 250, 0.2
+    # x1, h1 = wl.GetHisto(effHitE,xLo,xHi,xpb)
+    # plt.plot(x1, h1, ls='steps', label='ds%d' % ds)
+    # plt.xlabel("Energy (keV)",ha='right',x=1.)
+    # plt.ylabel("Counts",ha='right',y=1.)
+    # plt.legend()
+    # plt.savefig("../plots/slo-specTest.png")
     #
-    plt.tight_layout()
-    plt.savefig("../plots/slo-2dHits.png")
+    # # -- 2. bar plot, hits in all channels
+    # plt.cla()
+    # x, yAll = wl.GetHisto(effChan, chList[0], chList[-1], 1)
+    # idx = np.where(yAll!=0)
+    # x, yAll = x[idx]-0.5, yAll[idx]
+    # x = [int(ch) for ch in x]
+    # xb = np.arange(0,len(x),1)
+    # plt.bar(xb, yAll, 0.95, color='b', label='ds%d all hits' % ds)
+    #
+    # # hits under 20 keV
+    # idx = np.where(effHitE < 20)
+    # x, yLow = wl.GetHisto(effChan[idx], chList[0], chList[-1]+1, 1)
+    # idx = np.where(yLow!=0)
+    # x, yLow = x[idx]-0.5, yLow[idx]
+    # x = [int(t) for t in x]
+    # print("x:",x)
+    # plt.bar(xb, yLow, 0.95, color='r', label='ds%d < 20 keV' % ds)
+    #
+    # # plt.gca().set_ylim(1)
+    # plt.gca().set_yscale('log')
+    #
+    # plt.xticks(xb)
+    # plt.gca().set_xticklabels(x, fontsize=12, rotation='vertical')
+    # plt.xlabel("channel", ha='right', x=1.)
+    # leg = plt.legend(fontsize=14, ncol=2)
+    # leg.get_frame().set_alpha(0.6)
+    # plt.tight_layout()
+    # plt.savefig("../plots/slo-chans.png")
+    #
+    # # -- 3. 2d hits vs channels, 0-20 keV
+    # plt.cla()
+    #
+    # chDict = {chList[i]:i for i in range(len(chList))}
+    # chan = [chDict[chan] for chan in effChan]
+    # xLo, xHi, xpb = 0, 20., 0.2
+    # yLo, yHi = 0, len(chList)
+    # nbx, nby = int((xHi-xLo)/xpb), len(chList)
+    #
+    # plt.hist2d(effHitE, chan, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet')
+    # plt.xlabel("Energy (keV)", ha='right', x=1.)
+    # plt.xticks(np.arange(xLo, xHi+1, 1.0))
+    # plt.ylabel("channel", ha='right', y=1.)
+    # yticks = np.arange(0, len(chList))
+    # plt.yticks(yticks+0.5)
+    # plt.gca().set_yticklabels(chList, fontsize=10)
+    # plt.tight_layout()
+    # plt.savefig("../plots/slo-hist2d.png")
 
+    # -- 4. typical fitSlo values
+    for ch in chList[:]:
+        plt.cla()
+        plt.semilogy(fSloX, fSloSpec[ch][0], 'r', ls='steps', label='ds%d ch%d 0-10' % (ds,ch))
+        plt.semilogy(fSloX, fSloSpec[ch][1], 'g', ls='steps', label='ds%dch%d 10-200' % (ds,ch))
+        plt.semilogy(fSloX, fSloSpec[ch][2], 'b', ls='steps', label='ds%dch%d 236-240' % (ds,ch))
+
+        maxLo = fSloX[np.argmax(fSloSpec[ch][0])]
+        maxHi = fSloX[np.argmax(fSloSpec[ch][1])]
+        plt.axvline(maxLo, c='k', label='max 10-200: %.1f' % maxLo)
+        plt.axvline(maxHi, c='m', label='max 0-10: %.1f' % maxHi)
+
+        plt.xlabel("fitSlo",ha='right',x=1)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("../plots/slo-spec-ds%d-%d.png" % (ds,ch))
+
+
+    # -- 5. m2s238 slowness
+
+    # -- 5. stability of fitSlo vs run number
+    # for ch in chList[:1]:
+        # maxLo = fSloX[np.argmax(fSloSpec[ch][0])]
+        # maxHi
 
 
 if __name__=="__main__":
