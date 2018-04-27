@@ -303,7 +303,7 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
     # multi-run mode:
     for key in calKeys:
         print("key:",key)
-        if key=="ds6": continue # comment this out and do -cal -ds 6 to get the ds6 list
+        # if key=="ds6": continue # comment this out and do -cal -ds 6 to get the ds6 list
 
         # -cal (mega mode)
         if dsNum==None:
