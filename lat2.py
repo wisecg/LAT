@@ -256,22 +256,6 @@ def scanRuns(ds, key, mod, cIdx):
     print("  m2s238 evts:",evtCtr, "total evts:",totCtr, "runTime:",totRunTime)
 
 
-def getHistInfo(x,h):
-    """ Computes max, mean, width, percentiles of a numpy
-    array based histogram , w/ x values 'x' and counts 'h'. """
-    if np.sum(h)==0:
-        return 0, 0, 0, [0,0,0,0], 0
-
-    max = x[np.argmax(h)]
-    avg = np.average(x, weights=h/np.sum(h))
-    std = np.sqrt(np.average((h-max)**2, weights=h)/np.sum(h))
-    pct = []
-    for p in [5, 10, 90, 95]:
-        tmp = np.cumsum(h)/np.sum(h)*100
-        idx = np.where(tmp > p)
-        pct.append(x[idx][0])
-    wid = pct[2]-pct[0]
-    return max, avg, std, pct, wid
 
 
 def getStats():
@@ -302,9 +286,9 @@ def getStats():
         h2 = fSloSpec[ch][1] # 10-200 keV
         h3 = fSloSpec[ch][2] # 236-240 keV
 
-        max1, avg1, std1, pct1, wid1 = getHistInfo(x,h1)
-        max2, avg2, std2, pct2, wid2 = getHistInfo(x,h2)
-        max3, avg3, std3, pct3, wid3 = getHistInfo(x,h3)
+        max1, avg1, std1, pct1, wid1 = wl.getHistInfo(x,h1)
+        max2, avg2, std2, pct2, wid2 = wl.getHistInfo(x,h2)
+        max3, avg3, std3, pct3, wid3 = wl.getHistInfo(x,h3)
 
         print("channel",ch)
         print("0-10:    %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max1, avg1, std1, wid1), wl.niceList(pct1))

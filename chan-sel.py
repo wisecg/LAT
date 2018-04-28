@@ -553,15 +553,16 @@ def getSubRanges():
         TODO: 2) HV changed - identify bkgIdx and calIdx
     Use the result to make some decisions about data ranges.
     """
-    verbose = False
+    verbose = True
+    writeOutput = False
 
     # this is what we output (for other programs)
     thRanges = [] # these will be inputs to auto-thresh (thresholds)
     hvRanges = [] # these will be inputs to PSA cut tuning (calibration)
 
     # loop over datasets
-    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
-    # for ds in ["5C"]:
+    # for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+    for ds in [1]:
         if ds in ["5A","5B","5C"]:
             dsNum = 5
         else:
@@ -682,10 +683,11 @@ def getSubRanges():
             print(val)
 
     # save to npz file
-    thRanges = np.array(thRanges,dtype=object)
-    hvRanges = np.array(hvRanges,dtype=object)
-    np.savez("./data/thrHV_subRanges.npz",thRanges,hvRanges)
-    if verbose: print("Saved file.")
+    if writeOutput:
+        thRanges = np.array(thRanges,dtype=object)
+        hvRanges = np.array(hvRanges,dtype=object)
+        np.savez("./data/thrHV_subRanges.npz",thRanges,hvRanges)
+        if verbose: print("Saved file.")
 
 
 def loadSubRanges():

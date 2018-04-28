@@ -17,6 +17,23 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
+def getHistInfo(x,h):
+    """ Computes max, mean, width, percentiles of a numpy
+    array based histogram , w/ x values 'x' and counts 'h'. """
+    if np.sum(h)==0:
+        return 0, 0, 0, [0,0,0,0], 0
+
+    max = x[np.argmax(h)]
+    avg = np.average(x, weights=h/np.sum(h))
+    std = np.sqrt(np.average((h-max)**2, weights=h)/np.sum(h))
+    pct = []
+    for p in [5, 10, 90, 95]:
+        tmp = np.cumsum(h)/np.sum(h)*100
+        idx = np.where(tmp > p)
+        pct.append(x[idx][0])
+    wid = pct[2]-pct[0]
+    return max, avg, std, pct, wid
+
 
 def niceList(lst, fmt="%.2f", dtype="f"):
     """ trick to make list printing prettier """

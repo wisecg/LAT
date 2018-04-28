@@ -24,6 +24,7 @@ def main():
     # plotStats()
     # getCalRunTime()
     plotEff()
+    # dumpCutVals()
 
 
 def testStats():
@@ -331,13 +332,18 @@ def getCalRunTime():
 
 def plotEff():
 
-    # arrays to plot
-    effHitE = [] # m2s238 event [hitE1, hitE2 , ...] (remove sub-list of input format)
-    effChan = [] # m2s238 event [chan1, chan2 , ...]
+    # arrays to plot m2s238 data
+    effHitE = []  # [hitE1, hitE2 , ...] (remove sub-list of input format)
+    effChan = []  # [chan1, chan2 , ...]
+    effSlo = []   # [fSlo1, fSlo2, ...]
+    effRise = []  # [rise1, rise2, ...]
+    effRun = []   # [run1, run1, ...]
+
+    sloSpec = [] # array of fitSlo histo dicts (i should have used pandas probably)
 
     # load efficiency files
     fList = []
-    for ds in [0]:
+    for ds in [5]:
         print("Loading DS-%d" % ds)
         for key in cal.GetKeys(ds):
             mod = -1
@@ -364,14 +370,25 @@ def plotEff():
         runTime = f['arr_8']         # cal run time
         fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
         fSloX = f['arr_10']          # xVals for fitSlo histos
+        evtSlo = f['arr_11']         # m2s238 event [[fSlo1, fSlo2], ...]
+        evtRise = f['arr_12']        # m2s238 event [[rise1, rise2], ...]
+
+        sloSpec.append(fSloSpec)
 
         # remove the hit pair
         for i in range(len(evtHitE)):
             effHitE.extend(evtHitE[i])
             effChan.extend(evtChans[i])
+            effSlo.extend(evtSlo[i])
+            effRise.extend(evtRise[i])
+            effRun.extend([evtIdx[i][0],evtIdx[i][0]])
 
     effHitE = np.asarray(effHitE)
     effChan = np.asarray(effChan)
+    effSlo = np.asarray(effSlo)
+    effRise = np.asarray(effRise)
+    effRun = np.asarray(effRun)
+
     chList = det.getGoodChanList(ds)
 
     # -- MAKE PLOTS --
@@ -436,29 +453,162 @@ def plotEff():
     # plt.savefig("../plots/slo-hist2d.png")
 
     # -- 4. typical fitSlo values
-    for ch in chList[:]:
-        plt.cla()
-        plt.semilogy(fSloX, fSloSpec[ch][0], 'r', ls='steps', label='ds%d ch%d 0-10' % (ds,ch))
-        plt.semilogy(fSloX, fSloSpec[ch][1], 'g', ls='steps', label='ds%dch%d 10-200' % (ds,ch))
-        plt.semilogy(fSloX, fSloSpec[ch][2], 'b', ls='steps', label='ds%dch%d 236-240' % (ds,ch))
-
-        maxLo = fSloX[np.argmax(fSloSpec[ch][0])]
-        maxHi = fSloX[np.argmax(fSloSpec[ch][1])]
-        plt.axvline(maxLo, c='k', label='max 10-200: %.1f' % maxLo)
-        plt.axvline(maxHi, c='m', label='max 0-10: %.1f' % maxHi)
-
-        plt.xlabel("fitSlo",ha='right',x=1)
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("../plots/slo-spec-ds%d-%d.png" % (ds,ch))
-
+    # for ch in chList[:]:
+    #     plt.cla()
+    #     plt.semilogy(fSloX, fSloSpec[ch][0], 'r', ls='steps', label='ds%d ch%d 0-10' % (ds,ch))
+    #     plt.semilogy(fSloX, fSloSpec[ch][1], 'g', ls='steps', label='ds%dch%d 10-200' % (ds,ch))
+    #     plt.semilogy(fSloX, fSloSpec[ch][2], 'b', ls='steps', label='ds%dch%d 236-240' % (ds,ch))
+    #
+    #     maxLo = fSloX[np.argmax(fSloSpec[ch][0])]
+    #     maxHi = fSloX[np.argmax(fSloSpec[ch][1])]
+    #     plt.axvline(maxLo, c='k', label='max 10-200: %.1f' % maxLo)
+    #     plt.axvline(maxHi, c='m', label='max 0-10: %.1f' % maxHi)
+    #
+    #     plt.xlabel("fitSlo",ha='right',x=1)
+    #     plt.legend()
+    #     plt.tight_layout()
+    #     plt.savefig("../plots/slo-spec-ds%d-%d.png" % (ds,ch))
 
     # -- 5. m2s238 slowness
+    # for ch in chList[:]:
+    #
+    #     idx = np.where(effChan==ch)
+    #     tmpE = effHitE[idx]
+    #     tmpS = effSlo[idx]
+    #
+    #     idx2 = np.where(tmpE < 10)
+    #     nCtsLo = len(idx2[0])
+    #
+    #     plt.cla()
 
-    # -- 5. stability of fitSlo vs run number
-    # for ch in chList[:1]:
-        # maxLo = fSloX[np.argmax(fSloSpec[ch][0])]
-        # maxHi
+        # 1d energy
+        # xLo, xHi, xpb = 0, 250, 1
+        # plt.plot(*(wl.GetHisto(tmpE, xLo, xHi, xpb)),c='r',ls='steps')
+
+        # 2d energy vs slowness
+        # xLo, xHi, xpb = 0, 250, 1
+        # nbx = int((xHi-xLo)/xpb)
+        # yLo, yHi, ypb = -50, 400, 1
+        # nby = int((yHi-yLo)/ypb)
+        # _,_,_,im = plt.hist2d(tmpE, tmpS, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
+        # plt.plot(np.nan, np.nan, c='w', label='m2s238 ch%d  nCts %d  nCts0-10 %d' % (ch, len(tmpE), nCtsLo))
+        # # cb = plt.colorbar()
+        # plt.xlabel("Energy (keV)", ha='right', x=1.)
+        # plt.ylabel("fitSlo", ha='right', y=1.)
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.savefig("../plots/slo-ch%d-tmp.png" % ch)
+
+        # # 1d slowness (with 90% cut value)
+        # yLo, yHi, ypb = -50, 400, 1
+        # x, hSlo = wl.GetHisto(tmpS, yLo, yHi, ypb)
+        #
+        # max1, avg1, std1, pct1, wid1 = wl.getHistInfo(x,hSlo)
+        #
+        # plt.plot(x, hSlo, c='b', ls='steps', label="m2s238 ch %d" % ch)
+        # plt.axvline(pct1[2], c='r', label='90%% value: %.1f' % pct1[2])
+        # plt.legend()
+        #
+        # plt.savefig("../plots/slo-ds%d-ch%d-m2s238.png" % (ds, ch))
+
+
+    # -- 5. difference between m2s238 and pk238 90pct cut values
+    # for ch in chList[:]:
+    #
+    #     # compare the 10-200 max w. the m2s238 max from 10-200
+    #
+    #     maxLo = fSloX[np.argmax(fSloSpec[ch][0])] # 0-10
+    #     maxHi = fSloX[np.argmax(fSloSpec[ch][1])] # 10-200
+    #     maxPk = fSloX[np.argmax(fSloSpec[ch][2])] # 236-240
+    #
+    #     idx = np.where(effChan==ch)
+    #     tmpS = effSlo[idx]
+    #     yLo, yHi, ypb = -50, 400, 1
+    #     x, hSlo = wl.GetHisto(tmpS, yLo, yHi, ypb)
+    #     maxEff = x[np.argmax(hSlo)]
+    #
+    #     max1, avg1, std1, pct1, wid1 = wl.getHistInfo(x,hSlo)
+    #     pct90 = pct1[2]
+    #
+    #     max2, avg2, std2, pct2, wid2 = wl.getHistInfo(fSloX,fSloSpec[ch][2])
+    #     pk90 = pct2[2]
+    #
+    #     diff = pk90-pct90
+    #
+    #     # print(maxLo, maxHi, maxPk, maxEff, "m2s238 90",pct90, "pk90",pk90,"diff",diff)
+    #
+    #     print(ch,diff)
+
+
+    # -- 6. stability of fitSlo vs run number (calIdx)
+    # and plot as a function of run number
+    # gonna also need to pull in HV changes from the DB
+
+    # sweep over values
+    # for ch in chList:
+    #     fs10, fs200 = [], []
+    #     for ci in range(len(sloSpec)):
+    #         fs10.append(fSloX[np.argmax(sloSpec[ci][ch][0])])
+    #         fs200.append(fSloX[np.argmax(sloSpec[ci][ch][1])])
+    #     fs10, fs200 = np.asarray(fs10), np.asarray(fs200)
+    #     print("%d  fs10 %.2f pm %.2f  fs200 %.2f pm %.2f" % (ch, np.mean(fs10), np.std(fs10), np.mean(fs200), np.std(fs200)))
+
+    # plot vals by calIdx
+    # nCal = np.arange(len(sloSpec))
+    cmap = plt.cm.get_cmap('hsv', len(chList)+1)
+    plt.cla()
+
+    for i, ch in enumerate(chList[:]):
+
+        fs200, x200 = [], []
+        for ci in range(len(sloSpec)):
+
+            # diagnostic spectrum
+            # if ch==594:
+            #     print(ci, fs200[-1])
+            #     if fs200[-1] < 0:
+            #         plt.cla()
+            #         plt.plot(fSloX, sloSpec[ci][ch][1], ls='steps')
+            #         plt.xlabel("fitSlo", ha='right', x=1)
+            #         plt.savefig("../plots/slo-ds%d-ch%d.png" % (ds, ch))
+
+            # only save the value if we have a nonzero number of counts
+            spec = sloSpec[ci][ch][1]
+            nCts = np.sum(spec)
+            if nCts < 2: continue
+            fs200.append(fSloX[np.argmax(sloSpec[ci][ch][1])])
+            x200.append(ci)
+
+        # plot the raw value
+        plt.plot(x200, fs200, ".", c=cmap(i))
+        plt.axhline(np.mean(fs200), c=cmap(i), linewidth=0.5, label="ch%d: %.2f" % (ch, np.mean(fs200)))
+        plt.ylim(-50,400)
+
+    plt.xlabel("calIdx", ha='right', x=1)
+    plt.ylabel("fitSlo", ha='right', y=1)
+
+    plt.legend(ncol=3)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-stability-ds%d.png" % (ds))
+
+
+def dumpCutVals():
+
+    # compare to this cut value
+    # slo-ds1-ch608-m2s238: 88.5 NICE, THIS IS LOWER
+
+    ds, ch, mod = 1, 608, 1
+
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+
+    for cIdx in range(cal.GetNCalIdxs(ds,mod)):
+        fsD = dsi.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (ds, cIdx, mod), False, calDB, pars)
+
+        tmpCut = fsD[ch] # [1%,5%,90%,95%,99%] v1 used 90%
+        db90 = tmpCut[2]
+        print(ch, cIdx, db90)
+
 
 
 if __name__=="__main__":
