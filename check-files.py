@@ -360,7 +360,7 @@ def checkLAT():
                 cRuns = cal.GetCalList(key, sub)
                 for run in cRuns:
 
-                    if not (ds==5 and run>=24762): continue
+                    if not (ds==5 and run>=25506): continue
 
                     sList = dsi.getSplitList("%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir, ds, run), run)
                     latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
