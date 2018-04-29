@@ -562,7 +562,7 @@ def getSubRanges():
 
     # loop over datasets
     # for ds in [0,1,2,3,4,"5A","5B","5C",6]:
-    for ds in [1]:
+    for ds in [4]:
         if ds in ["5A","5B","5C"]:
             dsNum = 5
         else:

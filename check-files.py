@@ -360,6 +360,8 @@ def checkLAT():
                 cRuns = cal.GetCalList(key, sub)
                 for run in cRuns:
 
+                    if not (ds==5 and run>=24762): continue
+
                     sList = dsi.getSplitList("%s/splitSkimDS%d_run%d*" % (dsi.calSplitDir, ds, run), run)
                     latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
                     if len(sList) != len(latList):
@@ -394,19 +396,23 @@ def checkLAT():
             print("No entries in file",fname)
             continue
 
-        brSingle, brVector = [], []
+        brSingle, brVector, brNames = [], [], []
         for br in t.GetListOfBranches():
             if "vector" in br.GetClassName():
                 brVector.append(br.GetName())
             else:
                 brSingle.append(br.GetName())
+            brNames.append(br.GetName())
+
+        # make sure a typical LAT branch exists
+        if "fitSlo" not in brNames:
+            print("fitSlo branch not found in:",fname)
 
         if n < 20:
             eList = np.arange(0,n,1)
         else:
             eList = np.arange(0,20,1)
             eList = np.append(eList, np.arange(n-20,n,1))
-
         for i in eList:
             t.GetEntry(i)
 

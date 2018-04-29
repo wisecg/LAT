@@ -121,11 +121,11 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
             # "-p shared",
-            # "-n30", # match nCores for pdsf below
+            "-n10", # match nCores for pdsf below
             "-p long", # doesn't work w/ n30
-            "--mincpus=30",
+            # "--mincpus=30",
             # "-t 12:00:00",
-            "-t 4:00:00",
+            "-t 2:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -145,6 +145,17 @@ def getSBatch(opt, getCores=True, nArr=1):
             "-t 00:10:00"
             # "--qos=regular",
             # "-t 24:00:00",
+        ],
+        "cori-knl": [
+            "--workdir=%s" % (dsi.latSWDir),
+            "--output=%s/logs/cori-%%j.txt" % (dsi.latSWDir),
+            "--image=wisecg/mjsw:v2",
+            "-C knl",
+            "-N 1",
+            # "--qos=debug",
+            # "-t 00:10:00"
+            "--qos=regular",
+            "-t 2:00:00",
         ],
         "edison": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -192,6 +203,7 @@ def getSBatch(opt, getCores=True, nArr=1):
 
     if getCores:
         if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
+        if "cori-knl" in opt: return sbStr, 270, 280
         if "cori" in opt: return sbStr, 60, 66
         if "edison-shared" in opt: return sbStr, 12, 15
         if "edison" in opt: return sbStr, 48, 52
@@ -269,6 +281,7 @@ def runBatch():
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=99))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT_ds5c/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=11))
     # sh("%s slurm.slr './job-pump.sh jobs/calLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobs/calLAT_ds5c_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 10: file integrity checks
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
@@ -280,7 +293,11 @@ def runBatch():
 
     # EX. 12: run LAT2 scan
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("pdsf-pump"))
-    sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("edison-shared"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("edison-shared"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("cori-knl"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+
+    # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):

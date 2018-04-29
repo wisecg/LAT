@@ -62,6 +62,7 @@ function loadModulesMJD {
   export CC=/usr/common/usg/software/gcc/4.8.2/bin/gcc
   export CXX=/usr/common/usg/software/gcc/4.8.2/bin/g++
   module load python/3.4.3
+  # module load python/3.6-anaconda-4.4
   module load gcc/4.8.2
   module load ImageMagick
   module load curl
@@ -107,16 +108,32 @@ if [ "$RUNCRON" = 1 ]; then
   sourceEnvMJD
 fi
 
-# we're on cori
-if [ "$NERSC_HOST" = "cori" ] && [ -z "$SLURM_JOBID" ]; then
-  module load python/3.5-anaconda
+# we're on cori (interactive node)
+if [ "$NERSC_HOST" = "cori" ] && [[ $- == *i* ]] && [ -z "$SLURM_JOB_ID" ]; then
+  module load python/3.6-anaconda-4.4
   sourceEnvClint
   sourceEnvMJD
 fi
 
-# we're on edison
-if [ "$NERSC_HOST" = "edison" ] && [ -z "$SLURM_JOBID" ]; then
-  module load python/3.5-anaconda
+# we're on cori (slurm job)
+if [ "$NERSC_HOST" = "cori" ] && [ -n "$SLURM_JOBID" ]; then
+  # module load python/3.5-anaconda
+  module load python/3.6-anaconda-4.4
+  sourceEnvClint
+  sourceEnvMJD
+fi
+
+# we're on edison (interactive node)
+if [ "$NERSC_HOST" = "edison" ] && [[ $- == *i* ]] && [ -z "$SLURM_JOB_ID" ]; then
+  module load python/3.6-anaconda-4.4
+  sourceEnvClint
+  sourceEnvMJD
+fi
+
+# we're on edison (slurm job)
+if [ "$NERSC_HOST" = "edison" ] && [ -n "$SLURM_JOBID" ]; then
+  # module load python/3.5-anaconda
+  module load python/3.6-anaconda-4.4
   sourceEnvClint
   sourceEnvMJD
 fi

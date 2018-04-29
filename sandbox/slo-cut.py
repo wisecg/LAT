@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+""" slo-cut.py
+Sandbox code to set the fitSlo cut
+and produce verification plots.
+"""
 import sys, imp, os
 import tinydb as db
 import numpy as np
@@ -23,8 +27,10 @@ def main():
     # testStats()
     # plotStats()
     # getCalRunTime()
-    plotEff()
+    # plotEff()
     # dumpCutVals()
+    # checkWidth()
+    getShift()
 
 
 def testStats():
@@ -273,6 +279,85 @@ def plotStats():
     plt.savefig("../plots/slo-chans-test.png")
 
 
+def getStats():
+    # calculate mu, sig of fitSlo for each channel in each slice
+
+    makePlots = False
+
+    # fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds1_m1_c1.npz"
+    fname = "/global/projecta/projectdirs/majorana/users/wisecg/cal/eff/eff_ds0_m1_c16.npz"
+    key = fname.split('/')[-1].split(".")[0]
+    tmp = key.split("_")
+    ds, mod, cIdx = tmp[1], tmp[2], tmp[3]
+    print("Scanning:",key)
+
+    f1 = np.load(fname)
+    fSloSpec = f1['arr_9'].item()
+    x = f1['arr_10']
+
+    fig = plt.figure(figsize=(18,6))
+    p1 = plt.subplot(131)
+    p2 = plt.subplot(132)
+    p3 = plt.subplot(133)
+
+    chList = sorted(list(fSloSpec.keys()))
+    for ch in chList:
+
+        h1 = fSloSpec[ch][0] # 0-10 keV
+        h2 = fSloSpec[ch][1] # 10-200 keV
+        h3 = fSloSpec[ch][2] # 236-240 keV
+
+        max1, avg1, std1, pct1, wid1 = wl.getHistInfo(x,h1)
+        max2, avg2, std2, pct2, wid2 = wl.getHistInfo(x,h2)
+        max3, avg3, std3, pct3, wid3 = wl.getHistInfo(x,h3)
+
+        print("channel",ch)
+        print("0-10:    %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max1, avg1, std1, wid1), wl.niceList(pct1))
+        print("10-200:  %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max2, avg2, std2, wid2), wl.niceList(pct2))
+        print("236-240: %-6.2f  %-6.2f  %-6.2f  %-6.2f " % (max3, avg3, std3, wid3), wl.niceList(pct3))
+
+        if not makePlots: continue
+
+        # save a diagnostic plot
+        p1.cla()
+        p1.plot(x, h1,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p1.plot(np.nan,np.nan,'.w',label='0-10 keV')
+        p1.plot(np.nan,np.nan,'.w',label='max %.2f' % max1)
+        p1.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg1)
+        p1.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid1)
+        p1.axvline(pct1[0], c='g', label='pct5 %.2f' % pct1[0])
+        p1.axvline(pct1[2], c='r', label='pct90 %.2f' % pct1[2])
+        p1.set_xlabel("fitSlo",ha='right',x=1)
+        p1.legend(loc=2, fontsize=12)
+
+        p2.cla()
+        p2.plot(x, h2,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p2.plot(np.nan,np.nan,'.w',label='10-200 keV')
+        p2.plot(np.nan,np.nan,'.w',label='max %.2f' % max2)
+        p2.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg2)
+        p2.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid2)
+        p2.axvline(pct2[0], c='g', label='pct5 %.2f' % pct2[0])
+        p2.axvline(pct2[2], c='r', label='pct90 %.2f' % pct2[2])
+        p2.set_xlabel("fitSlo",ha='right',x=1)
+        p2.legend(loc=2, fontsize=12)
+
+        p3.cla()
+        p3.plot(x, h3,'b',lw=2.,ls='steps',label='ch %d' % ch)
+        p3.plot(np.nan,np.nan,'.w',label='236-240 keV')
+        p3.plot(np.nan,np.nan,'.w',label='max %.2f' % max3)
+        p3.plot(np.nan,np.nan,'.w',label='avg %.2f' % avg3)
+        p3.plot(np.nan,np.nan,'.w',label='wid %.2f' % wid3)
+        p3.axvline(pct3[0], c='g', label='pct5 %.2f' % pct3[0])
+        p3.axvline(pct3[2], c='r', label='pct90 %.2f' % pct3[2])
+        p3.set_xlabel("fitSlo",ha='right',x=1)
+        p3.legend(loc=2, fontsize=12)
+
+        plt.tight_layout()
+        plt.savefig('./plots/lat2-diag-ch%d.png' % ch)
+
+        # return
+
+
 def getCalRunTime():
     """
     Need to know the total run time of all cal runs in each DS.
@@ -343,7 +428,7 @@ def plotEff():
 
     # load efficiency files
     fList = []
-    for ds in [5]:
+    for ds in [4]:
         print("Loading DS-%d" % ds)
         for key in cal.GetKeys(ds):
             mod = -1
@@ -558,36 +643,75 @@ def plotEff():
     cmap = plt.cm.get_cmap('hsv', len(chList)+1)
     plt.cla()
 
+    fig2 = plt.figure(figsize=(10,8))
+    p1 = plt.subplot(211)
+    p2 = plt.subplot(212)
+
     for i, ch in enumerate(chList[:]):
 
-        fs200, x200 = [], []
-        for ci in range(len(sloSpec)):
+        # TODO: compute avg num counts,
+        # then throw a warning if the avg counts are low
 
-            # diagnostic spectrum
-            # if ch==594:
-            #     print(ci, fs200[-1])
-            #     if fs200[-1] < 0:
-            #         plt.cla()
-            #         plt.plot(fSloX, sloSpec[ci][ch][1], ls='steps')
-            #         plt.xlabel("fitSlo", ha='right', x=1)
-            #         plt.savefig("../plots/slo-ds%d-ch%d.png" % (ds, ch))
+        fs200, x200, fsm2s238 = [], [], []
+        for ci in range(len(sloSpec)):
 
             # only save the value if we have a nonzero number of counts
             spec = sloSpec[ci][ch][1]
             nCts = np.sum(spec)
             if nCts < 2: continue
+            # print(ds,ch,ci,nCts)
+
+            # get the width
+            max, avg, std, pct, wid = wl.getHistInfo(fSloX, sloSpec[ci][ch][1])
+
+            # TODO: smarter way to get the width
+            # like a FWHM.  find the max, then find the point of 50% reduction on either side
+
             fs200.append(fSloX[np.argmax(sloSpec[ci][ch][1])])
             x200.append(ci)
 
-        # plot the raw value
-        plt.plot(x200, fs200, ".", c=cmap(i))
-        plt.axhline(np.mean(fs200), c=cmap(i), linewidth=0.5, label="ch%d: %.2f" % (ch, np.mean(fs200)))
-        plt.ylim(-50,400)
+            # get m2s238 events from this calIdx and find the typical value
+            idx = np.where(effChan==ch)
+            tmpS = effSlo[idx]
+            tmpC = effChan[idx]
+            tmpR = effRun[idx]
+            thisFS = []
+            for j in range(len(tmpR)):
+                key = "ds%d_m1" % ds if ch < 1000 else "ds%d_m2" % ds
+                if ci == cal.GetCalIdx(key,tmpR[j]):
+                    thisFS.append(tmpS[j])
+            nEff = len(thisFS)
 
-    plt.xlabel("calIdx", ha='right', x=1)
-    plt.ylabel("fitSlo", ha='right', y=1)
+            yLo, yHi, ypb = -50, 400, 1
+            x, hSlo = wl.GetHisto(thisFS, yLo, yHi, ypb)
+            maxEff = np.nan if len(thisFS)==0 else x[np.argmax(hSlo)]
 
-    plt.legend(ncol=3)
+            # NOTE: the diff is NEVER more than 1.
+            print("%d  %-3d  nTot %-8d  nEff %-5d  wid %-4.0f  fs200 %-4.0f  fsEff %-4.0f  diff %.0f" % (ch, ci, nCts, nEff, wid, fs200[-1], maxEff, fs200[-1]-maxEff))
+
+            fsm2s238.append(maxEff)
+
+
+        # plot the raw value (stability)
+        p1.plot(x200, fs200, ".", c=cmap(i))
+        p1.axhline(np.mean(fs200), c=cmap(i), linewidth=0.5, label="ch%d: %.2f" % (ch, np.mean(fs200)))
+        p1.set_ylim(-50,400)
+
+        # plot the difference from the average (deviation)
+        fAvg = np.mean(fs200)
+        fDev = [(f-fAvg) for f in fs200]
+        p2.plot(x200, fDev, ".", c=cmap(i), label="ch%d  fAvg %.0f" % (ch, fAvg))
+
+        # plot the difference between the raw value and the m2s238 value
+        # man, i shoulda just added the calIdx of the m2s238 hits
+
+
+
+    p1.set_xlabel("calIdx", ha='right', x=1)
+    p1.set_ylabel("fitSlo", ha='right', y=1)
+    if ds!=5: p1.legend(ncol=3)
+    else: p1.legend(ncol=6, fontsize=8)
+    p2.set_ylabel("fitSlo Deviation from avg", ha='right', y=1)
     plt.tight_layout()
     plt.savefig("../plots/slo-stability-ds%d.png" % (ds))
 
@@ -608,6 +732,278 @@ def dumpCutVals():
         tmpCut = fsD[ch] # [1%,5%,90%,95%,99%] v1 used 90%
         db90 = tmpCut[2]
         print(ch, cIdx, db90)
+
+
+def checkWidth():
+
+    # arrays to plot m2s238 data
+    effHitE = []  # [hitE1, hitE2 , ...] (remove sub-list of input format)
+    effChan = []  # [chan1, chan2 , ...]
+    effSlo = []   # [fSlo1, fSlo2, ...]
+    effRise = []  # [rise1, rise2, ...]
+    effRun = []   # [run1, run1, ...]
+    sloSpec = [] # array of fitSlo histo dicts (i should have used pandas probably)
+
+    # load efficiency files
+    fList = []
+    for ds in [4]:
+        print("Loading DS-%d" % ds)
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                eFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+                if os.path.isfile(eFile):
+                    fList.append([ds,cIdx,mod,eFile])
+                else:
+                    print("File not found:",eFile)
+                    continue
+    for ds,ci,mod,ef in fList:
+        # print(ds,ci,mod,ef)
+        f = np.load(ef)
+        evtIdx = f['arr_0']          # m2s238 event [[run,iE] , ...]
+        evtSumET = f['arr_1']        # m2s238 event [sumET , ...]
+        evtHitE = f['arr_2']         # m2s238 event [[hitE1, hitE2] , ...]
+        evtChans = f['arr_3']        # m2s238 event [[chan1, chan2] , ...]
+        thrCal = f['arr_4'].item()   # {ch : [run,thrM,thrS,thrK] for ch in goodList(ds)}
+        thrFinal = f['arr_5'].item() # {ch : [thrAvg, thrDev] for ch in goodList(ds)}
+        evtCtr = f['arr_6']          # num m2s238 evts
+        totCtr = f['arr_7']          # num total evts
+        runTime = f['arr_8']         # cal run time
+        fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
+        fSloX = f['arr_10']          # xVals for fitSlo histos
+        evtSlo = f['arr_11']         # m2s238 event [[fSlo1, fSlo2], ...]
+        evtRise = f['arr_12']        # m2s238 event [[rise1, rise2], ...]
+
+        sloSpec.append(fSloSpec)
+
+        # remove the hit pair
+        for i in range(len(evtHitE)):
+            effHitE.extend(evtHitE[i])
+            effChan.extend(evtChans[i])
+            effSlo.extend(evtSlo[i])
+            effRise.extend(evtRise[i])
+            effRun.extend([evtIdx[i][0],evtIdx[i][0]])
+
+    effHitE = np.asarray(effHitE)
+    effChan = np.asarray(effChan)
+    effSlo = np.asarray(effSlo)
+    effRise = np.asarray(effRise)
+    effRun = np.asarray(effRun)
+    chList = det.getGoodChanList(ds)
+
+    for ci in range(len(sloSpec)):
+        for ch in chList:
+
+            # Get mode (maximum of hist) and 50% width of the 10-200 hits.
+            # This is what we use to shift m2s238.
+
+            h200 = sloSpec[ci][ch][1]
+            if np.sum(h200)==0:
+                print("ci %d  ch %d  no counts" % (ci, ch))
+            h200Bin = np.argmax(h200)
+            h200Max = fSloX[h200Bin]
+            h200BinLo, h200BinHi = -1, -1
+            for j in range(len(h200)):
+                if h200BinLo==-1 and h200[j] >= h200[h200Bin]/2.:
+                    h200BinLo = j
+                if j > h200Bin and h200[j] <= h200[h200Bin]/2.:
+                    h200BinHi = j
+                    break
+            h200Lo, h200Hi = fSloX[h200BinLo], fSloX[h200BinHi]
+            h200Wid = h200Hi - h200Lo
+
+            # get the maximum of the m2s238 hits in this range (limited stats)
+            idx = np.where(effChan==ch)
+            tmpS = effSlo[idx]
+            tmpC = effChan[idx]
+            tmpR = effRun[idx]
+            thisFS = []
+            for j in range(len(tmpR)):
+                key = "ds%d_m1" % ds if ch < 1000 else "ds%d_m2" % ds
+                if ci == cal.GetCalIdx(key,tmpR[j]):
+                    thisFS.append(tmpS[j])
+            nEff = len(thisFS)
+            yLo, yHi, ypb = -50, 400, 1
+            x, hSlo = wl.GetHisto(thisFS, yLo, yHi, ypb)
+            effMax = np.nan if len(thisFS)==0 else x[np.argmax(hSlo)]
+
+            modeDiff = h200Max - effMax
+
+            print("%d  %-4d  %-4d  %-4d  wid %d  h200-eff %.1f" % (ch, h200Lo, h200Max, h200Hi, h200Wid, modeDiff))
+
+            # plot the fitSlo 10-200 distibution, mode, and the width
+            # fig = plt.figure()
+            # plt.plot(fSloX, h200, ls='steps', c='b')
+            # plt.xlim(50,120)
+            # plt.axvline(h200Max-0.5,c='g')
+            # plt.axvline(h200Lo-0.5, c='r')
+            # plt.axvline(h200Hi-0.5, c='r')
+            # plt.axhline(h200[h200Bin]/2.)
+            # plt.savefig("../plots/slo-width-ch%d.png" % ch)
+            # return
+
+
+def getShift():
+    # Brian says shifting might introduce systematic error
+    # and I should just throw away the calIdx's that deviate from the mean for the DS.
+    # if i do that, then we lose huge chunks of data.
+
+    # arrays to plot m2s238 data
+    effHitE = []  # [hitE1, hitE2 , ...] (remove sub-list of input format)
+    effChan = []  # [chan1, chan2 , ...]
+    effSlo = []   # [fSlo1, fSlo2, ...]
+    effRise = []  # [rise1, rise2, ...]
+    effRun = []   # [run1, run1, ...]
+    sloSpec = [] # array of fitSlo histo dicts (i should have used pandas probably)
+
+    # load efficiency files
+    fList = []
+    for ds in [1]:
+        print("Loading DS-%d" % ds)
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                eFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+                if os.path.isfile(eFile):
+                    fList.append([ds,cIdx,mod,eFile])
+                else:
+                    print("File not found:",eFile)
+                    continue
+    for ds,ci,mod,ef in fList:
+        # print(ds,ci,mod,ef)
+        f = np.load(ef)
+        evtIdx = f['arr_0']          # m2s238 event [[run,iE] , ...]
+        evtSumET = f['arr_1']        # m2s238 event [sumET , ...]
+        evtHitE = f['arr_2']         # m2s238 event [[hitE1, hitE2] , ...]
+        evtChans = f['arr_3']        # m2s238 event [[chan1, chan2] , ...]
+        thrCal = f['arr_4'].item()   # {ch : [run,thrM,thrS,thrK] for ch in goodList(ds)}
+        thrFinal = f['arr_5'].item() # {ch : [thrAvg, thrDev] for ch in goodList(ds)}
+        evtCtr = f['arr_6']          # num m2s238 evts
+        totCtr = f['arr_7']          # num total evts
+        runTime = f['arr_8']         # cal run time
+        fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
+        fSloX = f['arr_10']          # xVals for fitSlo histos
+        evtSlo = f['arr_11']         # m2s238 event [[fSlo1, fSlo2], ...]
+        evtRise = f['arr_12']        # m2s238 event [[rise1, rise2], ...]
+
+        sloSpec.append(fSloSpec)
+
+        # remove the hit pair
+        for i in range(len(evtHitE)):
+            effHitE.extend(evtHitE[i])
+            effChan.extend(evtChans[i])
+            effSlo.extend(evtSlo[i])
+            effRise.extend(evtRise[i])
+            effRun.extend([evtIdx[i][0],evtIdx[i][0]])
+
+    effHitE = np.asarray(effHitE)
+    effChan = np.asarray(effChan)
+    effSlo = np.asarray(effSlo)
+    effRise = np.asarray(effRise)
+    effRun = np.asarray(effRun)
+
+    chList = det.getGoodChanList(ds)
+
+    # for every calIdx:
+    # get the avg value of fs200 and the width for every channel
+    # fsAvg = {ch : [avg, width]}
+    # then shift the m2s238 hits for that channel by the avg value
+    # fsShift = []
+    # then at the end of the DS, compute the 90% value for the shifted fitSlo of every channel
+    # then we save into the DB the 90% value and the mean, for every calIdx
+
+    # this stores the shifted m2s238 spectra for each channel in the DS
+    yLo, yHi, ypb = -50, 50, 1
+    nby = int((yHi-yLo)/ypb)
+    shiftSpec = {ch:np.zeros(nby+1) for ch in chList}
+
+    shiftDict = {ci:None for ci in range(len(sloSpec))}
+
+    for ci in range(len(sloSpec)):
+
+        shiftDict[ci] = {ch:[] for ch in chList}
+
+        for ch in chList:
+
+            # Get mode (maximum) and 50% width of the 10-200 hits.
+            # This is what we use to shift m2s238.
+            h200 = sloSpec[ci][ch][1]
+            if np.sum(h200)==0:
+                print("ci %d  ch %d  no counts" % (ci, ch))
+            fsBin = np.argmax(h200)
+            fsMax = fSloX[fsBin]
+            fsBinLo, fsBinHi = -1, -1
+            for j in range(len(h200)):
+                if fsBinLo==-1 and h200[j] >= h200[fsBin]/2.:
+                    fsBinLo = j
+                if j > fsBin and h200[j] <= h200[fsBin]/2.:
+                    fsBinHi = j
+                    break
+            fsLo, fsHi = fSloX[fsBinLo], fSloX[fsBinHi]
+            fsWid = fsHi - fsLo
+
+            # save the max and width of h200
+            shiftDict[ci][ch].extend([fsMax, fsWid])
+
+            # now histogram the shifted m2s238 vals
+            idx = np.where(effChan==ch)
+            tmpS = effSlo[idx]
+            tmpC = effChan[idx]
+            tmpR = effRun[idx]
+            thisFS = []
+            for j in range(len(tmpR)):
+                key = "ds%d_m1" % ds if ch < 1000 else "ds%d_m2" % ds
+                if ci == cal.GetCalIdx(key,tmpR[j]):
+                    thisFS.append(tmpS[j] - fsMax) # ** apply the shift **
+            if len(thisFS)==0: continue
+            x, hSlo = wl.GetHisto(thisFS, yLo, yHi, ypb)
+
+            # add to the histogram for this ch in this DS
+            shiftSpec[ch] = np.add(shiftSpec[ch], hSlo)
+
+            # print("%d  %d  %-4d  %-4d  %-4d  wid %d  n238 %d" % (ci, ch, fsLo, fsMax, fsHi, fsWid, np.sum(shiftSpec[ch])))
+
+    # now plot the shifted m2s238 spectra (could also plot against the unshifted)
+    for ch in shiftSpec:
+
+        # find the 90% cut value (shifted)
+        max1, avg1, std1, pct1, wid1 = wl.getHistInfo(x,shiftSpec[ch])
+        pct90 = pct1[2]
+
+        # add it to shiftDict
+        for ci in shiftDict:
+            shiftDict[ci][ch].extend([pct90])
+
+        plt.cla()
+        plt.plot(x, shiftSpec[ch], c='b', ls='steps', label='ds %d ch %d' % (ds,ch))
+        plt.axvline(pct90, c='r', label='90pct cut: %d' % (pct90))
+        plt.xlabel("fitSlo", ha='right', x=1)
+        plt.legend(loc=1)
+        plt.savefig("../plots/slo-m2s238shift-ds%d-ch%d.png" % (ds,ch))
+        # return
+
+    # now print all the shifted values and compare to the previous DB value
+    calDB = db.TinyDB('../calDB.json')
+    pars = db.Query()
+
+    for ci in shiftDict:
+        print("cIdx",ci)
+
+        for ch in shiftDict[ci]:
+
+            v2Cut90 = shiftDict[ci][ch][0] + shiftDict[ci][ch][2] # fs max + m2s238 90% val
+
+            mod = 1 if ch < 1000 else 2
+            fsD = dsi.getDBRecord("fitSlo_ds%d_idx%d_m%d_Peak" % (ds, ci, mod), False, calDB, pars)
+            if ch in fsD.keys():
+                v1Cut90 = fsD[ch][2] # [1%,5%,90%,95%,99%] v1 used 90%
+                print("ds %d  cIdx %d  ch%d  v1Cut90 %-6.1f  v2Cut90 %-6.1f  diff %.1f" % (ds, ci, ch, v1Cut90, v2Cut90, v2Cut90-v1Cut90))
+            else:
+                print("ds %d  cIdx %d  ch%d  v1Cut90 %-6.1f  v2Cut90 %-6.1f  diff %.1f" % (ds, ci, ch, np.nan, v2Cut90, np.nan))
 
 
 

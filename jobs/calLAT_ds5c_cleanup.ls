@@ -1,0 +1,3 @@
+./lat.py -b -f 5 24762 -p /global/projecta/projectdirs/majorana/users/wisecg/cal/split/splitSkimDS5_run24762.root /global/projecta/projectdirs/majorana/users/wisecg/cal/lat/latSkimDS5_run24762_0.root >& ./logs/lat-ds5-run24762-0.txt
+./lat.py -b -f 5 25487 -p /global/projecta/projectdirs/majorana/users/wisecg/cal/split/splitSkimDS5_run25487.root /global/projecta/projectdirs/majorana/users/wisecg/cal/lat/latSkimDS5_run25487_0.root >& ./logs/lat-ds5-run25487-0.txt
+./lat.py -b -f 5 25506 -p /global/projecta/projectdirs/majorana/users/wisecg/cal/split/splitSkimDS5_run25506.root /global/projecta/projectdirs/majorana/users/wisecg/cal/lat/latSkimDS5_run25506_0.root >& ./logs/lat-ds5-run25506-0.txt

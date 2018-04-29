@@ -186,6 +186,8 @@ class CalInfo:
         for key in calKeys:
             if "m%d" % module in key:
                 return self.GetIdxs(key)
+        if module==-1:
+            return self.GetIdxs(key)
         return 0
 
     def GetCalList(self,key,idx,runLimit=None):
