@@ -28,6 +28,8 @@ skipDS6Cal = True # ignore DS6 cal runs until they're processed
 
 def main(argv):
 
+    global writeDB
+    writeDB = False
     ds, cIdx, mod = None, None, None
 
     for i, opt in enumerate(argv):
@@ -40,6 +42,8 @@ def main(argv):
             cIdx = int(argv[i+2])
         if opt=="-m":
             mod = int(argv[i+1])
+        if opt=="-db":
+            writeDB = True
 
         # wrapper function for scanRuns
         if opt=="-load":
@@ -283,13 +287,6 @@ def loadScanData(key):
         if not os.path.isfile(eFile):
             print("File not found:",eFile)
             continue
-
-        # TODO: remove this debug block
-        tmpKey = "%s_c%d" % (key, ci)
-        if tmpKey in ["ds0_m1_c4", "ds5_m1_c13", "ds5_m2_c11"]:
-            continue
-        print(eFile)
-
         f = np.load(eFile)
         evtIdx = f['arr_0']          # m2s238 event [[run,iE,cIdx] , ...]
         evtSumET = f['arr_1']        # m2s238 event [sumET , ...]
@@ -326,7 +323,8 @@ def loadScanData(key):
 def setSloCut(ds):
     """ {"key":"fitSlo_[calKey]_idx[ci]_m2s238","value":{ch:[] for ch in chList}} """
 
-    writeDB = False
+    if writeDB:
+        print("Writing results to DB ...")
     calDB = db.TinyDB('%s/calDB.json' % (dsi.latSWDir))
     pars = db.Query()
 
@@ -343,8 +341,6 @@ def setSloCut(ds):
             chList = [ch for ch in chList if ch > 1000]
 
         eff = loadScanData(key)
-        continue
-
         nCal = cal.GetNCalIdxs(ds,mod)
 
         shiftDict = {ci:None for ci in range(nCal)}
@@ -364,7 +360,7 @@ def setSloCut(ds):
 
                 if np.sum(h1)==0:
                     print("ci %d  ch %d  no counts" % (ci, ch))
-                    dbVals[ch] = None
+                    shiftDict[ci][ch].extend([-1,-1,-1])
                     continue
 
                 # get mode (maximum) of the 10-200 hits
@@ -414,12 +410,12 @@ def setSloCut(ds):
                 v90 = shiftDict[ci][ch][2] # m2s238 90% val
                 cut90 = shiftDict[ci][ch][0] + shiftDict[ci][ch][2]
                 # print("ds %d  cIdx %d  ch%d  max %-4d  v90 %-3d  cut90 %d" % (ds, ci, ch, max, v90, cut90))
-                dbVals[ch] = [cut90, max, v90]
+                dbVals[ch] = [cut90, max, v90] # watch out for bad values < 0
 
             # final review
             print(dbKey)
-            for key in dbVals:
-                print(key, dbVals[key])
+            # for key in dbVals:
+                # print(key, dbVals[key])
 
             # fill the DB
             if writeDB:

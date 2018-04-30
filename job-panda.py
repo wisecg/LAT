@@ -218,6 +218,7 @@ def runBatch():
     http://www.nersc.gov/users/accounts/user-accounts/how-usage-is-charged/
 
     Did you make sure your job lists have a newline at the end ??
+    Did you check that someone hasn't altered your sbatch settings ??
     """
     # EX. 1: Run a single job under chos
     # cmd = "./skim_mjd_data -f 22513 -l -t 0.7 %s/skim" % (dsi.specialDir)
@@ -281,7 +282,7 @@ def runBatch():
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=99))
     # sh("%s slurm.slr 'eval ./job-pump.sh jobs/calLAT_ds5c/calLAT_${SLURM_ARRAY_TASK_ID}.ls python3 %d %d'" % getSBatch("edison-arr",nArr=11))
     # sh("%s slurm.slr './job-pump.sh jobs/calLAT_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
-    sh("%s slurm.slr './job-pump.sh jobs/calLAT_ds5c_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/calLAT_ds5c_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 10: file integrity checks
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
@@ -298,6 +299,7 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("edison-shared"))
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
