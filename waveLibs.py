@@ -17,6 +17,13 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
+def threshFunc(x,mu,sig,amp):
+    from scipy.special import erf
+    return amp*0.5*(1 + erf( (x - mu)/(sig*np.sqrt(2) ) ))
+    # from scipy.special import expit
+    # return expit((x-mu)/sig)
+
+
 def getHistInfo(x,h):
     """ Computes max, mean, width, percentiles of a numpy
     array based histogram , w/ x values 'x' and counts 'h'. """
@@ -322,16 +329,21 @@ def gauss_function(x, a, x0, sigma):
 
 
 def evalXGaus(x,mu,sig,tau):
-    """ Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
-        Negative tau: Regular WF, high tail
-        Positive tau: Backwards WF, low tail
+    """ Updated with correct limit, 1 May 2018.  (Correct version in LAT already.)
+    Ported from GAT/BaseClasses/GATPeakShapeUtil.cc
+    Negative tau: Regular WF, high tail
+    Positive tau: Backwards WF, low tail
     """
     tmp = (x-mu + sig**2./2./tau)/tau
-    if all(tmp < limit):
+
+    # np.exp of this is 1.7964120280206387e+308, the largest python float value: sys.float_info.max
+    fLimit = 709.782
+
+    if all(tmp < fLimit):
         return np.exp(tmp)/2./np.fabs(tau) * sp.erfc((tau*(x-mu)/sig + sig)/np.sqrt(2.)/np.fabs(tau))
     else:
-        print("Exceeded limit ...")
-        # Here, exp returns NaN (in C++).  So use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
+        # print("Exceeded limit ...")
+        # Use an approx. derived from the asymptotic expansion for erfc, listed on wikipedia.
         den = 1./(sig + tau*(x-mu)/sig)
         return sig * evalGaus(x,mu,sig) * den * (1.-tau**2. * den**2.)
 

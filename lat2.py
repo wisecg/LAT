@@ -10,6 +10,8 @@ v1. 17 Apr 2018
 import sys, os, time
 import numpy as np
 import tinydb as db
+from statsmodels.stats import proportion
+from scipy.optimize import curve_fit
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -57,6 +59,8 @@ def main(argv):
         # set fitSlo cut for a ds
         if opt=="-fs":
             setSloCut(ds)
+
+    getCombinedEff()
 
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
@@ -320,8 +324,125 @@ def loadScanData(key):
     return eff
 
 
+def getCombinedEff():
+    """ Identical to sandbox/slo-cut.py::getCombinedEff, except it doesn't make plots.
+        Goes by CPD instead of channel number, since CPD never changes through the DS's.
+    """
+    detList = det.allDets
+    detIDs = det.allDetIDs
+
+    yLo, yHi, ypb = -200, 400, 1
+    nby = int((yHi-yLo)/ypb)
+    shiftSpec = {cpd:np.zeros(nby+1) for cpd in detList} # these are the 10-200 hits (unlike the function above)
+    shiftVals = {} # this stores the 10-200 fitSlo vals
+    hitE = {cpd:[] for cpd in detList}
+    fSlo = {cpd:[] for cpd in detList}
+
+    # loop over scanRuns output from ALL DS's
+    for ds in [0,1,2,3,4,5]:
+    # for ds in [1]:
+        for key in cal.GetKeys(ds):
+
+            # get channels in this DS and map back to CPD
+            chList = det.getGoodChanList(ds)
+            mod = -1
+            if "m1" in key:
+                mod = 1
+                chList = [ch for ch in chList if ch < 1000]
+            if "m2" in key:
+                mod = 2
+                chList = [ch for ch in chList if ch > 1000]
+            cpdList = [det.getChanCPD(ds,ch) for ch in chList]
+            chMap = {det.getChanCPD(ds,ch):ch for ch in chList}
+
+            eff = loadScanData(key)
+            nCal = cal.GetNCalIdxs(ds,mod)
+            shiftVals[key] = {ci:None for ci in range(nCal)}
+
+            # loop over calIdx's
+            for ci in range(nCal):
+
+                # save the fs shift value for each cpd/ch in each calIdx, and fill the hit lists for plotting
+                shiftVals[key][ci] = {cpd:None for cpd in cpdList}
+
+                for cpd in cpdList:
+
+                    # load fitSlo hist of all cal hits in this channel 10-200 keV
+                    ch = chMap[cpd]
+                    h1 = eff["spec"][ci][ch][1]
+                    x1 = eff["specX"]
+                    shiftSpec[cpd] = np.add(shiftSpec[cpd], h1)
+                    if np.sum(h1)==0:
+                        # print("ci %d  cpd %d  no counts" % (ci, cpd))
+                        shiftVals[key][ci][cpd] = -1
+                        continue
+
+                    # get mode (maximum) of the 10-200 hits and save it
+                    fMax = x1[np.argmax(h1)]
+                    shiftVals[key][ci][cpd] = fMax
+
+                    # fill the hit lists
+                    idx = np.where((eff["cIdx"]==ci) & (eff["chan"]==ch))
+                    fSlo[cpd].extend([f - fMax for f in eff["fSlo"][idx]])
+                    hitE[cpd].extend([e for e in eff["hitE"][idx]])
+
+    print("CPD  amp  sig   e50%  e1keV  n10/bin")
+
+    for cpd in detList:
+        # if cpd!='114': continue
+
+        xLo, xHi, xpb = 0, 250, 1
+        nbx = int((xHi-xLo)/xpb)
+        fLo, fHi, fpb = -50, 50, 1
+        nby = int((fHi-fLo)/fpb)
+
+        # plot fitSlo 1D, calculate the 90% value
+        x, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
+        if np.sum(hSlo)==0:
+            print(cpd)
+            continue
+        max, avg, std, pct, wid = wl.getHistInfo(x,hSlo)
+        v90 = pct[2]
+
+        # zoom on low-E region & fit erf
+        hitPass, hitFail = [], []
+        for i in range(len(hitE[cpd])):
+            if fSlo[cpd][i] <= v90: hitPass.append(hitE[cpd][i])
+            else: hitFail.append(hitE[cpd][i])
+
+        xLo, xHi, xpb = 0, 30, 0.5
+        x, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
+        x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
+        hTot = np.add(hPass, hFail)
+
+        idx = np.where((hTot > 0) & (hPass > 0))
+        sloEff = hPass[idx] / hTot[idx]
+        nPad = len(hPass)-len(hPass[idx])
+        sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+        ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
+        ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+        ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+
+        idx = np.where(x > 0.5)
+        bnd = (0,[np.inf,np.inf,1])
+        popt,pcov = curve_fit(wl.threshFunc, x[idx], sloEff[idx], bounds=bnd)
+        perr = np.sqrt(np.diag(pcov))
+        mu, sig, amp = popt
+
+        hitPass = np.asarray(hitPass)
+        nBin = len(hitPass[np.where(hitPass < 10)])/((10/xpb))
+        eff1 = wl.threshFunc(1.,*popt)
+
+        # identify the cutoff point where the erf is outside the error bar
+
+        print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
+
+
 def setSloCut(ds):
-    """ {"key":"fitSlo_[calKey]_idx[ci]_m2s238","value":{ch:[] for ch in chList}} """
+    """ Set slow pulse cut for each detector in each DS.
+    Current method uses the combined m2s238 events from ALL datasets.
+    {"key":"fitSlo_[calKey]_idx[ci]_m2s238","value":{ch:[] for ch in chList}}
+    """
 
     if writeDB:
         print("Writing results to DB ...")

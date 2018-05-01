@@ -15,6 +15,7 @@ sys.argv.append("-b")
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
+from matplotlib import gridspec
 
 dsi = imp.load_source('dsi', '../dsi.py')
 bkg = dsi.BkgInfo()
@@ -1268,7 +1269,7 @@ def combineDSEff():
     detList = det.allDets
     detIDs = det.allDetIDs
 
-    makePlots = False
+    makePlots = True
 
     yLo, yHi, ypb = -200, 400, 1
     nby = int((yHi-yLo)/ypb)
@@ -1291,8 +1292,8 @@ def combineDSEff():
     xE, hTotNat = wl.GetHisto([], xLo, xHi, xpbE)
 
     # loop over multiple ds's
-    for ds in [0,1,2,3,4,5]:
-    # for ds in [1]:
+    # for ds in [0,1,2,3,4,5]:
+    for ds in [1]:
         for key in cal.GetKeys(ds):
 
             # get channels in this DS and map back to CPD
@@ -1342,13 +1343,17 @@ def combineDSEff():
     ctsAll = {cpd:0 for cpd in detList}
     ctsU10 = {cpd:0 for cpd in detList}
 
-    # now get the cut values and plot the multi-DS spectra
-    fig1 = plt.figure(1, figsize=(20,15)) # 4 plots
+    # figures
+    fig1 = plt.figure(1, figsize=(20,15)) # diagnostic m2s238 plot
     p1 = plt.subplot(221)
     p2 = plt.subplot(222)
     p3 = plt.subplot(223)
     p4 = plt.subplot(224)
-    fig2 = plt.figure(2) # efficiency plot
+    fig2 = plt.figure(2) # hit spectrum plot
+
+    fig3 = plt.figure(3) # efficiency plot
+    p31 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p32 = plt.subplot2grid((3,1), (2,0))
 
     print("CPD  amp  sig   e50%  e1keV  n10/bin")
 
@@ -1366,11 +1371,11 @@ def combineDSEff():
         nby = int((fHi-fLo)/fpb)
 
         # plot fitSlo 1D, calculate the 90% value
-        x, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
+        xS, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
         if np.sum(hSlo)==0:
             print(cpd)
             continue
-        max, avg, std, pct, wid = wl.getHistInfo(x,hSlo)
+        max, avg, std, pct, wid = wl.getHistInfo(xS,hSlo)
         v90 = pct[2]
 
         # zoom on low-E region & fit erf
@@ -1380,8 +1385,8 @@ def combineDSEff():
             else: hitFail.append(hitE[cpd][i])
 
         xLo, xHi, xpb = 0, 30, 0.5
-        x, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
-        x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
+        xE, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
+        xE, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
 
         nTotE += 1
@@ -1404,10 +1409,10 @@ def combineDSEff():
         ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
         ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
         ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-        idx = np.where(x > 1.)
+        idx = np.where(xE > 1.)
         # erf params: mu,sig,amp
         bnd = (0,[np.inf,np.inf,1])
-        popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+        popt,pcov = curve_fit(threshFunc, xE[idx], sloEff[idx], bounds=bnd)
         perr = np.sqrt(np.diag(pcov))
         mu, sig, amp = popt
 
@@ -1418,6 +1423,7 @@ def combineDSEff():
         print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
 
         if makePlots:
+            if cpd!='114': continue
 
             plt.figure(1)
             plt.cla()
@@ -1428,14 +1434,14 @@ def combineDSEff():
             nbx = int((xHi-xLo)/xpb)
             fLo, fHi, fpb = -50, 50, 1
             nby = int((fHi-fLo)/fpb)
-            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[fLo,fhi]], cmap='jet',norm=LogNorm())
+            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[fLo,fHi]], cmap='jet',norm=LogNorm())
             p1.axhline(v90, c='r', lw=3)
             p1.set_xlabel("Energy (keV)", ha='right', x=1)
             p1.set_ylabel("fitSlo", ha='right', y=1)
 
             # plot fs
             p2.cla()
-            p2.plot(hSlo, x, ls='steps', c='k', label='cpd %s' % cpd)
+            p2.plot(hSlo, xS, ls='steps', c='k', label='cpd %s' % cpd)
             p2.axhline(v90, c='r', label="90%% value: %.0f" % v90)
             p2.set_xlabel("fitSlo", ha='right', x=1)
             p2.legend(loc=1)
@@ -1450,9 +1456,9 @@ def combineDSEff():
 
             # zoom in on low-e region and plot pass/fail
             p4.cla()
-            p4.plot(x, hTot, ls='steps', c='k', lw=2., label='all m2s238 hits')
-            p4.plot(x, hPass, ls='steps', c='b', lw=2., label='cpd %s pass' % cpd)
-            p4.plot(x, hFail, ls='steps', c='r', lw=2., label='fail')
+            p4.plot(xE, hTot, ls='steps', c='k', lw=2., label='all m2s238 hits')
+            p4.plot(xE, hPass, ls='steps', c='b', lw=2., label='cpd %s pass' % cpd)
+            p4.plot(xE, hFail, ls='steps', c='r', lw=2., label='fail')
             p4.set_xlabel("Energy (keV)", ha='right', x=1)
             p4.set_ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
             p4.legend(loc=1)
@@ -1461,18 +1467,26 @@ def combineDSEff():
             plt.tight_layout()
             plt.savefig("../plots/slo-%s.png" % cpd)
 
-            # plot efficiency vs energy
-            plt.figure(2)
+            # plot efficiency vs energy.
+            plt.figure(3)
             plt.cla()
-            plt.plot(x, sloEff, '.b', ms=10., label='efficiency cpd %s' % cpd)
-            plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-            xnew = np.arange(0, x[-1], 0.1)
-            plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-            plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
-            plt.xlabel("hitE (keV)", ha='right', x=1)
-            plt.ylabel("Efficiency", ha='right', y=1)
-            plt.legend(loc=4)
+            p31.plot(xE, sloEff, '.b', ms=10., label='efficiency cpd %s' % cpd)
+            p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            xnew = np.arange(0, xE[-1], 0.1)
+            p31.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+            p31.axvline(1.,color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+            p31.set_xlabel("hitE (keV)", ha='right', x=1)
+            p31.set_ylabel("Efficiency", ha='right', y=1)
+            p31.legend(loc=4)
+
+            hResid = threshFunc(xE, *popt) - sloEff
+            p32.plot(xE, hResid, ".b")
+            p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+            plt.tight_layout()
             plt.savefig("../plots/slo-eff-%s.png" % cpd)
+
+            return
 
     if makePlots:
         # plot a bar of all det counts vs counts under 10 keV
@@ -1493,19 +1507,22 @@ def combineDSEff():
         plt.legend(loc=1)
         plt.savefig("../plots/slo-totCts.png")
 
-
     # plot overall hit spectrum
-    plt.cla()
-    plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
-    plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
-    plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
-    plt.legend(loc=1)
-    plt.tight_layout()
-    plt.savefig("../plots/slo-totHits.png")
+    # plt.figure(2)
+    # plt.cla()
+    # plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
+    # plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
+    # plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
+    # plt.xlabel("Energy (keV)", ha='right', x=1)
+    # plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    # plt.legend(loc=1)
+    # plt.tight_layout()
+    # plt.savefig("../plots/slo-totHits.png")
 
     # plot overall efficiency
+    plt.figure(3)
+    plt.cla()
+
     idx = np.where((hTotAll > 0) & (hPassAll > 0))
     sloEff = hPassAll[idx] / hTotAll[idx]
     nPad = len(hPassAll)-len(hPassAll[idx])
@@ -1516,17 +1533,25 @@ def combineDSEff():
     idx = np.where(xE > 1.)
     bnd = (0,[np.inf,np.inf,1])
     popt,pcov = curve_fit(threshFunc, xE[idx], sloEff[idx], bounds=bnd)
-    plt.cla()
-    plt.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
-    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+    p31.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
+    p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
     xnew = np.arange(0, xE[-1], 0.1)
-    plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Efficiency", ha='right', y=1)
-    plt.legend(loc=4)
+    p31.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+    p31.axvline(1.,color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+    p31.set_xlabel("Energy (keV)", ha='right', x=1)
+    p31.set_ylabel("Efficiency", ha='right', y=1)
+    p31.legend(loc=4)
+
+    hResid = threshFunc(xE, *popt) - sloEff
+    p32.plot(xE, hResid, ".b")
+    p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
     plt.tight_layout()
     plt.savefig("../plots/slo-effTot.png")
+
+    return
+
 
     # plot enriched hit spectrum and efficiency
     plt.cla()
@@ -1547,18 +1572,20 @@ def combineDSEff():
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
     idx = np.where(xE > 1.)
     bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+    popt,pcov = curve_fit(threshFunc, xE[idx], sloEff[idx], bounds=bnd)
     plt.cla()
     plt.plot(xE, sloEff, '.b', ms=10., label='Enr Efficiency')
     plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
     xnew = np.arange(0, xE[-1], 0.1)
     plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+    plt.axvline(1.,color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Efficiency", ha='right', y=1)
     plt.legend(loc=4)
     plt.tight_layout()
     plt.savefig("../plots/slo-effTot-enr.png")
+
 
     # plot natural hit spectrum and efficiency
     plt.cla()
@@ -1579,13 +1606,14 @@ def combineDSEff():
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
     idx = np.where(xE > 1.)
     bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+    popt,pcov = curve_fit(threshFunc, xE[idx], sloEff[idx], bounds=bnd)
     plt.cla()
     plt.plot(xE, sloEff, '.b', ms=10., label='Nat Efficiency')
     plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
     xnew = np.arange(0, xE[-1], 0.1)
     plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+    plt.axvline(1.,color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Efficiency", ha='right', y=1)
     plt.legend(loc=4)
@@ -1593,6 +1621,20 @@ def combineDSEff():
     plt.savefig("../plots/slo-effTot-nat.png")
 
 
+    # try to find the low-e cutoff where the fit is outside the error bar
+    # by >20% of the error bar
+    # xIdxs = []
+    # for i in range(len(sloEff)):
+    #     if xE[i] > 5.: break # ignore bad fits above 5 keV
+    #     fVal = threshFunc(xE[i], *popt)
+    #     upp20 = 0.2*abs((ci_upp[i]-sloEff[i]))
+    #     low20 = 0.2*abs((sloEff[i]-ci_low[i]))
+    #     if fVal > ci_upp[i]+upp20 or fVal < ci_low[i]-low20:
+    #         print("%d  %.1f  %.2f  %.2f  %.2f" % (i, xE[i], ci_low[i], ci_upp[i], fVal))
+    #         xIdxs.append(i)
+    # xIdxs = np.asarray(xIdxs)
+    # xCut = xE[xIdxs[-1]+1]
+    # plt.axvline(xCut, c='c', alpha=0.7, label='cutoff: %.2f keV' % xCut)
 
 
 if __name__=="__main__":
