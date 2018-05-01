@@ -7,6 +7,7 @@ import sys, imp, os
 import tinydb as db
 import numpy as np
 from statsmodels.stats import proportion
+from scipy.optimize import curve_fit
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -1253,10 +1254,9 @@ def plotSloCut():
             # return
 
 
-def threshFunc(x,mu,sig):
+def threshFunc(x,mu,sig,amp):
     from scipy.special import erf
-    # return erf((x-mu)/sig)
-    return 0.5*(1 + erf( (x - mu)/(sig*np.sqrt(2) ) ))
+    return amp*0.5*(1 + erf( (x - mu)/(sig*np.sqrt(2) ) ))
     # from scipy.special import expit
     # return expit((x-mu)/sig)
 
@@ -1266,6 +1266,7 @@ def getAllData():
     Go by CPD instead of channel number, since that never changes.
     """
     detList = det.allDets
+    makePlots = False
 
     yLo, yHi, ypb = -200, 400, 1
     nby = int((yHi-yLo)/ypb)
@@ -1275,8 +1276,8 @@ def getAllData():
     fSlo = {cpd:[] for cpd in detList}
 
     # loop over multiple ds's
-    # for ds in [0,1,2,3,4,5]:
-    for ds in [1]:
+    for ds in [0,1,2,3,4,5]:
+    # for ds in [1]:
         for key in cal.GetKeys(ds):
 
             # get channels in this DS and map back to CPD
@@ -1322,14 +1323,27 @@ def getAllData():
                     fSlo[cpd].extend([f - fMax for f in eff["fSlo"][idx]])
                     hitE[cpd].extend([e for e in eff["hitE"][idx]])
 
+    # values for a bar chart of all det counts vs cts under 10 keV
+    ctsAll = {cpd:0 for cpd in detList}
+    ctsU10 = {cpd:0 for cpd in detList}
 
     # now get the cut values and plot the multi-DS spectra
-    fig = plt.figure()
-    # fig1 = plt.figure(1, figsize=(15,15)) # 4 plots
-    # fig2 = plt.figure(2) # efficiency plot
+    fig1 = plt.figure(1, figsize=(20,15)) # 4 plots
+    p1 = plt.subplot(221)
+    p2 = plt.subplot(222)
+    p3 = plt.subplot(223)
+    p4 = plt.subplot(224)
+    fig2 = plt.figure(2) # efficiency plot
+
+    print("CPD  amp  sig   e50%  e20%  n10/bin")
 
     for cpd in detList:
-        if cpd!='114': continue
+        # if cpd!='114': continue
+
+        hTmp = np.asarray(hitE[cpd])
+        idx = np.where(hTmp < 10)
+        ctsAll[cpd] = len(hitE[cpd])
+        ctsU10[cpd] = len(hTmp[idx])
 
         xLo, xHi, xpb = 0, 250, 1
         nbx = int((xHi-xLo)/xpb)
@@ -1339,40 +1353,12 @@ def getAllData():
         # plot fitSlo 1D, calculate the 90% value
         x, hSlo = wl.GetHisto(fSlo[cpd], yLo, yHi, ypb)
         if np.sum(hSlo)==0:
-            print("no counts",cpd)
+            print(cpd)
             continue
-
         max, avg, std, pct, wid = wl.getHistInfo(x,hSlo)
         v90 = pct[2]
 
-        # plot fs
-        plt.cla()
-        plt.plot(x, hSlo, ls='steps', c='k', label='cpd %s' % cpd)
-        plt.axvline(v90, c='r', label="90%% value: %.0f" % v90)
-        plt.xlabel("fitSlo", ha='right', x=1)
-        plt.legend(loc=1)
-        plt.tight_layout()
-        plt.savefig("../plots/slo-fitSlo-%s.png" % cpd)
-
-        # plot hitE
-        plt.cla()
-        x, hHit = wl.GetHisto(hitE[cpd], xLo, xHi, xpb)
-        plt.plot(x, hHit, ls='steps', c='b', label="cpd %s" % cpd)
-        plt.xlabel("Energy (keV)", ha='right', x=1)
-        plt.ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
-        plt.legend(loc=1)
-        plt.savefig("../plots/slo-hitE-%s.png" % cpd)
-
-        # plot fs vs hitE (2D)
-        plt.cla()
-        plt.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet',norm=LogNorm())
-        plt.axhline(v90, c='r', lw=3)
-        plt.xlabel("Energy (keV)", ha='right', x=1)
-        plt.ylabel("fitSlo", ha='right', y=1)
-        plt.tight_layout()
-        plt.savefig('../plots/slo-fsHit2D-%s.png' % cpd)
-
-        # zoom on low-E region & plot pass/fail
+        # zoom on low-E region & fit erf
         hitPass, hitFail = [], []
         for i in range(len(hitE[cpd])):
             if fSlo[cpd][i] <= v90: hitPass.append(hitE[cpd][i])
@@ -1383,33 +1369,98 @@ def getAllData():
         x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
 
-        plt.cla()
-        plt.plot(x, hTot, ls='steps', c='k', lw=2., label='all m2s238 hits')
-        plt.plot(x, hPass, ls='steps', c='b', lw=2., label='cpd %s pass' % cpd)
-        plt.plot(x, hFail, ls='steps', c='r', lw=2., label='fail')
-        plt.xlabel("Energy (keV)", ha='right', x=1)
-        plt.legend(loc=1)
-        plt.tight_layout()
-        plt.savefig("../plots/slo-hPass-%s.png" % cpd)
-
-        # plot efficiency vs energy
-        plt.cla()
         idx = np.where((hTot > 0) & (hPass > 0))
-        ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
         sloEff = hPass[idx] / hTot[idx]
         nPad = len(hPass)-len(hPass[idx])
         sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+        ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
         ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
         ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-        plt.plot(x, sloEff, '.b', ms=10., label='efficiency')
-        plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-        idx = np.where(sloEff > 0.5)
-        x50 = x[idx][0]
-        plt.axvline(x50,color='g',label='50pct cutoff: %.2f keV' % x50)
-        plt.xlabel("hitE (keV)", ha='right', x=1)
-        plt.ylabel("Efficiency", ha='right', y=1)
-        plt.legend(loc=4)
-        plt.savefig("../plots/slo-eff-%s.png" % cpd)
+        idx = np.where(sloEff > 0.2)
+        x20 = x[idx][0]
+        # erf params: mu,sig,amp
+        bnd = (0,[np.inf,np.inf,1])
+        popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+        perr = np.sqrt(np.diag(pcov))
+        mu, sig, amp = popt
+
+        hitPass = np.asarray(hitPass)
+        nBin = len(hitPass[np.where(hitPass < 10)])/((10/xpb))
+
+        print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, x20, nBin))
+
+        if makePlots:
+
+            plt.figure(1)
+            plt.cla()
+
+            # plot fs vs hitE (2D)
+            p1.cla()
+            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet',norm=LogNorm())
+            p1.axhline(v90, c='r', lw=3)
+            p1.set_xlabel("Energy (keV)", ha='right', x=1)
+            p1.set_ylabel("fitSlo", ha='right', y=1)
+
+            # plot fs
+            p2.cla()
+            p2.plot(hSlo, x, ls='steps', c='k', label='cpd %s' % cpd)
+            p2.axhline(v90, c='r', label="90%% value: %.0f" % v90)
+            p2.set_xlabel("fitSlo", ha='right', x=1)
+            p2.legend(loc=1)
+
+            # plot hitE
+            p3.cla()
+            x, hHit = wl.GetHisto(hitE[cpd], xLo, xHi, xpb)
+            p3.plot(x, hHit, ls='steps', c='b', label="cpd %s" % cpd)
+            p3.set_xlabel("Energy (keV)", ha='right', x=1)
+            p3.set_ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
+            p3.legend(loc=1)
+
+            # zoom in on low-e region and plot pass/fail
+            p4.cla()
+            p4.plot(x, hTot, ls='steps', c='k', lw=2., label='all m2s238 hits')
+            p4.plot(x, hPass, ls='steps', c='b', lw=2., label='cpd %s pass' % cpd)
+            p4.plot(x, hFail, ls='steps', c='r', lw=2., label='fail')
+            p4.set_xlabel("Energy (keV)", ha='right', x=1)
+            p4.set_ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
+            p4.legend(loc=1)
+
+            # save figure 1
+            plt.tight_layout()
+            plt.savefig("../plots/slo-%s.png" % cpd)
+
+            # plot efficiency vs energy
+            plt.figure(2)
+            plt.cla()
+            plt.plot(x, sloEff, '.b', ms=10., label='efficiency cpd %s' % cpd)
+            plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            xnew = np.arange(0, x[-1], 0.1)
+            plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+            plt.axvline(x20,color='g',label='20pct cutoff: %.2f keV' % x20)
+            plt.xlabel("hitE (keV)", ha='right', x=1)
+            plt.ylabel("Efficiency", ha='right', y=1)
+            plt.legend(loc=4)
+            plt.savefig("../plots/slo-eff-%s.png" % cpd)
+
+    if makePlots:
+        # plot a bar of all det counts vs counts under 10 keV
+        plt.cla()
+        x = np.arange(0,len(detList),1)
+        hAll = [ctsAll[cpd] for cpd in detList]
+        plt.bar(x, hAll, 0.95, color='b', label='all m2s238 hits')
+        hLow = [ctsU10[cpd] for cpd in detList]
+        plt.bar(x, hLow, 0.95, color='r', label='m2s238 E<10 keV')
+        plt.gca().set_ylim(1)
+        plt.gca().set_yscale('log')
+
+        # plt.xlabel("channel", ha='right', x=1.)
+        xticks = np.arange(0, len(detList))
+        plt.xticks(xticks)
+        plt.gca().set_xticklabels(detList, fontsize=8, rotation=90)
+        # plt.ylabel("Counts, mHT=2, sumET=238 hits", ha='right', x=1.)
+        plt.legend(loc=1)
+        plt.savefig("../plots/slo-totCts.png")
+
 
 
 if __name__=="__main__":
