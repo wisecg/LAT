@@ -613,7 +613,10 @@ def getSplitList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
     files = {}
     for fl in glob.glob(filePathRegexString):
         int(re.search(r'\d+',fl).group())
-        ints = list(map(int, re.findall(r'\d+',fl)))
+        pathList = os.path.split(fl)
+        for path in pathList:
+            if '.root' in path:
+                ints = list(map(int, re.findall(r'\d+', path)))
         if (ints[1]==subNum):
             if (len(ints)==2):
                 ints.append(0)

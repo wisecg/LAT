@@ -108,7 +108,7 @@ def scanRuns(ds, key, mod, cIdx):
     print("Saving output in:",outFile)
 
     # declare the output stuff
-    evtIdx, evtSumET, evtHitE, evtChans, evtSlo, evtRise = [], [], [], [], [], []
+    evtIdx, evtSumET, evtHitE, evtChans, evtSlo, evtRise, evtToE = [], [], [], [], [], [], []
     thrCal = {ch:[] for ch in chList}
     fLo, fHi, fpb = -200, 400, 1
     nbf = int((fHi-fLo)/fpb)+1
@@ -209,12 +209,14 @@ def scanRuns(ds, key, mod, cIdx):
             hitChans = np.asarray([tt.channel.at(i) for i in idxList])
             hitSlo = np.asarray([tt.fitSlo.at(i) for i in idxList])
             hitRise = np.asarray([tt.riseNoise.at(i) for i in idxList])
+            hitkvorrT = np.asarray([tt.kvorrT.at(i) for i in idxList])
             evtIdx.append([run,iE,calIdx])
             evtSumET.append(sumET)
             evtHitE.append(hitE)
             evtChans.append(hitChans)
             evtSlo.append(hitSlo)
             evtRise.append(hitRise)
+            evtToE.append(hitRise/hitE)
 
             evtCtr += 1
 
@@ -259,7 +261,7 @@ def scanRuns(ds, key, mod, cIdx):
         print("%d  %.3f  %.3f  %s" % (chan,thKeV,thE,errString))
 
     # save output
-    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, totRunTime, fSloSpec, x, evtSlo, evtRise)
+    np.savez(outFile, evtIdx, evtSumET, evtHitE, evtChans, thrCal, thrFinal, evtCtr, totCtr, totRunTime, fSloSpec, x, evtSlo, evtRise, evtToE)
 
     # output stats
     print("Done:",time.strftime('%X %x %Z'),", %.2f sec/file." % ((time.time()-scanStart)/len(fileList)))
