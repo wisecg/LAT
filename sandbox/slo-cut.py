@@ -34,7 +34,7 @@ def main():
     # checkWidth()
     # getShift()
     # plotSloCut()
-    getAllData()
+    combineDSEff()
 
 
 def testStats():
@@ -1261,7 +1261,7 @@ def threshFunc(x,mu,sig,amp):
     # return expit((x-mu)/sig)
 
 
-def getAllData():
+def combineDSEff():
     """ Fk it.  Combine ALL the m2s238 data together.
     Go by CPD instead of channel number, since that never changes.
     """
@@ -1274,6 +1274,13 @@ def getAllData():
     shiftVals = {} # this stores the 10-200 fitSlo vals
     hitE = {cpd:[] for cpd in detList}
     fSlo = {cpd:[] for cpd in detList}
+
+    # overall hit and efficiency plots
+    nTotE = 0
+    xLo, xHi, xpbE = 0, 30, 0.5
+    xE, hPassAll = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hFailAll = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hTotAll = wl.GetHisto([], xLo, xHi, xpbE)
 
     # loop over multiple ds's
     for ds in [0,1,2,3,4,5]:
@@ -1347,11 +1354,11 @@ def getAllData():
 
         xLo, xHi, xpb = 0, 250, 1
         nbx = int((xHi-xLo)/xpb)
-        yLo, yHi, ypb = -50, 50, 1
-        nby = int((yHi-yLo)/ypb)
+        fLo, fHi, fpb = -50, 50, 1
+        nby = int((fHi-fLo)/fpb)
 
         # plot fitSlo 1D, calculate the 90% value
-        x, hSlo = wl.GetHisto(fSlo[cpd], yLo, yHi, ypb)
+        x, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
         if np.sum(hSlo)==0:
             print(cpd)
             continue
@@ -1368,6 +1375,11 @@ def getAllData():
         x, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
         x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
+
+        hTotAll = np.add(hTotAll, hTot)
+        hPassAll = np.add(hPassAll, hPass)
+        hFailAll = np.add(hFailAll, hFail)
+        nTotE += 1
 
         idx = np.where((hTot > 0) & (hPass > 0))
         sloEff = hPass[idx] / hTot[idx]
@@ -1396,7 +1408,11 @@ def getAllData():
 
             # plot fs vs hitE (2D)
             p1.cla()
-            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet',norm=LogNorm())
+            xLo, xHi, xpb = 0, 250, 1
+            nbx = int((xHi-xLo)/xpb)
+            fLo, fHi, fpb = -50, 50, 1
+            nby = int((fHi-fLo)/fpb)
+            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[fLo,fhi]], cmap='jet',norm=LogNorm())
             p1.axhline(v90, c='r', lw=3)
             p1.set_xlabel("Energy (keV)", ha='right', x=1)
             p1.set_ylabel("fitSlo", ha='right', y=1)
@@ -1460,6 +1476,44 @@ def getAllData():
         # plt.ylabel("Counts, mHT=2, sumET=238 hits", ha='right', x=1.)
         plt.legend(loc=1)
         plt.savefig("../plots/slo-totCts.png")
+
+
+    # plot overall hit spectrum
+    plt.cla()
+    plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
+    plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
+    plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    plt.legend(loc=1)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-totHits.png")
+
+    # plot overall efficiency
+    idx = np.where((hTotAll > 0) & (hPassAll > 0))
+    sloEff = hPassAll[idx] / hTotAll[idx]
+    nPad = len(hPassAll)-len(hPassAll[idx])
+    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+    ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
+    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+    idx = np.where(sloEff > 0.2)
+    x20 = x[idx][0]
+    bnd = (0,[np.inf,np.inf,1])
+    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+
+    plt.cla()
+    plt.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
+    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    xnew = np.arange(0, x[-1], 0.1)
+    plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+    plt.axvline(x20,color='g',label='20pct cutoff: %.2f keV' % x20)
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Efficiency", ha='right', y=1)
+    plt.legend(loc=4)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-effTot.png")
+
 
 
 
