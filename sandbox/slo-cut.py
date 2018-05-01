@@ -1266,6 +1266,8 @@ def combineDSEff():
     Go by CPD instead of channel number, since that never changes.
     """
     detList = det.allDets
+    detIDs = det.allDetIDs
+
     makePlots = False
 
     yLo, yHi, ypb = -200, 400, 1
@@ -1281,6 +1283,12 @@ def combineDSEff():
     xE, hPassAll = wl.GetHisto([], xLo, xHi, xpbE)
     xE, hFailAll = wl.GetHisto([], xLo, xHi, xpbE)
     xE, hTotAll = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hPassEnr = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hFailEnr = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hTotEnr = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hPassNat = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hFailNat = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hTotNat = wl.GetHisto([], xLo, xHi, xpbE)
 
     # loop over multiple ds's
     for ds in [0,1,2,3,4,5]:
@@ -1342,7 +1350,7 @@ def combineDSEff():
     p4 = plt.subplot(224)
     fig2 = plt.figure(2) # efficiency plot
 
-    print("CPD  amp  sig   e50%  e20%  n10/bin")
+    print("CPD  amp  sig   e50%  e1keV  n10/bin")
 
     for cpd in detList:
         # if cpd!='114': continue
@@ -1376,10 +1384,18 @@ def combineDSEff():
         x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
 
+        nTotE += 1
         hTotAll = np.add(hTotAll, hTot)
         hPassAll = np.add(hPassAll, hPass)
         hFailAll = np.add(hFailAll, hFail)
-        nTotE += 1
+        if detIDs[cpd] > 1000000:
+            hTotEnr = np.add(hTotEnr, hTot)
+            hPassEnr = np.add(hPassEnr, hPass)
+            hFailEnr = np.add(hFailEnr, hFail)
+        else:
+            hTotNat = np.add(hTotNat, hTot)
+            hPassNat = np.add(hPassNat, hPass)
+            hFailNat = np.add(hFailNat, hFail)
 
         idx = np.where((hTot > 0) & (hPass > 0))
         sloEff = hPass[idx] / hTot[idx]
@@ -1388,8 +1404,7 @@ def combineDSEff():
         ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
         ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
         ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-        idx = np.where(sloEff > 0.2)
-        x20 = x[idx][0]
+        idx = np.where(x > 1.)
         # erf params: mu,sig,amp
         bnd = (0,[np.inf,np.inf,1])
         popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
@@ -1398,8 +1413,9 @@ def combineDSEff():
 
         hitPass = np.asarray(hitPass)
         nBin = len(hitPass[np.where(hitPass < 10)])/((10/xpb))
+        eff1 = threshFunc(1.,*popt)
 
-        print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, x20, nBin))
+        print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
 
         if makePlots:
 
@@ -1452,7 +1468,7 @@ def combineDSEff():
             plt.errorbar(x, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
             xnew = np.arange(0, x[-1], 0.1)
             plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-            plt.axvline(x20,color='g',label='20pct cutoff: %.2f keV' % x20)
+            plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
             plt.xlabel("hitE (keV)", ha='right', x=1)
             plt.ylabel("Efficiency", ha='right', y=1)
             plt.legend(loc=4)
@@ -1497,22 +1513,84 @@ def combineDSEff():
     ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
     ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-    idx = np.where(sloEff > 0.2)
-    x20 = x[idx][0]
+    idx = np.where(xE > 1.)
     bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
-
+    popt,pcov = curve_fit(threshFunc, xE[idx], sloEff[idx], bounds=bnd)
     plt.cla()
     plt.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
     plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-    xnew = np.arange(0, x[-1], 0.1)
+    xnew = np.arange(0, xE[-1], 0.1)
     plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(x20,color='g',label='20pct cutoff: %.2f keV' % x20)
+    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Efficiency", ha='right', y=1)
     plt.legend(loc=4)
     plt.tight_layout()
     plt.savefig("../plots/slo-effTot.png")
+
+    # plot enriched hit spectrum and efficiency
+    plt.cla()
+    plt.plot(xE, hTotEnr, ls='steps', c='k', label="Total Enriched Hits")
+    plt.plot(xE, hPassEnr, ls='steps', c='b', label="Pass")
+    plt.plot(xE, hFailEnr, ls='steps', c='r', label="Fail")
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    plt.legend(loc=1)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-totHits-enr.png")
+    idx = np.where((hTotEnr > 0) & (hPassEnr > 0))
+    sloEff = hPassEnr[idx] / hTotEnr[idx]
+    nPad = len(hPassEnr)-len(hPassEnr[idx])
+    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+    ci_low, ci_upp = proportion.proportion_confint(hPassEnr[idx], hTotEnr[idx], alpha=0.1, method='beta')
+    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+    idx = np.where(xE > 1.)
+    bnd = (0,[np.inf,np.inf,1])
+    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+    plt.cla()
+    plt.plot(xE, sloEff, '.b', ms=10., label='Enr Efficiency')
+    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    xnew = np.arange(0, xE[-1], 0.1)
+    plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Efficiency", ha='right', y=1)
+    plt.legend(loc=4)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-effTot-enr.png")
+
+    # plot natural hit spectrum and efficiency
+    plt.cla()
+    plt.plot(xE, hTotNat, ls='steps', c='k', label="Total Natural Hits")
+    plt.plot(xE, hPassNat, ls='steps', c='b', label="Pass")
+    plt.plot(xE, hFailNat, ls='steps', c='r', label="Fail")
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    plt.legend(loc=1)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-totHits-nat.png")
+    idx = np.where((hTotNat > 0) & (hPassNat > 0))
+    sloEff = hPassNat[idx] / hTotNat[idx]
+    nPad = len(hPassNat)-len(hPassNat[idx])
+    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+    ci_low, ci_upp = proportion.proportion_confint(hPassNat[idx], hTotNat[idx], alpha=0.1, method='beta')
+    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+    idx = np.where(xE > 1.)
+    bnd = (0,[np.inf,np.inf,1])
+    popt,pcov = curve_fit(threshFunc, x[idx], sloEff[idx], bounds=bnd)
+    plt.cla()
+    plt.plot(xE, sloEff, '.b', ms=10., label='Nat Efficiency')
+    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    xnew = np.arange(0, xE[-1], 0.1)
+    plt.plot(xnew, threshFunc(xnew, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+    plt.axvline(threshFunc(1.,*popt),color='g',label='1keV eff: %.2f' % threshFunc(1.,*popt))
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Efficiency", ha='right', y=1)
+    plt.legend(loc=4)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-effTot-nat.png")
 
 
 
