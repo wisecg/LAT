@@ -597,6 +597,10 @@ def setSloCut():
         plt.savefig("./plots/lat2-totHits.png")
 
         # plot overall efficiency
+        # NOTE: fitting one logistic to all detectors doesn't fit very well below 2 keV.
+        # Better to use the individual detector efficiency functions.
+        eLow = 2.
+
         plt.figure(3)
         p31.cla()
 
@@ -607,7 +611,7 @@ def setSloCut():
         ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
         ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
         ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-        idx = np.where(xE > 1.)
+        idx = np.where(xE > eLow)
         bnd = (0,[np.inf,np.inf,1])
         popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
 
@@ -615,7 +619,7 @@ def setSloCut():
         p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
         xErf = np.arange(0, xE[-1], 0.1)
         p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-        p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
+        p31.axvline(eLow,color='g',label='%.1fkeV eff: %.2f' % (eLow, wl.logisticFunc(1.,*popt)))
         p31.set_xlabel("Energy (keV)", ha='right', x=1)
         p31.set_ylabel("Efficiency", ha='right', y=1)
         p31.legend(loc=4)
@@ -627,6 +631,12 @@ def setSloCut():
 
         plt.tight_layout()
         plt.savefig("./plots/lat2-effTot.png")
+
+        # print error of overall logistic fit
+        perr = np.sqrt(np.diag(pcov))
+        mu, sig, amp = popt
+        muE, sigE, ampE = perr
+        print("eLow %.1f  mu %.3f pm %3f  sig %.3f pm %.3f  amp %.3f pm %.3f" % (eLow, mu,muE,sig,sigE,amp,ampE))
 
     # --------------------------------------------------------------
     # Now that we've filled shiftVals, translate it back to datasets and channels
@@ -676,6 +686,8 @@ def setSloCut():
 
 
 def applyCuts(ds, cutType):
+    """ ./lat2.py -ds [N] -cut [cutType]"""
+
     # from ROOT import gROOT
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
