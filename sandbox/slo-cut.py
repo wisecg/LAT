@@ -1259,6 +1259,7 @@ def combineDSEff():
     """ Fk it.  Combine ALL the m2s238 data together.
     Go by CPD instead of channel number, since that never changes.
     """
+    dsList = [0,1,2,3,4,5]
     detList = det.allDets
     detIDs = det.allDetIDs
 
@@ -1285,8 +1286,7 @@ def combineDSEff():
     xE, hTotNat = wl.GetHisto([], xLo, xHi, xpbE)
 
     # loop over multiple ds's
-    for ds in [0,1,2,3,4,5]:
-    # for ds in [1]:
+    for ds in dsList:
         for key in cal.GetKeys(ds):
 
             # get channels in this DS and map back to CPD
@@ -1511,16 +1511,16 @@ def combineDSEff():
     plt.savefig("../plots/slo-totCts.png")
 
     # plot overall hit spectrum
-    # plt.figure(2)
-    # plt.cla()
-    # plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
-    # plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
-    # plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
-    # plt.xlabel("Energy (keV)", ha='right', x=1)
-    # plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
-    # plt.legend(loc=1)
-    # plt.tight_layout()
-    # plt.savefig("../plots/slo-totHits.png")
+    plt.figure(2)
+    plt.cla()
+    plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
+    plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
+    plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    plt.legend(loc=1)
+    plt.tight_layout()
+    plt.savefig("../plots/slo-totHits.png")
 
     # plot overall efficiency
     plt.figure(3)
@@ -1533,7 +1533,7 @@ def combineDSEff():
     ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
     ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-    idx = np.where(xE > 1.)
+    idx = np.where(xE > 2.)
     bnd = (0,[np.inf,np.inf,1])
     popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
 
@@ -1541,14 +1541,7 @@ def combineDSEff():
     p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
     xErf = np.arange(0, xE[-1], 0.1)
     p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
-
-    nBin = np.sum(hPass)/(10/xpb)
-    p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
-
-    # summed erf's
-    # p31.plot(xErf, yErfTot/nTot, "g-", alpha=0.5, label="nerf tot")
-
+    p31.axvline(2.,color='g',label='2keV eff: %.2f' % wl.logisticFunc(2.,*popt))
     p31.set_xlabel("Energy (keV)", ha='right', x=1)
     p31.set_ylabel("Efficiency", ha='right', y=1)
     p31.legend(loc=4)

@@ -38,7 +38,7 @@ def main(argv):
 
         # set dataset and options
         if opt=="-ds":
-            ds = int(argv[i+1])
+            ds = argv[i+1]
         if opt=="-ci":
             ds = int(argv[i+1])
             cIdx = int(argv[i+2])
@@ -60,9 +60,9 @@ def main(argv):
         if opt=="-fs":
             setSloCut()
 
-        # generate cut files
+        # generate cut files (specify cut type)
         if opt=="-cut":
-            applyCuts()
+            applyCuts(ds,argv[i+1])
 
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
@@ -329,13 +329,14 @@ def loadScanData(key):
 
 
 def setSloCut():
-    """ Set slow pulse cut for each detector in each DS.
+    """ ./lat2.py -fs
+    Set slow pulse cut for each detector in each DS.
     Uses the combined m2s238 events from ALL datasets, in each detector.
     If makePlots is true, output plots w/ the efficiency functions for each detector.
     If writeDB is set, fills the database with:
         "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200, nBin] for ch in chList}}
         and
-        "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu] for cpd in detList}
+        "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE] for cpd in detList}
     Sandbox version: LAT/sandbox/slo-cut.py :: combineDSEff
     """
     makePlots = False
@@ -430,6 +431,7 @@ def setSloCut():
 
     shiftCut = {}
 
+    # loop over the combined DS m2s238 populations for each detector and fill shiftCut
     for cpd in detList:
         # if cpd!='114': continue
 
@@ -483,6 +485,7 @@ def setSloCut():
         popt,pcov = curve_fit(wl.logisticFunc, xE[idx2], sloEff[idx2], bounds=bnd)
         perr = np.sqrt(np.diag(pcov))
         mu, sig, amp = popt
+        muE, sigE, ampE = perr
         xErf = np.arange(0, xE[-1], 0.1)
         yErf = wl.logisticFunc(xErf, *popt)
 
@@ -494,7 +497,7 @@ def setSloCut():
             print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
 
         # fill output dict
-        shiftCut[cpd] = [fsShiftCut, nBin, amp, sig, mu]
+        shiftCut[cpd] = [fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE]
 
         if makePlots:
             # if cpd!='114': continue
@@ -672,27 +675,97 @@ def setSloCut():
         print("DB filled.")
 
 
-def applyCuts():
+def applyCuts(ds, cutType):
     # from ROOT import gROOT
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
+    # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
+    dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
+
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
-
-    dsList = [2]
     dsMap = bkg.dsMap() # number of sub-ranges
+    bkgRanges = bkg.getRanges(ds)
+    calKeys = cal.GetKeys(dsNum)
 
-    for ds in dsList:
-        print(ds, dsMap[ds])
+    mods = [1]
+    if dsNum == 4: mods = [2]
+    if dsNum == 5: mods = [1,2]
+
+    for mod in mods:
+        chList = det.getGoodChanList(dsNum, mod)
+        # print("DS",ds,"Module",mod,"chans:",chList)
 
         fileList = []
-        for sub in range(dsMap[ds]+1):
-            latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, ds, sub), sub)
-            tmpList = [f for idx, f in sorted(latList.items())]
-            fileList.extend(tmpList)
+        for sub in bkgRanges:
 
-        for f in fileList:
-            print(f)
+            # latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, dsNum, sub), sub)
+            # tmpList = [f for idx, f in sorted(latList.items())]
+            # fileList.extend(tmpList)
+
+            firstRun, lastRun = bkgRanges[sub][0], bkgRanges[sub][-1]
+
+            calKey = "ds%d_m%d" % (dsNum, mod)
+            if ds == "5C": calKey = "ds5c"
+            if calKey not in calKeys:
+                print("Error: Unknown cal key:",calKey)
+                return
+            cIdxLo = cal.GetCalIdx(calKey, firstRun)
+            cIdxHi = cal.GetCalIdx(calKey, lastRun)
+            print(ds,mod,sub,firstRun,cIdxLo,lastRun,cIdxHi)
+
+            # create a dict of cuts for each channel, covering each calIdx within each bkgIdx
+            cutDict = {}
+            for cIdx in range(cIdxLo, cIdxHi+1):
+
+                runCovMin = cal.master[calKey][cIdx][1]
+                runCovMax = cal.master[calKey][cIdx][2]
+                runLo = firstRun if runCovMin < firstRun else runCovMin
+                runHi = lastRun if lastRun < runCovMax else runCovMax
+                runCut = "run>=%d && run<=%d" % (runLo, runHi)
+                print("  ci",cIdx,runCut)
+
+                fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
+                fsCut = None
+
+                for ch in sorted(fsD):
+
+                    # TODO: thresholds
+
+                    # fitSlo: check the 90% value is positive
+                    if fsD[ch][2] > 0:
+                        fsCut = "fitSlo<%.2f" % fsD[ch][2]
+
+                    # TODO: riseNoise
+
+                    # set the combination channel cut
+                    if cutType == "fs" and fsCut!=None:
+                        chanCut = "(%s && %s)" % (runCut, fsCut)
+
+                    # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
+                    if ch in cutDict.keys() and chanCut!=None:
+                        cutDict[ch] += " || %s" % chanCut
+                    elif ch not in cutDict.keys() and chanCut!=None:
+                        cutDict[ch] = "(%s" % chanCut
+
+            for ch in cutDict:
+                cutDict[ch] += ")" # close the parens for each channel entry
+
+            # -- finally, loop over each channel we have an entry for, get its cut, and create an output file. --
+            for ch in sorted(cutDict):
+
+                theCut = ""
+                chanCut = theCut + "&& channel==%d " % ch
+
+                if cutType == "fs":
+                    # outFile = "~/project/cuts/%sfs/%sfitSlo-DS%d-%d-ch%d.root" % (dString, dString, dsNum, bkgIdx, ch)
+                    chanCut += "&& fitSlo>0 && %s" % cutDict[ch]
+
+                print(ch, chanCut)
+
+            # f = TFile(file0)
+            # theCut = f.Get("theCut").GetTitle()
+
 
 
 

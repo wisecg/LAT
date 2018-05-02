@@ -504,11 +504,16 @@ class DetInfo:
         badChans = [self.getChanDetID(ds, id) for id in badIDs if self.getChanDetID(ds,id) is not None]
         return badChans
 
-    def getGoodChanList(self, ds, detType=None):
+    def getGoodChanList(self, ds, mod=None, detType=None):
         """ Return a list of good HG channels for a DS.  No bad, no veto-only, no pulser monitors. """
         chList = self.getChanList(ds)
         badList = self.getBadChanList(ds)
         goodList = [ch for ch in chList if ch not in badList and ch not in self.pMons[ds]]
+
+        if mod==1:
+            goodList = [ch for ch in goodList if ch < 1000]
+        elif mod==2:
+            goodList = [ch for ch in goodList if ch > 1000]
 
         if detType is None:
             return goodList
