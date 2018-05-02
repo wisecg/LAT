@@ -60,6 +60,10 @@ def main(argv):
         if opt=="-fs":
             setSloCut()
 
+        # generate cut files
+        if opt=="-cut":
+            applyCuts()
+
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
 
@@ -332,6 +336,7 @@ def setSloCut():
         "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200, nBin] for ch in chList}}
         and
         "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu] for cpd in detList}
+    Sandbox version: LAT/sandbox/slo-cut.py :: combineDSEff
     """
     makePlots = False
     printTable = True
@@ -665,6 +670,32 @@ def setSloCut():
         print(dbKey)
         dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
         print("DB filled.")
+
+
+def applyCuts():
+    # from ROOT import gROOT
+    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+
+    dsList = [2]
+    dsMap = bkg.dsMap() # number of sub-ranges
+
+    for ds in dsList:
+        print(ds, dsMap[ds])
+
+        fileList = []
+        for sub in range(dsMap[ds]+1):
+            latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, ds, sub), sub)
+            tmpList = [f for idx, f in sorted(latList.items())]
+            fileList.extend(tmpList)
+
+        for f in fileList:
+            print(f)
+
+
+
 
 
 if __name__=="__main__":
