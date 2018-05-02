@@ -56,11 +56,9 @@ def main(argv):
             ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
             scanRuns(ds,key,mod,cIdx)
 
-        # set fitSlo cut for a ds
+        # set fitSlo cut
         if opt=="-fs":
-            setSloCut(ds)
-
-    getCombinedEff()
+            setSloCut()
 
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
@@ -326,23 +324,43 @@ def loadScanData(key):
     return eff
 
 
-def getCombinedEff():
-    """ Identical to sandbox/slo-cut.py::getCombinedEff, except it doesn't make plots.
-        Goes by CPD instead of channel number, since CPD never changes through the DS's.
+def setSloCut():
+    """ Set slow pulse cut for each detector in each DS.
+    Uses the combined m2s238 events from ALL datasets, in each detector.
+    If makePlots is true, output plots w/ the efficiency functions for each detector.
+    If writeDB is set, fills the database with:
+        "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200, nBin] for ch in chList}}
+        and
+        "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu] for cpd in detList}
     """
+    makePlots = False
+    printTable = True
+    if writeDB:
+        dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
+        print("Writing results to DB :",dbFile)
+        calDB = db.TinyDB(dbFile)
+        pars = db.Query()
+
+    dsList = [0,1,2,3,4,5]
     detList = det.allDets
     detIDs = det.allDetIDs
 
     yLo, yHi, ypb = -200, 400, 1
     nby = int((yHi-yLo)/ypb)
-    shiftSpec = {cpd:np.zeros(nby+1) for cpd in detList} # these are the 10-200 hits (unlike the function above)
+    shiftSpec = {cpd:np.zeros(nby+1) for cpd in detList} # these are the 10-200 hits
     shiftVals = {} # this stores the 10-200 fitSlo vals
     hitE = {cpd:[] for cpd in detList}
     fSlo = {cpd:[] for cpd in detList}
 
-    # loop over scanRuns output from ALL DS's
-    for ds in [0,1,2,3,4,5]:
-    # for ds in [1]:
+    # overall hit and efficiency plots
+    nTot = 0
+    xLo, xHi, xpbE = 0, 30, 0.5
+    xE, hPassAll = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hFailAll = wl.GetHisto([], xLo, xHi, xpbE)
+    xE, hTotAll = wl.GetHisto([], xLo, xHi, xpbE)
+
+    # loop over multiple ds's, separated by cal key
+    for ds in dsList:
         for key in cal.GetKeys(ds):
 
             # get channels in this DS and map back to CPD
@@ -388,10 +406,32 @@ def getCombinedEff():
                     fSlo[cpd].extend([f - fMax for f in eff["fSlo"][idx]])
                     hitE[cpd].extend([e for e in eff["hitE"][idx]])
 
-    print("CPD  amp  sig   e50%  e1keV  n10/bin")
+    # values for a bar chart of all det counts vs cts under 10 keV
+    ctsAll = {cpd:0 for cpd in detList}
+    ctsU10 = {cpd:0 for cpd in detList}
+
+    # it figures
+    fig1 = plt.figure(1, figsize=(20,15)) # diagnostic m2s238 plot
+    p1 = plt.subplot(221)
+    p2 = plt.subplot(222)
+    p3 = plt.subplot(223)
+    p4 = plt.subplot(224)
+    fig2 = plt.figure(2) # hit spectrum plot
+    fig3 = plt.figure(3) # efficiency plot
+    p31 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p32 = plt.subplot2grid((3,1), (2,0))
+
+    if printTable: print("CPD  amp  sig   e50%  e1keV  n10/bin")
+
+    shiftCut = {}
 
     for cpd in detList:
         # if cpd!='114': continue
+
+        hTmp = np.asarray(hitE[cpd])
+        idx = np.where(hTmp < 10)
+        ctsAll[cpd] = len(hitE[cpd])
+        ctsU10[cpd] = len(hTmp[idx])
 
         xLo, xHi, xpb = 0, 250, 1
         nbx = int((xHi-xLo)/xpb)
@@ -399,23 +439,31 @@ def getCombinedEff():
         nby = int((fHi-fLo)/fpb)
 
         # plot fitSlo 1D, calculate the 90% value
-        x, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
+        xS, hSlo = wl.GetHisto(fSlo[cpd], fLo, fHi, fpb)
         if np.sum(hSlo)==0:
-            print(cpd)
+            if printTable: print(cpd)
             continue
-        max, avg, std, pct, wid = wl.getHistInfo(x,hSlo)
-        v90 = pct[2]
+        max, avg, std, pct, wid = wl.getHistInfo(xS,hSlo)
+
+        # ****
+        fsShiftCut = pct[2] # 90% val
+        # ****
 
         # zoom on low-E region & fit erf
         hitPass, hitFail = [], []
         for i in range(len(hitE[cpd])):
-            if fSlo[cpd][i] <= v90: hitPass.append(hitE[cpd][i])
+            if fSlo[cpd][i] <= fsShiftCut: hitPass.append(hitE[cpd][i])
             else: hitFail.append(hitE[cpd][i])
 
         xLo, xHi, xpb = 0, 30, 0.5
-        x, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
-        x, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
+        xE, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
+        xE, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
+
+        nTot += 1
+        hTotAll = np.add(hTotAll, hTot)
+        hPassAll = np.add(hPassAll, hPass)
+        hFailAll = np.add(hFailAll, hFail)
 
         idx = np.where((hTot > 0) & (hPass > 0))
         sloEff = hPass[idx] / hTot[idx]
@@ -424,126 +472,199 @@ def getCombinedEff():
         ci_low, ci_upp = proportion.proportion_confint(hPass[idx], hTot[idx], alpha=0.1, method='beta')
         ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
         ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-
-        idx = np.where(x > 0.5)
+        idx2 = np.where(xE > 1.)
+        # erf params: mu,sig,amp
         bnd = (0,[np.inf,np.inf,1])
-        popt,pcov = curve_fit(wl.threshFunc, x[idx], sloEff[idx], bounds=bnd)
+        popt,pcov = curve_fit(wl.logisticFunc, xE[idx2], sloEff[idx2], bounds=bnd)
         perr = np.sqrt(np.diag(pcov))
         mu, sig, amp = popt
+        xErf = np.arange(0, xE[-1], 0.1)
+        yErf = wl.logisticFunc(xErf, *popt)
 
         hitPass = np.asarray(hitPass)
         nBin = len(hitPass[np.where(hitPass < 10)])/((10/xpb))
-        eff1 = wl.threshFunc(1.,*popt)
+        eff1 = wl.logisticFunc(1.,*popt)
 
-        # identify the cutoff point where the erf is outside the error bar
+        if printTable:
+            print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
 
-        print("%s  %-3.1f  %-4.1f  %-4.2f  %-3.2f  %d" % (cpd, amp, sig, mu, eff1, nBin))
+        # fill output dict
+        shiftCut[cpd] = [fsShiftCut, nBin, amp, sig, mu]
 
+        if makePlots:
+            # if cpd!='114': continue
 
-def setSloCut(ds):
-    """ Set slow pulse cut for each detector in each DS.
-    Current method uses the combined m2s238 events from ALL datasets.
-    {"key":"fitSlo_[calKey]_idx[ci]_m2s238","value":{ch:[] for ch in chList}}
-    """
+            plt.figure(1)
+            plt.cla()
 
-    if writeDB:
-        print("Writing results to DB ...")
-    calDB = db.TinyDB('%s/calDB.json' % (dsi.latSWDir))
-    pars = db.Query()
+            # plot fs vs hitE (2D)
+            p1.cla()
+            xLo, xHi, xpb = 0, 250, 1
+            nbx = int((xHi-xLo)/xpb)
+            fLo, fHi, fpb = -50, 50, 1
+            nby = int((fHi-fLo)/fpb)
+            p1.hist2d(hitE[cpd], fSlo[cpd], bins=[nbx, nby], range=[[xLo,xHi],[fLo,fHi]], cmap='jet',norm=LogNorm())
+            p1.axhline(v90, c='r', lw=3)
+            p1.set_xlabel("Energy (keV)", ha='right', x=1)
+            p1.set_ylabel("fitSlo", ha='right', y=1)
 
-    # treat each cal key separately
-    for key in cal.GetKeys(ds):
+            # plot fs
+            p2.cla()
+            p2.plot(hSlo, xS, ls='steps', c='k', label='cpd %s' % cpd)
+            p2.axhline(v90, c='r', label="90%% value: %.0f" % v90)
+            p2.set_xlabel("fitSlo", ha='right', x=1)
+            p2.legend(loc=1)
 
+            # plot hitE
+            p3.cla()
+            x, hHit = wl.GetHisto(hitE[cpd], xLo, xHi, xpb)
+            p3.plot(x, hHit, ls='steps', c='b', label="cpd %s" % cpd)
+            p3.set_xlabel("Energy (keV)", ha='right', x=1)
+            p3.set_ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
+            p3.legend(loc=1)
+
+            # zoom in on low-e region and plot pass/fail
+            p4.cla()
+            p4.plot(xE, hTot, ls='steps', c='k', lw=2., label='all m2s238 hits')
+            p4.plot(xE, hPass, ls='steps', c='b', lw=2., label='cpd %s pass' % cpd)
+            p4.plot(xE, hFail, ls='steps', c='r', lw=2., label='fail')
+            p4.set_xlabel("Energy (keV)", ha='right', x=1)
+            p4.set_ylabel("Counts/%.1f keV" % xpb, ha='right', y=1)
+            p4.legend(loc=1)
+
+            # save figure 1
+            plt.tight_layout()
+            plt.savefig("./plots/lat2-%s.png" % cpd)
+
+            # plot efficiency vs energy.
+            plt.cla()
+            plt.figure(3)
+            p31.cla()
+            p31.plot(xE, sloEff, '.b', ms=10., label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
+            p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            p31.plot(xErf, yErf, 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+            p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
+            p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
+            p31.set_xlabel("hitE (keV)", ha='right', x=1)
+            p31.set_ylabel("Efficiency", ha='right', y=1)
+            p31.legend(loc=4)
+
+            p32.cla()
+            hResid = wl.logisticFunc(xE, *popt) - sloEff
+            p32.plot(xE, hResid, ".b")
+            p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+            plt.tight_layout()
+            plt.savefig("./plots/lat2-eff-%s.png" % cpd)
+
+    if makePlots:
+        # plot a bar of all det counts vs counts under 10 keV
+        plt.figure(2)
+        plt.cla()
+        x = np.arange(0,len(detList),1)
+        hAll = [ctsAll[cpd] for cpd in detList]
+        plt.bar(x, hAll, 0.95, color='b', label='all m2s238 hits')
+        hLow = [ctsU10[cpd] for cpd in detList]
+        plt.bar(x, hLow, 0.95, color='r', label='m2s238 E<10 keV')
+        plt.gca().set_ylim(1)
+        plt.gca().set_yscale('log')
+        # plt.xlabel("channel", ha='right', x=1.)
+        xticks = np.arange(0, len(detList))
+        plt.xticks(xticks)
+        plt.gca().set_xticklabels(detList, fontsize=8, rotation=90)
+        # plt.ylabel("Counts, mHT=2, sumET=238 hits", ha='right', x=1.)
+        plt.legend(loc=1)
+        plt.savefig("./plots/lat2-totCts.png")
+
+        # plot overall hit spectrum
+        plt.figure(2)
+        plt.cla()
+        plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
+        plt.plot(xE, hPassAll, ls='steps', c='b', label="Pass")
+        plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
+        plt.xlabel("Energy (keV)", ha='right', x=1)
+        plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+        plt.legend(loc=1)
+        plt.tight_layout()
+        plt.savefig("./plots/lat2-totHits.png")
+
+        # plot overall efficiency
+        plt.figure(3)
+        p31.cla()
+
+        idx = np.where((hTotAll > 0) & (hPassAll > 0))
+        sloEff = hPassAll[idx] / hTotAll[idx]
+        nPad = len(hPassAll)-len(hPassAll[idx])
+        sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
+        ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
+        ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
+        ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
+        idx = np.where(xE > 1.)
+        bnd = (0,[np.inf,np.inf,1])
+        popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
+
+        p31.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
+        p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+        xErf = np.arange(0, xE[-1], 0.1)
+        p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+        p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
+        p31.set_xlabel("Energy (keV)", ha='right', x=1)
+        p31.set_ylabel("Efficiency", ha='right', y=1)
+        p31.legend(loc=4)
+
+        p32.cla()
+        hResid = wl.logisticFunc(xE, *popt) - sloEff
+        p32.plot(xE, hResid, ".b")
+        p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+        plt.tight_layout()
+        plt.savefig("./plots/lat2-effTot.png")
+
+    # --------------------------------------------------------------
+    # Now that we've filled shiftVals, translate it back to datasets and channels
+    for key in shiftVals:
+        print(key)
+        ds = int(key[2])
         chList = det.getGoodChanList(ds)
-        mod = -1
         if "m1" in key:
-            mod = 1
             chList = [ch for ch in chList if ch < 1000]
-        if "m2" in key:
-            mod = 2
+        elif "m2" in key:
             chList = [ch for ch in chList if ch > 1000]
+        print(chList)
 
-        eff = loadScanData(key)
-        nCal = cal.GetNCalIdxs(ds,mod)
-
-        shiftDict = {ci:None for ci in range(nCal)}
-        yLo, yHi, ypb = -50, 50, 1
-        nby = int((yHi-yLo)/ypb)
-        shiftSpec = {ch:np.zeros(nby+1) for ch in chList}
-
-        # find the fs shift value for each ch in each calIdx
-        for ci in range(nCal):
-            shiftDict[ci] = {ch:[] for ch in chList}
-
-            for ch in chList:
-
-                # load fitSlo hist of ALL cal hits in this channel 10-200 keV
-                h1 = eff["spec"][ci][ch][1]
-                x1 = eff["specX"]
-
-                if np.sum(h1)==0:
-                    print("ci %d  ch %d  no counts" % (ci, ch))
-                    shiftDict[ci][ch].extend([-1,-1,-1])
-                    continue
-
-                # get mode (maximum) of the 10-200 hits
-                b = np.argmax(h1)
-                fMax = x1[b] # maximum x (fitSlo) value
-
-                # get the 50% width of the 10-200 hits
-                bLo, bHi = -1, -1
-                for j in range(len(h1)):
-                    if bLo==-1 and h1[j] >= h1[b]/2.:
-                        bLo = j
-                    if j > b and h1[j] <= h1[b]/2.:
-                        bHi = j
-                        break
-                fLo, fHi = x1[bLo], x1[bHi]
-                fWid = fHi - fLo
-
-                # save the max and width of h1
-                shiftDict[ci][ch].extend([fMax, fWid])
-                # print("ci %-2d  ch %d  h10-200 nCts %-7d  max %-4d  fLo %-4d  fHi %-4d  wid %-4d" % (ci,ch,np.sum(h1),fMax,fLo,fHi,fWid))
-
-                # shift the m2s238 events
-                idx = np.where((eff["cIdx"]==ci) & (eff["chan"]==ch))
-                thisFS = [f - fMax for f in eff["fSlo"][idx]] #
-                if len(thisFS) == 0: continue
-
-                # fill the shifted m2s238 fitSlo histograms
-                x2, hSlo = wl.GetHisto(thisFS, yLo, yHi, ypb)
-                shiftSpec[ch] = np.add(shiftSpec[ch], hSlo)
-                # print("ci %-2d  ch %d  m2s238  nCts %-7d" % (ci,ch,np.sum(hSlo)))
-
-        # now find the 90% value from the shifted m2s238 fs histograms
-        for ch in chList:
-            max, avg, std, pct, wid = wl.getHistInfo(x2,shiftSpec[ch])
-            pct90 = pct[2]
-            for ci in shiftDict:
-                shiftDict[ci][ch].extend([pct90])
-
-        # find the unshifted value for each ch, each calIdx and fill the DB
-        for ci in shiftDict:
-
+        for ci in shiftVals[key]:
             dbKey = "fitSlo_%s_idx%d_m2s238" % (key, ci)
             dbVals = {}
-
+            # print(dbKey)
             for ch in chList:
-                max = shiftDict[ci][ch][0] # fs max
-                v90 = shiftDict[ci][ch][2] # m2s238 90% val
-                cut90 = shiftDict[ci][ch][0] + shiftDict[ci][ch][2]
-                # print("ds %d  cIdx %d  ch%d  max %-4d  v90 %-3d  cut90 %d" % (ds, ci, ch, max, v90, cut90))
-                dbVals[ch] = [cut90, max, v90] # watch out for bad values < 0
+                cpd = det.getChanCPD(ds, ch)
+                fs200 = shiftVals[key][ci][cpd]  # watch out for "-1", it signifies a bad fit (or no data)
+                if fs200 > 0:
+                    fsCut = fs200 + shiftCut[cpd][0]
+                    nBin = shiftCut[cpd][1]
+                else:
+                    fsCut, nBin = -1, -1
+                dbVals[ch] = [fsCut, fs200, nBin]
+                # print(cpd, ch, fs200, fsCut, nBin)
 
             # final review
-            print(dbKey)
-            # for key in dbVals:
-                # print(key, dbVals[key])
+            # print(dbKey)
+            # for ch in dbVals:
+                # print(ch, dbVals[ch])
 
             # fill the DB
             if writeDB:
+                print(dbKey)
                 dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
                 print("DB filled.")
+
+    # Finally, write the erf function parameters as a separate DB entry for each cpd (all DS's)
+    if writeDB:
+        dbKey = "fitSlo_cpd_eff"
+        dbVals = shiftCut
+        print(dbKey)
+        dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+        print("DB filled.")
 
 
 if __name__=="__main__":

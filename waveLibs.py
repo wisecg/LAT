@@ -17,7 +17,12 @@ homePath = os.path.expanduser('~')
 bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
-def threshFunc(x,mu,sig,amp):
+
+def logisticFunc(x,mu,sig,amp):
+    return amp/(1.+np.exp(-(x-mu)/sig))
+
+
+def erFunc(x,mu,sig,amp):
     from scipy.special import erf
     return amp*0.5*(1 + erf( (x - mu)/(sig*np.sqrt(2) ) ))
     # from scipy.special import expit
