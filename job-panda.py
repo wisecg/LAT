@@ -39,13 +39,13 @@ def main(argv):
         if opt == "-cal": calList = getCalRunList(dsNum,subNum,runNum)
 
         # main skim routines
-        if opt == "-skim":      runSkimmer(dsNum, subNum, runNum, calList=calList)
-        if opt == "-wave":      runWaveSkim(dsNum, subNum, runNum, calList=calList)
-        if opt == "-thresh":    runAutoThresh(dsNum)
+        if opt == "-skim":       runSkimmer(dsNum, subNum, runNum, calList=calList)
+        if opt == "-wave":       runWaveSkim(dsNum, subNum, runNum, calList=calList)
+        if opt == "-thresh":     runAutoThresh(dsNum)
         if opt == "-batchSplit": batchSplit(dsNum, subNum, runNum, calList=calList)
-        if opt == "-writeCut":  writeCut(dsNum, subNum, runNum, calList=calList)
-        if opt == "-lat":       runLAT(dsNum, subNum, runNum, calList=calList)
-        if opt == "-pandify":   pandifySkim(dsNum, subNum, runNum, calList=calList)
+        if opt == "-writeCut":   writeCut(dsNum, subNum, runNum, calList=calList)
+        if opt == "-lat":        runLAT(dsNum, subNum, runNum, calList=calList)
+        if opt == "-pandify":    pandifySkim(dsNum, subNum, runNum, calList=calList)
 
         # mega modes
         if opt == "-mskim":  [runSkimmer(i) for i in range(0,6+1)]
@@ -113,7 +113,7 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-p shared",
+            "-p long",
             "-t 24:00:00",
         ],
         "pdsf-pump": [
@@ -298,7 +298,13 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("cori-knl"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
-    sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
+    # EX. 13: run LAT2, generate cut files
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
+    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5A -cut fs"))
+    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5B -cut fs"))
+    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5C -cut fs"))
+
+    # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("edison-shared"))
 
 

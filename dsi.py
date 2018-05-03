@@ -8,13 +8,14 @@ import tinydb as db
 
 latSWDir    = os.environ['LATDIR']
 dataDir     = os.environ['LATDATADIR']
-bkgDir      = dataDir+"/bkg"     # subfolders: skim waves split lat thresh
+bkgDir      = dataDir+"/bkg"     # subfolders: skim waves split lat thresh cut
 calDir      = dataDir+"/cal"     # subfolders: skim waves split lat eff
 specialDir  = dataDir+"/special" # subfolders: skim waves split lat
 skimDir     = bkgDir+"/skim"
 waveDir     = bkgDir+"/waves"
 splitDir    = bkgDir+"/split"
 latDir      = bkgDir+"/lat"
+cutDir      = bkgDir+"/cut"
 calSkimDir  = calDir+"/skim"
 calWaveDir  = calDir+"/waves"
 calSplitDir = calDir+"/split"

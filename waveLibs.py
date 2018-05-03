@@ -18,6 +18,14 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 
+def linFunc(x, m, b):
+    return m*x + b
+
+
+def pol1(x, a, b, c):
+    return a*x**2 + b*x + c
+
+
 def logisticFunc(x,mu,sig,amp):
     return amp/(1.+np.exp(-(x-mu)/sig))
 
