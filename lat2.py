@@ -229,7 +229,7 @@ def scanRunsSlo(ds, key, mod, cIdx):
             evtChans.append(hitChans)
             evtSlo.append(hitSlo)
             evtRise.append(hitRise)
-            evtToE.append(hitRise/hitE)
+            evtToE.append(hitkvorrT/hitE)
 
             evtCtr += 1
 

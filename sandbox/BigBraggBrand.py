@@ -128,13 +128,13 @@ def main():
     # print(dfTrace.head())
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
+    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
 
     # Sample Here
-    # with model:
+    with model:
         # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
-        # db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
-        # trace = pm.sample(draws=7500, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+        db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
+        trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
     # with modelBasic:
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
@@ -180,8 +180,8 @@ def constructModel(pdfDict, energyBins):
         # eff = 0.5*(1+tt.erf((pdfDict['Energy'] - Mu)/(tt.sqrt(2)*Sig)))
 
         # Reparameterize efficiency as logistic function
-        Mu = pm.Normal('Mu', mu = 0.77, sd = 0.1)
-        Sig = pm.Normal('Sig', mu = 0.56, sd = 0.1)
+        Mu = pm.Normal('Mu', mu = 0.591, sd = 0.088)
+        Sig = pm.Normal('Sig', mu = 5.536, sd = 0.103)
         eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
         # Generate array of deterministic variables (per bin)
         det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
