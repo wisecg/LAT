@@ -829,9 +829,9 @@ def loadRiseData(key):
 
 def setRiseCut():
 
-    makePlots = False
+    makePlots = True
 
-    dsList = [1] # still need to generate the other ds's
+    dsList = [1]
 
     # loop over ds's, separated by cal key
     for ds in dsList:
@@ -865,7 +865,7 @@ def setRiseCut():
 
                     # make sure we have hits, and that riseNoise vals are good
                     if len(hitE)==0 or len(rise[np.where(rise > 0)])==0:
-                        print("No data, ch",ch)
+                        # print("No data, ch",ch)
                         continue
 
                     # fit the data to a pol1
@@ -900,22 +900,26 @@ def setRiseCut():
                         plt.plot(np.nan, np.nan, ".w", label="ch %d, C%sP%sD%s" % (ch, cpd[0],cpd[1],cpd[2]))
                         xFit = np.arange(xLo, xHi, 0.1)
                         plt.plot(xFit, wl.pol1(xFit, *popt), 'r-', label="a %.4f b %.4f c %.4f" % tuple(popt))
-                        plt.plot(xFit, wl.pol1(xFit, a,b,c99), 'g-', label="a %-9.4f b %-9.4f c99 %.4f" % (a,b,c99))
+                        plt.plot(xFit, wl.pol1(xFit, a,b,c99), 'g-', label="a %.4f b %.4f c99 %.4f" % (a,b,c99))
                         plt.plot(evtPass[:,0], evtPass[:,1], ".b", ms=1, label="pass")
                         plt.plot(evtFail[:,0], evtFail[:,1], ".r", ms=1, label="fail")
                         plt.xlabel("Energy (keV)", ha='right', x=1)
                         plt.ylabel("riseNoise", ha='right', y=1)
                         leg = plt.legend(loc='best', fontsize=12)
                         leg.get_frame().set_alpha(0.5)
-                        plt.savefig("../plots/rise-ds%d-ci%d-ch%d.png" % (ds, ci, ch))
+                        plt.savefig("./plots/rise-ds%d-ci%d-ch%d.png" % (ds, ci, ch))
                         # return
 
                 # final db check
                 print(dbKey)
                 for ch in sorted(dbVals):
-                    print(ch, dbVals[ch])
+                    tmp = dbVals[ch]
+                    if tmp is not None:
+                        print(ch, "%-9.2e  %-9.2e  %.2f " % (tmp[0],tmp[1],tmp[2]),tmp[3])
+                    else:
+                        print(ch, None)
 
-                return
+                # return
 
 
 def applyCuts(ds, cutType):

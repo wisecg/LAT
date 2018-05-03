@@ -122,10 +122,10 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--image=wisecg/mjsw:v2",
             # "-p shared",
             "-n10", # match nCores for pdsf below
-            "-p long", # doesn't work w/ n30
+            "-p short", # doesn't work w/ n30
             # "--mincpus=30",
             # "-t 12:00:00",
-            "-t 2:00:00",
+            "-t 5:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -298,11 +298,14 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("cori-knl"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("cori-knl")) # riseNoise
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("pdsf-pump")) # riseNoise
+
     # EX. 13: run LAT2, generate cut files
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
-    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5A -cut fs"))
-    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5B -cut fs"))
-    sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5C -cut fs"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5A -cut fs"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5B -cut fs"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5C -cut fs"))
 
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("edison-shared"))
@@ -1118,8 +1121,14 @@ def scanLAT2(dsIn=None, subIn=None, modIn=None):
                 if modIn is not None and mod!=modIn:
                     continue
 
-                job = "./lat2.py -scan %d %s %d %d" % (ds, key, mod, cIdx)
-                if useJobQueue: sh("%s >& ./logs/lat2-%s-%d.txt" % (job, key, cIdx))
+                # this does the fitSlo scan
+                # job = "./lat2.py -scan %d %s %d %d" % (ds, key, mod, cIdx)
+                # if useJobQueue: sh("%s >& ./logs/lat2-%s-%d.txt" % (job, key, cIdx))
+                # else: sh("%s '%s'" % (jobStr, job))
+
+                # this does the riseNoise scan
+                job = "./lat2.py -rscan %d %s %d %d" % (ds, key, mod, cIdx)
+                if useJobQueue: sh("%s >& ./logs/lat2-rise-%s-%d.txt" % (job, key, cIdx))
                 else: sh("%s '%s'" % (jobStr, job))
 
 
