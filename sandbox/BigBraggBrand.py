@@ -16,7 +16,7 @@ sns.set(style='darkgrid')
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-seedNum, dsNum = 1, 5
+seedNum, dsNum = 2, 5
 # Energy range (also fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8
@@ -128,13 +128,13 @@ def main():
     # print(dfTrace.head())
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
+    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
 
     # Sample Here
-    with model:
+    # with model:
         # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
-        db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
-        trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+        # db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
+        # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
     # with modelBasic:
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
@@ -558,11 +558,11 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None):
 
     # pm.traceplot(trace[nBurn:])
     pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
-    # pm.forestplot(trace[nBurn:], alpha=0.1)
-    # traceBurn = trace[nBurn:]
+    pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
+    traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
-    # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65'], traceBurn['Mu'], traceBurn['Sig']]).T
-    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65', 'Mu', 'Sig'])
+    cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65'], traceBurn['Mu'], traceBurn['Sig']]).T
+    figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65', 'Mu', 'Sig'])
 
     # Format is hpdDict[nChain][Parameter] = [lower, upper]
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
