@@ -149,7 +149,7 @@ def genAlphaMacros(sourceName='DUPTFE', nStart=1, nStop=100, macroDir='.', outDi
         f.write("/run/beamOn {}".format(nEvents))
         f.close()
 
-def runAllJobs(sourceName='Cal', macroTye='gss', mod=1, nStart=0, nStop=None, macroDir='.'):
+def runAllJobs(sourceName='Cal', macroType='gss', mod=1, nStart=0, nStop=None, macroDir='.'):
     # Macro type is either gss or surf
     fileList = []
     if sourceName == 'Cal':
