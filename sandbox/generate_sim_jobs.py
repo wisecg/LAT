@@ -22,10 +22,10 @@ def main():
 
     # Surface Alpha Jobs
     # Surface Sources: DUPTFE, DUCopper
-    # genSurfaceMacros(sourceName='DUPTFE', nStart=1, nStop=1, macroDir=macroDir, outDir=outDir)
-    # genAlphaMacros(sourceName='DUPTFE', nStart=1, nStop=1, macroDir=macroDir, outDir=outDir)
+    genSurfaceMacros(sourceName='DUCopper', nStart=1, nStop=250, macroDir=macroDir, outDir=outDir)
+    #genAlphaMacros(sourceName='DUPTFE', nStart=1, nStop=1, macroDir=macroDir, outDir=outDir)
 
-    # runAllJobs(sourceName='Cal', mod=1, nStart=601, nStop = 999, macroDir=macroDir)
+    #runAllJobs(sourceName='DUPTFE', mod=1, nStart=1, nStop = 250, macroType='gss', macroDir=macroDir)
 
 def genCalMacros(mod=1, nStart=1, nStop=100, oldAF = False, macroDir='.', outDir='.', nEvents = 500000):
     for nFile in range(nStart, nStop+1):
@@ -87,24 +87,24 @@ def genSurfaceMacros(sourceName='DUPTFE', nStart=1, nStop=100, macroDir='.', out
         for vol in volList:
             stripped = vol.rstrip('_0123456789')
             if sourceName == 'DUCopper':
-                if stripped.endswith('HVRing77'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('HollowHexRod'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('FlexInsulator'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('CrystalMountingPlate'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('ContactPin'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('SpringFEMount'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('LMFECoverPlate'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('SpringNut'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
+                if stripped.endswith('HVRing77'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('HollowHexRod'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('FlexInsulator'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('CrystalMountingPlate'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('ContactPin'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('SpringFEMount'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('LMFECoverPlate'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('SpringNut'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
             elif sourceName == 'DUPTFE':
-                if stripped.endswith('HVNut'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('CrystalInsulator'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
-                if stripped.endswith('CenterBushing'): f.write("/MG/io/gss/addVolume {}\n".format(stripped))
+                if stripped.endswith('HVNut'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('CrystalInsulator'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
+                if stripped.endswith('CenterBushing'): f.write("/MG/io/gss/addVolume {}\n".format(vol))
 
         f.write("/MG/generator/gss/boundvol RadShieldAssembly_001_RadShieldCuInner_001\n")
         if sourceName == 'DUCopper':
             f.write("/MG/io/gss/setMaxIntersections 26\n")
         elif sourceName == 'DUPTFE':
-            f.write("/MG/io/gss/setMaxIntersections 20\n")
+            f.write("/MG/io/gss/setMaxIntersections 28\n")
         f.write("/run/beamOn {}".format(nEvents))
         f.close()
 
@@ -130,9 +130,9 @@ def genAlphaMacros(sourceName='DUPTFE', nStart=1, nStop=100, macroDir='.', outDi
         f.write("/MG/io/MCRun/setRunID {:03d}\n".format(nFile))
         f.write("/MG/io/MCRun/useTimeWindow true\n")
         f.write("/MG/io/MCRun/setTimeWindow 86400 second\n")
-        f.write("/run/initialize\n")
         f.write("/MG/demonstrator/muonVetoOn false\n")
         f.write("/MG/demonstrator/innerCopperOn true\n")
+        f.write("/run/initialize\n")
         f.write("/MG/generator/select RDMiso\n")
         f.write("/gun/energy 0 eV\n")
         f.write("/grdm/ion 210 84 0\n")
@@ -141,7 +141,7 @@ def genAlphaMacros(sourceName='DUPTFE', nStart=1, nStop=100, macroDir='.', outDi
         # Here we have to find the gss ROOT file and get the number of entries to set for the number of events
         gssFileName = '{}/MJDem_{}_A210_Z84_gss_p{:03d}.root'.format(outDir, sourceName, nFile)
         gssFile = ROOT.TFile(gssFileName)
-        tree = gss_file.Get('GSSTree')
+        tree = gssFile.Get('GSSTree')
         nEvents = tree.GetEntries()
         gssFile.Close()
 
