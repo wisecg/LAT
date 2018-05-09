@@ -101,6 +101,8 @@ def getSBatch(opt, getCores=True, nArr=1):
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/batch-jobs/
     http://www.nersc.gov/users/computational-systems/pdsf/using-slurm-pdsf-batch-sbatch/
     """
+    # `"--job-name=mjd_dt_calc"` # example of adding a job name
+
     batchOpts = {
         "chos": [
             "--workdir=%s" % (dsi.latSWDir),

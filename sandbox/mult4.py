@@ -157,8 +157,8 @@ def getSpecTest():
             xHit, y = wl.GetHisto(hitVals[i], hLo, hHi, hpb)
             hitSpecLo[i] = np.add(hitSpecLo[i], y)
 
-    np.savez("../plots/mult4-sumE-test.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
-    np.savez("../plots/mult4-hitE-test.npz", runTime, hitList, hitData, eCut)
+    np.savez("../data/mult4-sumE-test.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
+    np.savez("../data/mult4-hitE-test.npz", runTime, hitList, hitData, eCut)
 
 
 def plotSpecTest():
@@ -167,8 +167,8 @@ def plotSpecTest():
     hitData : [mHT, sumET, dt[mHT]]
     hitList : [hitE, chan, fSlo]  (same length as hitData)
     """
-    f1 = np.load("../plots/mult4-sumE-histats.npz")
-    f2 = np.load("../plots/mult4-hitE-histats.npz")
+    f1 = np.load("../data/mult4-sumE-histats.npz")
+    f2 = np.load("../data/mult4-hitE-histats.npz")
     runTime, x, sumSpec = f1['arr_0'], f1['arr_1'], f1['arr_2'].item()
     hitSpec, xHit, hitSpecLo = f1['arr_3'].item(), f1['arr_4'], f1['arr_5'].item()
     hitList, hitData, eCut = f2['arr_1'], f2['arr_2'], f2['arr_3']
@@ -203,7 +203,7 @@ def plotSpecTest():
     x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
 
     # load sim data
-    fs = np.load("../plots/mult4-evtTrans.npz")
+    fs = np.load("../data/mult4-evtTrans.npz")
     hits = fs['arr_0'].item()
     evtTotal, evtBulk, evtTrans = hits[0], hits[1], hits[2]
     eneTotal, eneBulk, eneTrans = hits[3], hits[4], hits[5]
@@ -320,11 +320,11 @@ def getSpec():
             xHit, y = wl.GetHisto(hitVals[i], hLo, hHi, hpb)
             hitSpecLo[i] = np.add(hitSpecLo[i], y)
 
-    # np.savez("../plots/mult4-sumE.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
-    # np.savez("../plots/mult4-hitE.npz", runTime, hitList, hitData, eCut)
+    # np.savez("../data/mult4-sumE.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
+    # np.savez("../data/mult4-hitE.npz", runTime, hitList, hitData, eCut)
 
-    np.savez("../plots/mult4-sumE-histats.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
-    np.savez("../plots/mult4-hitE-histats.npz", runTime, hitList, hitData, eCut)
+    np.savez("../data/mult4-sumE-histats.npz", runTime, x, sumSpec, hitSpec, xHit, hitSpecLo)
+    np.savez("../data/mult4-hitE-histats.npz", runTime, hitList, hitData, eCut)
 
 
 def getRunTime(runList):
@@ -348,10 +348,10 @@ def plotSpec():
     hitData : [mHT, sumET, dt[mHT]]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    # f1 = np.load("../plots/mult4-sumE.npz")
-    # f2 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-sumE-histats.npz")
-    f2 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-sumE.npz")
+    # f2 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-sumE-histats.npz")
+    f2 = np.load("../data/mult4-hitE-histats.npz")
     runTime, x, sumSpec = f1['arr_0'], f1['arr_1'], f1['arr_2'].item()
     hitSpec, xHit, hitSpecLo = f1['arr_3'].item(), f1['arr_4'], f1['arr_5'].item()
     hitList, hitData, eCut = f2['arr_1'], f2['arr_2'], f2['arr_3']
@@ -413,8 +413,8 @@ def plotRiseNoise():
     hitData : [mHT, sumET, dt[mHT]]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    # f1 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-hitE-histats.npz")
     hitList, hitData, eCut = f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     # this is pretty arbitrary, but it has high stats and no e-noise
@@ -465,8 +465,8 @@ def tuneFitSlo():
     hitData : [mHT, sumET, dt[mHT]]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    f1 = np.load("../plots/mult4-hitE.npz")
-    # f1 = np.load("../plots/mult4-hitE-histats.npz")
+    f1 = np.load("../data/mult4-hitE.npz")
+    # f1 = np.load("../data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     # peak fit results from mult2.  could retune, but it shouldn't matter much
@@ -603,7 +603,7 @@ def testSimData():
 
     print("Peak cts: %d  Cont cts: %d" % (nPk,nCont))
 
-    np.savez("../plots/mult4-simTest.npz", hits, actList, totESpec, sumHitESpec)
+    np.savez("../data/mult4-simTest.npz", hits, actList, totESpec, sumHitESpec)
 
 
 def roughSigma(ene):
@@ -619,7 +619,7 @@ def gaus(x, b, a, mu, sig):
 
 def plotSimTest():
 
-    f = np.load("../plots/mult4-simTest.npz")
+    f = np.load("../data/mult4-simTest.npz")
     hits = f['arr_0'].item()
 
     evts = hits[2]
@@ -707,12 +707,12 @@ def getSimData():
             hits[i] = hits[i][idx]
         print("hit set %d, %d entries" % (i, len(hits[i])))
 
-    np.savez("../plots/mult4-evtTrans.npz", hits)
+    np.savez("../data/mult4-evtTrans.npz", hits)
 
 
 def plotSimData():
 
-    f = np.load("../plots/mult4-evtTrans.npz")
+    f = np.load("../data/mult4-evtTrans.npz")
     hits = f['arr_0'].item()
     evtTotal, evtBulk, evtTrans = hits[0], hits[1], hits[2]
     eneTotal, eneBulk, eneTrans = hits[3], hits[4], hits[5]
@@ -772,8 +772,8 @@ def plotFitSlo():
         (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
         ]
 
-    # f1 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     hitE, chan, fSlo = [], [], []
@@ -832,7 +832,7 @@ def plotFitSlo():
     # hitEFast = [hitE[i] for i in range(len(hitE)) if fSloShift[i] < 30]
     # x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
     #
-    # fs = np.load("../plots/mult4-evtTrans.npz")
+    # fs = np.load("../data/mult4-evtTrans.npz")
     # evtTotal, evtBulk, evtTrans = fs['arr_0'], fs['arr_1'], fs['arr_2']
     # eneTotal, eneBulk, eneTrans = fs['arr_3'], fs['arr_4'], fs['arr_5']
     #
@@ -874,8 +874,8 @@ def plotFitSloHist():
         (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
         ]
 
-    # f1 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     hitE, chan, fSlo = [], [], []
@@ -1005,12 +1005,12 @@ def getSimDataEvtLoop():
                 eTotHits[mH].append(hitE)
                 eActHits[mH].append(fAct)
 
-    np.savez("../plots/mult4-simDataLoop.npz", eTotHits, eActHits)
+    np.savez("../data/mult4-simDataLoop.npz", eTotHits, eActHits)
 
 
 def plotSimDataLoop():
 
-    f = np.load("../plots/mult4-simDataLoop.npz")
+    f = np.load("../data/mult4-simDataLoop.npz")
     eTotHits, eActHits = f['arr_0'].item(), f['arr_1'].item()
     mH = 2
     n = len(eTotHits[mH])
@@ -1042,7 +1042,7 @@ def compareDataSim():
     xLo, xHi, xpb = 0, 240, 1
 
     # sim
-    f = np.load("../plots/mult4-simDataLoop.npz")
+    f = np.load("../data/mult4-simDataLoop.npz")
     eTotHits, eActHits = f['arr_0'].item(), f['arr_1'].item()
     mH = 2
     n = len(eTotHits[mH])
@@ -1067,8 +1067,8 @@ def compareDataSim():
         690: 80.5, 694: 80.5
         }
     chList = list(fsVals.keys())
-    # f1 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
     hitE, chan, fSlo = [], [], []
     for i in range(len(hitData)):

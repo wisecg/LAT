@@ -61,12 +61,12 @@ def getSimData():
 
         tf.Close()
 
-    np.savez("../plots/sim1-evtTrans.npz",evtTotal,evtBulk,evtTrans)
+    np.savez("../data/sim1-evtTrans.npz",evtTotal,evtBulk,evtTrans)
 
 
 def plotSimData():
 
-    f = np.load("../plots/sim1-evtTrans.npz")
+    f = np.load("../data/sim1-evtTrans.npz")
     evtTotal, evtBulk, evtTrans = f['arr_0'], f['arr_1'], f['arr_2']
 
     fig = plt.figure()
@@ -365,7 +365,7 @@ def testSimData():
 
     print("Peak cts: %d  Cont cts: %d" % (nPk,nCont))
 
-    np.savez("../plots/mult4-simTest.npz", hits, actList, totESpec, sumHitESpec)
+    np.savez("../data/mult4-simTest.npz", hits, actList, totESpec, sumHitESpec)
 
 
 

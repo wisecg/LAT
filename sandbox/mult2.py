@@ -160,12 +160,12 @@ def getSumSpec():
         tf.Close()
 
     # note: "mult" was wrong, do sum(sumSpec[i]) to get the num. cts
-    np.savez("../plots/mult2-sumSpec.npz", x, sumSpec, hitSpec, mult, runTime)
+    np.savez("../data/mult2-sumSpec.npz", x, sumSpec, hitSpec, mult, runTime)
 
 
 def plotSumSpec():
 
-    f = np.load("../plots/mult2-sumSpec.npz")
+    f = np.load("../data/mult2-sumSpec.npz")
     x, sumSpec, hitSpec, runTime = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_4']
     fig = plt.figure()
 
@@ -192,7 +192,7 @@ def plotSumSpec():
 
 
 def plotHitSpec():
-    f = np.load("../plots/mult2-sumSpec.npz")
+    f = np.load("../data/mult2-sumSpec.npz")
     x, hitSpec = f['arr_0'], f['arr_2']
     fig = plt.figure()
 
@@ -211,7 +211,7 @@ def plotHitSpec():
 def plotMultipRates():
     # 'mult' in the orig. npz file was busted.  use sum(sumSpec[i]) to get the num counts.
 
-    f = np.load("../plots/mult2-sumSpec.npz")
+    f = np.load("../data/mult2-sumSpec.npz")
     sumSpec, runTime = f['arr_1'], f['arr_4']
     fig = plt.figure()
 
@@ -277,12 +277,12 @@ def getLoHitSpec():
             x, y = wl.GetHisto(hitE, eLo, eHi, epb)
             hitSpec[i] = np.add(hitSpec[i], y)
 
-    # np.savez("../plots/mult2-lowHitSpec.npz", x, hitSpec, runTime)
-    np.savez("../plots/mult2-lowHitSpec-histats.npz", x, hitSpec, runTime)
+    # np.savez("../data/mult2-lowHitSpec.npz", x, hitSpec, runTime)
+    np.savez("../data/mult2-lowHitSpec-histats.npz", x, hitSpec, runTime)
 
 
 def plotLoHitSpec():
-    f = np.load("../plots/mult2-lowHitSpec-histats.npz")
+    f = np.load("../data/mult2-lowHitSpec-histats.npz")
     x, hitSpec, runTime = f['arr_0'], f['arr_1'], f['arr_2']
     fig = plt.figure()
 
@@ -382,8 +382,8 @@ def getHiDT():
                 # print("%-4d  %-3d  evt %-10.9f  pr[%d] %-10.9f" % (iEnt, mH, evtTime, mH, prev[mH]))
             prev[mH] = evtTime
 
-    np.savez("../plots/mult2-dtVals.npz", dtVals, highDtVals, runTime)
-    np.savez("../plots/mult2-dtVals-histats.npz", dtVals, highDtVals, runTime)
+    np.savez("../data/mult2-dtVals.npz", dtVals, highDtVals, runTime)
+    np.savez("../data/mult2-dtVals-histats.npz", dtVals, highDtVals, runTime)
 
 
 def expoDist(t, rate, amp):
@@ -395,8 +395,8 @@ def expoDist(t, rate, amp):
 def plotHiDT():
     """ This one is less important b/c I realized the longCal file was generated w/ dontSkipAnything """
 
-    # f = np.load("../plots/mult2-dtVals.npz")
-    f = np.load("../plots/mult2-dtVals-histats.npz")
+    # f = np.load("../data/mult2-dtVals.npz")
+    f = np.load("../data/mult2-dtVals-histats.npz")
     dtVals = f['arr_0'].item()
     highDtVals = f['arr_1'].item()
 
@@ -498,18 +498,18 @@ def getDT():
                 # print("%-4d  %-3d  evt %-10.9f  pr[%d] %-10.9f" % (iEnt, mH, evtTime, mH, prev[mH]))
             prev[mH] = evtTime
 
-    # np.savez("../plots/mult2-dtVals-ene.npz", dtVals, runTime)
-    np.savez("../plots/mult2-dtVals-ene-histats.npz", dtVals, runTime)
+    # np.savez("../data/mult2-dtVals-ene.npz", dtVals, runTime)
+    np.savez("../data/mult2-dtVals-ene-histats.npz", dtVals, runTime)
 
 
 def plotFitRates():
 
-    # f = np.load("../plots/mult2-dtVals.npz")
-    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
+    # f = np.load("../data/mult2-dtVals.npz")
+    f = np.load("../data/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
 
     # get raw rate
-    f = np.load("../plots/mult2-sumSpec.npz") # generated from full long cal
+    f = np.load("../data/mult2-sumSpec.npz") # generated from full long cal
     sumSpec, runTime = f['arr_1'], f['arr_4']
     rates = [sum(sumSpec[i])/runTime for i in range(0,6)]
 
@@ -555,7 +555,7 @@ def plotFitRates():
 
 def plotDT_mH1Ene():
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
 
     mH = 1
@@ -610,7 +610,7 @@ def plotDT_mH1Ene_wThr():
 
     # same as above, but only plot hits if they are above the detector threshold.
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
 
     mH = 1
@@ -673,7 +673,7 @@ def plotDT_mH1Ene_wThr():
 
 def plotDT_mH1Low():
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
 
     mH = 1
@@ -740,7 +740,7 @@ def plotDT_mH1Low_wThr():
 
     # same as above, but only plot hits if they are above the detector threshold.
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
 
     mH = 1
@@ -812,8 +812,8 @@ def plotDT_wThr():
 
     # same as above, but show fewer steps and do it for all multiplicities
 
-    # f = np.load("../plots/mult2-dtVals-ene.npz")
-    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
+    # f = np.load("../data/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene-histats.npz")
     dtVals = f['arr_0'].item()
 
     for mH in [1,2,3,4]:
@@ -898,7 +898,7 @@ def plotDT_wThr():
 
 def plotChannelRates_mH1():
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
     runTime = 2473.0 # kludge - this is for runList[7:14] in getDT
 
@@ -970,7 +970,7 @@ def noiseProbability():
 
 def noiseProbability2D():
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
 
     # recalculated the run time, i forgot to save it
@@ -1059,8 +1059,8 @@ def plotDTCut():
     hitESpec = {mH:[] for mH in [1,2,3,4]}      # E cut, 598 cut, thresh cut
     hitESpec_dtp = {mH:[] for mH in [1,2,3,4]}  # dtPulser cut
 
-    # f = np.load("../plots/mult2-dtVals-ene.npz")
-    f = np.load("../plots/mult2-dtVals-ene-histats.npz")
+    # f = np.load("../data/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
     for mH in [1,2,3,4]:
         n = len(dtVals[mH])
@@ -1097,7 +1097,7 @@ def plotDTCut():
         hitESpec_dtp[mH].extend(hitE_dtp)
 
     # save to file for comparison in plotPCut()
-    np.savez("../plots/mult2-dtp-cutSpec.npz", hitESpec_dtp)
+    np.savez("../data/mult2-dtp-cutSpec.npz", hitESpec_dtp)
 
     f, ax = plt.subplots()
 
@@ -1119,8 +1119,8 @@ def plotPCut():
 
     # use the 2d histo to cut on probability
 
-    f = np.load("../plots/mult2-dtVals-ene.npz")
-    # f = np.load("../plots/mult2-dtVals-ene-histats.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
+    # f = np.load("../data/mult2-dtVals-ene-histats.npz")
     dtVals, runTime = f['arr_0'].item(), f['arr_1']
 
     mH = 1
@@ -1225,7 +1225,7 @@ def plotPCut():
     plt.cla()
     fig2 = plt.figure()
 
-    f2 = np.load("../plots/mult2-dtp-cutSpec.npz")
+    f2 = np.load("../data/mult2-dtp-cutSpec.npz")
     hitESpec_dtp = f2['arr_0'].item()
 
     plt.plot(*wl.GetHisto(hitESpec_dtp[mH], xLo, xHi, xpb), ls='steps', lw=1., c='r', label='mH=%d dtpcut' % mH)
@@ -1289,8 +1289,8 @@ def getPeaks():
 
         tf.Close()
 
-    # np.savez("../plots/mult2-peaks.npz", runTime, pks, pkHist)
-    np.savez("../plots/mult2-peaks-histats.npz", runTime, pks, pkHist)
+    # np.savez("../data/mult2-peaks.npz", runTime, pks, pkHist)
+    np.savez("../data/mult2-peaks-histats.npz", runTime, pks, pkHist)
 
 
 def roughSigma(ene):
@@ -1306,8 +1306,8 @@ def gaus(x, b, a, mu, sig):
 
 def plotPeaks():
 
-    # f = np.load("../plots/mult2-peaks.npz")
-    f = np.load("../plots/mult2-peaks-histats.npz") # full cal run
+    # f = np.load("../data/mult2-peaks.npz")
+    f = np.load("../data/mult2-peaks-histats.npz") # full cal run
     runTime, pks, pkHist = f['arr_0'], f['arr_1'], f['arr_2'].item()
 
     # note: to access x and y histogram values:
@@ -1427,17 +1427,17 @@ def getSumEvents():
 
         tf.Close()
 
-    # np.savez("../plots/mult2-comptonEdgeEvts.npz", runTime, comptonEvts2, comptonEvts3)
-    # np.savez("../plots/mult2-sumLoEvts.npz", runTime, sumEvts)
+    # np.savez("../data/mult2-comptonEdgeEvts.npz", runTime, comptonEvts2, comptonEvts3)
+    # np.savez("../data/mult2-sumLoEvts.npz", runTime, sumEvts)
 
-    np.savez("../plots/mult2-comptonEdgeEvts-histats.npz", runTime, comptonEvts2, comptonEvts3)
-    np.savez("../plots/mult2-sumLoEvts-histats.npz", runTime, sumEvts)
+    np.savez("../data/mult2-comptonEdgeEvts-histats.npz", runTime, comptonEvts2, comptonEvts3)
+    np.savez("../data/mult2-sumLoEvts-histats.npz", runTime, sumEvts)
 
 
 def plotComptonEdge():
 
-    # f = np.load("../plots/mult2-comptonEdgeEvts.npz")
-    f = np.load("../plots/mult2-comptonEdgeEvts-histats.npz")
+    # f = np.load("../data/mult2-comptonEdgeEvts.npz")
+    f = np.load("../data/mult2-comptonEdgeEvts-histats.npz")
     runTime, comptonEvts2, comptonEvts3 = f['arr_0'], f['arr_1'].item(), f['arr_2'].item()
 
     f = plt.figure()
@@ -1504,8 +1504,8 @@ def plotComptonEdge():
 
 def plotLoHits():
 
-    f = np.load("../plots/mult2-sumLoEvts.npz")
-    # f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    f = np.load("../data/mult2-sumLoEvts.npz")
+    # f = np.load("../data/mult2-sumLoEvts-histats.npz")
     runTime, sumEvts = f['arr_0'], f['arr_1'].item()
 
     f = plt.figure()
@@ -1537,8 +1537,8 @@ def plotSloHits():
         **** BUG, DO NOT USE ***
     """
 
-    # f = np.load("../plots/mult2-sumLoEvts.npz")
-    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    # f = np.load("../data/mult2-sumLoEvts.npz")
+    f = np.load("../data/mult2-sumLoEvts-histats.npz")
     runTime, sumEvts = f['arr_0'], f['arr_1'].item()
 
     mH, pk = 2, 238
@@ -1637,8 +1637,8 @@ def plotChannelEff():
 
     # Idea: show a bar plot for efficiency of each detector (integrated over energy)
 
-    # f = np.load("../plots/mult2-sumLoEvts.npz")
-    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    # f = np.load("../data/mult2-sumLoEvts.npz")
+    f = np.load("../data/mult2-sumLoEvts-histats.npz")
     runTime, sumEvts = f['arr_0'], f['arr_1'].item()
 
     # load fitSlo constants for cal run range closest to the run range [22513, 22566]
@@ -1751,12 +1751,12 @@ def getExtPulser():
 
             print(run,runTime,np.mean(hitE),nExp,cutEff,extChan)
 
-    np.savez("../plots/mult2-extPulser.npz", effs, evts)
+    np.savez("../data/mult2-extPulser.npz", effs, evts)
 
 
 def plotExtPulser():
 
-    f = np.load("../plots/mult2-extPulser.npz")
+    f = np.load("../data/mult2-extPulser.npz")
     effs, evts = f['arr_0'], f['arr_1']
 
     # effs: (run,runTime,nExp,cutEff,extChan)

@@ -132,9 +132,9 @@ def getSpec():
             x, y = wl.GetHisto(sumVals[i], xLo, xHi, xpb)
             sumSpec[i] = np.add(sumSpec[i], y)
 
-    np.savez("../plots/mult3-sumE.npz", runTime, x, sumSpec, sumTSpec)
-    np.savez("../plots/mult3-dtmHT.npz", runTime, dtVals)
-    np.savez("../plots/mult3-hitE.npz", runTime, hitList, hitData, eCut)
+    np.savez("../data/mult3-sumE.npz", runTime, x, sumSpec, sumTSpec)
+    np.savez("../data/mult3-dtmHT.npz", runTime, dtVals)
+    np.savez("../data/mult3-hitE.npz", runTime, hitList, hitData, eCut)
 
 
 def getRunTime(runList):
@@ -168,8 +168,8 @@ def plotSumHitCut():
     hitData : [mH, mHT, sumE, sumET, dt[mH], iFile, iEnt]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    f1 = np.load("../plots/mult3-sumE.npz")
-    f2 = np.load("../plots/mult3-hitE.npz")
+    f1 = np.load("../data/mult3-sumE.npz")
+    f2 = np.load("../data/mult3-hitE.npz")
     runTime, x, sumSpec, sumSpecT = f1['arr_0'], f1['arr_1'], f1['arr_2'].item(), f1['arr_3'].item()
     hitList, hitData, eCut = f2['arr_1'], f2['arr_2'], f2['arr_3']
 
@@ -196,9 +196,9 @@ def plotSpec():
     hitData : [mH, mHT, sumE, sumET, dt[mH], iFile, iEnt]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    f1 = np.load("../plots/mult3-hitE.npz")
-    f2 = np.load("../plots/mult3-dtmHT.npz")
-    f3 = np.load("../plots/mult3-sumE.npz")
+    f1 = np.load("../data/mult3-hitE.npz")
+    f2 = np.load("../data/mult3-dtmHT.npz")
+    f3 = np.load("../data/mult3-sumE.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
     runTime, dtVals = f2['arr_0'], f2['arr_1'].item()
     runTime, x, sumSpec, sumSpecT = f3['arr_0'], f3['arr_1'], f3['arr_2'].item(), f3['arr_3'].item()

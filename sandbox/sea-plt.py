@@ -143,12 +143,12 @@ def scrapeData():
     # # fCut = sorted(glob.glob("%s/results_v1/fs/fitSlo-DS%d-*.root" % (dsi.dataDir, dsNum)))
 
     print(len(hitE))
-    np.savez("../plots/sea-plt-2.npz", hitE, fSlo, chans, runs, fsCut, thMu, thSig, rise, riseCut)
+    np.savez("../data/sea-plt-2.npz", hitE, fSlo, chans, runs, fsCut, thMu, thSig, rise, riseCut)
 
 
 def plotData():
 
-    f = np.load("../plots/sea-plt.npz")
+    f = np.load("../data/sea-plt.npz")
 
     hitE, fSlo, chans, runs = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
     fsCut, thMu, thSig = f['arr_4'], f['arr_5'], f['arr_6']
@@ -252,7 +252,7 @@ def plotData():
 
 def plotData2():
 
-    f = np.load("../plots/sea-plt-2.npz")
+    f = np.load("../data/sea-plt-2.npz")
 
     hitE, fSlo, chans, runs = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
     fsCut, thMu, thSig = f['arr_4'], f['arr_5'], f['arr_6']
@@ -342,12 +342,12 @@ def getData3():
     t4 = np.asarray([t4[i] for i in range(n) if t6[i] in goodChans])
     t5 = np.asarray([t5[i] for i in range(n) if t6[i] in goodChans])
 
-    np.savez("../plots/sea-data3.npz",t1,t2,t4,t5)
+    np.savez("../data/sea-data3.npz",t1,t2,t4,t5)
 
 
 def plotData3():
 
-    f = np.load("../plots/sea-data3.npz")
+    f = np.load("../data/sea-data3.npz")
     t1 = f['arr_0']
     t2 = f['arr_1']
     t4 = f['arr_2']
@@ -364,9 +364,9 @@ def plotData3():
 
 def plotThreshCut():
     """ Adapted from LAT/sandbox/mult2.py, and dependent on input:
-    "../plots/mult2-dtVals-ene.npz"
+    "../data/mult2-dtVals-ene.npz"
     """
-    f = np.load("../plots/mult2-dtVals-ene.npz")
+    f = np.load("../data/mult2-dtVals-ene.npz")
     dtVals = f['arr_0'].item()
     mH = 1
     n = len(dtVals[mH])
@@ -468,12 +468,12 @@ def getCalData():
         rise.extend(rn)
         tf.Close()
 
-    np.savez("../plots/sea-cal.npz",chan,hitE,fSlo,rise)
+    np.savez("../data/sea-cal.npz",chan,hitE,fSlo,rise)
 
 
 def plotCalSlowness():
 
-    f = np.load('../plots/sea-cal.npz')
+    f = np.load('../data/sea-cal.npz')
     chanIn, hitEIn, fSloIn, riseIn = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
 
     # average slowness values
@@ -558,8 +558,8 @@ def plotSlowness2():
         (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
         ]
 
-    # f1 = np.load("../plots/mult4-hitE.npz")
-    f1 = np.load("../plots/mult4-hitE-histats.npz")
+    # f1 = np.load("../data/mult4-hitE.npz")
+    f1 = np.load("../data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     hitE, chan, fSlo = [], [], []
@@ -631,8 +631,8 @@ def plotSloHits():
     chList = sorted(list(set(chList)))
 
     # load data (from mult2::getSumEvents)
-    # f = np.load("../plots/mult2-sumLoEvts.npz")
-    f = np.load("../plots/mult2-sumLoEvts-histats.npz")
+    # f = np.load("../data/mult2-sumLoEvts.npz")
+    f = np.load("../data/mult2-sumLoEvts-histats.npz")
     runTime, sumEvts = f['arr_0'], f['arr_1'].item()
     mH, pk = 2, 238
     evts = sumEvts[mH][pk]
