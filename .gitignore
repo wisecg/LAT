@@ -1,5 +1,6 @@
 .*
 !/.gitignore
+!./data/gitignore
 *.pyc
 *.root
 *.o
@@ -11,8 +12,6 @@ validate_skim
 specFit
 logs/*
 plots/*
-data/mucal
 cron.log
 job.q
-data/parse*
 jobs/*/
