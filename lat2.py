@@ -71,6 +71,10 @@ def main(argv):
         if opt=="-rs":
             riseStability()
 
+        # update riseNoise DB entries for problem channels
+        if opt=="-rc":
+            badRiseChans()
+
         # generate cut files (specify cut type)
         if opt=="-cut":
             if ds is None:
@@ -967,12 +971,15 @@ def setRiseCut():
 
 
 def riseStability():
-    """ ./lat2.py [-db] -rs
+    """ ./lat2.py -rs
     Track problem channels in riseNoise and return a (suggested)
     list of channels to cut, along w/ a diagnostic plot. """
 
-    # dsList = [0,1,2,3,4,5]
-    dsList = [3]
+    dsList = [0,1,2,3,4,5]
+    # dsList = [3]
+
+    makeStabilityPlot = True
+    makeChannelPlots = True
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
@@ -1007,20 +1014,211 @@ def riseStability():
             avgB, stdB = np.mean(allB), np.std(allB)
             avgC, stdC = np.mean(allC), np.std(allC)
 
+            fig = plt.figure(figsize=(18,6))
+            p1 = plt.subplot(131)
+            p2 = plt.subplot(132)
+            p3 = plt.subplot(133)
+            cmap = plt.cm.get_cmap('tab20',len(chList)+1)
+
+            # these are the threshold values for a candidate for a bad riseNoise channel
+            chk = {'a':[-500,2000], 'b':[0,200], 'c':[50,200]}
+
+            checkList = [] # this is what we fill with bad stuff
+
+            for i, ch in enumerate(chList):
+                x = [ci for ci in range(nCal) if dbVals[ci][ch] is not None]
+                yA, yB, yC = [], [], []
+                for ci in range(nCal):
+                    if dbVals[ci][ch] is not None:
+                        valA = dbVals[ci][ch][0]/avgA
+                        valB = dbVals[ci][ch][1]/avgB
+                        valC = dbVals[ci][ch][2]/avgC
+                        yA.append(valA)
+                        yB.append(valB)
+                        yC.append(valC)
+
+                        # save bad vals
+                        if not (chk['a'][0] < valA*100 < chk['a'][1] \
+                            and chk['b'][0] < valB*100 < chk['b'][1] \
+                            and chk['c'][0] < valC*100 < chk['c'][1]):
+                            checkList.append([ci,ch])
+
+                        # if fit is bad, always check it
+                        if not dbVals[ci][ch][4]:
+                            checkList.append([ci,ch])
+
+                if makeStabilityPlot:
+                    yA, yB, yC = np.asarray(yA), np.asarray(yB), np.asarray(yC)
+                    p1.plot(x, yA*100, ".", ms=10, c=cmap(i), label=ch)
+                    p2.plot(x, yB*100, ".", ms=10, c=cmap(i))
+                    p3.plot(x, yC*100, ".", ms=10, c=cmap(i))
+
+            if makeStabilityPlot:
+                p1.axhline(100, c='g', alpha=0.5, label='avgA %.2e' % avgA)
+                p1.axhline(chk['a'][0], c='r', alpha=0.5, label='bad:%d' % chk['a'][0])
+                p1.axhline(chk['a'][1], c='r', alpha=0.5, label='bad:%d' % chk['a'][1])
+                p1.set_xlabel("calIdx", ha='right', x=1)
+                p1.set_ylabel("Pct.Deviation from Avg.", ha='right', y=1)
+                p1.legend(loc='best', ncol=4, fontsize=10)
+
+                p2.axhline(100, c='g', alpha=0.5, label='avgB %.2e' % avgB)
+                p2.axhline(chk['b'][0], c='r', alpha=0.5, label='bad:%d' % chk['b'][0])
+                p2.axhline(chk['b'][1], c='r', alpha=0.5, label='bad:%d' % chk['b'][1])
+                p2.set_xlabel("calIdx", ha='right', x=1)
+                p2.legend(loc='best', fontsize=10)
+
+                p3.axhline(100, c='g', alpha=0.5, label='avgC %.2f' % avgC)
+                p3.axhline(chk['c'][0], c='r', alpha=0.5, label='bad:%d' % chk['c'][0])
+                p3.axhline(chk['c'][1], c='r', alpha=0.5, label='bad:%d' % chk['c'][1])
+                p3.set_xlabel("calIdx", ha='right', x=1)
+                p3.legend(loc='best', fontsize=10)
+
+                plt.tight_layout()
+                plt.savefig("./plots/rise-stability-%s.png" % calKey)
 
 
-    return checkList
+            # ============================================================
+            # if we have candidates for removal, check this diagnostic plot
+            # before you make a final decision.
+
+            if len(checkList)==0:
+                print("No bad channels found!")
+                return
+
+            if not makeChannelPlots:
+                print(checkList)
+                continue
+
+            f = np.load("./data/lat2-rise-%s.npz" % calKey)
+            riseHist = f['arr_0'].item()
+
+            # match the 2d hists in setRiseCut
+            xLo, xHi, xpb = 0, 250, 2
+            yLo, yHi, ypb = -5, 10, 0.1
+            nbx = int((xHi-xLo)/xpb)
+            nby = int((yHi-yLo)/ypb)
+            _, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+
+            fig = plt.figure(figsize=(18,6))
+            p1 = plt.subplot(131)
+            p2 = plt.subplot(132)
+            p3 = plt.subplot(133)
+
+            # print a good channel, just for comparison
+            # checkList = [[0,578]]
+
+            print("Removal candidates:")
+            for ci, ch in checkList:
+                cpd = det.getChanCPD(ds,ch)
+                # print("ci",ci,"ch",ch,"cpd",cpd)
+
+                if riseHist[ci][ch] is None:
+                    print("No data found! ci, ch",ci,ch)
+                    continue
+
+                hRise = riseHist[ci][ch]
+
+                # -- 1. 2d hist, riseNoise vs hitE, with fit and 99.9% cut shown
+                p1.cla()
+                p1.set_aspect('auto')
+                x, y = np.meshgrid(xe, ye)
+                p1.pcolormesh(x, y, hRise.T, norm=LogNorm())
+                p1.plot(np.nan, np.nan, '.w', label='cIdx %d ch%d C%sP%sD%s' % (ci, ch, *cpd))
+
+                a,b,c99,c,fitPass = dbVals[ci][ch]
+                if not fitPass:
+                    print("warning: this riseNoise fit failed!")
+                xFit = np.arange(xLo, xHi, 0.1)
+                p1.plot(xFit, wl.pol1(xFit, a, b, c), 'g-', label="a %.1e b %.1e c %.4f" % (a,b,c))
+                p1.plot(xFit, wl.pol1(xFit, a, b, c99), 'r-', label="a %.1e b %.1e c99 %.4f" % (a,b,c99))
+
+                p1.set_xlabel("Energy (keV)", ha='right', x=1)
+                p1.set_ylabel("riseNoise", ha='right', y=1)
+
+                p1.legend(loc=4)
+
+                # -- 2. 1d projection, energy
+                p2.cla()
+                yE = np.sum(hRise, axis=1)
+                xE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
+                p2.plot(xE, yE, "b", ls='steps')
+                p2.set_xlabel("Energy (keV)", ha='right', x=1)
+
+                # -- 3. 1d projection, riseNoise. show the E=0 and E=238 cut vals
+                p3.cla()
+                yR = np.sum(hRise, axis=0)
+                xR = ye[:-1] + 0.5*(ye[1]-ye[0])
+                p3.plot(xR, yR, "b", ls='steps')
+
+                p3.axvline(wl.pol1(0,a,b,c99), c='r', label='@E=0 : %.2f' % wl.pol1(0,a,b,c99))
+                p3.axvline(wl.pol1(238,a,b,c99), c='r', label='@E=238 : %.2f' % wl.pol1(238,a,b,c99))
+                p3.set_xlabel("riseNoise", ha='right', x=1)
+                p3.legend(loc=1, fontsize=10)
+
+                plt.tight_layout()
+                plt.savefig("./plots/rise-%s-ci%d-ch%d.png" % (calKey,ci,ch))
+
+            print("Cut candidates,",calKey)
+            print(checkList)
 
 
-def cutRiseChans():
-    """ Edit the list of problem channels from riseStability
-    and update the DB values for the ones we actually want to cut.
+def badRiseChans():
+    """ Using the diagnostic plots from riseStability,
+    manually identify channels which fail the fit.
+    Update the riseNoise DB entries for these channels/calIdxs to be declared bad.
+        (Just change the last parameter to False.)
     This could maybe go in chan-sel.py but we're just gonna turn around
     and use it in applyCuts anyway.
     """
-    print("i'm a placeholder!")
+    # the corresponding plots are saved in ./plots/rise for reference
+    removeList = {}
+    removeList["ds0_m1"] = {
+        692:[26,27]   # HF burst
+        }
+    removeList["ds1_m1"] = {
+        594:list(range(29,56+1)), # 2nd HF population starting @ 50 keV (C1P7D3)
+        692:[56]         # too much curvature
+        }
+    removeList["ds3_m1"] = {
+        594:list(range(0,8+1)) # 2nd HF population starting @ 50 keV (C1P7D3)
+        }
+    removeList["ds4_m2"] = {
+        1106:[1,4,7,8], # HF burst
+        1136:[4,7,8],   # HF burst
+        1144:[7],       # too much curvature
+        1296:[4,7,8],   # HF burst
+        1298:[4]        # HF burst
+        }
+    removeList["ds5_m1"] = {
+        584:[7],    # threshold noise causes too much curvature
+        608:[7,8],
+        632:[7],
+        662:[8],
+        692:[7,8]
+        }
+    removeList["ds5_m2"] = {
+        1232:[4,5,6,7], # threshold noise causes too much curvature
+        1236:[4,5,6,7,8],
+        1298:[4,5,6,7],
+        1330:[4,6,7,8],
+        1332:[4]
+        }
 
-    checkList = [] # put the
+    # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    for calKey in removeList:
+        for ch in removeList[calKey]:
+            badIdx = removeList[calKey][ch]
+            print("Updating DB entry for %s ch %d, badIdxs:" % (calKey,ch),badIdx)
+
+            for bI in badIdx:
+                dbKey = "riseNoise_%s_ci%d_pol" % (calKey,bI)
+                dbVals = dsi.getDBRecord(dbKey,False,calDB,pars)
+
+                dbVals[ch][4] = False # this marks the entry bad in the DB
+
+                dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
 
 
 def applyCuts(ds, cutType):
