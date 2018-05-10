@@ -1163,45 +1163,46 @@ def riseStability():
 
 
 def badRiseChans():
-    """ Using the diagnostic plots from riseStability,
+    """ ./lat2.py [-db] -rc
+    Using the diagnostic plots from riseStability,
     manually identify channels which fail the fit.
     Update the riseNoise DB entries for these channels/calIdxs to be declared bad.
         (Just change the last parameter to False.)
     This could maybe go in chan-sel.py but we're just gonna turn around
     and use it in applyCuts anyway.
     """
-    # the corresponding plots are saved in ./plots/rise for reference
+    # the corresponding plots are saved in ./plots/rise/ for reference
     removeList = {}
     removeList["ds0_m1"] = {
         692:[26,27]   # HF burst
         }
     removeList["ds1_m1"] = {
-        594:list(range(29,56+1)), # 2nd HF population starting @ 50 keV (C1P7D3)
-        692:[56]         # too much curvature
+        594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
+        692:[56]                    # too much curvature
         }
     removeList["ds3_m1"] = {
-        594:list(range(0,8+1)) # 2nd HF population starting @ 50 keV (C1P7D3)
+        594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
         }
     removeList["ds4_m2"] = {
         1106:[1,4,7,8], # HF burst
-        1136:[4,7,8],   # HF burst
+        1136:[4,7,8],   # "
         1144:[7],       # too much curvature
         1296:[4,7,8],   # HF burst
-        1298:[4]        # HF burst
+        1298:[4]        # "
         }
     removeList["ds5_m1"] = {
         584:[7],    # threshold noise causes too much curvature
-        608:[7,8],
-        632:[7],
-        662:[8],
-        692:[7,8]
+        608:[7,8],  # "
+        632:[7],    # "
+        662:[8],    # "
+        692:[7,8]   # "
         }
     removeList["ds5_m2"] = {
-        1232:[4,5,6,7], # threshold noise causes too much curvature
-        1236:[4,5,6,7,8],
-        1298:[4,5,6,7],
-        1330:[4,6,7,8],
-        1332:[4]
+        1232:[4,5,6,7],     # threshold noise causes too much curvature
+        1236:[4,5,6,7,8],   # "
+        1298:[4,5,6,7],     # "
+        1330:[4,6,7,8],     # "
+        1332:[4]            # "
         }
 
     # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
@@ -1218,7 +1219,8 @@ def badRiseChans():
 
                 dbVals[ch][4] = False # this marks the entry bad in the DB
 
-                dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+                if writeDB:
+                    dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
 
 
 def applyCuts(ds, cutType):
