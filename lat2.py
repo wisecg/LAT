@@ -788,7 +788,6 @@ def scanRunsRise(ds, key, mod, cIdx):
                 chan.append(tt.channel.at(i))
                 rise.append(tt.riseNoise.at(i))
 
-    print("done.")
     hitE, chan, rise = np.asarray(hitE), np.asarray(chan), np.asarray(rise)
     print(len(hitE),'total entries')
 
@@ -835,7 +834,6 @@ def setRiseCut():
     riseNoise DB entries:
     {"key":"riseNoise_%s_ci%d_pol", "vals": {ch:[a,b,c99,fitPass] for ch in goodList} }
     """
-
     makePlots = False
     if writeDB:
         dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
@@ -843,16 +841,15 @@ def setRiseCut():
         calDB = db.TinyDB(dbFile)
         pars = db.Query()
 
-    # dsList = [0,1,2,3,4,5]
-    dsList = [5]
-    # remaining: ds5_m2, ds5c
+    dsList = [0,1,2,3,4,5]
+    # dsList = [0]
 
     # loop over ds's, separated by cal key
     for ds in dsList:
         for calKey in cal.GetKeys(ds):
             print("Scanning",calKey,"...")
 
-            if calKey!="ds5c": continue
+            # if calKey!="ds5c": continue
 
             chList = det.getGoodChanList(ds)
             mod = -1
@@ -900,31 +897,37 @@ def setRiseCut():
                     # fit the data to a pol1
                     popt, pcov = curve_fit(wl.pol1, hitE, rise)
 
-                    # move the y-intercept up (c), and calculate how many events you keep
-                    start = time.time()
+                    # move the y-intercept up (c), and calculate how many events you keep.
+                    # The version in rise-cut.py will make a plot showing the raw fitting (so we don't do it here.)
+                    # s1 = time.time()
                     nTot = len(hitE)
                     a, b, c = popt
                     fitPass = False
                     for i in range(1000):
-                        c99 = c + 0.05*i
-                        evtPass = np.asarray([[hitE[i],rise[i]] for i in range(nTot) if rise[i] <= wl.pol1(hitE[i],a,b,c99)])
-                        evtFail = np.asarray([[hitE[i],rise[i]] for i in range(nTot) if rise[i] > wl.pol1(hitE[i],a,b,c99)])
-                        nPass = len(evtPass)
+                        c99 = c + 0.1*i
+                        nPass = 0
+                        for i in range(nTot):
+                            if rise[i] <= wl.pol1(hitE[i],a,b,c99):
+                                nPass += 1
                         if nPass/nTot > 0.995: # keep 99.5% of cal events
                             fitPass = True
                             break
+                    # print("DS%d ci%d ch%d  99pct fit: %.2f sec  a %-9.2e  b %-5.3f  c99 %.3f  Pass:" % (ds,ci,ch,time.time()-s1,a,b,c99),fitPass)
 
-                    # print("DS%d ci%d ch%d  99pct fit: %.2f sec  a %-9.2e  b %-5.3f  c99 %.3f  Pass:" % (ds,ci,ch,time.time()-start,a,b,c99),fitPass)
-
-                    dbVals[ch] = [a,b,c99,fitPass]
+                    dbVals[ch] = [a,b,c99,c,fitPass]
 
                     # save a 2d hist for this channel/calIdx
-                    xLo, xHi, xpb = 0, 250, 1
-                    yLo, yHi, ypb = -10, 10, 0.05
+                    xLo, xHi, xpb = 0, 250, 2
+                    yLo, yHi, ypb = -5, 10, 0.1
                     nbx = int((xHi-xLo)/xpb)
                     nby = int((yHi-yLo)/ypb)
-                    riseShift = [rise[i] - wl.pol1(hitE[i],a,b,c) for i in range(nTot)]
-                    hist,_,_ = np.histogram2d(hitE,riseShift,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+
+                    # make sure we're not getting too many overflow counts
+                    idx = np.where((rise < yLo) | (rise > yHi))
+                    if len(idx[0])/len(rise) > 0.05:
+                        print("Warning, getting overflow counts, chan %d  nTot %d  nOVF %d  maxRise %.1f  minRise %.1f" % (ch,len(idx[0]),len(rise),rise[idx].max(),rise[idx].min()))
+
+                    hist,_,_ = np.histogram2d(hitE,rise,bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
                     riseHist[ci][ch] = hist
 
                     if makePlots:
@@ -945,13 +948,12 @@ def setRiseCut():
                         # return
 
                 # final db check
-                print(dbKey)
-                for ch in sorted(dbVals):
-                    tmp = dbVals[ch]
-                    if tmp is not None:
-                        print(ch, "%-9.2e  %-9.2e  %.2f " % (tmp[0],tmp[1],tmp[2]),tmp[3])
-                    else:
-                        print(ch, None)
+                if not writeDB: print(dbKey)
+                # for ch in sorted(dbVals):
+                #     if dbVals[ch] is not None:
+                #         print(ch, "%-9.2e  %-9.2e  %.2f " % (*dbVals[ch])
+                #     else:
+                #         print(ch, None)
 
                 # fill the DB
                 if writeDB:
@@ -966,16 +968,16 @@ def setRiseCut():
 
 def riseStability():
     """ ./lat2.py [-db] -rs
-    If this finds problems w/ a channel/calIdx, it overwrites that
-    channel's DB record w/ a bad value. """
+    Track problem channels in riseNoise and return a (suggested)
+    list of channels to cut, along w/ a diagnostic plot. """
+
+    # dsList = [0,1,2,3,4,5]
+    dsList = [3]
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
 
-    dsList = [2]
     for ds in dsList:
-
-        totA, totB, totC = [], [], []
 
         for calKey in cal.GetKeys(ds):
             chList = det.getGoodChanList(ds)
@@ -988,123 +990,37 @@ def riseStability():
                 chList = [ch for ch in chList if ch > 1000]
             nCal = cal.GetNCalIdxs(ds,mod)
 
-            muA = {ch:[] for ch in chList}
-            muB = {ch:[] for ch in chList}
-            muC = {ch:[] for ch in chList}
-
+            # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
+            dbVals = {}
             for ci in range(nCal):
-                dbKey = "riseNoise_%s_ci%d_pol" % (calKey,ci)
-                dbVals = dsi.getDBRecord(dbKey,False,calDB,pars)
-                for ch in dbVals:
-                    if dbVals[ch] is not None:
-                        # "vals": {ch:[a,b,c99,fitPass] for ch in goodList} }
-                        muA[ch].append(dbVals[ch][0])
-                        muB[ch].append(dbVals[ch][1])
-                        muC[ch].append(dbVals[ch][2])
-                        totA.append(dbVals[ch][0])
-                        totB.append(dbVals[ch][1])
-                        totC.append(dbVals[ch][2])
-                    else:
-                        muA[ch].append(-9)
-                        muB[ch].append(-9)
-                        muC[ch].append(-9)
-                        totA.append(-9)
-                        totB.append(-9)
-                        totC.append(-9)
-
-            fig = plt.figure(figsize=(9,12))
-            p1 = plt.subplot(311)
-            p2 = plt.subplot(312)
-            p3 = plt.subplot(313)
+                dbVals[ci] = dsi.getDBRecord("riseNoise_%s_ci%d_pol" % (calKey,ci),False,calDB,pars)
 
             # average a,b,c for ALL detectors, all calIdx's
-            avgA = np.mean([t for t in totA if t!=-9])
-            stdA = np.std([t for t in totA if t!=-9])
-            avgB = np.mean([t for t in totB if t!=-9])
-            stdB = np.std([t for t in totB if t!=-9])
-            avgC = np.mean([t for t in totC if t!=-9])
-            stdC = np.std([t for t in totC if t!=-9])
-
-            calIdxs = np.arange(len(muA[chList[0]]))
-
-            cmap = plt.cm.get_cmap('jet',len(chList)+1)
-            # for key in dsExpos:
-                # val = dsExpos[key]
-                # plt.plot(val,2.6e-11/sensFunc(val),'o',c=cmap(ctr),label=key)
-                # ctr += 1
-
-            for i, ch in enumerate(chList):
-
-                # devA = np.asarray(muA[ch])/avgA
-                p1.plot(calIdxs, muA[ch], ".", c=cmap(i), ms=5, label=ch)
-
-                # devB = np.asarray(muB[ch])/avgB
-                p2.plot(calIdxs, muB[ch], ".", c=cmap(i), ms=5, label=ch)
-
-                # devC = np.asarray(muC[ch])/avgC
-                p3.plot(calIdxs, muC[ch], ".", c=cmap(i), ms=5, label=ch)
-
-
-            # p1.axhline(1, color='g', label="avgA:%.2e" % avgA)
-            leg = p1.legend(loc=1,ncol=4,fontsize=8)
-            leg.get_frame().set_alpha(0.5)
-
-            # p2.axhline(1, color='g', label="avgB:%.2e" % avgA)
-
-            # p3.axhline(1, color='g', label="avgC:%.2e" % avgC)
-
-            plt.tight_layout()
-            plt.savefig("./plots/lat2-dbStable-test.png")
+            allA, allB, allC = [], [], []
+            for ci in range(nCal):
+                for ch in dbVals[ci]:
+                    if dbVals[ci][ch] is not None:
+                        allA.append(dbVals[ci][ch][0])
+                        allB.append(dbVals[ci][ch][1])
+                        allC.append(dbVals[ci][ch][2])
+            avgA, stdA = np.mean(allA), np.std(allA)
+            avgB, stdB = np.mean(allB), np.std(allB)
+            avgC, stdC = np.mean(allC), np.std(allC)
 
 
 
+    return checkList
 
 
+def cutRiseChans():
+    """ Edit the list of problem channels from riseStability
+    and update the DB values for the ones we actually want to cut.
+    This could maybe go in chan-sel.py but we're just gonna turn around
+    and use it in applyCuts anyway.
+    """
+    print("i'm a placeholder!")
 
-    # f = np.load("./data/lat2-rise-ds2_m1.npz")
-    # riseHist = f['arr_0'].item()
-    #
-    # xLo, xHi, xpb = 0, 250, 1
-    # yLo, yHi, ypb = -10, 10, 0.05
-    # nbx = int((xHi-xLo)/xpb)
-    # nby = int((yHi-yLo)/ypb)
-    # hSum, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
-    #
-    # for cIdx in riseHist:
-    #     breakin2 = False
-    #     for ch in riseHist[cIdx]:
-    #         if riseHist[cIdx][ch] is not None:
-    #             hSum = np.add(hSum,riseHist[cIdx][ch])
-    #             print(cIdx, ch)
-    #             breakin2 = True
-    #             break
-    #     if breakin2: break # electric boogaloo
-    #
-    # fig = plt.figure()
-    #
-    # plt.gca().set_aspect('auto')
-    # x, y = np.meshgrid(xe, ye)
-    # plt.gca().pcolormesh(x, y, hSum.T, norm=LogNorm())
-    #
-    # plt.xlabel("Energy (keV)", ha='right', x=1)
-    # plt.ylabel("riseNoise", ha='right', y=1)
-    # plt.savefig("./plots/lat2-rise.png")
-    #
-    # pE = np.sum(hSum, axis=1)
-    # bE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
-    #
-    # pR = np.sum(hSum, axis=0)
-    # bR = ye[:-1] + 0.5*(ye[1]-ye[0])
-    #
-    # plt.cla()
-    # plt.plot(bE, pE, "b", ls='steps')
-    # plt.xlabel("Energy (keV)", ha='right', x=1)
-    # plt.savefig("./plots/lat2-riseE.png")
-    #
-    # plt.cla()
-    # plt.plot(bR, pR, "b", ls='steps')
-    # plt.xlabel("riseNoise", ha='right', x=1)
-    # plt.savefig("./plots/lat2-riseR.png")
+    checkList = [] # put the
 
 
 def applyCuts(ds, cutType):

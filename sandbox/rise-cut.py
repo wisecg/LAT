@@ -13,6 +13,7 @@ as well as the cut file generation.
 """
 import sys, os, time
 import numpy as np
+import tinydb as db
 from scipy.optimize import curve_fit
 
 import matplotlib as mpl
@@ -43,6 +44,9 @@ def main(argv):
 
         if opt=="-set":
             setRiseCut()
+
+    # riseStability_v1()
+    riseStability_v2()
 
 
 def scanRunsRise(ds, key, mod, cIdx):
@@ -266,8 +270,216 @@ def setRiseCut():
                 return
 
 
-def plotStability():
-    print("you need to plot each channel, each calIdx")
+def riseStability_v1():
+
+    f = np.load("./data/lat2-rise-ds2_m1.npz")
+    riseHist = f['arr_0'].item()
+
+    xLo, xHi, xpb = 0, 250, 1
+    yLo, yHi, ypb = -10, 10, 0.05
+    nbx = int((xHi-xLo)/xpb)
+    nby = int((yHi-yLo)/ypb)
+    hSum, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+
+    for cIdx in riseHist:
+        breakin2 = False
+        for ch in riseHist[cIdx]:
+            if riseHist[cIdx][ch] is not None:
+                hSum = np.add(hSum,riseHist[cIdx][ch])
+                print(cIdx, ch)
+                breakin2 = True
+                break
+        if breakin2: break # electric boogaloo
+
+    fig = plt.figure()
+
+    plt.gca().set_aspect('auto')
+    x, y = np.meshgrid(xe, ye)
+    plt.gca().pcolormesh(x, y, hSum.T, norm=LogNorm())
+
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("riseNoise", ha='right', y=1)
+    plt.savefig("./plots/lat2-rise.png")
+
+    pE = np.sum(hSum, axis=1)
+    bE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
+
+    pR = np.sum(hSum, axis=0)
+    bR = ye[:-1] + 0.5*(ye[1]-ye[0])
+
+    plt.cla()
+    plt.plot(bE, pE, "b", ls='steps')
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.savefig("./plots/lat2-riseE.png")
+
+    plt.cla()
+    plt.plot(bR, pR, "b", ls='steps')
+    plt.xlabel("riseNoise", ha='right', x=1)
+    plt.savefig("./plots/lat2-riseR.png")
+
+
+def riseStability_v2():
+
+    dsList = [0,1,2,3,4,5]
+    # dsList = [3]
+
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+
+    for ds in dsList:
+
+        for calKey in cal.GetKeys(ds):
+            chList = det.getGoodChanList(ds)
+            mod = -1
+            if "m1" in calKey:
+                mod = 1
+                chList = [ch for ch in chList if ch < 1000]
+            if "m2" in calKey:
+                mod = 2
+                chList = [ch for ch in chList if ch > 1000]
+            nCal = cal.GetNCalIdxs(ds,mod)
+
+            # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
+            dbVals = {}
+            for ci in range(nCal):
+                dbVals[ci] = dsi.getDBRecord("riseNoise_%s_ci%d_pol" % (calKey,ci),False,calDB,pars)
+
+            # average a,b,c for ALL detectors, all calIdx's
+            allA, allB, allC = [], [], []
+            for ci in range(nCal):
+                for ch in dbVals[ci]:
+                    if dbVals[ci][ch] is not None:
+                        allA.append(dbVals[ci][ch][0])
+                        allB.append(dbVals[ci][ch][1])
+                        allC.append(dbVals[ci][ch][2])
+            avgA, stdA = np.mean(allA), np.std(allA)
+            avgB, stdB = np.mean(allB), np.std(allB)
+            avgC, stdC = np.mean(allC), np.std(allC)
+
+            # MWE - don't delete me
+            # fig = plt.figure()
+            # cmap = plt.cm.get_cmap('tab20',len(chList)+1)
+            # for i, ch in enumerate(chList):
+            #     x = [ci for ci in range(nCal) if dbVals[ci][ch] is not None]
+            #     y = [dbVals[ci][ch][0]/avgA for ci in range(nCal) if dbVals[ci][ch] is not None]
+            #     plt.plot(x, y, ".", ms=10, c=cmap(i), label=ch)
+            # plt.axhline(avgA, c='r', alpha=0.5, label='avgA %.2e' % avgA)
+            # plt.xlabel("calIdx", ha='right', x=1)
+            # plt.legend(loc='best', ncol=4, fontsize=8)
+
+            print("plotting",calKey)
+
+            fig = plt.figure(figsize=(18,6))
+            p1 = plt.subplot(131)
+            p2 = plt.subplot(132)
+            p3 = plt.subplot(133)
+            cmap = plt.cm.get_cmap('tab20',len(chList)+1)
+
+            chk = {'a':[-500,2000], 'b':[0,200], 'c':[50,200]}
+            checkList = []
+
+            for i, ch in enumerate(chList):
+                x = [ci for ci in range(nCal) if dbVals[ci][ch] is not None]
+                yA, yB, yC = [], [], []
+                for ci in range(nCal):
+                    if dbVals[ci][ch] is not None:
+                        valA = 100 * dbVals[ci][ch][0]/avgA
+                        valB = 100 * dbVals[ci][ch][1]/avgB
+                        valC = 100 * dbVals[ci][ch][2]/avgC # this is c99
+                        yA.append(valA)
+                        yB.append(valB)
+                        yC.append(valC)
+                        if not (chk['a'][0]<valA<chk['a'][1] and chk['b'][0]<valB<chk['b'][1] and chk['c'][0]<valC<chk['c'][1]):
+                            checkList.append([ci,ch,valC])
+
+                yA = [100 * dbVals[ci][ch][0]/avgA for ci in range(nCal) if dbVals[ci][ch] is not None]
+                yB = [100 * dbVals[ci][ch][1]/avgB for ci in range(nCal) if dbVals[ci][ch] is not None]
+                yC = [100 * dbVals[ci][ch][2]/avgC for ci in range(nCal) if dbVals[ci][ch] is not None]
+                p1.plot(x, yA, ".", ms=10, c=cmap(i), label=ch)
+                p2.plot(x, yB, ".", ms=10, c=cmap(i))
+                p3.plot(x, yC, ".", ms=10, c=cmap(i))
+
+            p1.axhline(100, c='g', alpha=0.5, label='avgA %.2e' % avgA)
+            p1.axhline(chk['a'][0], c='r', alpha=0.5, label='bad:%d' % chk['a'][0])
+            p1.axhline(chk['a'][1], c='r', alpha=0.5, label='bad:%d' % chk['a'][1])
+            p1.set_xlabel("calIdx", ha='right', x=1)
+            p1.set_ylabel("Pct.Deviation from Avg.", ha='right', y=1)
+            p1.legend(loc='best', ncol=4, fontsize=10)
+
+            p2.axhline(100, c='g', alpha=0.5, label='avgB %.2e' % avgB)
+            p2.axhline(chk['b'][0], c='r', alpha=0.5, label='bad:%d' % chk['b'][0])
+            p2.axhline(chk['b'][1], c='r', alpha=0.5, label='bad:%d' % chk['b'][1])
+            p2.set_xlabel("calIdx", ha='right', x=1)
+            p2.legend(loc='best', fontsize=10)
+
+            p3.axhline(100, c='g', alpha=0.5, label='avgC %.2f' % avgC)
+            p3.axhline(chk['c'][0], c='r', alpha=0.5, label='bad:%d' % chk['c'][0])
+            p3.axhline(chk['c'][1], c='r', alpha=0.5, label='bad:%d' % chk['c'][1])
+            p3.set_xlabel("calIdx", ha='right', x=1)
+            p3.legend(loc='best', fontsize=10)
+
+            plt.tight_layout()
+            plt.savefig("../plots/rise-stability-%s.png" % calKey)
+
+            if len(checkList)==0:
+                print("No bad channels found!")
+                return
+
+            # ===========================
+            # For channels that look suspicious, print a diagnostic plot
+            # so you can justify rejecting them
+
+            # checkList = [[0,578]] # just print an example of a good plot
+
+            f = np.load("../data/lat2-rise-%s.npz" % calKey)
+            riseHist = f['arr_0'].item()
+
+            xLo, xHi, xpb = 0, 250, 1
+            yLo, yHi, ypb = -10, 10, 0.05
+            nbx = int((xHi-xLo)/xpb)
+            nby = int((yHi-yLo)/ypb)
+            _, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
+
+            fig = plt.figure(figsize=(18,6))
+            p1 = plt.subplot(131)
+            p2 = plt.subplot(132)
+            p3 = plt.subplot(133)
+
+            print("Removal candidates:")
+            for ci, ch, c99 in checkList:
+                cpd = det.getChanCPD(ds,ch)
+                print("ci",ci,"ch",ch,"cpd",cpd)
+
+                if riseHist[ci][ch] is None:
+                    print("No data found! ci, ch",ci,ch)
+                    continue
+
+                hRise = riseHist[ci][ch]
+
+                p1.cla()
+                p1.set_aspect('auto')
+                x, y = np.meshgrid(xe, ye)
+                p1.pcolormesh(x, y, hRise.T, norm=LogNorm())
+                p1.set_xlabel("Energy (keV)", ha='right', x=1)
+                p1.set_ylabel("riseNoise (Shifted)", ha='right', y=1)
+                p1.plot(np.nan, np.nan, '.w', label='cIdx %d ch%d C%sP%sD%s' % (ci, ch, *cpd))
+                p1.legend(loc=1)
+
+                p2.cla()
+                pE = np.sum(hRise, axis=1)
+                bE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
+                p2.plot(bE, pE, "b", ls='steps')
+                p2.set_xlabel("Energy (keV)", ha='right', x=1)
+
+                p3.cla()
+                pR = np.sum(hRise, axis=0)
+                bR = ye[:-1] + 0.5*(ye[1]-ye[0])
+                p3.plot(bR, pR, "b", ls='steps')
+                p3.axvline(c99/100, c='r', label='c99:%.2f' % (c99/100.))
+                p3.set_xlabel("riseNoise", ha='right', x=1)
+
+                plt.tight_layout()
+                plt.savefig("../plots/rise-%s-ci%d-ch%d.png" % (calKey,ci,ch))
 
 
 if __name__=="__main__":
