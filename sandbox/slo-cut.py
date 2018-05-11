@@ -35,7 +35,8 @@ def main():
     # checkWidth()
     # getShift()
     # plotSloCut()
-    combineDSEff()
+    # combineDSEff()
+    testFitFunc()
 
 
 def testStats():
@@ -1260,10 +1261,11 @@ def combineDSEff():
     Go by CPD instead of channel number, since that never changes.
     """
     dsList = [0,1,2,3,4,5]
+    # dsList = [1]
     detList = det.allDets
     detIDs = det.allDetIDs
 
-    makePlots = False
+    makePlots = True
 
     yLo, yHi, ypb = -200, 400, 1
     nby = int((yHi-yLo)/ypb)
@@ -1274,7 +1276,7 @@ def combineDSEff():
 
     # overall hit and efficiency plots
     nTot = 0
-    xLo, xHi, xpbE = 0, 30, 0.5
+    xLo, xHi, xpbE = 0, 250, 0.5
     xE, hPassAll = wl.GetHisto([], xLo, xHi, xpbE)
     xE, hFailAll = wl.GetHisto([], xLo, xHi, xpbE)
     xE, hTotAll = wl.GetHisto([], xLo, xHi, xpbE)
@@ -1378,7 +1380,7 @@ def combineDSEff():
             if fSlo[cpd][i] <= v90: hitPass.append(hitE[cpd][i])
             else: hitFail.append(hitE[cpd][i])
 
-        xLo, xHi, xpb = 0, 30, 0.5
+        xLo, xHi, xpb = 0, 250, 0.5
         xE, hPass = wl.GetHisto(hitPass, xLo, xHi, xpb)
         xE, hFail = wl.GetHisto(hitFail, xLo, xHi, xpb)
         hTot = np.add(hPass, hFail)
@@ -1469,48 +1471,84 @@ def combineDSEff():
             # plt.savefig("../plots/slo-%s.png" % cpd)
 
             # plot efficiency vs energy.
-            plt.cla()
             plt.figure(3)
             p31.cla()
-            p31.plot(xE, sloEff, '.b', ms=10., label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
-            p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-            p31.plot(xErf, yErf, 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-            p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
-            p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
-            p31.set_xlabel("hitE (keV)", ha='right', x=1)
-            p31.set_ylabel("Efficiency", ha='right', y=1)
-            p31.legend(loc=4)
 
+            # old version w/ one logistic
+            # p31.plot(xE, sloEff, '.b', ms=10., label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
+            # p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            # p31.plot(xErf, yErf, 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
+            # p31.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
+            # p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
+            # p31.set_xlabel("hitE (keV)", ha='right', x=1)
+            # p31.set_ylabel("Efficiency", ha='right', y=1)
+            # p31.legend(loc=4)
+            # p32.cla()
+            # hResid = wl.logisticFunc(xE, *popt) - sloEff
+            # p32.plot(xE, hResid, ".b")
+            # p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+            # new version w/ multiple fits (see below for a commented version)
+            idx = np.where((xE > 0.95) & (sloEff > 0.1))
+            xT, sloEff, ci_low, ci_upp = xE[idx], sloEff[idx], ci_low[idx], ci_upp[idx]
+            xT -= xpb/2
+            p31.plot(np.nan, np.nan, c='w', label='%d C%sP%sD%s nBin %d' % (ch, cpd[0],cpd[1],cpd[2], nBin))
+            p31.axvline(1., color='k', ms=1, label='1 keV')
+            p31.axvline(2., color='lightblue', ms=1, label='2 keV')
+            idxF = np.where((xT < 30) & (sloEff > 0.1)) # redundant, but we could (say) restrict xT
+            # xErf = np.arange(0, xT[-1], 0.1)
+            xErf = np.arange(0, 50, 0.1)
+            popt, pcov = curve_fit(wl.logisticFunc, xT[idxF], sloEff[idxF], bounds=(0,[np.inf,np.inf,1]))
+            popt2, pcov2 = curve_fit(wl.logistic, xT[idxF], sloEff[idxF], bounds=((-20, 0, 0, 1),(np.inf,np.inf,1,50)))
+            popt3, pcov3 = curve_fit(wl.weibull, xT[idxF], sloEff[idxF], bounds=((0,-10,-np.inf,0),(np.inf,np.inf,np.inf,1.)))
+            popt4, pcov4 = curve_fit(wl.xgauss, xT[idxF], sloEff[idxF], bounds=(0,(np.inf,np.inf,np.inf,1)))
+            p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="logistic: m %.1f  s %.1f  a %.1f" % tuple(popt))
+            p31.plot(xErf, wl.logistic(xErf, *popt2), 'c-', label="glog: m %.1f  s %.1f  a %.1f  sk %.1f" % tuple(popt2))
+            p31.plot(xErf, wl.weibull(xErf, *popt3), 'g-', label='weibull: c %.1f  loc %.1f  sc %.1f  a %.1f ' % tuple(popt3))
+            p31.plot(xErf, wl.xgauss(xErf, *popt4), '-m', label='xgauss: k %.1f  loc %.1f  sc %.1f  a %.1f' % tuple(popt4))
+            p31.plot(xT, sloEff, '.b', ms=5.)
+            p31.errorbar(xT, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            p31.set_xlim(0, 50)
+            p31.set_ylim(0,1)
+            p31.set_xlabel("Energy (keV)", ha='right', x=1)
+            p31.set_ylabel("Efficiency", ha='right', y=1)
+            p31.legend(fontsize=12, loc=4)
             p32.cla()
-            hResid = wl.logisticFunc(xE, *popt) - sloEff
-            p32.plot(xE, hResid, ".b")
-            p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            p32.set_xlim(0, 50)
+            p32.plot(xT, 100*(wl.logisticFunc(xT, *popt) - sloEff), ".r")
+            p32.plot(xT, 100*(wl.logistic(xT, *popt2) - sloEff), ".c")
+            p32.plot(xT, 100*(wl.weibull(xT, *popt3) - sloEff), ".g")
+            p32.plot(xT, 100*(wl.xgauss(xT, *popt4) - sloEff), ".m")
+            p32.errorbar(xT,  np.zeros(len(xT)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), color='k', linewidth=0.8, fmt='none')
+            p32.set_ylabel("Resid(%)")
 
             plt.tight_layout()
             plt.savefig("../plots/slo-eff-%s.png" % cpd)
 
+            if cpd=='114': np.savez('../data/slo-eff-114.npz',xT,sloEff,ci_low,ci_upp)
+            if cpd=='151': np.savez('../data/slo-eff-152.npz',xT,sloEff,ci_low,ci_upp)
 
-
+            # return
 
     # plot a bar of all det counts vs counts under 10 keV
-    plt.figure(2)
-    plt.cla()
-    x = np.arange(0,len(detList),1)
-    hAll = [ctsAll[cpd] for cpd in detList]
-    plt.bar(x, hAll, 0.95, color='b', label='all m2s238 hits')
-    hLow = [ctsU10[cpd] for cpd in detList]
-    plt.bar(x, hLow, 0.95, color='r', label='m2s238 E<10 keV')
-    plt.gca().set_ylim(1)
-    plt.gca().set_yscale('log')
-    # plt.xlabel("channel", ha='right', x=1.)
-    xticks = np.arange(0, len(detList))
-    plt.xticks(xticks)
-    plt.gca().set_xticklabels(detList, fontsize=8, rotation=90)
-    # plt.ylabel("Counts, mHT=2, sumET=238 hits", ha='right', x=1.)
-    plt.legend(loc=1)
-    plt.savefig("../plots/slo-totCts.png")
-
-    # plot overall hit spectrum
+    # plt.figure(2)
+    # plt.cla()
+    # x = np.arange(0,len(detList),1)
+    # hAll = [ctsAll[cpd] for cpd in detList]
+    # plt.bar(x, hAll, 0.95, color='b', label='all m2s238 hits')
+    # hLow = [ctsU10[cpd] for cpd in detList]
+    # plt.bar(x, hLow, 0.95, color='r', label='m2s238 E<10 keV')
+    # plt.gca().set_ylim(1)
+    # plt.gca().set_yscale('log')
+    # # plt.xlabel("channel", ha='right', x=1.)
+    # xticks = np.arange(0, len(detList))
+    # plt.xticks(xticks)
+    # plt.gca().set_xticklabels(detList, fontsize=8, rotation=90)
+    # # plt.ylabel("Counts, mHT=2, sumET=238 hits", ha='right', x=1.)
+    # plt.legend(loc=1)
+    # plt.savefig("../plots/slo-totCts.png")
+    #
+    # # plot overall hit spectrum
     plt.figure(2)
     plt.cla()
     plt.plot(xE, hTotAll, ls='steps', c='k', label="Total Hits")
@@ -1518,6 +1556,7 @@ def combineDSEff():
     plt.plot(xE, hFailAll, ls='steps', c='r', label="Fail")
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
+    plt.axvline(1., c='g', lw=1., label='1 kev')
     plt.legend(loc=1)
     plt.tight_layout()
     plt.savefig("../plots/slo-totHits.png")
@@ -1526,6 +1565,7 @@ def combineDSEff():
     plt.figure(3)
     p31.cla()
 
+    # calculate error bars
     idx = np.where((hTotAll > 0) & (hPassAll > 0))
     sloEff = hPassAll[idx] / hTotAll[idx]
     nPad = len(hPassAll)-len(hPassAll[idx])
@@ -1533,111 +1573,213 @@ def combineDSEff():
     ci_low, ci_upp = proportion.proportion_confint(hPassAll[idx], hTotAll[idx], alpha=0.1, method='beta')
     ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
     ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-    idx = np.where(xE > 2.)
-    bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
 
-    p31.plot(xE, sloEff, '.b', ms=10., label='Efficiency')
-    p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    np.savez('../data/slo-eff-tot.npz',xE,sloEff,ci_low,ci_upp)
+
+    # limit plotting to where we have good data
+    idx = np.where((xE > 0.95) & (sloEff > 0.1))
+    xE, sloEff, ci_low, ci_upp = xE[idx], sloEff[idx], ci_low[idx], ci_upp[idx]
+    xE -= xpb/2
+
+    # plot some guide lines
+    p31.axvline(1., color='k', ms=1, label='1 keV')
+    p31.axvline(2., color='lightblue', ms=1, label='2 keV')
+
+    idxF = np.where((xE < 30) & (sloEff > 0.1)) # redundant, but we could (say) restrict xE
     xErf = np.arange(0, xE[-1], 0.1)
-    p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    p31.axvline(2.,color='g',label='2keV eff: %.2f' % wl.logisticFunc(2.,*popt))
+
+    popt, pcov = curve_fit(wl.logisticFunc, xE[idxF], sloEff[idxF], bounds=(0,[np.inf,np.inf,1]))
+    p31.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="logistic: m %.1f  s %.1f  a %.1f" % tuple(popt))
+
+    popt2, pcov2 = curve_fit(wl.logistic, xE[idxF], sloEff[idxF], bounds=((-20, 0, 0, 1),(np.inf,np.inf,1,50)))
+    p31.plot(xErf, wl.logistic(xErf, *popt2), 'c-', label="glog: m %.1f  s %.1f  a %.1f  sk %.1f" % tuple(popt2))
+
+    popt3, pcov3 = curve_fit(wl.weibull, xE[idxF], sloEff[idxF])
+    p31.plot(xErf, wl.weibull(xErf, *popt3), 'g-', label='weibull: c %.1f  loc %.1f  sc %.1f  a %.1f ' % tuple(popt3))
+
+    popt4, pcov4 = curve_fit(wl.xgauss, xE[idxF], sloEff[idxF])
+    p31.plot(xErf, wl.xgauss(xErf, *popt4), '-m', label='xgauss: k %.1f  loc %.1f  sc %.1f  a %.1f' % tuple(popt4))
+
+    p31.plot(xE, sloEff, '.b', ms=5.)
+    p31.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+    p31.set_xlim(0, 30)
+    p31.set_ylim(0,1)
+
     p31.set_xlabel("Energy (keV)", ha='right', x=1)
     p31.set_ylabel("Efficiency", ha='right', y=1)
-    p31.legend(loc=4)
+    p31.legend(fontsize=12, loc=4)
 
+    # plot residuals for weibull and xGauss
     p32.cla()
-    hResid = wl.logisticFunc(xE, *popt) - sloEff
-    p32.plot(xE, hResid, ".b")
-    p32.errorbar(xE, hResid, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+    p32.set_xlim(0, 30)
+    p32.plot(xE, 100*(wl.logisticFunc(xE, *popt) - sloEff), ".r")
+    p32.plot(xE, 100*(wl.logistic(xE, *popt2) - sloEff), ".c")
+    p32.plot(xE, 100*(wl.weibull(xE, *popt3) - sloEff), ".g")
+    p32.plot(xE, 100*(wl.xgauss(xE, *popt4) - sloEff), ".m")
+    p32.errorbar(xE,  np.zeros(len(xE)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), color='k', linewidth=0.8, fmt='none')
+    p32.set_ylabel("Resid(%)")
 
     plt.tight_layout()
     plt.savefig("../plots/slo-effTot.png")
 
-    return
-
     # plot enriched hit spectrum and efficiency
+    # use hTotEnr, etc
+    # plot natural, use hTotNat, etc.
+
+
+def testFitFunc():
+    """ saved fit func's w/ lat2 into npz so we can plot em real fast """
+
+    # must match lat2
+    xPassLo, xPassHi, xpbPass = 0, 50, 1      # "low energy" region
+
+    xTot, hPassAll = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hFailAll = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hTotAll = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+
+    # change the plot region
+    eFitHi = 50
+    xPassLo, xPassHi = 0, 50
+
+    # load efficiency data
+    f = np.load('../data/lat2-eff-data.npz')
+    effData = f['arr_0'].item()
+
+    detList = det.allDets
+    for i, cpd in enumerate(detList):
+
+        if cpd not in effData.keys():
+            continue
+
+        # if i > 4: break
+
+        xEff, sloEff, ci_low, ci_upp = effData[cpd][0], effData[cpd][1], effData[cpd][2], effData[cpd][3]
+        hPass, hFail, hTot, xELow = effData[cpd][4], effData[cpd][5], effData[cpd][6], effData[cpd][7]
+
+        # save for the total
+        hTotAll = np.add(hTotAll, hTot)
+        hPassAll = np.add(hPassAll, hPass)
+        hFailAll = np.add(hFailAll, hFail)
+
+        # weibull params: c, loc, scale, amp
+        # b1 = ((0,-10,-np.inf,0),(np.inf,np.inf,np.inf,1.))
+        # b2 = ((0,0,-np.inf,0),(np.inf,np.inf,np.inf,1.))
+        b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this one is working best
+        popt, pcov = curve_fit(wl.weibull, xEff, sloEff, bounds=b3)
+
+        perr = np.sqrt(np.diag(pcov))
+        c, loc, sc, amp = popt
+        cE, locE, scE, ampE = perr
+        eff1 = wl.weibull(1.,*popt)
+
+        fig = plt.figure(3)
+        p31 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+        p32 = plt.subplot2grid((3,1), (2,0))
+
+        plt.cla()
+        plt.figure(3)
+        p31.cla()
+
+        # p31.plot(xELow, 70*hTot/np.sum(hTot), c='k', alpha=0.1, lw=1, ls='steps')
+        # p31.plot(xELow, 70*hFail/np.sum(hTot), c='r', alpha=0.1, lw=1, ls='steps')
+        # p31.plot(xELow, 70*hPass/np.sum(hTot), c='b', alpha=0.1, lw=1, ls='steps')
+        nBin = np.sum(hPass[np.where(xELow <= 10)])/(10/xpbPass)
+
+        p31.plot(xEff, sloEff, '.b', ms=10., label='C%sP%sD%s  nBin %.1f' % (cpd[0],cpd[1],cpd[2], nBin))
+        p31.errorbar(xEff, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+        xFunc = np.arange(xPassLo, xPassHi, 0.1)
+        p31.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label='weibull: c %.1f  loc %.1f  sc %.1f  a %.3f ' % tuple(popt))
+        p31.axvline(1.,color='b', lw=1., label='1keV eff: %.2f' % wl.weibull(1.,*popt))
+
+        # p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
+        p31.set_xlim(xPassLo, xPassHi)
+        p31.set_ylim(0,1)
+        p31.set_xlabel("hitE (keV)", ha='right', x=1)
+        p31.set_ylabel("Efficiency", ha='right', y=1)
+        p31.legend(loc=4, fontsize=10)
+
+        p32.cla()
+        p32.set_xlim(xPassLo, xPassHi)
+
+        hResid = 100*(wl.weibull(xEff, *popt) - sloEff)
+        meanRes, stdRes = np.mean(hResid), np.std(hResid)
+        p32.axhline(meanRes, c='b', alpha=0.3, label='mean:%.2f%%' % meanRes)
+        p32.axhline(meanRes+stdRes, c='m', alpha=0.3, label='std:%.2f%%' % stdRes)
+        p32.axhline(meanRes-stdRes, c='m', alpha=0.3)
+
+        p32.plot(xEff, hResid, ".g")
+        p32.errorbar(xEff, np.zeros(len(xEff)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), \
+             color='k', linewidth=0.8, fmt='none')
+        p32.axvline(1.,color='b', lw=1.)
+        p32.set_ylabel("Resid(%)")
+
+        plt.legend(loc=1,ncol=2,fontsize=8)
+
+        plt.tight_layout()
+        plt.savefig("../plots/slo-eff-%s.png" % cpd)
+
+        # return
+
+
+    return
+    # ==================================================
+    # do it again for the total.
+    # NOTE: the total is less impressive under 10 kev (fit is outside the error bars)
+
+    idxP = np.where((hTotAll > 0) & (hPassAll > 0))
+    sloEff = hPassAll[idxP] / hTotAll[idxP]
+    ci_low, ci_upp = proportion.proportion_confint(hPassAll[idxP], hTotAll[idxP], alpha=0.1, method='beta')
+    xELow = xELow[idxP]
+
+    # fit to constrained weibull (c, loc, scale, amp)
+    idxF = np.where((xELow < eFitHi) & (xELow >= 0.9))
+    # weibull params: c, loc, scale, amp
+    b1 = ((0,-10,-np.inf,0),(np.inf,np.inf,np.inf,1.))
+    b2 = ((0,0,-np.inf,0),(np.inf,np.inf,np.inf,1.))
+    b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.))
+    popt, pcov = curve_fit(wl.weibull, xELow[idxF], sloEff[idxF], bounds=b3)
+
+    perr = np.sqrt(np.diag(pcov))
+    c, loc, sc, amp = popt
+    cE, locE, scE, ampE = perr
+    eff1 = wl.weibull(1.,*popt)
+
+
+    fig = plt.figure(3)
+    p31 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p32 = plt.subplot2grid((3,1), (2,0))
+
     plt.cla()
-    plt.plot(xE, hTotEnr, ls='steps', c='k', label="Total Enriched Hits")
-    plt.plot(xE, hPassEnr, ls='steps', c='b', label="Pass")
-    plt.plot(xE, hFailEnr, ls='steps', c='r', label="Fail")
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
-    plt.legend(loc=1)
+    plt.figure(3)
+    p31.cla()
+
+    p31.plot(xELow, sloEff, '.b', ms=10., label='totals')
+    p31.errorbar(xELow, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+    xFunc = np.arange(xPassLo, xPassHi, 0.1)
+    p31.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label='weibull: c %.1f  loc %.1f  sc %.1f  a %.3f ' % tuple(popt))
+    p31.axvline(1.,color='b', lw=1., label='1keV eff: %.2f' % wl.weibull(1.,*popt))
+
+    # p31.plot(np.nan, np.nan, 'w', label='nBin %d' % nBin)
+    p31.set_xlim(xPassLo, xPassHi)
+    p31.set_xlabel("hitE (keV)", ha='right', x=1)
+    p31.set_ylabel("Efficiency", ha='right', y=1)
+    p31.set_ylim(0,1)
+    p31.legend(loc=4, fontsize=12)
+
+    p32.cla()
+    p32.set_xlim(xPassLo, xPassHi)
+    p32.plot(xELow, 100*(wl.weibull(xELow, *popt) - sloEff), ".g")
+    p32.errorbar(xELow, np.zeros(len(xELow)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), \
+         color='k', linewidth=0.8, fmt='none')
+    p32.axvline(1.,color='b', lw=1.)
+    p32.set_ylabel("Resid(%)")
+
     plt.tight_layout()
-    plt.savefig("../plots/slo-totHits-enr.png")
-    idx = np.where((hTotEnr > 0) & (hPassEnr > 0))
-    sloEff = hPassEnr[idx] / hTotEnr[idx]
-    nPad = len(hPassEnr)-len(hPassEnr[idx])
-    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
-    ci_low, ci_upp = proportion.proportion_confint(hPassEnr[idx], hTotEnr[idx], alpha=0.1, method='beta')
-    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
-    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-    idx = np.where(xE > 1.)
-    bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
-    plt.cla()
-    plt.plot(xE, sloEff, '.b', ms=10., label='Enr Efficiency')
-    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-    xErf = np.arange(0, xE[-1], 0.1)
-    plt.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
+    plt.savefig("../plots/slo-eff-tot.png")
 
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Efficiency", ha='right', y=1)
-    plt.legend(loc=4)
-    plt.tight_layout()
-    plt.savefig("../plots/slo-effTot-enr.png")
-
-
-    # plot natural hit spectrum and efficiency
-    plt.cla()
-    plt.plot(xE, hTotNat, ls='steps', c='k', label="Total Natural Hits")
-    plt.plot(xE, hPassNat, ls='steps', c='b', label="Pass")
-    plt.plot(xE, hFailNat, ls='steps', c='r', label="Fail")
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts/%.1f keV" % xpbE, ha='right', y=1)
-    plt.legend(loc=1)
-    plt.tight_layout()
-    plt.savefig("../plots/slo-totHits-nat.png")
-    idx = np.where((hTotNat > 0) & (hPassNat > 0))
-    sloEff = hPassNat[idx] / hTotNat[idx]
-    nPad = len(hPassNat)-len(hPassNat[idx])
-    sloEff = np.pad(sloEff, (nPad,0), 'constant', constant_values=0)
-    ci_low, ci_upp = proportion.proportion_confint(hPassNat[idx], hTotNat[idx], alpha=0.1, method='beta')
-    ci_low = np.pad(ci_low, (nPad,0), 'constant', constant_values=0)
-    ci_upp = np.pad(ci_upp, (nPad,0), 'constant', constant_values=0)
-    idx = np.where(xE > 1.)
-    bnd = (0,[np.inf,np.inf,1])
-    popt,pcov = curve_fit(wl.logisticFunc, xE[idx], sloEff[idx], bounds=bnd)
-    plt.cla()
-    plt.plot(xE, sloEff, '.b', ms=10., label='Nat Efficiency')
-    plt.errorbar(xE, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-    xErf = np.arange(0, xE[-1], 0.1)
-    plt.plot(xErf, wl.logisticFunc(xErf, *popt), 'r-', label="m %.1f s %.2f a %.2f" % tuple(popt))
-    plt.axvline(1.,color='g',label='1keV eff: %.2f' % wl.logisticFunc(1.,*popt))
-
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Efficiency", ha='right', y=1)
-    plt.legend(loc=4)
-    plt.tight_layout()
-    plt.savefig("../plots/slo-effTot-nat.png")
-
-
-    # try to find the low-e cutoff where the fit is outside the error bar
-    # by >20% of the error bar
-    # xIdxs = []
-    # for i in range(len(sloEff)):
-    #     if xE[i] > 5.: break # ignore bad fits above 5 keV
-    #     fVal = wl.logisticFunc(xE[i], *popt)
-    #     upp20 = 0.2*abs((ci_upp[i]-sloEff[i]))
-    #     low20 = 0.2*abs((sloEff[i]-ci_low[i]))
-    #     if fVal > ci_upp[i]+upp20 or fVal < ci_low[i]-low20:
-    #         print("%d  %.1f  %.2f  %.2f  %.2f" % (i, xE[i], ci_low[i], ci_upp[i], fVal))
-    #         xIdxs.append(i)
-    # xIdxs = np.asarray(xIdxs)
-    # xCut = xE[xIdxs[-1]+1]
-    # plt.axvline(xCut, c='c', alpha=0.7, label='cutoff: %.2f keV' % xCut)
 
 
 if __name__=="__main__":

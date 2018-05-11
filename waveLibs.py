@@ -18,6 +18,21 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 
+def logistic(x,mu,sig,amp,skew):
+    from scipy.stats import genlogistic
+    return amp * genlogistic.cdf(x, skew, mu, sig)
+
+
+def weibull(x,c,loc,scale,amp):
+    from scipy.stats import weibull_min
+    return amp * weibull_min.cdf(x,c,loc,scale)
+
+
+def xgauss(x,k,loc,scale,amp):
+    from scipy.stats import exponnorm
+    return amp * exponnorm.cdf(x,k,loc,scale)
+
+
 def linFunc(x, m, b):
     return m*x + b
 
