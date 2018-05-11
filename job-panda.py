@@ -78,6 +78,7 @@ def main(argv):
 
         # lat2
         if opt == "-lat2": scanLAT2(dsNum,subNum,modNum)
+        if opt == "-cuts": cutLAT2()
 
 # =============================================================
 
@@ -124,10 +125,10 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--image=wisecg/mjsw:v2",
             # "-p shared",
             "-n10", # match nCores for pdsf below
-            "-p short", # doesn't work w/ n30
+            "-p long", # doesn't work w/ n30
             # "--mincpus=30",
             # "-t 12:00:00",
-            "-t 5:00:00",
+            "-t 6:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -301,14 +302,13 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("cori-knl")) # riseNoise
-    sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("pdsf-pump")) # riseNoise
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("pdsf-pump")) # riseNoise
 
     # EX. 13: run LAT2, generate cut files
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5A -cut fs"))
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5B -cut fs"))
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -ds 5C -cut fs"))
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
+    # EX. 14: placeholder for DS6 cal run processing
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("edison-shared"))
 
@@ -1133,6 +1133,18 @@ def scanLAT2(dsIn=None, subIn=None, modIn=None):
                 if useJobQueue: sh("%s >& ./logs/lat2-rise-%s-%d.txt" % (job, key, cIdx))
                 else: sh("%s '%s'" % (jobStr, job))
 
+
+def cutLAT2():
+    """ ./job-panda.py [-q] -cuts """
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    optList = ["","fs","rn","fr"]
+
+    for ds in dsList:
+        for opt in optList:
+            job = "./lat2.py -ds %s -cut %s" % (str(ds),opt)
+            if useJobQueue: sh("%s >& ./logs/lat2-cuts-%s-%s.txt" % (job, ds, opt))
+            else: sh("%s '%s'" % (jobStr, job))
 
 
 if __name__ == "__main__":

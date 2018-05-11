@@ -75,7 +75,7 @@ def main(argv):
         if opt=="-rc":
             badRiseChans()
 
-        # generate cut files (specify cut type: th fs rn fsrn)
+        # generate cut files (specify cut type: th fs rn fr)
         if opt=="-cut":
             if ds is None:
                 for d in [0,1,2,3,4,"5A","5B","5C"]: applyCuts(d, argv[i+1])
@@ -351,14 +351,15 @@ def setSloCut():
     Set slow pulse cut for each detector in each DS.
     Uses the combined m2s238 events from ALL datasets, in each detector.
     If makePlots is true, output plots w/ the efficiency functions for each detector.
-    If writeDB is set, fills the database with:
-        "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200, nBin] for ch in chList}}
-        and
-        "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE] for cpd in detList}
     Sandbox version: LAT/sandbox/slo-cut.py :: combineDSEff
 
     NOTE: uses a 90% cut on m2s238 events.  Someone may ask for this to change someday,
           it might be worth making it a parameter at the top of the code.
+
+    DB entries:
+    "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+        and
+    "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE] for cpd in detList}
     """
     from statsmodels.stats import proportion
     if writeDB:
@@ -788,7 +789,7 @@ def setSloCut():
                 fsShiftCut, nBin, amp, c, loc, sc, ampE, cE, locE, scE = shiftCut[cpd]
 
                 if fs200 > 0:
-                    fsCut = fs200 + fsShiftCut
+                    fsCut = fs200 + fsShiftCut # ****** this is the 90% cut value for this channel ******
                 else:
                     fsCut, nBin = -1, -1
 
@@ -959,7 +960,7 @@ def setRiseCut():
     """ ./lat2.py [-db] -rn
 
     riseNoise DB entries:
-    {"key":"riseNoise_%s_ci%d_pol", "vals": {ch:[a,b,c99,fitPass] for ch in goodList} }
+    {"key":"riseNoise_%s_ci%d_pol", "vals": {ch:[a,b,c99,c,fitPass] for ch in goodList} }
     """
     makePlots = False
     if writeDB:
@@ -1348,7 +1349,7 @@ def badRiseChans():
 
 def applyCuts(ds, cutType):
     """ ./lat2.py [-ds [N]] -cut [cutType]
-    Specify cut type: th fs rn fsrn (the last 3 have th applied automatically)
+    Specify cut type: th fs rn fr (the last 3 have th applied automatically)
     """
     from ROOT import gROOT, TFile, TChain, TTree, TNamed
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
@@ -1370,24 +1371,30 @@ def applyCuts(ds, cutType):
     # have to treat modules separately
     for mod in mods:
         chList = det.getGoodChanList(dsNum, mod)
-        print("DS",ds,"Module",mod,"chans:",chList)
+        # print("DS",ds,"Module",mod,"chans:",chList)
+        print("DS%d mod %d" % (dsNum, mod))
 
         for bIdx in bkgRanges:
             rFirst, rLast = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
-            print("bkgIdx %d  rFirst %d  rLast %d" % (bIdx, rFirst, rLast))
 
             # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
-            # and bkgIdx's are divided according to when the threshold finder was run
             bkgDict = {}
-            subRanges = bkg.GetSubRanges(dsNum, bIdx)
+            subRanges = bkg.GetSubRanges(ds, bIdx)
+
             if len(subRanges) == 0: subRanges.append((rFirst, rLast))
+            print("bkgIdx %-4d  rFirst %d  rLast %d  nSub %d" % (bIdx, rFirst, rLast, len(subRanges)))
+
             for sIdx, (runLo, runHi) in enumerate(subRanges):
 
                 # print("ds %d  bIdx %d  sub %d  %d  %d" % (dsNum,bIdx,sIdx,runLo,runHi))
                 bRunCut = "run>=%d && run<=%d" % (runLo, runHi)
 
                 thD = dsi.getDBRecord("thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sIdx), False, calDB, pars)
+
                 for ch in sorted(thD):
+                    if ch not in thD.keys():
+                        bkgDict[ch] = None
+                        continue
 
                     # get threshold data for this bkg/sub/chan
                     thrMu = thD[ch][0]
@@ -1395,24 +1402,27 @@ def applyCuts(ds, cutType):
                     isBad = thD[ch][2]
                     thrCut, chanCut = None, None
                     if not isBad:
-                        thrCut = "trapENFCal>=%.2f" % (thrMu + 3*thrSig) # ***** 3 sigma threshold cut *****
+                        thrCut = "trapENFCal>=%.2f " % (thrMu + 3*thrSig) # ***** 3 sigma threshold cut *****
 
                     # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
-                    chanCut = "(%s && %s)" % (bRunCut, thrCut) if len(subRanges) > 0 else thrCut
+                    chanCut = "(%s && %s)" % (bRunCut, thrCut) if len(subRanges) > 1 else thrCut
                     if ch in bkgDict.keys() and thrCut!=None:
                         bkgDict[ch] += " || %s" % chanCut
-                    elif ch not in bkgDict.keys() and thrCut!=None:
+                    elif ch not in bkgDict.keys() and thrCut!=None and len(subRanges) > 1:
                         bkgDict[ch] = "(%s" % chanCut
+                    elif len(subRanges)==1 and thrCut != None:
+                        bkgDict[ch] = thrCut
 
             for ch in bkgDict:
-                bkgDict[ch] += ")" # close the parens for each channel entry
+                if bkgDict[ch] is not None and len(subRanges) > 1:
+                    bkgDict[ch] += ")" # close the parens for each channel entry
 
             # final check
-            # for ch in bkgDict:
+            # for ch in sorted(bkgDict):
                 # print(ch, bkgDict[ch])
 
+
             # -- 2. get data for cuts tuned by calIdx (fitSlo, riseNoise)--
-            # create a dict of cuts for each channel, for each calIdx in this bkgIdx
             calDict = {}
             calKey = "ds%d_m%d" % (dsNum, mod)
             if ds == "5C": calKey = "ds5c"
@@ -1421,6 +1431,7 @@ def applyCuts(ds, cutType):
                 return
             cIdxLo = cal.GetCalIdx(calKey, rFirst)
             cIdxHi = cal.GetCalIdx(calKey, rLast)
+            nCal = cIdxHi+1 - cIdxLo
 
             for cIdx in range(cIdxLo, cIdxHi+1):
                 runCovMin = cal.master[calKey][cIdx][1]
@@ -1428,65 +1439,102 @@ def applyCuts(ds, cutType):
                 runLo = rFirst if runCovMin < rFirst else runCovMin
                 runHi = rLast if rLast < runCovMax else runCovMax
                 cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-                print("  cIdx",cIdx,cRunCut)
+                print("calIdx %-4d  rFirst %d  rLast %d  nCal %d" % (cIdx, runLo, runHi, nCal))
 
                 fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
-                fsCut, chanCut = None, None
+                rnD = dsi.getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
 
-                # for ch in sorted(fsD):
+                for ch in chList:
 
-                    # if fsD[ch]
+                    # "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+                    fsCut = None
+                    if fsD[ch] is not None and fsD[ch][0] > 0:
+                        fsCut = "fitSlo<%.2f" % fsD[ch][0]
 
-                    # dbVals[ch] = [fsCut, fs200]
+                    # "riseNoise_%s_ci%d_pol", "vals": {ch : [a,b,c99,c,fitPass] for ch in chList} }
+                    rnCut = None
+                    if rnD[ch] is not None and rnD[ch][3]!=False:
+                        a, b, c99, c, fitPass = rnD[ch]
+                        rnCut = "riseNoise < %.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f" % (a, b, c99)
 
-                    # fitSlo: check the 90% value is positive
-                    # if fsD[ch][2] > 0:
-            #             fsCut = "fitSlo<%.2f" % fsD[ch][2]
-            #
-            #         # TODO: riseNoise
-            #
-            #         # set the combination channel cut
-            #         if cutType == "fs" and fsCut!=None:
-            #             chanCut = "(%s && %s)" % (cRunCut, fsCut)
-            #
-            #         # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
-            #         if ch in calDict.keys() and chanCut!=None:
-            #             calDict[ch] += " || %s" % chanCut
-            #         elif ch not in calDict.keys() and chanCut!=None:
-            #             calDict[ch] = "(%s" % chanCut
-            #
+                    # set the combination channel cut
+                    chanCut = None
+                    if cutType == "fs" and fsCut!=None:
+                        chanCut = fsCut if nCal==1 else "(%s && %s)" % (cRunCut, fsCut)
+
+                    if cutType == "rn" and rnCut!=None:
+                        chanCut = rnCut if nCal==1 else "(%s && %s)" % (cRunCut, rnCut)
+
+                    if cutType == "fr" and fsCut!=None and rnCut!=None:
+                        chanCut = "%s && %s" % (fsCut, rnCut) if nCal==1 else "(%s && %s && %s)" % (cRunCut, fsCut, rnCut)
+
+                    # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
+                    if ch in calDict.keys() and chanCut!=None:
+                        calDict[ch] += " || %s" % chanCut
+                    elif ch not in calDict.keys() and chanCut!=None:
+                        calDict[ch] = "(%s" % chanCut
+
+            # close the parens for each channel entry
+            for key in calDict:
+                calDict[key] += ")"
+
+            # final check
             # for ch in calDict:
-            #     calDict[ch] += ")" # close the parens for each channel entry
+                # print(ch, calDict[ch])
 
 
-
+            # -- FINALLY, loop over each channel we have an entry for, get its cut, and create an output file. --
 
             # get the list of LAT files for this bkgIdx
             latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, dsNum, bIdx), bIdx)
             fileList = [f for idx, f in sorted(latList.items())]
             skimTree = TChain("skimTree")
             for f in fileList: skimTree.Add(f)
-
             # f = TFile(fileList[0])
-            # theCut = f.Get("theCut").GetTitle()
+            # theCut = f.Get("theCut").GetTitle() # don't need to reapply this
 
-            # -- finally, loop over each channel we have an entry for, get its cut, and create an output file. --
+            print("now filling files for bkgIdx",bIdx)
+
             for ch in sorted(chList):
+                cpd = det.getChanCPD(dsNum,ch)
 
-                if ch not in bkgDict.keys() or ch not in calDict.keys():
-                    # if ch not in bkgDict.keys():
-                    #     print(ch, "not in bkgDict")
-                    # if ch not in calDict.keys():
-                    #     print(ch, "not in calDict")
+                # don't write files we don't have cut values for
+                if ch not in bkgDict.keys():
+                    print("No threshold data for ch %d (cpd %s).  Skipping..." % (ch, cpd))
                     continue
 
-                # channel and threshold cut
+                if cutType == "fs" and ch not in calDict.keys():
+                    print("No fitSlo data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
+                    continue
+
+                if cutType == "rn" and ch not in calDict.keys():
+                    print("No riseNoise data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
+                    continue
+
+                if cutType == "fr" and (ch not in calDict.keys() or ("fitSlo" not in calDict[ch] or "riseNoise" not in calDict[ch])):
+                    print("No fs+rn data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
+                    continue
+
+                # default: channel + threshold cut only
                 chanCut = "channel==%d && %s" % (ch, bkgDict[ch])
+                outFile = "%s/th/th_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
 
                 if cutType == "fs":
                     outFile = "%s/fs/fs_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
                     chanCut += "&& fitSlo>0 && %s" % calDict[ch]
 
+                if cutType == "rn":
+                    outFile = "%s/rn/rn_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
+                    chanCut += "&& %s" % calDict[ch]
+
+                if cutType == "fr":
+                    outFile = "%s/fr/fr_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
+                    chanCut += "&& %s" % calDict[ch]
+
+                # if (bIdx==88):
+                # print(ch, cpd, chanCut)
+
+                # Wow, such a crazy amount of work to get to this block.
                 print("   Writing to:",outFile)
                 print("   Chan",ch,"Cut:",chanCut,"\n")
                 outFile = TFile(outFile,"RECREATE")
