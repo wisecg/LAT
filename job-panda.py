@@ -123,12 +123,10 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
-            # "-p shared",
-            "-n10", # match nCores for pdsf below
-            "-p long", # doesn't work w/ n30
-            # "--mincpus=30",
+            "-n14", # match nCores for pdsf below
+            "-p short", # doesn't work w/ n30
             # "-t 12:00:00",
-            "-t 6:00:00",
+            "-t 5:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -205,7 +203,8 @@ def getSBatch(opt, getCores=True, nArr=1):
     sbStr = "sbatch "+' '.join(batchOpts[opt])
 
     if getCores:
-        if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
+        # if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
+        if "pdsf" in opt: return sbStr, 14, 18 # sbatch cmd, nCores, peakLoad
         if "cori-knl" in opt: return sbStr, 270, 280
         if "cori" in opt: return sbStr, 60, 66
         if "edison-shared" in opt: return sbStr, 12, 15

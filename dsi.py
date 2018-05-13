@@ -769,6 +769,127 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
         print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
 
 
+def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
+
+    det = DetInfo()
+    bkg = BkgInfo()
+    cal = CalInfo()
+
+    dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
+    chList = det.getGoodChanList(dsNum, mod)
+
+    bkgRanges = bkg.getRanges(ds)
+    rFirst, rLast = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
+
+    # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
+    bkgDict = {}
+    subRanges = bkg.GetSubRanges(ds, bIdx)
+
+    if len(subRanges) == 0: subRanges.append((rFirst, rLast))
+    print("bkgIdx %-4d  rFirst %d  rLast %d  nSub %d" % (bIdx, rFirst, rLast, len(subRanges)))
+
+    for sIdx, (runLo, runHi) in enumerate(subRanges):
+
+        # print("ds %d  bIdx %d  sub %d  %d  %d" % (dsNum,bIdx,sIdx,runLo,runHi))
+        bRunCut = "run>=%d && run<=%d" % (runLo, runHi)
+
+        thD = getDBRecord("thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sIdx), False, calDB, pars)
+
+        for ch in sorted(thD):
+            if ch not in thD.keys():
+                bkgDict[ch] = None
+                continue
+
+            # get threshold data for this bkg/sub/chan
+            thrMu = thD[ch][0]
+            thrSig = thD[ch][1]
+            isBad = thD[ch][2]
+            thrCut, chanCut = None, None
+            if not isBad:
+                thrCut = "trapENFCal>=%.2f " % (thrMu + 3*thrSig) # ***** 3 sigma threshold cut *****
+
+            # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
+            chanCut = "(%s && %s)" % (bRunCut, thrCut) if len(subRanges) > 1 else thrCut
+            if ch in bkgDict.keys() and thrCut!=None:
+                bkgDict[ch] += " || %s" % chanCut
+            elif ch not in bkgDict.keys() and thrCut!=None and len(subRanges) > 1:
+                bkgDict[ch] = "(%s" % chanCut
+            elif len(subRanges)==1 and thrCut != None:
+                bkgDict[ch] = thrCut
+
+    for ch in bkgDict:
+        if bkgDict[ch] is not None and len(subRanges) > 1:
+            bkgDict[ch] += ")" # close the parens for each channel entry
+
+    # final check
+    # for ch in sorted(bkgDict):
+        # print(ch, bkgDict[ch])
+
+
+    # -- 2. get data for cuts tuned by calIdx (fitSlo, riseNoise)--
+    calDict = {}
+    calKeys = cal.GetKeys(dsNum)
+    calKey = "ds%d_m%d" % (dsNum, mod)
+    if ds == "5C": calKey = "ds5c"
+    if calKey not in calKeys:
+        print("Error: Unknown cal key:",calKey)
+        return
+    cIdxLo = cal.GetCalIdx(calKey, rFirst)
+    cIdxHi = cal.GetCalIdx(calKey, rLast)
+    nCal = cIdxHi+1 - cIdxLo
+
+    for cIdx in range(cIdxLo, cIdxHi+1):
+        runCovMin = cal.master[calKey][cIdx][1]
+        runCovMax = cal.master[calKey][cIdx][2]
+        runLo = rFirst if runCovMin < rFirst else runCovMin
+        runHi = rLast if rLast < runCovMax else runCovMax
+        cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
+        print("calIdx %-4d  rFirst %d  rLast %d  nCal %d" % (cIdx, runLo, runHi, nCal))
+
+        fsD = getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
+        rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
+
+        for ch in chList:
+
+            # "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+            fsCut = None
+            if fsD[ch] is not None and fsD[ch][0] > 0:
+                fsCut = "fitSlo<%.2f" % fsD[ch][0]
+
+            # "riseNoise_%s_ci%d_pol", "vals": {ch : [a,b,c99,c,fitPass] for ch in chList} }
+            rnCut = None
+            if rnD[ch] is not None and rnD[ch][3]!=False:
+                a, b, c99, c, fitPass = rnD[ch]
+                rnCut = "riseNoise < %.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f" % (a, b, c99)
+
+            # set the combination channel cut
+            chanCut = None
+            if cutType == "fs" and fsCut!=None:
+                chanCut = fsCut if nCal==1 else "(%s && %s)" % (cRunCut, fsCut)
+
+            if cutType == "rn" and rnCut!=None:
+                chanCut = rnCut if nCal==1 else "(%s && %s)" % (cRunCut, rnCut)
+
+            if cutType == "fr" and fsCut!=None and rnCut!=None:
+                chanCut = "%s && %s" % (fsCut, rnCut) if nCal==1 else "(%s && %s && %s)" % (cRunCut, fsCut, rnCut)
+
+            # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
+            if ch in calDict.keys() and chanCut!=None:
+                calDict[ch] += " || %s" % chanCut
+            elif ch not in calDict.keys() and chanCut!=None:
+                calDict[ch] = "(%s" % chanCut
+
+    # close the parens for each channel entry
+    for key in calDict:
+        calDict[key] += ")"
+
+    # final check
+    # for ch in calDict:
+        # print(ch, calDict[ch])
+
+    return bkgDict, calDict
+
+
 def test():
     print("testing...")
 

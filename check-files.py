@@ -43,6 +43,7 @@ def main(argv):
             checkLAT()
         if opt == "-m": makeJobList()
         if opt == "-t": testDraw()
+        if opt == "-cut": checkCutFiles()
 
 
 def checkSkim():
@@ -577,6 +578,71 @@ def testDraw():
         # print("%s: nEnt %-8d nDraw %-8d  mem: %d MB" % (f.split("/")[-1], nEnt, n, process.memory_info().rss/1e6))
         print("%s: nEnt %-8d nDraw %-8d" % (f.split("/")[-1], nEnt, n))
         tf.Close()
+
+
+def checkCutFiles():
+    """ ./check-files.py -cut
+    Verify that all the cut files created by LAT2 have working TTrees.
+    """
+    ds = 0
+
+    cutList = ["th","fs","rn","fr"]
+    chList = det.getGoodChanList(ds)
+
+    mods = [1]
+    if dsNum == 4: mods = [2]
+    if dsNum == 5: mods = [1,2]
+
+    # have to treat modules separately
+    for mod in mods:
+        chList = det.getGoodChanList(dsNum, mod)
+        # print("DS",ds,"Module",mod,"chans:",chList)
+        print("DS%d mod %d" % (dsNum, mod))
+
+        for bIdx in bkgRanges:
+
+            # this was moved to dsi.py s/t other routines can access it
+            bkgDict, calDict = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars)
+
+        for bIdx in range(bkg.dsMap()[ds]+1):
+
+            bkgDict, calDict = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars)
+
+            for cut in cutList:
+
+                for ch in chList:
+
+                    cutName = "%s/%s/%s_ds%d_%d_ch%d.root" % (dsi.cutDir,cut,cut,ds,bIdx,ch)
+
+                    # it may not exist because:
+                    # - we didn't have valid cut data
+                    # - processing failed
+                    if not os.path.isfile(cutName):
+                        print("File not found:",cutName)
+                        continue
+
+                    cutFile = TFile(cutName)
+                    if cutFile.IsZombie():
+                        print("Zombieeeah, eeah, eeaah,",cutName)
+                        continue
+                    elif cutFile.TestBit(TFile.kRecovered):
+                        print("Recovered",cutName)
+                        continue
+                    elif cutFile.GetListOfKeys().GetSize()==0:
+                        print("No keys:",cutName)
+                        continue
+
+                    # tt = cutFile.Get("skimTree")
+                    # nEnt = tt.GetEntries()
+                    # n = tt.Draw("trapENFCal:riseNoise:fitSlo","trapENFCal < 250","goff")
+                    # t1, t2, t3 = tt.GetV1(), tt.GetV2(), tt.GetV3()
+                    # t1 = np.asarray([t1[i] for i in range(n)])
+                    # t2 = np.asarray([t2[i] for i in range(n)])
+                    # print("%s: nEnt %-8d nDraw %-8d" % (cutName.split("/")[-1], nEnt, n))
+
+
+                    cutFile.Close()
+
 
 
 if __name__=="__main__":

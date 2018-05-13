@@ -1354,6 +1354,10 @@ def applyCuts(ds, cutType):
     from ROOT import gROOT, TFile, TChain, TTree, TNamed
     # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
+    # if this is set, don't overwrite good files.
+    cleanupMode = True
+    print("CLEANUP MODE?",cleanupMode)
+
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
     print("Generating cut files for DS-%s (%d) ..." % (ds, dsNum))
@@ -1375,115 +1379,11 @@ def applyCuts(ds, cutType):
         print("DS%d mod %d" % (dsNum, mod))
 
         for bIdx in bkgRanges:
-            rFirst, rLast = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
 
-            # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
-            bkgDict = {}
-            subRanges = bkg.GetSubRanges(ds, bIdx)
+            # this was moved to dsi.py s/t other routines can access it
+            bkgDict, calDict = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars)
 
-            if len(subRanges) == 0: subRanges.append((rFirst, rLast))
-            print("bkgIdx %-4d  rFirst %d  rLast %d  nSub %d" % (bIdx, rFirst, rLast, len(subRanges)))
-
-            for sIdx, (runLo, runHi) in enumerate(subRanges):
-
-                # print("ds %d  bIdx %d  sub %d  %d  %d" % (dsNum,bIdx,sIdx,runLo,runHi))
-                bRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-
-                thD = dsi.getDBRecord("thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sIdx), False, calDB, pars)
-
-                for ch in sorted(thD):
-                    if ch not in thD.keys():
-                        bkgDict[ch] = None
-                        continue
-
-                    # get threshold data for this bkg/sub/chan
-                    thrMu = thD[ch][0]
-                    thrSig = thD[ch][1]
-                    isBad = thD[ch][2]
-                    thrCut, chanCut = None, None
-                    if not isBad:
-                        thrCut = "trapENFCal>=%.2f " % (thrMu + 3*thrSig) # ***** 3 sigma threshold cut *****
-
-                    # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
-                    chanCut = "(%s && %s)" % (bRunCut, thrCut) if len(subRanges) > 1 else thrCut
-                    if ch in bkgDict.keys() and thrCut!=None:
-                        bkgDict[ch] += " || %s" % chanCut
-                    elif ch not in bkgDict.keys() and thrCut!=None and len(subRanges) > 1:
-                        bkgDict[ch] = "(%s" % chanCut
-                    elif len(subRanges)==1 and thrCut != None:
-                        bkgDict[ch] = thrCut
-
-            for ch in bkgDict:
-                if bkgDict[ch] is not None and len(subRanges) > 1:
-                    bkgDict[ch] += ")" # close the parens for each channel entry
-
-            # final check
-            # for ch in sorted(bkgDict):
-                # print(ch, bkgDict[ch])
-
-
-            # -- 2. get data for cuts tuned by calIdx (fitSlo, riseNoise)--
-            calDict = {}
-            calKey = "ds%d_m%d" % (dsNum, mod)
-            if ds == "5C": calKey = "ds5c"
-            if calKey not in calKeys:
-                print("Error: Unknown cal key:",calKey)
-                return
-            cIdxLo = cal.GetCalIdx(calKey, rFirst)
-            cIdxHi = cal.GetCalIdx(calKey, rLast)
-            nCal = cIdxHi+1 - cIdxLo
-
-            for cIdx in range(cIdxLo, cIdxHi+1):
-                runCovMin = cal.master[calKey][cIdx][1]
-                runCovMax = cal.master[calKey][cIdx][2]
-                runLo = rFirst if runCovMin < rFirst else runCovMin
-                runHi = rLast if rLast < runCovMax else runCovMax
-                cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-                print("calIdx %-4d  rFirst %d  rLast %d  nCal %d" % (cIdx, runLo, runHi, nCal))
-
-                fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
-                rnD = dsi.getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
-
-                for ch in chList:
-
-                    # "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
-                    fsCut = None
-                    if fsD[ch] is not None and fsD[ch][0] > 0:
-                        fsCut = "fitSlo<%.2f" % fsD[ch][0]
-
-                    # "riseNoise_%s_ci%d_pol", "vals": {ch : [a,b,c99,c,fitPass] for ch in chList} }
-                    rnCut = None
-                    if rnD[ch] is not None and rnD[ch][3]!=False:
-                        a, b, c99, c, fitPass = rnD[ch]
-                        rnCut = "riseNoise < %.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f" % (a, b, c99)
-
-                    # set the combination channel cut
-                    chanCut = None
-                    if cutType == "fs" and fsCut!=None:
-                        chanCut = fsCut if nCal==1 else "(%s && %s)" % (cRunCut, fsCut)
-
-                    if cutType == "rn" and rnCut!=None:
-                        chanCut = rnCut if nCal==1 else "(%s && %s)" % (cRunCut, rnCut)
-
-                    if cutType == "fr" and fsCut!=None and rnCut!=None:
-                        chanCut = "%s && %s" % (fsCut, rnCut) if nCal==1 else "(%s && %s && %s)" % (cRunCut, fsCut, rnCut)
-
-                    # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
-                    if ch in calDict.keys() and chanCut!=None:
-                        calDict[ch] += " || %s" % chanCut
-                    elif ch not in calDict.keys() and chanCut!=None:
-                        calDict[ch] = "(%s" % chanCut
-
-            # close the parens for each channel entry
-            for key in calDict:
-                calDict[key] += ")"
-
-            # final check
-            # for ch in calDict:
-                # print(ch, calDict[ch])
-
-
-            # -- FINALLY, loop over each channel we have an entry for, get its cut, and create an output file. --
+            # -- loop over each channel we have an entry for, get its cut, and create an output file. --
 
             # get the list of LAT files for this bkgIdx
             latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, dsNum, bIdx), bIdx)
@@ -1532,19 +1432,44 @@ def applyCuts(ds, cutType):
                     chanCut += "&& %s" % calDict[ch]
 
                 # if (bIdx==88):
-                # print(ch, cpd, chanCut)
+                print(ch, cpd, chanCut)
+
+                continue
+
+                # if a file exists, only recreate it if it's bad.
+                makeNew = True
+                if cleanupMode:
+
+                    # let's try an idea from a Rene Brun forum post from 2002.  Ugggg
+                    # this is almost 100% guaranteed not to catch all the edge cases.
+                    # will implement a routine in check-files.py to make sure all the
+                    # files created are OK.
+                    if os.path.isfile(outFile):
+                        makeNew = False
+                        fTmp = TFile(outFile)
+                        if fTmp.IsZombie():
+                            print("zombie:",outFile)
+                            makeNew = True
+                        elif fTmp.TestBit(TFile.kRecovered):
+                            print("recovered:",outFile)
+                            makeNew = True
+                        elif fTmp.GetListOfKeys().GetSize()==0:
+                            print("no keys:",outFile)
+                            makeNew = True
+                        fTmp.Close()
 
                 # Wow, such a crazy amount of work to get to this block.
-                print("   Writing to:",outFile)
-                print("   Chan",ch,"Cut:",chanCut,"\n")
-                outFile = TFile(outFile,"RECREATE")
-                outTree = TTree()
-                outTree = skimTree.CopyTree(chanCut)
-                outTree.Write()
-                cutUsed = TNamed("chanCut",chanCut)
-                cutUsed.Write()
-                print("Wrote",outTree.GetEntries(),"entries.")
-                outFile.Close()
+                # if makeNew:
+                #     print("   Writing to:",outFile)
+                #     print("   Chan",ch,"Cut:",chanCut,"\n")
+                #     outFile = TFile(outFile,"RECREATE")
+                #     outTree = TTree()
+                #     outTree = skimTree.CopyTree(chanCut)
+                #     outTree.Write()
+                #     cutUsed = TNamed("chanCut",chanCut)
+                #     cutUsed.Write()
+                #     print("Wrote",outTree.GetEntries(),"entries.")
+                #     outFile.Close()
 
 
 if __name__=="__main__":
