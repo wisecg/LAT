@@ -3,17 +3,21 @@
 # wave-movie.py
 # Clint Wiseman, USC
 # 12 July 2017
+#
+# Modified to take in a chain, apply a cut onto a dummy tree and then load the dummy tree
+# this allows loading entire datasets as a TChain
+
 
 import sys, imp, glob, os
 sys.argv.append("-b") # kill all interactive crap
-ds = imp.load_source('DataSetInfo','../DataSetInfo.py')
-wl = imp.load_source('waveLibs','../waveLibs.py')
-from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform,MJTMSWaveform,GATDataSet
+wl = imp.load_source('waveLibs', os.environ['LATDIR']+'/waveLibs.py')
+from ROOT import TFile,TTree,TChain,TEntryList,gDirectory,gROOT,MGTWaveform
 import ROOT
 import numpy as np
-from scipy.signal import butter, lfilter
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import seaborn as sns
+sns.set(style='whitegrid', context='poster')
 
 def main(argv):
     """
@@ -21,30 +25,31 @@ def main(argv):
     http://jakevdp.github.io/blog/2012/08/18/matplotlib-animation-tutorial/
     Requires ffmpeg.  (brew install ffmpeg)
     """
+    dsNum = 0
 
     # Set input file and cuts
-    # gatFile = TFile("~/project/mjddatadir/gatified/mjd_run27012.root") # generate w/ process_mjd_data_p1
-    # bltFile = TFile("~/project/mjddatadir/built/OR_run27012.root")
-    # gatTree = gatFile.Get("mjdTree")
-    # bltTree = bltFile.Get("MGTree")
-    run = 23725
-    ds = GATDataSet(run)
-    gatTree = ds.GetGatifiedChain()
-    bltTree = ds.GetBuiltChain()
-    gatTree.AddFriend(bltTree)
-    print "Found",gatTree.GetEntries(),"input entries."
+    dummyTree = ROOT.TChain("skimTree")
+    if dsNum == 5:
+        for i in range(80):
+            dummyTree.Add(os.environ['LATDATADIR']+"/bkg/cut/fr/fr_ds{}_{}_ch*.root".format(dsNum, i))
+    dummyTree.Add(os.environ['LATDATADIR']+"/bkg/cut/fr/fr_ds{}_*_ch*.root".format(dsNum))
+    print "Found",dummyTree.GetEntries(),"input entries."
+
+    # Dummy code: first save code as another file, then load that file
+    if dsNum == 5:
+        theCut = "trapENFCal > 1 && trapENFCal < 5 && isEnr && channel!=1236 && channel!=1298 && channel!=1332"
+    elif dsNum == 0:
+        theCut = "trapENFCal > 1 && trapENFCal < 5 && isEnr && channel!=656"
+    else:
+        theCut = "trapENFCal > 1 && trapENFCal < 5 && isEnr"
+    # Single channel sets
+    # theCut = "trapENFCal > 1 && trapENFCal < 5 && isEnr && channel==1332 && Entry$<15000"
+    gatTree = TTree()
+    gatTree = dummyTree.CopyTree(theCut)
+    outFile = os.environ['LATDIR']+"/plots/wave_movie_DS{}_Enr.mp4".format(dsNum)
 
     # Get first timestamp
     gatTree.GetEntry(0)
-    # print type(gatTree.localTime.localTime)
-
-
-    theCut = "Entry$<50"
-    # theCut = "channel == 674" # C1P7D3
-    # theCut = "trapE < 6000 && channel==674 && timestamp/1e8 > 148359"
-    # theCut = "channel==632 && timestamp/1e8 > 148359"
-
-    outFile = "../plots/movie_run%d.mp4" % run
 
     # Print cut and events passing cut
     print "Using cut:\n",theCut,"\n"
@@ -54,24 +59,18 @@ def main(argv):
     nList = elist.GetN()
     print "Found",nList,"entries passing cuts."
 
-
-
     # First set up the figure, the axis, and the plot element we want to animate
-    fig = plt.figure(figsize=(11,5), facecolor='w')
+    fig = plt.figure(figsize=(20,10), facecolor='w')
+    fig.set_size_inches(20,10, True)
     a1 = plt.subplot(111)
-    # a2 = plt.subplot(111)
-    # a1.set_xlim(0,50000)
-    # a1.set_ylim(0,1000)
-    a1.set_xlabel("time (ns)")
+    a1.set_xlabel("Time (ns)")
     a1.set_ylabel("ADC")
     p1, = a1.plot(np.ones(1), np.ones(1), color='blue')
-    p2, = a1.plot(np.ones(1), np.ones(1), color='red')
 
     # initialization function: plot the background of each frame
     def init():
         p1.set_data([],[])
-        p2.set_data([],[])
-        return p1,p2,
+        return p1,
 
     # animation function.  This is called sequentially (it's the loop over events.)
     def animate(iList):
@@ -83,57 +82,32 @@ def main(argv):
         numPass = gatTree.Draw("channel",theCut,"GOFF",1,iList)
         chans = gatTree.GetV1()
         chanList = list(set(int(chans[n]) for n in xrange(numPass)))
-        event = bltTree.event
-
-        locTime = gatTree.localTime.localTime # wow, srsly?
 
         # Loop over hits passing cuts
         hitList = (iH for iH in xrange(nChans) if gatTree.channel.at(iH) in chanList)  # a 'generator expression'
         for iH in hitList:
-
-            # wf = MGTWaveform()
-            iEvent = 0
-            wf_downsampled = event.GetWaveform(iH)
-            wf_regular = event.GetAuxWaveform(iH)
-
-            wf = MJTMSWaveform(wf_downsampled,wf_regular)
-
-
+            wf = gatTree.MGTWaveforms.at(iH)
             iEvent = entry
             run = gatTree.run
             chan = gatTree.channel.at(iH)
-            energy = gatTree.trapE.at(iH)
-            # timestamp = gatTree.timestamp.at(iH) / 1e8
-            # locTime = timestamp - firstTime
-
-
+            energy = gatTree.trapENFCal.at(iH)
+            fs = gatTree.fitSlo.at(iH)
+            rn = gatTree.riseNoise.at(iH)
             signal = wl.processWaveform(wf)
             waveRaw = signal.GetWaveRaw()
-            waveBLSub = signal.GetWaveBLSub()
             waveTS = signal.GetTS()
 
             baseline = np.sum(waveRaw[:50])/50
 
-            # B, A = butter(2,1e6/(1e8/2), btype='lowpass')
-            # data_lPass = lfilter(B, A, waveRaw)
-
-            # simple trap filter (broken)
-            trapTS = waveTS
-            ADCThresh = 1.
-            trap, trigger, triggerTS = trapFilt(waveBLSub,trapThresh=ADCThresh)
-            trap = trap + baseline
-
             # fill the figure
             p1.set_ydata(waveRaw)
             p1.set_xdata(waveTS)
-            p2.set_ydata(trap)
-            p2.set_xdata(trapTS)
-            plt.title("Run %d  Channel %d  Entry %d  trapE %.1f  locTime %.1f s" % (run,chan,iList,energy,locTime))
+            plt.title("Run %d  Ch %d  Entry %d  trapENFCal %.1f  fitSlo %.2f  riseNoise %.2f" % (run,chan,iList,energy, fs, rn))
 
             # dynamically scale the axes
             xmin, xmax = np.amin(waveTS), np.amax(waveTS)
             a1.set_xlim([xmin,xmax])
-            if energy < 1000:
+            if energy > 1000:
                 a1.set_ylim(0,1000)
             else:
                 ymin, ymax = np.amin(waveRaw), np.amax(waveRaw)
@@ -143,8 +117,7 @@ def main(argv):
             # print "%d / %d  Run %d  nCh %d  chan %d  trapE %.1f  samp %d" % (iList,nList,run,nChans,chan,energy,wf.GetLength())
             if iList%500 == 0 and iList!=0:
                 print "%d / %d entries saved (%.2f %% done)." % (iList,nList,100*(float(iList)/nList))
-
-            return p1,p2,
+            return p1,
 
     # call the animator.  blit=True means only re-draw the parts that have changed.
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=elist.GetN(), interval=0, blit=True)
