@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --workdir=/global/homes/w/wisecg/lat
 #SBATCH --output=/global/homes/w/wisecg/lat/logs/pdsf-%j.txt
-#SBATCH -p shared --image=wisecg/mjsw:v2
-#SBATCH -t 5:00:00
+#SBATCH -p long --image=wisecg/mjsw:v2
+#SBATCH -t 3:00:00
 shifter /bin/bash slurm-job.sh ${@}

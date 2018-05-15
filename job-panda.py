@@ -80,6 +80,9 @@ def main(argv):
         if opt == "-lat2": scanLAT2(dsNum,subNum,modNum)
         if opt == "-cuts": cutLAT2()
 
+        # livetime
+        if opt == "-lt":   ltCalc()
+
 # =============================================================
 
 def sh(cmd):
@@ -306,7 +309,9 @@ def runBatch():
     # EX. 13: run LAT2, generate cut files
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts.ls python3 %d %d'" % getSBatch("pdsf-pump"))
-    sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+
+    # EX. 14: run livetime calc
 
     # EX. 14: placeholder for DS6 cal run processing
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
@@ -1145,6 +1150,17 @@ def cutLAT2():
             job = "./lat2.py -ds %s -cut %s" % (str(ds),opt)
             if useJobQueue: sh("%s >& ./logs/lat2-cuts-%s-%s.txt" % (job, ds, opt))
             else: sh("%s '%s'" % (jobStr, job))
+
+
+def ltCalc():
+    """ ./job-panda.py [-q] -lt
+    Runs ds_livetime jobs w/ low-energy options.
+    """
+    dsList = [0,1,2,3,4,"5a","5b","5c"]
+    for ds in dsList:
+        job = "./ds_livetime %s -low -idx" % (str(ds))
+        if useJobQueue: sh("%s >& ./logs/lt-%s.txt" % (job, ds))
+        else: sh("%s '%s'" % (jobStr, job))
 
 
 if __name__ == "__main__":

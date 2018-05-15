@@ -1437,11 +1437,11 @@ def applyCuts(ds, cutType):
                     continue
 
                 # debug: just print cuts
-                if ch in bkgDict.keys():
-                    print(ch, chanCut)
-                else:
-                    print(ch, None)
-                continue
+                # if ch in bkgDict.keys():
+                #     print(ch, chanCut)
+                # else:
+                #     print(ch, None)
+                # continue
 
                 # do file integrity checks (instead of making new output)
                 if checkMode:

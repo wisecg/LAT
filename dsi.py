@@ -851,7 +851,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
         runLo = rFirst if runCovMin < rFirst else runCovMin
         runHi = rLast if rLast < runCovMax else runCovMax
         cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-        if verbose: print("  cIdx %d   (%d - %d)" % (cIdx, runLo, runHi))
+        if verbose: print("  cIdx %d    (%d - %d)" % (cIdx, runLo, runHi))
 
         fsD = getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
         rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
