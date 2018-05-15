@@ -27,30 +27,30 @@
 using namespace std;
 using namespace MJDB;
 
-void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT,
+void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx,
   map<int,vector<string>> ranges = map<int,vector<string>>(),
   vector<pair<int,double>> times = vector<pair<int,double>>(),
-  map<int,vector<int>> burst = map<int,vector<int>>());
+  map<int,vector<int>> loChSel = map<int,vector<int>>());
 
+vector<int> GetRunList(string dsStr, bool blind, int bkgIdx=-1);
 bool compareInterval(pair<int,int> i1, pair<int,int> i2) { return (i1.first < i2.first); }
 int mergeIntervals(vector<pair<int,int>> vals, int start, int stop);
-map<int,vector<int>> LoadBurstCut();
+map<int,vector<int>> LoadLEChanSel(string dsStr);
 void getDBRunList(int &dsNum, double &ElapsedTime, string options, vector<int> &runList, vector<pair<int,double>> &times);
-void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT);
-map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi=-1) ;
+void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT, int& nRuns);
+map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, bool blind=0, int dsNum_hi=-1);
 double getTotalLivetimeUncertainty(map<int, double> livetimes, string opt="");
 double getLivetimeAverage(map<int, double> livetimes, string opt="");
 double getVectorUncertainty(vector<double> aVector);
 double getVectorAverage(vector<double> aVector);
 vector<uint32_t> getBestIDs(vector<uint32_t> input);
 double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> expUnc, vector<uint32_t> IDs, int nIterations=1000);
-
-
 bool check_num(std::string const &in) {
     char *end;
     strtol(in.c_str(), &end, 10);
     return !in.empty() && *end == '\0';
 }
+vector<int> GetBkgIdxRuns(int dsNum);
 
 // =======================================================================================
 int main(int argc, char** argv)
@@ -59,12 +59,15 @@ int main(int argc, char** argv)
   if (argc < 2) {
 		cout << "Usage: ./ds_livetime [dsNum] [options]\n"
          << " Options:\n"
-         << "   [dsNum]: 0-5, 5a, 5b, 6\n"
+         << "   [dsNum]: 0-5, 5a, 5b, 5c, 6\n"
          << "   -raw: Only get raw duration\n"
          << "   -gds: Get livetime from GATDataSet\n"
          << "   -db1 ['options in quotes']: Get run list from runDB and quit\n"
          << "   -db2 ['options in quotes']: Do full LT calculation on a runDB list\n"
-         << "   -low: GDS method + low energy run/channel selection list.\n"
+         << "   -blind: Run calculation on blind runs.\n"
+         << "   -c: Use official channel selection files\n"
+         << "   -low: Apply low energy run/channel selection\n"
+         << "   -idx: Print results for each bkgIdx\n"
          << " RunDB access (-db[12] option):\n"
          << "    partNum = P3LQK, P3KJR, P3LQG, etc.\n"
          << "    runRank = gold, silver, bronze, cal, etc.\n"
@@ -73,14 +76,18 @@ int main(int argc, char** argv)
          << "    Ex.2: ./ds_livetime 5 -db1 'dataset 3'\n";
 		return 1;
 	}
-  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, ds5a=0, ds5b=0;
+
+  // print the command line arg
+  cout << "Running ds_livetime with arg:\n";
+  for(int i = 0; i < argc; i++) cout << argv[i] << " ";
+  cout << endl;
+
+  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, blind=0, chanSel=0, idx=0;
   int dsNum;
   string dsStr = argv[1];
   if (check_num(dsStr)) dsNum = stoi(dsStr);
-  else {
-    if (dsStr=="5a") { dsNum=5; ds5a=1; }
-    if (dsStr=="5b") { dsNum=5; ds5b=1; }
-  }
+  else dsNum = 5; // 5 is the only one that's split up
+
   string runDBOpt = "";
   vector<string> opt(argv+1, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
@@ -88,23 +95,17 @@ int main(int argc, char** argv)
     if (opt[i] == "-gds") { gds=1; }
     if (opt[i] == "-db1") { lt=0; rdb=1; runDBOpt = opt[i+1]; }
     if (opt[i] == "-db2") { lt=1; rdb=1; runDBOpt = opt[i+1]; }
+    if (opt[i] == "-blind") { blind=1; }
+    if (opt[i] == "-c") { chanSel=1;    cout << "Using official chan sel files ...\n"; }
     if (opt[i] == "-low") { lt=0; low=1; }
+    if (opt[i] == "-idx") { idx=1; }
   }
 
   // -- Primary livetime routine, using DataSetInfo run sequences (default, no extra args) --
   if (lt && !rdb) {
-    vector<int> runList;
-    GATDataSet ds;
-    cout << "Scanning DS-" << dsNum << endl;
-    if      (ds5a) { cout << "5A\n"; for (int rs = 0; rs <= 79; rs++) LoadDataSet(ds, dsNum, rs); }
-    else if (ds5b) { cout << "5B\n"; for (int rs = 80; rs <= 112; rs++) LoadDataSet(ds, dsNum, rs); }
-    else         for (int rs = 0; rs <= GetDataSetSequences(dsNum); rs++) LoadDataSet(ds, dsNum, rs);
-
-    for (size_t i = 0; i < ds.GetNRuns(); i++) runList.push_back(ds.GetRunNumber(i));
-    map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT);
-
-    // -- Main routine --
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges);
+    vector<int> runList = GetRunList(dsStr, blind);
+    map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT,blind);
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges);
   }
 
   // -- Do SIMPLE GATDataSet method and quit (-gds) --
@@ -133,34 +134,32 @@ int main(int argc, char** argv)
     vector<pair<int,double>> times;
     getDBRunList(dsNum, ElapsedTime, runDBOpt, runList, times); // auto-detects dsNum
     map<int, vector<string>> ranges = getDeadtimeMap(0,noDT,5); // we don't know what DS we're in, so load them all.
-    // -- Main routine --
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges,times);
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges,times);
   }
 
-  // -- Do primary livetime with a low-energy run+channels 'burst' cut applied. --
+  // -- Do primary livetime with a low-energy run+channel selection --
   if (low) {
-    vector<int> runList;
-    GATDataSet ds;
-    cout << "Scanning DS-" << dsNum << endl;
-    for (int rs = 0; rs <= GetDataSetSequences(dsNum); rs++) LoadDataSet(ds, dsNum, rs);
-    for (size_t i = 0; i < ds.GetNRuns(); i++) runList.push_back(ds.GetRunNumber(i));
-    map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT);
-    map<int,vector<int>> burst = LoadBurstCut(); // (low-energy run+channel selection)
 
-    // -- Main routine --
-    vector<pair<int,double>> times; // dummy (empty)
-    calculateLiveTime(runList,dsNum,raw,rdb,noDT,ranges,times,burst);
+    vector<int> runList = GetRunList(dsStr, blind);
+    map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT,blind);
+
+    map<int,vector<int>> loChSel = LoadLEChanSel(dsStr); // (low-energy run+channel selection)
+
+    vector<pair<int,double>> times; // dummy (empty), don't need this
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges,times,loChSel);
   }
 }
 // =======================================================================================
-
-void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, bool noDT,
+void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx,
   map<int,vector<string>> ranges,
   vector<pair<int,double>> times,
-  map<int,vector<int>> burst)
+  map<int,vector<int>> loChSel)
 {
   // Do we have deadtime files for this dataset?
   if (noDT) cout << "No deadtime files available, will show only runtime-exposure...\n";
+
+  // was "idx" set?
+  if (idx) cout << "'-idx' option selected. Printing results for each bkgIdx ...\n";
 
   // Do we have M1 and M2 enabled?
   bool mod1=0, mod2=0;
@@ -168,11 +167,11 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   else if (dsNum == 4)  { mod1=0; mod2=1; }
   else if (dsNum == 5)  { mod1=1; mod2=1; }
 
-  // Are we applying a burst cut?
-  bool useBurst=0;
-  if (burst.size() > 0) {
-    cout << "Applying burst cut...\n";
-    useBurst=1;
+  // Are we applying low-e run/ch selection?
+  bool useLowChSel=0;
+  if (loChSel.size() > 0) {
+    cout << "Applying low-e channel selection cut...\n";
+    useLowChSel=1;
   }
 
   // Load LN fill times
@@ -187,7 +186,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   map<int,double> actM4Det_g = LoadActiveMasses(dsNum);
   map<int,double> actMUnc4Det_g = LoadActiveMassUncertainties(dsNum);
   map<int,bool> detIsEnr = LoadEnrNatMap();
-
+  vector<int> bkgIdxRuns = GetBkgIdxRuns(dsNum);
 
   // ====== Loop over runs ======
   double runTime=0, vetoRunTime=0, vetoDead=0, m1LNDead=0, m2LNDead=0;
@@ -201,8 +200,10 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   double dtfRunTimeHG=0, dtfRunTimeLG=0;  // dummy runtimes for deadtime fraction (hg and lg det's)
   double dtfRunTimeBest=0;                // dummy runtime for deadtime fraction ('best' det's)
   vector<double> dtfDeadTime(10,0);       // individual deadtimes
+  map <int,double> bkgIdxExposure;        // exposure for each channel in each bkgIdx
   time_t prevStop=0;
   int prevSubSet=-1;
+  int bkgIdx = 0;
   for (size_t r = 0; r < runList.size(); r++)
   {
     int run = runList[r];
@@ -211,13 +212,14 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       cout << 100*(double)r/runList.size() << " % done, run " << run << endl;
 
      // Load the deadtime file ONLY when the subset changes.
-    int runInSet = -1;
+    int runInSet = -1, nRunsDT = -1;
     string dtFilePath;
-    if (!noDT) locateRunRange(run,ranges,runInSet,dtFilePath,noDT);
+    if (!noDT) locateRunRange(run,ranges,runInSet,dtFilePath,noDT,nRunsDT);
+    if (dsNum==0) nRunsDT = 2149;
     double hgDeadAvg=0, lgDeadAvg=0, orDeadAvg=0;
     if (!noDT && (runInSet != prevSubSet))
     {
-      cout << "Subset " << runInSet << ", loading DT file:" << dtFilePath << endl;
+      cout << Form("DT Subset %i, nRunsDT %i, loading DT file: %s\n",runInSet,nRunsDT,dtFilePath.c_str());
       firstTimeInSubset = true;
 
       ifstream dtFile(dtFilePath.c_str());
@@ -274,6 +276,21 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       prevSubSet = runInSet;
     }
     // if (firstTimeInSubset) continue; // debugging for printing out deadtime maps
+
+    // '-idx' option: At each new bkgIdx, print out the exposure for all detectors.
+    if (idx) {
+      if ( std::find(bkgIdxRuns.begin(), bkgIdxRuns.end(), run) != bkgIdxRuns.end() ) {
+        cout << "bkgIdx " << bkgIdx << endl;
+        for(auto &idx : bkgIdxExposure) {
+          int chan = idx.first;
+          double exposure = idx.second;
+          cout << chan << " : " << exposure << endl;
+        }
+        bkgIdx++;
+        bkgIdxExposure.clear();
+        // cout << "Warning, not clearing bkgIdxExposure\n";
+      }
+    }
 
     // Load built file
     GATDataSet ds;
@@ -419,7 +436,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     //   Then use the DataSetInfo veto-only and bad lists to pop channels from the list.
     //   Then look for a GATChannelSelectionInfo file and pop any additional channels.
     //   We don't count the runtime OR livetime from detectors that are on these lists.
-    // - If we're applying a burst cut for this run, remove the affected channels.
+    // - If we're applying low-e run/ch selection for this run, remove the affected channels.
     // - If we don't have a deadtime file, report only the runtime.
 
     MJTChannelMap *chMap = (MJTChannelMap*)bltFile->Get("ChannelMap");
@@ -438,9 +455,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     }
 
     // Now try and load a channel selection object and pop any other bad detectors
-    // NOTE: this code uses the 'official version' argument (1) in GetChannelSelectionPath, which points to the
-    //       channel selection files stored in $MJDDATADIR/surfmjd/analysis/channelselection .
-    string chSelPath = GetChannelSelectionPath(dsNum,1);
+    string chSelPath = GetChannelSelectionPath(dsNum, int(chanSel));
     if (FILE *file = fopen(chSelPath.c_str(), "r")) {
       fclose(file);
       GATChannelSelectionInfo ch_select (chSelPath, run);
@@ -465,34 +480,37 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       }
     }
 
-    // Now apply the burst cut
-    if (useBurst)
+    // Now apply the low-e run/channel selection
+    if (useLowChSel)
     {
-      // make a list of channels to remove
-      vector<int> killChs;
+      ite = enabledIDs.begin();
+      while (ite != enabledIDs.end()) {
+        int enabCh = *ite;
+        bool badChan = false;
 
-      // search for the dataset-wide channels to remove
-      map<int,vector<int>>::iterator it = burst.find(dsNum);
-      if(it != burst.end())
-        for (auto ch : it->second)
-          killChs.push_back(ch);
-
-      // search for the run-specific channels to remove
-      map<int,vector<int>>::iterator it2 = burst.find(run);
-      if(it2 != burst.end())
-        for (auto ch : it2->second)
-          killChs.push_back(ch);
-
-      // now remove the channels
-      for (auto ch : killChs) {
-        auto it3 = std::find(enabledIDs.begin(), enabledIDs.end(), ch);
-        if (it3 != enabledIDs.end()) {
-          enabledIDs.erase(it3);
-          cout << Form("DS %i  run %i  removed %i . enabled: ",dsNum,run,ch);
+        // loChSel format: [ch]:[lo1, hi1, lo2, hi2, ...]
+        if ( loChSel.find(enabCh) == loChSel.end() ) {
+          ++ite;
+          // cout << Form("Run %i  chan %i\n",run,enabCh);
+          continue;
+        }
+        else {
+          vector<int> badRanges = loChSel.find(enabCh)->second;
+          for (size_t bi = 0; bi < badRanges.size(); bi+=2) {
+            if ((run >= badRanges[bi]) && (run <= badRanges[bi+1])) {
+              badChan = true;
+              break;
+            }
+          }
+          // cout << Form("Run %i  chan %i  bad? %i\n",run,enabCh,(int)badChan);
+          if (badChan) { enabledIDs.erase(ite); continue; }
+          else ++ite;
         }
       }
-      for (auto ch : enabledIDs) cout << ch << " ";
-      cout << endl;
+      // final review
+      // cout << "Final chan list:\n";
+      // for (auto ch : enabledIDs) cout << ch << " ";
+      // cout << endl;
     }
 
 
@@ -521,24 +539,23 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         if (lgDead < 0 && hgDead >= 0) lgDead = hgDead;
         if (lgDead < 0 && hgDead < 0) { hgDead = hgDeadAvg; lgDead = lgDeadAvg; }
 
-        // The following assumes only DS2 uses presumming, and may not always be true
-        // Takes out 62 or 100 us per pulser as deadtime.
+        // Takes out 62 or 100 us per pulser as deadtime, if this DS uses multisampling.
         double hgPulsers = dtMap[pos][3];
         double lgPulsers = dtMap[pos][4];
         double hgPulserDT = hgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
         double lgPulserDT = lgPulsers * (dsNum==2 || dsNum==6 ? 100e-6 : 62e-6);
 
-        // Get livetime for this channel.  Subtract off the pulser deadtime from the entire subset only once.
+        // Get livetime for this channel.  Subtract off (pulserDT)/(nRunsDT).
         if (ch%2 == 0) {
-          thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT*(firstTimeInSubset?1:0);
+          thisLiveTime = thisRunTime * (1 - hgDead) - hgPulserDT/(double)nRunsDT;
           dtfDeadTime[0] += thisRunTime * hgDead;
-          dtfDeadTime[3] += hgPulserDT*(firstTimeInSubset?1:0);
+          dtfDeadTime[3] += hgPulserDT/(double)nRunsDT;
           dtfRunTimeHG += thisRunTime;
         }
         if (ch%2 == 1) {
-          thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT*(firstTimeInSubset?1:0);
+          thisLiveTime = thisRunTime * (1 - lgDead) - lgPulserDT/(double)nRunsDT;
           dtfDeadTime[1] += thisRunTime * lgDead;
-          dtfDeadTime[4] += lgPulserDT*(firstTimeInSubset?1:0);
+          dtfDeadTime[4] += lgPulserDT/(double)nRunsDT;
           dtfRunTimeLG += thisRunTime;
         }
       }
@@ -548,24 +565,38 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
       }
       channelLivetime[ch] += thisLiveTime;
 
-      // LN reduction - depends on if channel is M1 or M2
+      // LN reduction depends on if channel is M1 or M2
       double thisLNDeadTime = 0;
       GATDetInfoProcessor gp;
       int detID = gp.GetDetIDFromName( chMap->GetString(ch, "kDetectorName") );
       if (CheckModule(detID)==1) thisLNDeadTime = m1LNDeadRun;
       if (CheckModule(detID)==2) thisLNDeadTime = m2LNDeadRun;
-      channelLivetime[ch] -= thisLNDeadTime;
-      thisLiveTime -= thisLNDeadTime;
-      dtfDeadTime[6] += thisLNDeadTime;
 
-      // Veto reduction - applies to all channels in BOTH modules.
-      channelLivetime[ch] -= vetoDeadRun;
-      thisLiveTime -= vetoDeadRun;
-      dtfDeadTime[8] += vetoDeadRun;
+      if ((thisLNDeadTime + vetoDeadRun) < thisLiveTime) {
+
+        channelLivetime[ch] -= thisLNDeadTime;
+        thisLiveTime -= thisLNDeadTime;
+        dtfDeadTime[6] += thisLNDeadTime;
+
+        // Veto reduction - applies to all channels in BOTH modules.
+        channelLivetime[ch] -= vetoDeadRun;
+        thisLiveTime -= vetoDeadRun;
+        dtfDeadTime[8] += vetoDeadRun;
+      }
 
       // Used for averages and uncertainty
       livetimeMap[ch].push_back(thisLiveTime/thisRunTime);
 
+      // '-idx' option: increment channel exposure (used w/ low-energy, so print HG channels only)
+      if (idx && ch%2==0) {
+        int detID = detChanToDetIDMap[ch];
+        double activeMass = actM4Det_g[detID]/1000;
+        bkgIdxExposure[ch] += activeMass * thisLiveTime/86400.0;
+        if (thisLiveTime < 0) {
+          cout << "Stop the fking presses, " << ch << " " << thisLiveTime << endl;
+          return;
+        }
+      }
     }
     // cout << "dtfRunTimeHG " << dtfRunTimeHG << " dtfRunTimeLG " << dtfRunTimeLG << endl;
     // cout << "Now best\n";
@@ -592,8 +623,8 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
         double orDead = dtMap[pos][2]/100.;
         if (orDead < 0) {
           bool hgGood=false, lgGood=false, hgGuess=false, lgGuess=false, hgBad=false, lgBad=false;
-          if (p1 > 0 && p4 > 0 && hgGood >= 0) hgGood=true;
-          if (p2 > 0 && p4 > 0 && hgGood >= 0) lgGood=true;
+          if (p1 > 0 && p4 > 0 && hgDead >= 0) hgGood=true;
+          if (p2 > 0 && p4 > 0 && lgDead >= 0) lgGood=true;
           if (p1 == 0 && hgDead >= 0.) hgGuess=true;
           if (p2 == 0 && lgDead >= 0.) lgGuess=true;
           if (p1 == 0 && hgDead < 0) hgBad=true;
@@ -660,6 +691,17 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     // Done with this run.
     delete bltFile;
   } // End loop over runs.
+
+  // print out the last bkgIdxExposure
+  if (idx) {
+    int nLastBkgIdx = GetDataSetSequences(dsNum);
+    cout << "bkgIdx " << nLastBkgIdx << endl;
+    for(auto &idx : bkgIdxExposure) {
+      int chan = idx.first;
+      double exposure = idx.second;
+      cout << chan << " : " << exposure << endl;
+    }
+  }
 
 
   // ========================================================
@@ -811,40 +853,44 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
   // ============ Print results by module. ============
   time_t t = time(0);   // get time now
   struct tm * now = localtime( & t );
-  cout << "\nDS " << dsNum << " Results, " << now->tm_year+1900 << "/" << now->tm_mon+1 << "/" << now->tm_mday << "\n"
-       << "\tVeto Runtime " << vetoRunTime << "\n"
-       << "\tVeto Deadtime " << vetoDead << "\n";
+  cout << "\nDS " << dsStr << "  Results, " << now->tm_year+1900 << "/" << now->tm_mon+1 << "/" << now->tm_mday << "\n"
+       << "   Veto Runtime (d) : " << vetoRunTime << "\n"
+       << "   Veto Deadtime (d) : " << vetoDead << "\n";
 
   if (noDT) cout << "Deadtime info not available -- reporting only runtime-based exposure ...\n";
 
   if (mod1) {
     cout << "Module 1:\n"
-         << "\tRuntime : " << runTime << "\n"
-         << "\tNumber of runs: " << runList.size() << " \n"
-         << "\tLN Deadtime : " << m1LNDead << " (" << m1LNDead/runTime << ")\n"
-         << "\tActive Enr Mass (kg): " << m1EnrActMass << "  Active Nat Mass: " << m1NatActMass << "\n";
+         << "   Runtime (d) : " << runTime << "\n"
+         << "   Number of runs: " << runList.size() << " \n"
+         << "   LN Deadtime (d) : " << m1LNDead << " +/- " << m1LNDead/runTime << "\n"
+         << "   Active Enr Mass (kg): " << m1EnrActMass << "  Active Nat Mass (kg): " << m1NatActMass << "\n";
     if (!noDT) {
-      cout << "\tBest Enr Exposure : " << m1EnrExpBest << " +/- " << m1EnrExpBestUnc << " ( " << m1EnrExpBestLTUnc << " w/o active mass unc) " << "\n"
-           << "\tBest Nat Exposure : " << m1NatExpBest << " +/- " << m1NatExpBestUnc << " ( " << m1NatExpBestLTUnc << " w/o active mass unc) " << "\n";
+      cout << "   Best Enr Exposure (kg-d): " << m1EnrExpBest << " +/- " << m1EnrExpBestUnc << endl;
+      cout << "    Unc w/o active mass :  +/- " << m1EnrExpBestLTUnc << endl;
+      cout << "   Best Nat Exposure (kg-d): " << m1NatExpBest << " +/- " << m1NatExpBestUnc << endl;
+      cout << "    Unc w/o active mass :  +/- " << m1NatExpBestLTUnc << endl;
     }
     else {
-      cout << "\tEnr Exposure : " << m1EnrExp << "\n"
-           << "\tNat Exposure : " << m1NatExp << "\n";
+      cout << "   Enr Exposure (kg-d) : " << m1EnrExp << "\n"
+           << "   Nat Exposure (kg-d): " << m1NatExp << "\n";
     }
   }
   if (mod2) {
     cout << "Module 2:\n"
-         << "\tRuntime : " << runTime << "\n"
-         << "\tNumber of runs: " << runList.size() << " \n"
-         << "\tLN Deadtime : " << m2LNDead << " (" << m2LNDead/runTime << ")\n"
-         << "\tActive Enr Mass (kg): " << m2EnrActMass << "  Active Nat Mass: " << m2NatActMass << "\n";
+         << "   Runtime (d) : " << runTime << "\n"
+         << "   Number of runs: " << runList.size() << " \n"
+         << "   LN Deadtime (d): " << m2LNDead << " (" << m2LNDead/runTime << ")\n"
+         << "   Active Enr Mass (kg): " << m2EnrActMass << "  Active Nat Mass (kg): " << m2NatActMass << "\n";
     if (!noDT) {
-      cout << "\tBest Enr Exposure : " << m2EnrExpBest << " +/- " << m2EnrExpBestUnc <<  " ( " << m2EnrExpBestLTUnc << " w/o active mass unc) " << "\n"
-           << "\tBest Nat Exposure : " << m2NatExpBest << " +/- " << m2NatExpBestUnc <<  " ( " << m2NatExpBestLTUnc << " w/o active mass unc) " << "\n";
+      cout << "   Best Enr Exposure (kg-d) : " << m2EnrExpBest << " +/- " << m2EnrExpBestUnc << endl;
+      cout << "    Unc w/o active mass  +/- :" << m2EnrExpBestLTUnc << endl;
+      cout << "   Best Nat Exposure (kg-d): " << m2NatExpBest << " +/- " << m2NatExpBestUnc << endl;
+      cout << "    Unc w/o active mass  +/- :" << m2NatExpBestLTUnc << endl;
     }
     else {
-      cout << "\tEnr Exposure : " << m2EnrExp << "\n"
-           << "\tNat Exposure : " << m2NatExp << "\n";
+      cout << "   Enr Exposure (kg-d): " << m2EnrExp << "\n"
+           << "   Nat Exposure (kg-d): " << m2NatExp << "\n";
     }
   }
   // Finally, print a channel-by-channel summary
@@ -873,13 +919,13 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
     double chBestLTAvg = getLivetimeAverage(channelLivetimeBest);
     double chHighLTAvg = getLivetimeAverage(channelLivetime,"HG");
     double chLowLTAvg = getLivetimeAverage(channelLivetime,"LG");
-    cout << Form("Channel livetime averages - All %.4f  Best %.4f  HG %.4f  LG %.4f\n",chAllLTAvg,chBestLTAvg,chHighLTAvg,chLowLTAvg);
+    cout << Form("Channel livetime averages (d) - All %.4f  Best %.4f  HG %.4f  LG %.4f\n",chAllLTAvg,chBestLTAvg,chHighLTAvg,chLowLTAvg);
 
     double chAllLTUnc = getTotalLivetimeUncertainty(channelLivetime);
     double chBestLTUnc = getTotalLivetimeUncertainty(channelLivetimeBest);
     double chHighLTUnc = getTotalLivetimeUncertainty(channelLivetime,"HG");
     double chLowLTUnc = getTotalLivetimeUncertainty(channelLivetime,"LG");
-    cout << Form("Channel livetime avg unc -  All %.4f  Best %.4f  HG %.4f  LG %.4f\n",chAllLTUnc,chBestLTUnc,chHighLTUnc,chLowLTUnc);
+    cout << Form("Channel livetime avg unc (d) -  All %.4f  Best %.4f  HG %.4f  LG %.4f\n",chAllLTUnc,chBestLTUnc,chHighLTUnc,chLowLTUnc);
 
     vector<double> allAvg;
     vector<double> allUnc;
@@ -891,7 +937,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
          << "Total average fractional livetime uncertainty    : " << getVectorUncertainty(allAvg) << endl;
 
     // Now report deadtime fractions
-    cout << "Deadtime summary (percent, sum deadtime, sum runtime):"
+    cout << "Deadtime summary (percent, sum deadtime (sec), sum runtime (sec)):"
          << Form("\n   Hardware HG:       %.4e  %.4e  %.4e",dtFrac[0]*100,dtfDeadTime[0],dtfRunTimeHG)
          << Form("\n   Hardware LG:       %.4e  %.4e  %.4e",dtFrac[1]*100,dtfDeadTime[1],dtfRunTimeLG)
          << Form("\n   Hardware OR/Best:  %.4e  %.4e  %.4e",dtFrac[2]*100,dtfDeadTime[2],dtfRunTimeBest)
@@ -920,6 +966,38 @@ void calculateLiveTime(vector<int> runList, int dsNum, bool raw, bool runDB, boo
 }
 
 // =======================================================================================
+vector<int> GetRunList(string dsStr, bool blind, int bkgIdx)
+{
+  vector<int> runList;
+  int dsNum;
+  GATDataSet ds;
+  if (check_num(dsStr)) dsNum = stoi(dsStr);
+  else dsNum = 5;
+
+  if (bkgIdx >= 0) {
+    LoadDataSet(ds, dsNum, bkgIdx);
+  }
+  else {
+    if (!blind) {
+      cout << "Scanning DS-" << dsStr << endl;
+      if      (dsStr=="5a") for (int rs = 0; rs <= 79; rs++) LoadDataSet(ds, dsNum, rs);
+      else if (dsStr=="5b") for (int rs = 80; rs <= 112; rs++) LoadDataSet(ds, dsNum, rs);
+      else if (dsStr=="5c") for (int rs = 113; rs <= 121; rs++) LoadDataSet(ds, dsNum, rs);
+      else
+        for (int rs = 0; rs <= GetDataSetSequences(dsNum); rs++) LoadDataSet(ds, dsNum, rs);
+    }
+    else {
+      cout << "Scanning BLIND DS-" << dsNum << endl;
+      for (int rs = 0; rs <= GetBlindDataSetSequences(dsNum); rs++) LoadBlindDataSet(ds, dsNum, rs);
+    }
+  }
+
+  for (size_t i = 0; i < ds.GetNRuns(); i++)
+    runList.push_back(ds.GetRunNumber(i));
+  return runList;
+}
+
+
 int mergeIntervals(vector<pair<int,int>> vals, int start, int stop)
 {
   // Start with a vector of start/stop intervals, and sort in order of increasing start times.
@@ -1042,40 +1120,49 @@ void getDBRunList(int &dsNum, double &ElapsedTime, string options, vector<int> &
 
 
 // Used to perform low-energy run selection.
-map<int,vector<int>> LoadBurstCut()
+map<int,vector<int>> LoadLEChanSel(string dsStr)
 {
-  map<int, vector<int>> burst;
+  map<int, vector<int>> ranges;
+
   ifstream inFile;
-  inFile.open("burstCut_v1.txt");
+  inFile.open(Form("./data/dbCut_fr_%s.txt",dsStr.c_str()));
   string line;
   while (getline(inFile, line)) {
     vector<string> inputs;
     istringstream iss(line);
     string buf;
     while (iss >> buf) inputs.push_back(buf);
-    int key = stoi(inputs[0]);
+
+    int chan = stoi(inputs[0]);
     vector<int> cut;
-    for (size_t i = 1; i < inputs.size(); i++) cut.push_back( stoi(inputs[i]) );
-    burst[ key ] = cut;
+    for (size_t i = 1; i < inputs.size(); i++)
+      cut.push_back( stoi(inputs[i]) );
+    ranges[chan] = cut;
   }
-  // Also note channels that were entirely removed from the dataset.
-  burst[0] = {656};
-  burst[3] = {592,692};
-  burst[4] = {1332};
-  burst[5] = {614,692,1124,1232};
-  return burst;
+
+  // debug
+  // for (auto &i : ranges) {
+  //   int chan = i.first;
+  //   vector<int> cut = i.second;
+  //   cout << chan << ": ";
+  //   for (auto v : cut) cout << v << " ";
+  //   cout << endl;
+  // }
+
+  return ranges;
 }
 
 
 // Looks up which sub-range a particular run is in, given a range map.
-void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT)
+void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, string& dtFilePath, bool& noDT, int& nRuns)
 {
   bool foundRun = false;
   for (auto& r : ranges) {
-    vector<string> thisRange = r.second; // c++ map trick: the first string is the file path, the rest are the run ranges.
+    vector<string> thisRange = r.second; // {dtFile, nRuns, firstRun, lastRun}
     dtFilePath = thisRange[0];
+    nRuns = stoi(thisRange[1]);
 
-    for (size_t i = 1; i < thisRange.size(); i+=2) {
+    for (size_t i = 2; i < thisRange.size(); i+=2) {
       if (run >= stoi(thisRange[i]) && run <= stoi(thisRange[i+1])) {
         // cout << Form("Found run %i between runs %i and %i\n",run,stoi(thisRange[i]),stoi(thisRange[i+1]));
         foundRun = true;
@@ -1094,7 +1181,7 @@ void locateRunRange(int run, map<int,vector<string>> ranges, int& runInSet, stri
 
 // Parses the 'lis' files in ./deadtime/ to make a range map.
 // The first string is the file path, the rest are the 'int' run ranges.
-map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi)
+map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, bool blind, int dsNum_hi)
 {
   map<int, vector<string>> ranges;
 
@@ -1110,7 +1197,7 @@ map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi)
   {
     // Find runlist files for this dataset
     string command = Form("ls ./deadtime/ds%i_*.lis",ds);
-    if (ds==5) command = Form("ls ./deadtime/DS*.lis");
+    if (ds>4||blind) command = Form("ls ./deadtime/DS*.lis");
     array<char, 128> buffer;
     vector<string> files;
     string str;
@@ -1140,7 +1227,7 @@ map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi)
         return ranges;
       }
       string buffer;
-      int firstRun = -1, lastRun = -1;
+      int firstRun = -1, lastRun = -1, nRuns = 0;
       while (getline(lisFile, buffer))
       {
         size_t found = buffer.find("Run");
@@ -1151,13 +1238,14 @@ map<int, vector<string>> getDeadtimeMap(int dsNum, bool& noDT, int dsNum_hi)
         int run = stoi( buffer.substr(found+3) );
         if (firstRun == -1) firstRun = run;
         lastRun = run;
+        nRuns++;
       }
 
       // grab the corresponding DT file
       string dtFile = file.substr(0, file.find_last_of(".")) + ".DT";
 
       // Fill the range map
-      ranges[rangeCount] = {dtFile,to_string(firstRun),to_string(lastRun)};
+      ranges[rangeCount] = {dtFile,to_string(nRuns),to_string(firstRun),to_string(lastRun)};
       rangeCount++;
     }
   }
@@ -1337,3 +1425,18 @@ double getTotalExposureUncertainty(map<int, double> expMean, map<int, double> ex
 
 }
 
+
+vector<int> GetBkgIdxRuns(int dsNum)
+{
+  // this returns a vector containing the FIRST run numbers for every bkgIdx.
+
+  GATDataSet ds;
+  map<int, vector<int>> runRanges;
+  LoadDataSet(ds, dsNum, -1, runRanges);
+
+  vector<int> bkgRuns;
+  for (int i = 1; i <= GetDataSetSequences(dsNum); i++){
+    bkgRuns.push_back(runRanges[i][0]);
+  }
+  return bkgRuns;
+}
