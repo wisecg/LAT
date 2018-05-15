@@ -769,35 +769,51 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
         print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
 
 
-def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
-
-    det = DetInfo()
-    bkg = BkgInfo()
-    cal = CalInfo()
-
+def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
+    """ Load cut data from the calDB and translate to TCut format.
+    Used by: lat2.py, check-files.py
+    """
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
+
+    # load metadata and print a status message.
+    det = DetInfo()
     chList = det.getGoodChanList(dsNum, mod)
 
+    bkg = BkgInfo()
     bkgRanges = bkg.getRanges(ds)
     rFirst, rLast = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
+    dsSub = ds if ds in ["5A","5B","5C"] else int(ds)
+    subRanges = bkg.GetSubRanges(dsSub, bIdx) # this is finicky about int/str
+    if len(subRanges) == 0: subRanges.append((rFirst, rLast))
+
+    cal = CalInfo()
+    calKey = "ds%d_m%d" % (dsNum, mod)
+    if ds == "5C": calKey = "ds5c"
+    if calKey not in cal.GetKeys(dsNum):
+        print("Error: Unknown cal key:",calKey)
+        return
+    cIdxLo = cal.GetCalIdx(calKey, rFirst)
+    cIdxHi = cal.GetCalIdx(calKey, rLast)
+    nCal = cIdxHi+1 - cIdxLo
+
+    if cutType == '-b': cutType = "th"
+    if verbose: print("DS%d-M%d (%s) %s bIdx %d  (%d - %d)  nBkg %d  nCal %d" % (dsNum,mod,ds,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
 
     # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
+    # bkgDict = {ch:None for ch in chList}
     bkgDict = {}
-    subRanges = bkg.GetSubRanges(ds, bIdx)
-
-    if len(subRanges) == 0: subRanges.append((rFirst, rLast))
-    print("bkgIdx %-4d  rFirst %d  rLast %d  nSub %d" % (bIdx, rFirst, rLast, len(subRanges)))
-
+    bkgCov = {ch:[] for ch in chList}
     for sIdx, (runLo, runHi) in enumerate(subRanges):
 
-        # print("ds %d  bIdx %d  sub %d  %d  %d" % (dsNum,bIdx,sIdx,runLo,runHi))
         bRunCut = "run>=%d && run<=%d" % (runLo, runHi)
+        if verbose: print("  bIdx %d %d (%d - %d)" % (bIdx, sIdx, runLo, runHi))
 
         thD = getDBRecord("thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sIdx), False, calDB, pars)
 
-        for ch in sorted(thD):
+        for ch in chList:
+
             if ch not in thD.keys():
-                bkgDict[ch] = None
+                bkgCov[ch].append(0)
                 continue
 
             # get threshold data for this bkg/sub/chan
@@ -807,9 +823,13 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
             thrCut, chanCut = None, None
             if not isBad:
                 thrCut = "trapENFCal>=%.2f " % (thrMu + 3*thrSig) # ***** 3 sigma threshold cut *****
+                bkgCov[ch].append(1)
+            else:
+                bkgCov[ch].append(0)
 
             # create dict entry for this channel or append to existing, taking care of parentheses and OR's.
             chanCut = "(%s && %s)" % (bRunCut, thrCut) if len(subRanges) > 1 else thrCut
+
             if ch in bkgDict.keys() and thrCut!=None:
                 bkgDict[ch] += " || %s" % chanCut
             elif ch not in bkgDict.keys() and thrCut!=None and len(subRanges) > 1:
@@ -817,34 +837,21 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
             elif len(subRanges)==1 and thrCut != None:
                 bkgDict[ch] = thrCut
 
+    # close the parens for each channel entry
     for ch in bkgDict:
         if bkgDict[ch] is not None and len(subRanges) > 1:
-            bkgDict[ch] += ")" # close the parens for each channel entry
-
-    # final check
-    # for ch in sorted(bkgDict):
-        # print(ch, bkgDict[ch])
-
+            bkgDict[ch] += ")"
 
     # -- 2. get data for cuts tuned by calIdx (fitSlo, riseNoise)--
     calDict = {}
-    calKeys = cal.GetKeys(dsNum)
-    calKey = "ds%d_m%d" % (dsNum, mod)
-    if ds == "5C": calKey = "ds5c"
-    if calKey not in calKeys:
-        print("Error: Unknown cal key:",calKey)
-        return
-    cIdxLo = cal.GetCalIdx(calKey, rFirst)
-    cIdxHi = cal.GetCalIdx(calKey, rLast)
-    nCal = cIdxHi+1 - cIdxLo
-
+    calCov = {ch:[['fs'],['rn']] for ch in chList}
     for cIdx in range(cIdxLo, cIdxHi+1):
         runCovMin = cal.master[calKey][cIdx][1]
         runCovMax = cal.master[calKey][cIdx][2]
         runLo = rFirst if runCovMin < rFirst else runCovMin
         runHi = rLast if rLast < runCovMax else runCovMax
         cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-        print("calIdx %-4d  rFirst %d  rLast %d  nCal %d" % (cIdx, runLo, runHi, nCal))
+        if verbose: print("  cIdx %d   (%d - %d)" % (cIdx, runLo, runHi))
 
         fsD = getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
         rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
@@ -855,12 +862,18 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
             fsCut = None
             if fsD[ch] is not None and fsD[ch][0] > 0:
                 fsCut = "fitSlo<%.2f" % fsD[ch][0]
+                calCov[ch][0].append(1)
+            else:
+                calCov[ch][0].append(0)
 
             # "riseNoise_%s_ci%d_pol", "vals": {ch : [a,b,c99,c,fitPass] for ch in chList} }
             rnCut = None
             if rnD[ch] is not None and rnD[ch][3]!=False:
                 a, b, c99, c, fitPass = rnD[ch]
-                rnCut = "riseNoise < %.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f" % (a, b, c99)
+                rnCut = "riseNoise < (%.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f)" % (a, b, c99)
+                calCov[ch][1].append(1)
+            else:
+                calCov[ch][1].append(0)
 
             # set the combination channel cut
             chanCut = None
@@ -884,10 +897,13 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars):
         calDict[key] += ")"
 
     # final check
+    # for ch in sorted(bkgDict):
+        # print(ch, bkgDict[ch])
+
     # for ch in calDict:
         # print(ch, calDict[ch])
 
-    return bkgDict, calDict
+    return bkgDict, calDict, bkgCov, calCov
 
 
 def test():

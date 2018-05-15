@@ -75,12 +75,14 @@ def main(argv):
         if opt=="-rc":
             badRiseChans()
 
-        # generate cut files (specify cut type: th fs rn fr)
+        # generate cut files (specify cut type: (blank) fs rn fr)
         if opt=="-cut":
             if ds is None:
                 for d in [0,1,2,3,4,"5A","5B","5C"]: applyCuts(d, argv[i+1])
             else:
-                applyCuts(ds,argv[i+1])
+                # cutType = "-th" if argv[i+1]!="-b" else argv[i+1]
+                cutType = argv[i+1]
+                applyCuts(ds,cutType)
 
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
@@ -1348,15 +1350,25 @@ def badRiseChans():
 
 
 def applyCuts(ds, cutType):
-    """ ./lat2.py [-ds [N]] -cut [cutType]
-    Specify cut type: th fs rn fr (the last 3 have th applied automatically)
+    """ ./lat2.py -ds [N] -cut [cutType]
+    DS values:
+        0, 1, 2, 3, 4, 5A, 5B, 5C
+    Cut types:
+        -cut [blank]: threshold cut only
+        -cut fs : threshold + fitSlo
+        -cut rn : threshold + riseNoise
+        -cut fr : threshold + fitSlo + riseNoise
     """
     from ROOT import gROOT, TFile, TChain, TTree, TNamed
-    # gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
     # if this is set, don't overwrite good files.
     cleanupMode = True
     print("CLEANUP MODE?",cleanupMode)
+
+    # if this is set, check that we get all files we should. (instead of writing new ones)
+    checkMode = False
+    print("CHECK MODE?", checkMode)
 
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
@@ -1364,26 +1376,28 @@ def applyCuts(ds, cutType):
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
-    dsMap = bkg.dsMap() # number of sub-ranges
+    dsMap = bkg.dsMap() # number of bIdx's
     bkgRanges = bkg.getRanges(ds)
     calKeys = cal.GetKeys(dsNum)
 
+    # have to treat modules separately
     mods = [1]
     if dsNum == 4: mods = [2]
     if dsNum == 5: mods = [1,2]
-
-    # have to treat modules separately
     for mod in mods:
         chList = det.getGoodChanList(dsNum, mod)
-        # print("DS",ds,"Module",mod,"chans:",chList)
-        print("DS%d mod %d" % (dsNum, mod))
 
         for bIdx in bkgRanges:
+            bkgDict, calDict, _,_ = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars)
 
-            # this was moved to dsi.py s/t other routines can access it
-            bkgDict, calDict = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars)
-
-            # -- loop over each channel we have an entry for, get its cut, and create an output file. --
+            # # debug block
+            # if bIdx!=32:continue
+            # if bIdx==32:
+            #     bkgDict, calDict = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars,True)
+            #     for ch in sorted(bkgDict):
+            #         print(ch, bkgDict[ch])
+            #     for ch in calDict:
+            #         print(ch, calDict[ch])
 
             # get the list of LAT files for this bkgIdx
             latList = dsi.getSplitList("%s/latSkimDS%d_%d*" % (dsi.latDir, dsNum, bIdx), bIdx)
@@ -1393,57 +1407,76 @@ def applyCuts(ds, cutType):
             # f = TFile(fileList[0])
             # theCut = f.Get("theCut").GetTitle() # don't need to reapply this
 
-            print("now filling files for bkgIdx",bIdx)
-
-            for ch in sorted(chList):
+            for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
 
-                # don't write files we don't have cut values for
-                if ch not in bkgDict.keys():
-                    print("No threshold data for ch %d (cpd %s).  Skipping..." % (ch, cpd))
-                    continue
+                thData = True if ch in bkgDict.keys() else False
+                fsData = True if ch in calDict.keys() and "fitSlo" in calDict[ch] else False
+                rnData = True if ch in calDict.keys() and "riseNoise" in calDict[ch] else False
 
-                if cutType == "fs" and ch not in calDict.keys():
-                    print("No fitSlo data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
-                    continue
+                # print("DS%d  bIdx %d  ch %d  cpd %s  th %d  fs %d  rn %d" % (dsNum,bIdx,ch,cpd,int(thData),int(fsData),int(rnData)))
 
-                if cutType == "rn" and ch not in calDict.keys():
-                    print("No riseNoise data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
-                    continue
-
-                if cutType == "fr" and (ch not in calDict.keys() or ("fitSlo" not in calDict[ch] or "riseNoise" not in calDict[ch])):
-                    print("No fs+rn data for ch %d (cpd %s).  Skipping ..." % (ch,cpd))
-                    continue
-
-                # default: channel + threshold cut only
+                # ** thresholds are REQUIRED **
+                if not thData: continue
                 chanCut = "channel==%d && %s" % (ch, bkgDict[ch])
                 outFile = "%s/th/th_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
 
-                if cutType == "fs":
+                if cutType=="fs" and fsData:
                     outFile = "%s/fs/fs_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
                     chanCut += "&& fitSlo>0 && %s" % calDict[ch]
 
-                if cutType == "rn":
+                elif cutType=="rn" and rnData:
                     outFile = "%s/rn/rn_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
                     chanCut += "&& %s" % calDict[ch]
 
-                if cutType == "fr":
+                elif cutType=="fr" and fsData and rnData:
                     outFile = "%s/fr/fr_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
                     chanCut += "&& %s" % calDict[ch]
 
-                # if (bIdx==88):
-                print(ch, cpd, chanCut)
+                else:
+                    continue
 
+                # debug: just print cuts
+                if ch in bkgDict.keys():
+                    print(ch, chanCut)
+                else:
+                    print(ch, None)
                 continue
+
+                # do file integrity checks (instead of making new output)
+                if checkMode:
+
+                    if not os.path.isfile(outFile):
+                        print("File not found:",outFile)
+                        print("DS%d  bIdx %d  ch %d  cpd %s  th %d  fs %d  rn %d" % (dsNum,bIdx,ch,cpd,int(thData),int(fsData),int(rnData)))
+                        exit(1)
+
+                    cutFile = TFile(outFile)
+                    if cutFile.IsZombie():
+                        print("Zombieeeah, eeah, eeaah,",outFile)
+                        exit(1)
+                    elif cutFile.TestBit(TFile.kRecovered):
+                        print("Recovered",outFile)
+                        exit(1)
+                    elif cutFile.GetListOfKeys().GetSize()==0:
+                        print("No keys:",outFile)
+                        exit(1)
+
+                    tt = cutFile.Get("skimTree")
+                    nEnt = tt.GetEntries()
+                    n = tt.Draw("trapENFCal:riseNoise:fitSlo","trapENFCal < 250","goff")
+                    t1, t2, t3 = tt.GetV1(), tt.GetV2(), tt.GetV3()
+                    t1 = np.asarray([t1[i] for i in range(n)])
+                    t2 = np.asarray([t2[i] for i in range(n)])
+                    print("%s: nEnt %-8d nDraw %-8d" % (outFile.split("/")[-1], nEnt, n))
+
+                    cutFile.Close()
+                    continue
 
                 # if a file exists, only recreate it if it's bad.
                 makeNew = True
                 if cleanupMode:
-
                     # let's try an idea from a Rene Brun forum post from 2002.  Ugggg
-                    # this is almost 100% guaranteed not to catch all the edge cases.
-                    # will implement a routine in check-files.py to make sure all the
-                    # files created are OK.
                     if os.path.isfile(outFile):
                         makeNew = False
                         fTmp = TFile(outFile)
@@ -1459,17 +1492,19 @@ def applyCuts(ds, cutType):
                         fTmp.Close()
 
                 # Wow, such a crazy amount of work to get to this block.
-                # if makeNew:
-                #     print("   Writing to:",outFile)
-                #     print("   Chan",ch,"Cut:",chanCut,"\n")
-                #     outFile = TFile(outFile,"RECREATE")
-                #     outTree = TTree()
-                #     outTree = skimTree.CopyTree(chanCut)
-                #     outTree.Write()
-                #     cutUsed = TNamed("chanCut",chanCut)
-                #     cutUsed.Write()
-                #     print("Wrote",outTree.GetEntries(),"entries.")
-                #     outFile.Close()
+                if makeNew:
+                    print("   Writing to:",outFile)
+                    print("   Chan",ch,"Cut:",chanCut,"\n")
+                    outFile = TFile(outFile,"RECREATE")
+                    outTree = TTree()
+                    outTree = skimTree.CopyTree(chanCut)
+                    outTree.Write()
+                    cutUsed = TNamed("chanCut",chanCut)
+                    cutUsed.Write()
+                    print("Wrote",outTree.GetEntries(),"entries.")
+                    outFile.Close()
+
+
 
 
 if __name__=="__main__":

@@ -1,0 +1,16 @@
+./lat2.py -ds 0 -cut rn >& ./logs/lat2-cuts-0-rn.txt
+./lat2.py -ds 0 -cut fr >& ./logs/lat2-cuts-0-fr.txt
+./lat2.py -ds 1 -cut rn >& ./logs/lat2-cuts-1-rn.txt
+./lat2.py -ds 1 -cut fr >& ./logs/lat2-cuts-1-fr.txt
+./lat2.py -ds 2 -cut rn >& ./logs/lat2-cuts-2-rn.txt
+./lat2.py -ds 2 -cut fr >& ./logs/lat2-cuts-2-fr.txt
+./lat2.py -ds 3 -cut rn >& ./logs/lat2-cuts-3-rn.txt
+./lat2.py -ds 3 -cut fr >& ./logs/lat2-cuts-3-fr.txt
+./lat2.py -ds 4 -cut rn >& ./logs/lat2-cuts-4-rn.txt
+./lat2.py -ds 4 -cut fr >& ./logs/lat2-cuts-4-fr.txt
+./lat2.py -ds 5A -cut rn >& ./logs/lat2-cuts-5A-rn.txt
+./lat2.py -ds 5A -cut fr >& ./logs/lat2-cuts-5A-fr.txt
+./lat2.py -ds 5B -cut rn >& ./logs/lat2-cuts-5B-rn.txt
+./lat2.py -ds 5B -cut fr >& ./logs/lat2-cuts-5B-fr.txt
+./lat2.py -ds 5C -cut rn >& ./logs/lat2-cuts-5C-rn.txt
+./lat2.py -ds 5C -cut fr >& ./logs/lat2-cuts-5C-fr.txt

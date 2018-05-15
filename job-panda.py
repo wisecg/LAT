@@ -123,10 +123,10 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--workdir=%s" % (dsi.latSWDir),
             "--output=%s/logs/pdsf-%%j.txt" % (dsi.latSWDir),
             "--image=wisecg/mjsw:v2",
-            "-n14", # match nCores for pdsf below
-            "-p short", # doesn't work w/ n30
-            # "-t 12:00:00",
-            "-t 5:00:00",
+            "-n14", # match nCores for pdsf below.  14 is new maximum?
+            "-p long",
+            "-t 8:00:00",
+            # "-t 5:00:00",
         ],
         "pdsf-test": [
             "--workdir=%s" % (dsi.latSWDir),
@@ -305,7 +305,8 @@ def runBatch():
 
     # EX. 13: run LAT2, generate cut files
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
-    sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 14: placeholder for DS6 cal run processing
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls skim_mjd_data %d %d'" % getSBatch("pdsf-pump"))
