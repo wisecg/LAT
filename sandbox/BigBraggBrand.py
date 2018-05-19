@@ -16,7 +16,7 @@ sns.set(style='darkgrid')
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-seedNum, dsNum = 2, 5
+seedNum, dsNum = 1, 5
 # Energy range (also fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8
@@ -121,20 +121,18 @@ def main():
     # modelBasic = constructBasicModel(pdfFlatDict)
     print('Built model(s)')
 
-    # return
-
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEff'.format(inDir), unNormAxion=AxionArr)
+    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEffWb'.format(inDir), unNormAxion=AxionArr)
 
     # Sample Here
-    # with model:
+    with model:
         # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
-        # db = pm.backends.Text('{}/AveragedAxion_WithEff'.format(inDir))
-        # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+        db = pm.backends.Text('{}/AveragedAxion_WithEffWb'.format(inDir))
+        trace = pm.sample(draws=5000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
     # with modelBasic:
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
@@ -179,10 +177,17 @@ def constructModel(pdfDict, energyBins):
         # Sig = pm.Normal('Sig', mu = 1.26, sd = 0.5)
         # eff = 0.5*(1+tt.erf((pdfDict['Energy'] - Mu)/(tt.sqrt(2)*Sig)))
 
-        # Reparameterize efficiency as logistic function
-        Mu = pm.Normal('Mu', mu = 0.591, sd = 0.088)
-        Sig = pm.Normal('Sig', mu = 5.536, sd = 0.103)
-        eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
+        # Logistic Efficiency
+        # Mu = pm.Normal('Mu', mu = 0.591, sd = 0.088)
+        # Sig = pm.Normal('Sig', mu = 5.536, sd = 0.103)
+        # eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
+        # Weibull efficiency
+        amp = pm.Normal('amp', mu = 0.9, sd = 0.01)
+        c = pm.Normal('c', mu = 1.8, sd = 0.2)
+        loc = pm.Normal('loc', mu = -10.8, sd = 1.)
+        scale = pm.Normal('scale', mu = 14.4, sd = 2.)
+        eff = amp*(1.-tt.exp(-tt.pow((pdfDict['Energy']-loc)/scale, c)))
+
         # Generate array of deterministic variables (per bin)
         det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
         # det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
@@ -667,8 +672,9 @@ def reduceData(dsNum):
     import ROOT
     inDir, outDir = '/Users/brianzhu/project/cuts/corrfs_rn2', os.environ['LATDIR']+'/data/MCMC'
     skimTree = ROOT.TChain("skimTree")
+    # skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
     skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
-    theCut = "trapENFCal > 0.8 && trapENFCal < 50"
+    theCut = "trapENFCal > 2.4 && trapENFCal < 50"
     nPass = skimTree.Draw('trapENFCal:channel:globalTime', theCut, 'goff')
     print ("{} events passed all cuts".format(nPass))
     nEnergy = skimTree.GetV1()
