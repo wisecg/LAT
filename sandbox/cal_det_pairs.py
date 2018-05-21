@@ -33,14 +33,14 @@ def main():
     # getSpecPandas()
     # getSimPandas()
 
-    # loadSpec()
+    loadSpec()
     # interceptList, distList, absdistList = loadScatter()
     # print('Mean intercept: ', sum(interceptList)/len(interceptList))
     # print('Mean Distance: ', sum(distList)/len(distList))
     # print('Absolute Distance: ', sum(absdistList)/len(absdistList))
 
-    simMatrix, simdetLabel = loadMatrix('Sim')
-    calMatrix, detLabel = loadMatrix('Cal')
+    # simMatrix, simdetLabel = loadMatrix('Sim')
+    # calMatrix, detLabel = loadMatrix('Cal')
 
     # Get Total Counts
     totCounts = np.sum(calMatrix)
@@ -299,27 +299,32 @@ def loadSpec():
     """
     from scipy import stats
     inDir = os.environ['LATDIR']
-    df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
-    df['EMirror'] = 238.63 - df['trapENFCal2']
-    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
-    # g1 = sns.FacetGrid(df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)], col='CPD1', hue='CPD2', col_wrap=5, size=10, aspect=1.2).set(xlim=(0, 50), ylim=(0,50))
+    # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
+    df = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
+    # df['EMirror'] = 238.63 - df['trapENFCal2']
+    dfCut = df.loc[(df['sumET'] > 0.237) & (df['sumET'] < 0.240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
+
+    fig1, ax1 = plt.subplots(figsize=(10,7))
+    sns.distplot(np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values)), bins=np.linspace(0,250,250), kde=False, ax=ax1)
+
     # g1 = g1.map(plt.scatter, 'trapENFCal1', 'EMirror').add_legend()
     # g2 = sns.lmplot(x='trapENFCal1', y='EMirror', data=dfCut, col_wrap=5, size=10, col='CPD1').set(xlim=(0, 10), ylim=(0,10))
     # g1 = g1.map(plt.hist, 'trapENFCal1', bins=np.linspace(0, 50, 50)).add_legend()
 
-    slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
-    print(slope, intercept, r_value, p_value, std_err)
+    # slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
+    # print(slope, intercept, r_value, p_value, std_err)
 
-    g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
-    g3 = g3.plot_joint(sns.regplot)
-    g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
-    plt.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
-    g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
+    # g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
+    # g3 = g3.plot_joint(sns.regplot)
+    # g3.set_axis_labels('Low Energy Hit (keV)', '238.63 - Pair Hit (keV)')
+    # plt.annotate('Slope: {:.2f} \nY-intercept: {:.2f}'.format(slope, intercept), xy=(1, 8))
+    # g3 = g3.plot_marginals(sns.distplot, kde=False, bins=np.linspace(0,10,10))
     # g3 = g3.annotate(stats.pearsonr)
     # linregress = lambda x,y: stats.linregress(x,y)
     # g3 = g3.annotate(linregress, template="{stat}: {val:.2f}")
     # g3.set('C1P3D2')
     # g3.savefig('CrazyPlot_3_C1P2D3.png')
+
     plt.show()
 
 def loadScatter():
@@ -384,12 +389,14 @@ def loadMatrix(dType = 'Cal'):
     """
         Loops through event list and fills a matrix of hit pairs
     """
+
     inDir, outDir = os.environ['LATDIR'], os.environ['LATDIR']+'/plots/CalPairs'
     df = pd.read_hdf('{}/DS5_{}_HitData.h5'.format(inDir, dType))
     df['EMirror'] = 238.63 - df['trapENFCal2']
     # Select 238 sum peak, select only module 1 detectors
     # This is here right now because I'm a dumbass and I forgot to scale the sum energy
     lowCut, highCut = 0,0
+    # Sim cut is using MeV
     if dType == 'Sim':
         lowCut, highCut = 0.237, 0.240
     elif dType == 'Cal':

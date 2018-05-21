@@ -3,119 +3,155 @@ import sys, time, os, ROOT
 import numpy as np
 from scipy.stats import ks_2samp
 import seaborn as sns
-from matplotlib import pyplot as plt
-sns.set_style('whitegrid')
+import matplotlib.pyplot as plt
+sns.set_style('darkgrid')
 
 def main(argv):
 
+    # dsList, module = [0,1,2,3,5,6], 1
+    dsList, module = [4,5,6], 2
 
-    # dsList, module = [0, 1, 2, 3, 5], 1
-    dsList, module = [4, 5], 2
+    theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && C==%d && globalTime > 0"%(module)
 
-    theCut = "gain==0 && isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && C==%d"%(module)
-
-    nuCut = theCut + "&&trapENFCal>1000&&trapENFCal<1400&&avse>-1&&dcr99<0"
-    alphaCut = theCut + "&&trapENFCal>2000&&trapENFCal<3000&&avse>-1&&dcr99>=0"
-    geCut = theCut + "&& trapENFCal > 9.7 && trapENFCal < 11.1 && trapETailMin < 0.5"
+    nuCut = theCut + "&&trapENFCalC>1000&&trapENFCalC<1400&&avse>-1&&dcr99<0"
+    dcrCut = theCut + "&&trapENFCalC>2350&&trapENFCalC<3350&&avse>-1&&dcr99>=0"
+    alphaCut = theCut + "&&trapENFCalC>4000&&trapENFCalC<8000&&avse>-1"
 
     h2nList = []
     halphaList = []
     pval = []
 
-    sortnutot = []
-    pnutot = []
-    sortalphatot = []
-    palphatot = []
-    sortgetot = []
-    pgetot = []
-    ksresultTot = []
-    endTime = []
+    sortnutot,sortnublindtot = [], []
+    pnutot, pnublindtot = [], []
+    sortalphatot, sortalphablindtot = [], []
+    palphatot, palphablindtot = [], []
+    ksresultTot, ksblindresultTot  = [], []
+    kseresultTot = []
+    endTime, endTimeblind = [], []
+    sortetot,sorteblindtot = [], []
+    petot, peblindtot = [], []
 
     print "Using cut for two nu: ", nuCut
     print "Using cut for alpha: ", alphaCut
-    print "Using cut for Ge68: ", geCut
+    print "Using cut for dcr: ", dcrCut
 
     for idx,ds in enumerate(dsList):
         print "Scanning dataset", ds
+        skimOpen = ROOT.TChain("skimTree")
+        skimOpenAlpha = ROOT.TChain("skimTree")
+        skimOpenEnergy = ROOT.TChain("skimTree")
+        if ds == 5:
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-51-g69c5025/skimDS%d_*.root"%(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v02-00-51-g69c5025/skimDS%d_*.root"%(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v02-00-51-g69c5025/skimDS%d_*.root"%(ds))
 
-        skimTree = ROOT.TChain("skimTree")
-        skimTree.Add("/Users/brianzhu/project/skim/GAT-v01-06-134-g3f44fab/skimDS%d_*.root"%(ds))
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
 
-        skimTree2 = ROOT.TChain("skimTree")
-        skimTree2.Add("/Users/brianzhu/project/skim/GAT-v01-06-134-g3f44fab/skimDS%d_*.root"%(ds))
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
 
-        skimTree3 = ROOT.TChain("skimTree")
-        skimTree3.Add("/Users/brianzhu/project/skim/GAT-v01-06-134-g3f44fab/skimDS%d_*.root"%(ds))
+        elif ds == 6:
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS%d_*.root"%(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS%d_*.root"%(ds))
 
-        n2nu = skimTree.Draw("globalTime", nuCut, "goff")
-        nalpha = skimTree2.Draw("globalTime", alphaCut, "goff")
-        nge = skimTree3.Draw("globalTime", geCut, "goff")
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-74-g794b9f8/skimDS{}_*.root".format(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v02-00-74-g794b9f8/skimDS%d_*.root"%(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v02-00-74-g794b9f8/skimDS%d_*.root"%(ds))
 
-        nu = skimTree.GetV1()
-        alpha = skimTree2.GetV1()
-        ge = skimTree3.GetV1()
+        else:
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS%d_*.root"%(ds))
+            skimOpenAlpha.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS%d_*.root"%(ds))
+            skimOpenEnergy.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS%d_*.root"%(ds))
 
-        nuList = list(set(int(nu[n]) for n in xrange(n2nu)))
-        alphaList = list(set(int(alpha[n]) for n in xrange(nalpha)))
-        geList = list(set(int(ge[n]) for n in xrange(nge)))
+        n2nu = skimOpen.Draw("globalTime", nuCut, "goff")
+        nalpha = skimOpenAlpha.Draw("globalTime", alphaCut, "goff")
+        ne = skimOpenEnergy.Draw("globalTime", dcrCut, "goff")
+
+        nu = skimOpen.GetV1()
+        alpha = skimOpenAlpha.GetV1()
+        e = skimOpenEnergy.GetV1()
+        nuList = list(int(nu[n]) for n in xrange(n2nu))
+        alphaList = list(int(alpha[n]) for n in xrange(nalpha))
+        eList = list(int(e[n]) for n in xrange(ne))
         sortnu = np.sort(nuList)
         sortalpha = np.sort(alphaList)
-        sortge = np.sort(geList)
+        sorte = np.sort(eList)
 
         pnu = 1. * np.arange(len(nuList)) / (len(nuList) - 1)
         palpha = 1. * np.arange(len(alphaList)) / (len(alphaList) - 1)
-        pge = 1. * np.arange(len(geList)) / (len(geList) - 1)
+        pe = 1. * np.arange(len(eList)) / (len(eList) - 1)
 
         ksresult = ks_2samp(nuList, alphaList)
-        # ksresult = ks_2samp(nuList, geList)
         ksresultTot.append(ksresult)
 
-        # Save the ending time of each dataset (maximum time of last event of the 3 distributions)
-        endTime.append( np.amax( [sortnu[-1], sortalpha[-1], sortge[-1]] ) )
+        kseresult = ks_2samp(nuList, eList)
+        kseresultTot.append(kseresult)
 
+        # Save the ending time of each dataset (maximum time of last event of the 3 distributions)
+        endTime.append( np.amax( [sortnu[-1], sorte[-1]] ) )
         sortnutot.extend(sortnu)
         pnutot.extend([x+idx for x in pnu])
-
         sortalphatot.extend(sortalpha)
         palphatot.extend([x+idx for x in palpha])
 
-        sortgetot.extend(sortge)
-        pgetot.extend([x+idx for x in pge])
+        sortetot.extend(sorte)
+        petot.extend([x+idx for x in pe])
+
 
     # This is CDFs if we combine all of the datasets
-    pnuSumTot = 1. * np.arange(len(sortnutot)) / (len(sortnutot) - 1)
-    palphaSumTot = 1. * np.arange(len(sortalphatot)) / (len(sortalphatot) - 1)
-    pgeSumTot = 1. * np.arange(len(sortgetot)) / (len(sortgetot) - 1)
-
-    ksSumResult = ks_2samp(sortnutot, sortgetot)
+    # pnuSumTot = 1. * np.arange(len(sortnutot)) / (len(sortnutot) - 1)
+    # palphaSumTot = 1. * np.arange(len(sortalphatot)) / (len(sortalphatot) - 1)
+    # ksSumResult = ks_2samp(sortnutot, sortgetot)
 
     nuDate = np.asarray(sortnutot, dtype='datetime64[s]')
     alphaDate = np.asarray(sortalphatot, dtype='datetime64[s]')
-    geDate = np.asarray(sortgetot, dtype='datetime64[s]')
+    dcrDate = np.asarray(sortetot, dtype='datetime64[s]')
     endDate = np.asarray(endTime, dtype='datetime64[s]')
 
-    fig = plt.figure(figsize=(9,6))
-    a1 = plt.subplot(111)
-    # Using r in front changes to latex
-    a1.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
-    a1.step(alphaDate, palphatot, color='blue', label="DCR rejected")
+    fig1, (a11, a12) = plt.subplots(nrows=2, figsize=(15,10))
+    a11.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
+    a11.step(alphaDate, palphatot, color='blue', label="Alphas (4-8 MeV)")
+    a12.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
+    a12.step(dcrDate, petot, color='blue', label="DCR rejected")
 
-    # a1.step(nuDate, pnuSumTot, color='green', label=r"$2\nu\beta\beta$")
-    # a1.step(geDate, pgeSumTot, color='purple', label=r"$^{68}$Ge")
-
-    a1.set_xlabel("Date")
-    a1.set_ylabel("CDF")
+    a11.set_xlabel("Date")
+    a12.set_xlabel("Date")
+    a11.set_ylabel("CDF")
     for idx, ds in enumerate(dsList[:-1]):
-        a1.axvline(endDate[idx], color='red', alpha=0.5, linestyle=':')
-
-    plt.title("All DS (M%d Enriched)"%(module))
-    a1.legend(loc=4)
+        a11.axvline(endDate[idx], color='red', alpha=0.5, linestyle=':')
+        a12.axvline(endDate[idx], color='red', alpha=0.5, linestyle=':')
+    a11.set_title("Module {} Eriched, All DS -- Alphas (4 - 8 MeV)".format(module))
+    a12.set_title("Module {} Eriched, All DS -- DCR Rejected Alphas (2.35 - 3.35 MeV)".format(module))
+    a11.legend(loc=4)
     labelText = ""
     for idx, ksres in enumerate(ksresultTot):
-        labelText = labelText + "DS%d -- KS statistic: %.3f p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
-    # labelText = "KS statistic: %.3f p-value: %.3f \n"%(ksSumResult[0], ksSumResult[1])
-    a1.text(0.05, 0.95, labelText, transform=a1.transAxes, fontsize=12, verticalalignment='top' )
+        labelText = labelText + "DS%d -- KS statistic: %.3f   p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    a11.text(0.05, 0.95, labelText, transform=a11.transAxes, fontsize=12, verticalalignment='top' )
+
+    a12.legend(loc=4)
+    labelText = ""
+    for idx, ksres in enumerate(kseresultTot):
+        labelText = labelText + "DS%d -- KS statistic: %.3f   p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    a12.text(0.05, 0.95, labelText, transform=a12.transAxes, fontsize=12, verticalalignment='top' )
     plt.tight_layout()
+
+    # fig2, a2 = plt.subplots(figsize=(10,6))
+    # a2.step(np.asarray(sortetot), petot, color='green', label="Open Data")
+    # a2.step(np.asarray(sorteblindtot), peblindtot, color='blue', label="Blind Data")
+    # a2.set_xlabel("Energy (keV)")
+    # a2.set_ylabel("CDF")
+    # a2.legend(loc=4)
+    # labelText = ""
+    # for idx, ksres in enumerate(kseresultTot):
+    #     labelText = labelText + "DS%d -- KS statistic: %.3f   p-value: %.3f \n"%(dsList[idx], ksres[0], ksres[1])
+    #
+    # a2.text(0.05, 0.95, labelText, transform=a2.transAxes, fontsize=12, verticalalignment='top' )
+    # plt.tight_layout()
+
     plt.show()
 
 
