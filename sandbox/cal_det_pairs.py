@@ -34,7 +34,7 @@ def main():
     getSimPandas()
     return
 
-    loadSpec()
+    # loadSpec()
     # interceptList, distList, absdistList = loadScatter()
     # print('Mean intercept: ', sum(interceptList)/len(interceptList))
     # print('Mean Distance: ', sum(distList)/len(distList))
@@ -44,10 +44,10 @@ def main():
     # calMatrix, detLabel = loadMatrix('Cal')
 
     # Get Total Counts
-    totCounts = np.sum(calMatrix)
-    totCountsSim = np.sum(simMatrix)
-    print('Total Counts (Calibration): ', totCounts)
-    print('Total Counts (Simulation): ', totCountsSim)
+    # totCounts = np.sum(calMatrix)
+    # totCountsSim = np.sum(simMatrix)
+    # print('Total Counts (Calibration): ', totCounts)
+    # print('Total Counts (Simulation): ', totCountsSim)
 
     # Draw heatmap
     # fig1, ax1 = plt.subplots(figsize=(10,8))
@@ -284,8 +284,8 @@ def getSimPandas():
                 dataMap['sumET'] = sumET
                 dataMap['CPD1'] = cpds[0]
                 dataMap['CPD2'] = cpds[1]
-                dataMap['fActiveness1'] = cpds[0]
-                dataMap['fActiveness2'] = cpds[1]
+                dataMap['fActiveness1'] = activeNess[0]
+                dataMap['fActiveness2'] = activeNess[1]
                 dataList.append(dataMap)
 
     df = pd.DataFrame.from_dict(dataList)
@@ -307,10 +307,13 @@ def loadSpec():
     # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
     df = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
     # df['EMirror'] = 238.63 - df['trapENFCal2']
-    dfCut = df.loc[(df['sumET'] > 0.237) & (df['sumET'] < 0.240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
+    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
+    dfSurf1 = dfCut.loc[(dfCut['fActiveness1'] < 1)]
+    dfSurf2 = dfCut.loc[(dfCut['fActiveness2'] < 1)]
 
     fig1, ax1 = plt.subplots(figsize=(10,7))
-    sns.distplot(np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values)), bins=np.linspace(0,250,250), kde=False, ax=ax1)
+    # sns.distplot(np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values)), bins=np.linspace(1,250,125), kde=False, ax=ax1)
+    sns.distplot(np.concatenate((dfSurf1['trapENFCal1'].values, dfSurf2['trapENFCal2'].values)), bins=np.linspace(1,250,125), kde=False, ax=ax1)
 
     # g1 = g1.map(plt.scatter, 'trapENFCal1', 'EMirror').add_legend()
     # g2 = sns.lmplot(x='trapENFCal1', y='EMirror', data=dfCut, col_wrap=5, size=10, col='CPD1').set(xlim=(0, 10), ylim=(0,10))
