@@ -31,7 +31,8 @@ def main():
 
     # Create files with hits
     # getSpecPandas()
-    # getSimPandas()
+    getSimPandas()
+    return
 
     loadSpec()
     # interceptList, distList, absdistList = loadScatter()
@@ -230,9 +231,10 @@ def getSimPandas():
         Save detailed info for events with hits < 2630 keV.
     """
     from ROOT import TFile, TTree
-    inDir = '/projecta/projectdirs/majorana/sim/MJDG41003GAT/MJDemonstrator/linesource/M1CalSource/A224_Z88'
+    # inDir = '/projecta/projectdirs/majorana/sim/MJDG41003GAT/MJDemonstrator/linesource/M1CalSource/A224_Z88'
+    inDir = '/mnt/mjdDisk1/Majorana/users/psz/MAGE/Processed/5M'
     inPath = pathlib.Path(inDir)
-    files = inPath.glob('processed_MJDemonstrator_linesource_A224_Z88_from_A224_Z88_to_A208_Z81_in_M1CalSource_500000_*.root')
+    files = inPath.glob('processed_M1CalSource_A224_Z88_p*.root')
     fileList = []
 
     fileList.extend([str(f) for f in files]) # Because ROOT doesn't play nice with python paths
@@ -270,6 +272,7 @@ def getSimPandas():
             hitE = [ae.GetElement(i).GetEnergy()*1000 for i in idxList]
             chans = [simtoCh(ae.GetElement(i).GetWaveformID()) for i in idxList]
             cpds = [simtoCPD(ae.GetElement(i).GetWaveformID()) for i in idxList]
+            activeNess = [ae.GetElement(i).GetActiveness() for i in idxList]
 
             if sumET < 2630:
                 dataMap = {}
@@ -281,6 +284,8 @@ def getSimPandas():
                 dataMap['sumET'] = sumET
                 dataMap['CPD1'] = cpds[0]
                 dataMap['CPD2'] = cpds[1]
+                dataMap['fActiveness1'] = cpds[0]
+                dataMap['fActiveness2'] = cpds[1]
                 dataList.append(dataMap)
 
     df = pd.DataFrame.from_dict(dataList)
