@@ -31,10 +31,11 @@ def main():
 
     # Create files with hits
     # getSpecPandas()
-    getSimPandas()
+    # getSimPandas()
+    # loadSpec()
+    loadFraction()
     return
 
-    # loadSpec()
     # interceptList, distList, absdistList = loadScatter()
     # print('Mean intercept: ', sum(interceptList)/len(interceptList))
     # print('Mean Distance: ', sum(distList)/len(distList))
@@ -72,8 +73,6 @@ def main():
     # plt.show()
 
 
-
-
     # Bar plot showing fractions for each detector
     chCounts = np.sum(calMatrix, axis=0)
     chFrac = chCounts/float(totCounts)
@@ -105,7 +104,7 @@ def main():
     # ax3.set_xticks(xList + bar_width/2)
     # ax3.set_xticklabels(detLabel, rotation=50)
     plt.tight_layout()
-    fig2.savefig('{}/CrazyBar_C1_3.png'.format(outDir))
+    # fig2.savefig('{}/CrazyBar_C1_3.png'.format(outDir))
 
 
 
@@ -305,22 +304,16 @@ def loadSpec():
     from scipy import stats
     inDir = os.environ['LATDIR']
     # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
-    df = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
+    df = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
     # df['EMirror'] = 238.63 - df['trapENFCal2']
     dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
-    dfSurf1 = dfCut.loc[(dfCut['fActiveness1'] < 1)]
-    dfSurf2 = dfCut.loc[(dfCut['fActiveness2'] < 1)]
 
-    fig1, ax1 = plt.subplots(figsize=(10,7))
-    # sns.distplot(np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values)), bins=np.linspace(1,250,125), kde=False, ax=ax1)
-    sns.distplot(np.concatenate((dfSurf1['trapENFCal1'].values, dfSurf2['trapENFCal2'].values)), bins=np.linspace(1,250,125), kde=False, ax=ax1)
+    g1 = g1.map(plt.scatter, 'trapENFCal1', 'EMirror').add_legend()
+    g2 = sns.lmplot(x='trapENFCal1', y='EMirror', data=dfCut, col_wrap=5, size=10, col='CPD1').set(xlim=(0, 10), ylim=(0,10))
+    g1 = g1.map(plt.hist, 'trapENFCal1', bins=np.linspace(0, 50, 50)).add_legend()
 
-    # g1 = g1.map(plt.scatter, 'trapENFCal1', 'EMirror').add_legend()
-    # g2 = sns.lmplot(x='trapENFCal1', y='EMirror', data=dfCut, col_wrap=5, size=10, col='CPD1').set(xlim=(0, 10), ylim=(0,10))
-    # g1 = g1.map(plt.hist, 'trapENFCal1', bins=np.linspace(0, 50, 50)).add_legend()
-
-    # slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
-    # print(slope, intercept, r_value, p_value, std_err)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(dfCut['trapENFCal1'].loc[dfCut['CPD1']==123].values, dfCut['EMirror'].loc[dfCut['CPD1']==123].values)
+    print(slope, intercept, r_value, p_value, std_err)
 
     # g3 = sns.JointGrid(x="trapENFCal1", y="EMirror", data=dfCut.loc[dfCut['CPD1']==132], xlim=(0,10), ylim=(0,10))
     # g3 = g3.plot_joint(sns.regplot)
@@ -333,7 +326,9 @@ def loadSpec():
     # g3.set('C1P3D2')
     # g3.savefig('CrazyPlot_3_C1P2D3.png')
 
+    plt.tight_layout()
     plt.show()
+
 
 def loadScatter():
     """
@@ -393,6 +388,7 @@ def loadScatter():
             print('{} - Distance {:.3f} - Absolute Distance {:.3f}'.format(str(CPD), distance.sum()/len(distance), absdistance.sum()/len(absdistance)))
     return interceptList, distList, absdistList
 
+
 def loadMatrix(dType = 'Cal'):
     """
         Loops through event list and fills a matrix of hit pairs
@@ -443,6 +439,77 @@ def loadMatrix(dType = 'Cal'):
             countMatrix[idx2, idx1] += 1
 
     return countMatrix, detLabel
+
+
+def loadFraction():
+    """
+        Loops through channels and draws fraction of surface/total events per channel/detector
+    """
+
+    inDir = os.environ['LATDIR']
+    # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
+    df = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
+    # df['EMirror'] = 238.63 - df['trapENFCal2']
+    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] > 200) & (df['CPD2'] > 200)]
+    dfSurf1 = dfCut.loc[(dfCut['fActiveness1'] < 1)]
+    dfSurf2 = dfCut.loc[(dfCut['fActiveness2'] < 1)]
+
+    totArr = np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values))
+    surfArr = np.concatenate((dfSurf1['trapENFCal1'].values, dfSurf2['trapENFCal2'].values))
+
+    totHistVals, totHistBins = np.histogram(totArr, bins=50, range=(0, 50))
+    surfHistVals, surfHistBins = np.histogram(surfArr, bins=50, range=(0, 50))
+
+    fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(10,8))
+    ax1.step(totHistBins[:-1]+0.5, totHistVals, label='All Events')
+    ax1.step(totHistBins[:-1]+0.5, surfHistVals, label='Transition Layer')
+    ax2.step(totHistBins[:-1]+0.5, np.divide(surfHistVals, totHistVals, dtype=float), label='Percentage')
+    ax1.set_xlim(0, 50)
+    ax2.set_xlim(0, 50)
+    ax1.set_title('Module 1 - Fraction of Transition Layer Events')
+    ax1.set_ylabel('Counts/keV')
+    ax1.set_xlabel('Energy (keV)')
+    ax2.set_ylabel('Fraction')
+    ax2.set_xlabel('Energy (keV)')
+    ax1.legend()
+    ax2.legend()
+    fig1.savefig(inDir + '/plots/DeadLayer/Sim/TransitionFrac_Module1.png')
+    # plt.show()
+
+    # Now go through detector lists
+    detList1 = np.unique(dfCut['CPD1'])
+    detList2 = np.unique(dfCut['CPD2'])
+    # Combine detector lists with union
+    detListFull = np.union1d(detList1, detList2)
+
+    for det in detListFull:
+        ax1.cla()
+        ax2.cla()
+
+        dfCh1 = dfCut.loc[dfCut['CPD1'] == det]
+        dfCh2 = dfCut.loc[dfCut['CPD2'] == det]
+        dfSurfCh1 = dfCh1.loc[dfCh1['fActiveness1'] < 1]
+        dfSurfCh2 = dfCh2.loc[dfCh2['fActiveness2'] < 1]
+
+        totArrCh = np.concatenate((dfCh1['trapENFCal1'].values, dfCh2['trapENFCal2'].values))
+        surfArrCh = np.concatenate((dfSurfCh1['trapENFCal1'].values, dfSurfCh2['trapENFCal2'].values))
+
+        totHistValsCh, _ = np.histogram(totArrCh, bins=50, range=(0, 50))
+        surfHistValsCh, _ = np.histogram(surfArrCh, bins=50, range=(0, 50))
+        fracCh = np.divide(surfHistValsCh, totHistValsCh, dtype=float)
+        ax1.step(totHistBins[:-1]+0.5, totHistValsCh, label='All Events')
+        ax1.step(totHistBins[:-1]+0.5, surfHistValsCh, label='Transition Layer')
+        ax2.step(totHistBins[:-1]+0.5, fracCh, label='Percentage')
+        ax1.set_xlim(0, 50)
+        ax2.set_xlim(0, 50)
+        ax1.set_title('C{}P{}D{} - Fraction of Transition Layer Events'.format(*str(det)))
+        ax1.set_ylabel('Counts/keV')
+        ax1.set_xlabel('Energy (keV)')
+        ax2.set_ylabel('Fraction')
+        ax2.set_xlabel('Energy (keV)')
+        ax1.legend()
+        ax2.legend()
+        fig1.savefig(inDir + '/plots/DeadLayer/Sim/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
 
 
 if __name__=="__main__":

@@ -8,19 +8,24 @@ sns.set_style('darkgrid')
 
 def main(argv):
 
-    bUseBlind, bSkip5a = False, True
-    dsList, module = [1,2,3,5], 1
+    bUseBlind, bSkip5a = True, False
+    dsList, module = [1,2,3,5,6], 1
     # dsList, module = [4,5], 2
     # dsList, module = [6], 1
 
+    # Channels across DS1, 2, 3, 5
+    chList = [592, 598, 608, 626, 632, 640, 648, 672, 690]
+
     # globalTime cut right now is because of some unrejected runs in blind DS1
     theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && C=={} && globalTime > 0".format(module)
-
+    channelCut = "&& (channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={})".format(*chList)
+    theCut += channelCut
     nuCut = theCut + " && mHL==1 && trapENFCalC>1000 && trapENFCalC<1400 && avse>-1 && dcr99<0"
     dcrCut = theCut + " && mHL==1 && trapENFCalC>2350 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     alphaCut = theCut + " && mHL==1 && trapENFCalC>4000 && trapENFCalC<8000 && avse>-1"
     pbCut = theCut + " && mHL==1 && trapENFCalC>45.5 && trapENFCalC<47.5"
-    excessCut = "C=={} && trapENFCal>2 && trapENFCal<5 || (channel!=656 && run < 6964)".format(module)
+    # excessCut = "C=={} && trapENFCal>2 && trapENFCal<5 || (channel!=656 && run < 6964)".format(module)
+    excessCut = "C=={} && trapENFCal>2 && trapENFCal<5".format(module)
 
     h2nList = []
     halphaList = []
@@ -212,9 +217,9 @@ def main(argv):
     a2.step(nuDate, pnuSumTot, color = 'black', label=r"$2\nu\beta\beta$ (Clock)")
     a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
     a2.step(dcrDate, pdcrSumTot, label="DCR rejected")
-    a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
-    a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
-    a2.set_title('Module {} Eriched, DS1-4,5bc'.format(module))
+    # a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
+    # a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
+    # a2.set_title('Module {} Eriched, DS1-4,5bc'.format(module))
     a2.set_xlabel("Date")
     a2.set_ylabel("CDF")
     a2.legend(loc=4)
