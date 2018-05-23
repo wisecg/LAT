@@ -4,8 +4,6 @@ import numpy as np
 import waveLibs as wl
 from ROOT import TChain, TTree
 
-import matplotlib
-matplotlib.use('macosx')
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 
@@ -21,7 +19,7 @@ def main(argv):
     tt = TChain("skimTree")
     tt.Add("~/project/cal/lat/*.root")
 
-    tCut = "trapENFCal > 200 && trapENFCal < 201"
+    tCut = "trapENFCal > 238 && trapENFCal < 239"
 
     n = tt.Draw("Entry$:Iteration$",tCut,"goff")
     evt, itr = tt.GetV1(), tt.GetV2()
@@ -38,6 +36,8 @@ def main(argv):
             if val == "q": break
             if val == "p": i -= 2
             if val.isdigit() : i = int(val)
+            if val == "s":
+                plt.savefig("../plots/wf-%d.pdf" % i)
         if i >= len(evtList): break
         iE, iH = evtList[i]
 
@@ -74,20 +74,12 @@ def main(argv):
         tTrapTS = np.arange(0, len(tTrap)*10., 10)
 
         plt.cla()
-        plt.plot(waveTS, waveBLSub, 'b', lw=1.5, label='%.2f keV' % (hitE))
+        plt.plot(waveTS, waveBLSub, 'b', lw=1.5, label='Raw WF, %.2f keV' % (hitE))
         plt.xlabel("Time (ns)", ha='right', x=1)
         plt.ylabel("Voltage (ADC)", ha='right',y=1)
-        plt.legend(loc=0)
-        # plt.show(block=False)
+        plt.legend(loc=4)
 
         plt.pause(0.0001) # scan speed, does plt.show(block=False) automatically
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
