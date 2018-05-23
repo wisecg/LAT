@@ -25,7 +25,12 @@ xtick.labelsize : 15
 ytick.labelsize : 15
 
 # https://matplotlib.org/users/usetex.html
-# text.usetex        : true
+# this isn't gonna work without the full MacTeX package
+#font.family        : sans-serif
+#font.sans-serif    : Helvetica
+#text.usetex        : true
+
+font.family : serif
 
 # Note:  plt.plot(..., ha='right', x=1.)
 # isn't in the default rc parameters (python >>> print(matplotlib.rcParams)).
