@@ -14,13 +14,13 @@ detInfo = ds.DetInfo()
 def main():
     outDir = os.environ['LATDIR'] + '/plots/AlphaRate'
     # dsList, module = [0,1,2,3,5,6], 1
-    # dsList, module = [4,5,6], 2
-    dsList, module = [4], 2
+    dsList, module = [4,5,6], 2
+    # dsList, module = [4], 2
 
     theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && globalTime > 0 && C=={}".format(module)
     pbCut = theCut + "&&trapENFCalC>45.5&&trapENFCalC<47.5"
     dcrCut = theCut + "&&trapENFCalC>2000&&trapENFCalC<4000&&avse>-1&&dcr99>=0"
-    alphaCut = theCut + "&&trapENFCalC>4000&&trapENFCalC<8000&&avse>-1"
+    alphaCut = theCut + "&&trapENFCalC>4000&&trapENFCalC<8000"
 
     pbDict = {}
     dcrDict = {}

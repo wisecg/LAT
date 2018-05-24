@@ -448,9 +448,11 @@ def loadFraction():
 
     inDir = os.environ['LATDIR']
     # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
-    df = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
+    df1 = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
+    df2 = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
+    df = pd.concat([df1, df2])
     # df['EMirror'] = 238.63 - df['trapENFCal2']
-    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] > 200) & (df['CPD2'] > 200)]
+    dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
     dfSurf1 = dfCut.loc[(dfCut['fActiveness1'] < 1)]
     dfSurf2 = dfCut.loc[(dfCut['fActiveness2'] < 1)]
 
@@ -473,7 +475,7 @@ def loadFraction():
     ax2.set_xlabel('Energy (keV)')
     ax1.legend()
     ax2.legend()
-    fig1.savefig(inDir + '/plots/DeadLayer/Sim/TransitionFrac_Module1.png')
+    fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module1.png')
     # plt.show()
 
     # Now go through detector lists
@@ -509,7 +511,7 @@ def loadFraction():
         ax2.set_xlabel('Energy (keV)')
         ax1.legend()
         ax2.legend()
-        fig1.savefig(inDir + '/plots/DeadLayer/Sim/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
+        fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
 
 
 if __name__=="__main__":
