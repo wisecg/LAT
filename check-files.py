@@ -14,7 +14,7 @@ from ROOT import TFile, TTree, MGTWaveform
 
 # switches
 fLimit = None    # set to None to run over everything
-skipDS6Cal = True
+skipDS6Cal = False
 verbose = True
 testMode = False
 
