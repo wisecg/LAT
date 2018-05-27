@@ -3,6 +3,8 @@
 import sys, random
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use('../pltReports.mplstyle')
+
 from scipy.ndimage.filters import gaussian_filter
 import waveLibs as wl
 
@@ -12,16 +14,16 @@ def main(argv):
     for i,opt in enumerate(argv):
         if opt == "-i":
             intMode = True
-            print "Interactive mode selected."
+            print("Interactive mode selected.")
         if opt == "-b":
             batMode = True
-            print "Bach mode selected."
+            print("Bach mode selected.")
 
-    print "Generating signal template ..."
+    print("Generating signal template ...")
     tSamp, tR, tZ, tAmp, tST, tSlo = 5000, 0, 15, 100, 2500, 10
-    tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo)
-    # templateFile = np.load("./data/lat_template.npz")
-    # tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
+    # tOrig, tOrigTS = wl.MakeSiggenWaveform(tSamp,tR,tZ,tAmp,tST,tSlo)
+    templateFile = np.load("../data/lat_template.npz")
+    tOrig, tOrigTS = templateFile['arr_0'], templateFile['arr_1']
 
     fig = plt.figure(figsize=(10,7),facecolor='w')
     p1 = plt.subplot(211)
@@ -32,13 +34,14 @@ def main(argv):
     amps1, amps2, amps3 = [], [], []
     starts1, starts2, starts3 = [], [], []
 
-    print "Starting event loop ..."
-    nList = 1500 # how many wf's to generate
+    print("Starting event loop ...")
+    nList = 2000 # how many wf's to generate
+    # nList = 100 # how many wf's to generate
     iList = -1
     while True:
         iList += 1
         if intMode==True and iList != 0:
-            value = raw_input()
+            value = input()
             if value=='q': break        # quit
             if value=='p': iList -= 2   # go to previous
             if (value.isdigit()):
@@ -46,6 +49,8 @@ def main(argv):
         elif intMode==False and batMode==False:
             plt.pause(0.00001)          # rapid-draw mode
         if iList >= nList: break        # bail out, goose!
+
+        print("%d/%d" % (iList, nList))
 
 
         # make a somewhat convincing template
@@ -72,7 +77,7 @@ def main(argv):
         # trap = np.append(trap,wl.trapezoidalFilter(temp,rampTime=400, flatTime=200, decayTime=0.))
         # trapMax = np.amax(trap)
 
-        ADCThresh = 1.
+        ADCThresh = 2.
 
         # simple trap filter
         trapTS = tempTS
@@ -93,10 +98,12 @@ def main(argv):
         starts2.append(walkBackTS)
 
         # make a windowed waveform, the same windowing ORCA uses
-        lo = triggerTS/10 - 1009
-        hi = triggerTS/10 + 1009
+        lo = int(triggerTS/10 - 1009)
+        hi = int(triggerTS/10 + 1009)
         trig = temp[lo:hi]
         trigTS = tempTS[lo:hi]
+
+        if len(trigTS)==0: continue
         trigTS = trigTS - trigTS[0]
 
         # asymmetric trap filter
@@ -143,14 +150,15 @@ def main(argv):
 
     # Make a scatter plot
     if not intMode:
-        fig2 = plt.figure(figsize=(9,6),facecolor='w')
-        plt.scatter(amps1,starts1,color='green',s=5,label='long trap - walk up')
-        plt.scatter(amps2,starts2,color='red',s=5,label='short trap - walk back')
-        plt.scatter(amps3,starts3,color='magenta',s=5,alpha=0.8,label='short trap, windowed, walk back')
-        plt.xlabel("Energy [ADC]")
-        plt.ylabel("Trigger time (ns)")
-        plt.legend(loc=4)
-        fig2.savefig('./plots/trig-walk.pdf')
+        fig2 = plt.figure()
+        # plt.scatter(amps1,starts1,color='green',s=5,label='long trap - walk up')
+        # plt.scatter(amps2,starts2,color='red',s=5,label='short trap - walk back')
+        # plt.scatter(amps3,starts3,color='magenta',s=5,alpha=0.8,label='short trap, windowed, walk back')
+        plt.scatter(amps3,starts3,color='blue',s=5,alpha=0.8) # thesis plot
+        plt.xlabel("Energy (ADC)", ha='right', x=1)
+        plt.ylabel("Trigger Time (ns)", ha='right', y=1)
+        # plt.legend(loc=4)
+        fig2.savefig('../plots/trig-walk.pdf')
 
 
 def trapFilt(data,ramp=400,flat=200,decay=72,trapThresh=2.,padAfter=False):
@@ -185,7 +193,7 @@ def trapFilt(data,ramp=400,flat=200,decay=72,trapThresh=2.,padAfter=False):
                 triggerTS = i * 10
                 trigger = True
 
-    # if trigger: print "triggered!",triggerTS
+    # if trigger: print("triggered!",triggerTS)
     return trap, trigger, triggerTS
 
 def asymTrapFilt(data,ramp=200,flat=100,fall=40,trapThresh=2.,padAfter=False):
@@ -213,7 +221,7 @@ def asymTrapFilt(data,ramp=200,flat=100,fall=40,trapThresh=2.,padAfter=False):
                 triggerTS = i * 10
                 trigger = True
 
-    # if trigger: print "triggered!",triggerTS
+    # if trigger: print("triggered!",triggerTS)
     return trap, trigger, triggerTS
 
 

@@ -3,7 +3,7 @@
 legend.fontsize : 13
 axes.titlesize : 20
 axes.labelsize : 15
-lines.linewidth : 1
+lines.linewidth : 1.5
 lines.markersize : 10
 xtick.labelsize : 13
 ytick.labelsize : 13

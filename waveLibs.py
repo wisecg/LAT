@@ -10,7 +10,6 @@ from scipy.optimize import curve_fit
 from scipy.ndimage.filters import gaussian_filter
 from scipy import signal as sg
 import scipy.special as sp
-# from pysiggen import Detector
 
 limit = sys.float_info.max # equivalent to std::numeric_limits::max() in C++
 homePath = os.path.expanduser('~')
@@ -739,10 +738,10 @@ def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
 
 
 
-"""
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
     # Use pysiggen to generate a waveform w/ arb. ADC amplitude. Thanks Ben.
+    from pysiggen import Detector
 
     wf_length = samp # in tens of ns.  This sets how long a wf you will simulate
     # r ranges from 0 to detector.detector_radius
@@ -757,9 +756,26 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     fitSamples = 1000 # ask me if you think you need to change this (you almost definitely don't)
     timeStepSize = 1 # don't change this, you'll break everything
     # Create a detector model (don't change any of this)
-    detName = "./data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05,2.5, 1.65)
-    detector =  Detector(detName, timeStep=timeStepSize, numSteps=fitSamples*10./timeStepSize, maxWfOutputLength=5000)
-    detector.LoadFieldsGrad("./data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
+    detName = "../data/conf/P42574A_grad%0.2f_pcrad%0.2f_pclen%0.2f.conf" % (0.05, 2.5, 1.65)
+    detector = Detector(detName, timeStep=timeStepSize, numSteps=fitSamples*10./timeStepSize, maxWfOutputLength=5000)
+    # detector.LoadFieldsGrad("../data/fields_impgrad.npz",pcLen=1.6, pcRad=2.5)
+
+    data = np.load("../data/fields_impgrad.npz")
+    print(data.keys())
+    wpArray  = data['wpArray']
+    # # efld_rArray = data['efld_rArray']
+    # # efld_zArray = data['efld_zArray']
+    # gradList = data['gradList']
+    print(wpArray.shape)
+    return
+
+
+
+
+
+    detector.LoadFieldsGrad("../data/fields_impgrad.npz")
+    return
+
     # Sets the impurity gradient.  Don't bother changing this
     detector.SetFieldsGradIdx(0)
 
@@ -783,4 +799,3 @@ def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     #     print("amplitude diff: %f" % ( (np.amax(wf_notrap) - np.amax(wf)) /  np.amax(wf_notrap) ))
 
     return wf_notrap, timesteps
-"""
