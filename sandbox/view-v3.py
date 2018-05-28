@@ -14,15 +14,15 @@ def main(argv):
     tt = TChain("skimTree")
     tt.Add("~/project/cal/lat/*.root")
 
-    # trapENF 1.1, iE 9895, iH 0
-    # trapENF 2.0, iE 61372, iH 0
-    # trapENF 3.1, iE 35219, iH 0
-    # trapENF 4.2, iE 33507, iH 0
-    # evtList = [[9895,0],[61372,0],[35219,0],[33507,0]]
-    evtList = [[33507,0],[35219,0],[61372,0],[9895,0]]
-    cols = ['r','g','m','b']
+    # i'm just pasting the output of view-v2 here.
 
-    fig = plt.figure(figsize=(8,7))
+    # thesis plot, fast vs slow
+    # trapENF 16.0, iE 20958, iH 0 # fast
+    # trapENF 16.0, iE 33039, iH 0 # slow
+    evtList = [[20958,0],[33039,0]]
+    cols = ['k','r','g','m']
+    labels = ['Fast, 16.0 keV','Slow, 16.0 keV']
+    alphas = [1, 0.7]
 
     for i, (iE, iH) in enumerate(evtList):
         tt.GetEntry(iE)
@@ -38,7 +38,9 @@ def main(argv):
         waveTS = signal.GetTS()
         print("%d / %d  Run %d  chan %d  trapENF %.1f" % (i,len(evtList),run,chan,hitE))
 
-        plt.plot(waveTS, waveBLSub, "-", lw=1, c=cols[i], label="%.1f keV" % hitE)
+        # plt.plot(waveTS, waveBLSub, "-", lw=1, c=cols[i], label="%.1f keV" % hitE)
+
+        plt.plot(waveTS, waveBLSub, "-", lw=2, c=cols[i], alpha=alphas[i], label=labels[i])
 
         # # standard energy trapezoid
         # eTrap = wl.trapFilter(waveBLSub,400,250,-7200)
@@ -62,12 +64,16 @@ def main(argv):
         # plt.plot(waveTS, waveBLSub, 'b', label='Raw WF, %.2f keV' % (hitE))
         # # plt.plot(waveTS, waveLP, 'r', alpha=0.7, label='Low-pass filter')
 
+    plt.ylim(ymin=-10)
+
     plt.xlabel("Time (ns)", ha='right', x=1)
     plt.ylabel("Voltage (ADC)", ha='right',y=1)
     plt.legend(loc=4)
 
     # plt.pause(0.0001) # scan speed, does plt.show(block=False) automatically
-    plt.show()
+    # plt.show()
+
+    plt.savefig('../plots/fast-and-slow.pdf')
 
 
 if __name__ == "__main__":

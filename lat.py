@@ -92,8 +92,9 @@ def main(argv):
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import matplotlib.ticker as mtick
-    plt.style.use('pltTalks.mplstyle')
-    from matplotlib.colors import LogNorm, Normalize
+    # plt.style.use('pltTalks.mplstyle')
+    plt.style.use('pltReports.mplstyle')
+    from matplotlib import colors
 
     # File I/O
     inFile, outFile, bltFile = TFile(), TFile(), TFile()
@@ -143,8 +144,9 @@ def main(argv):
         # theCut += customPar
         # theCut = "(channel==672 || channel==674) && mH==2" # sync chan: 672, extp chan: 674
         # theCut += " && fitSlo < 10"
-        # theCut = "trapENFCal > 1 && trapENFCal < 10 && riseNoise > 2"
-        theCut = "trapENFCal > 20 && trapENFCal < 100 && riseNoise > 2"
+        theCut = "trapENFCal > 2 && trapENFCal < 15 && riseNoise > 5"
+        # theCut = "trapENFCal > 5 && trapENFCal < 15 && fitSlo > 300"
+        # theCut = "trapENFCal >= 1.1 && trapENFCal <= 1.2"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -226,8 +228,10 @@ def main(argv):
     }
 
     # Make a figure (-i option: select different plots)
-    # fig = plt.figure(figsize=(12,9), facecolor='w')
-    fig = plt.figure()
+    # fig = plt.figure()
+    # fig = plt.figure(figsize=(8,10))
+    # fig = plt.figure(figsize=(8,4.5))
+    fig = plt.figure(figsize=(8,8))
     if plotNum==0 or plotNum==7 or plotNum==8:
         p0 = plt.subplot(111)  # 0-raw waveform, 7-new trap filters
     elif plotNum==1 or plotNum==2:
@@ -253,6 +257,17 @@ def main(argv):
         p0 = plt.subplot2grid((5,1), (0,0)) # 9- wpt on wf fit residual
         p1 = plt.subplot2grid((5,1), (1,0), rowspan=2)
         p2 = plt.subplot2grid((5,1), (3,0), rowspan=2)
+    elif plotNum==10:
+        # wf fit thesis plot
+        # p0 = plt.subplot2grid((6,2),(0,0), colspan=2, rowspan=4) # wf
+        # p1 = plt.subplot2grid((6,2),(4,0), colspan=2, rowspan=2)
+        p2 = plt.subplot2grid((2,2),(0,0)) # trace
+        p3 = plt.subplot2grid((2,2),(0,1))
+        p4 = plt.subplot2grid((2,2),(1,0))
+        p5 = plt.subplot2grid((2,2),(1,1))
+    elif plotNum==11:
+        # wf fit thesis plot, wf only
+        p0 = plt.subplot(111)
     if not batMode: plt.show(block=False)
 
 
@@ -277,10 +292,14 @@ def main(argv):
         iList += 1
         if intMode==True and iList != 0:
             value = input()
-            if value=='q': break        # quit
-            if value=='p': iList -= 2   # go to previous
+            if value == 'q': break        # quit
+            if value == 'p': iList -= 2   # go to previous
             if (value.isdigit()):
                 iList = int(value)      # go to entry number
+            if value == "s":
+                pltName = "./plots/lat-%d.pdf" % iList
+                print("Saving figure:",pltName)
+                plt.savefig(pltName)
         elif intMode==False and batMode==False:
             plt.pause(0.00001)          # rapid-draw mode
         if iList >= nList: break        # bail out, goose!
@@ -691,21 +710,31 @@ def main(argv):
             if plotNum==1: # wavelet plot
                 p0.cla()
                 p0.margins(x=0)
-                p0.plot(dataTS,data_blSub,color='blue',label='data (%.2f keV)' % dataENFCal)
-                p0.plot(dataTS,data_wlDenoised,color='cyan',label='denoised',alpha=0.7)
-                p0.axvline(fitRiseTime50,color='green',label='fit 50%',linewidth=2)
-                p0.plot(dataTS,fit_blSub,color='red',label='bestfit',linewidth=2)
-                # p0.set_title("Run %d  Entry %d  Channel %d  ENFCal %.2f  flo %.0f  fhi %.0f  fhi-flo %.0f" % (run,iList,chan,dataENFCal,fitStartTime,fitMaxTime,fitMaxTime-fitStartTime))
-                p0.legend(loc='best')
+                p0.plot(dataTS, data_blSub, 'k', alpha=0.9, lw=2, label='Data, %.2f keV' % dataENFCal)
+                p0.plot(dataTS, data_wlDenoised, 'b', alpha=0.7, lw=2, label='Wavelet Denoised')
+                p0.plot(dataTS, fit_blSub, 'r', alpha=0.9, lw=2, label='xGauss fit')
+                p0.axvline(fitRiseTime50, c='g', lw=2, label='xGauss fitMu')
+                p0.legend(loc=4)
                 p0.set_xlabel("Time (ns)", ha='right', x=1.)
                 p0.set_ylabel("Voltage (ADC)", ha='right', y=1.)
 
+
+                # plot 1 - all WPT coefficients
                 p1.cla()
-                p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 0, len(wpCoeff)],cmap='viridis')
-                p1.axvline(float(wpLoRise)/numXRows,color='orange',linewidth=2)
-                p1.axvline(float(wpHiRise)/numXRows,color='orange',linewidth=2)
-                # p1.set_title("waveS5 %.2f  bcMax %.2f  bcMin %.2f  riseNoise %.2f" % (waveS5[iH], bcMax[iH], bcMin[iH], riseNoise[iH]))
-                # p1.set_xlabel("Time (%wf)", ha='right', x=1.)
+                p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower", extent=[0, 1, 0, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
+
+                # plot 2 - riseNoise box, only show coeffs w/ level >= 2.
+                # p1.cla()
+                # p1.imshow(wpCoeff[2:,:], interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 2, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
+                # nX = wpCoeff.shape[1]
+                # p1.axvline(wpLoRise/nX, c='cyan', alpha=0.7)
+                # p1.axvline(wpHiRise/nX, c='cyan', alpha=0.7)
+                # p1.axhline(15.9, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
+                # p1.axhline(2.05, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
+                # p1.plot(np.nan, np.nan, label="riseNoise: %.2f" % riseNoise[iH])
+                # p1.legend(loc=1,markerscale=0)
+
+                p1.set_xlabel("Time (%)", ha='right', x=1.)
                 p1.set_ylabel("WPT Coefficients", ha='right', y=1.)
 
             if plotNum==2: # time points, bandpass filters, tail slope
@@ -803,6 +832,57 @@ def main(argv):
                 p6.legend(loc='best')
 
                 print(gatTree.fitSlo.at(iH), sig)
+
+            if plotNum==10: # wf fit thesis plot
+
+                print("Run %d  iL %d  ch %d  trapENFCal %.1f  fitSlo %.1f  fitSpeed %.3f" % (run, iList, chan, dataENFCal, sig, fitSpeed))
+
+                # p0.cla()
+                #
+                # p0.plot(dataTS, data, 'k', alpha=0.9, lw=2, label='Data, %.1f keV' % dataENFCal)
+                # p0.plot(dataTS, data_wlDenoised+bl, 'b', lw=2, label='Wavelet Denoised')
+                # p0.plot(dataTS, temp, c='orange', alpha=0.5, label="xGauss initial guess")
+                # p0.plot(dataTS, fit, 'r', alpha=0.9, label="xGauss fit, fitSlo = %.0f" % sig)
+                #
+                # p0.legend(loc='best')
+                # p1.cla()
+                # p1.plot(dataTS, 100*(data-fit)/data, 'k', lw=2, label='Residual (%)')
+                # p1.legend(loc='best')
+                #
+                # p1.set_xlabel("Time (ns)", ha='right', x=1)
+                # p0.set_ylabel("Voltage (ADC)", ha='right', y=1)
+
+                p2.cla()
+                p2.plot(ampTr[:],'r',label="fitAmp (ADC)")
+                # p2.set_ylabel("fitAmp (ADC)", ha='right', y=1)
+                p2.legend(loc='best')
+                p3.cla()
+                p3.plot(muTr[:],'r',label='fitMu (ns)')
+                # p3.set_ylabel("fitMu (ns)", ha='right', y=1)
+                p3.legend(loc='best')
+                p4.cla()
+                p4.plot(sigTr[:],'r',label='fitSlo')
+                # p4.set_ylabel("fitSlo", ha='right', y=1)
+                # p4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+                p4.legend(loc='best')
+                p5.cla()
+                p5.plot(blTr[:],'r',label='fitBL (ADC)')
+                # p5.set_ylabel("fitBL (ADC)", ha='right', y=1)
+                p5.set_xlabel("Fit Steps", ha='right', x=1)
+                p5.legend(loc='best')
+
+            if plotNum==11: # wf fit thesis plot, fit only
+
+                print("Run %d  iL %d  ch %d  trapENFCal %.1f  fitSlo %.1f  fitSpeed %.3f" % (run, iList, chan, dataENFCal, sig, fitSpeed))
+
+                p0.cla()
+                p0.plot(dataTS, data, 'k', alpha=0.9, lw=3, label='Data, %.1f keV' % dataENFCal)
+                p0.plot(dataTS, data_wlDenoised+bl, 'b', lw=2, label='Wavelet Denoised')
+                p0.plot(dataTS, temp, c='orange', alpha=0.5, label="xGauss initial guess")
+                p0.plot(dataTS, fit, 'r', alpha=0.9, label="xGauss fit, fitSlo = %.0f" % sig)
+                p0.legend(loc=4)
+                p0.set_xlabel("Time (ns)", ha='right', x=1)
+                p0.set_ylabel("Voltage (ADC)", ha='right', y=1)
 
             if plotNum==7: # new traps plot
                 p0.cla()

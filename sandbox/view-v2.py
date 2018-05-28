@@ -18,13 +18,19 @@ def main(argv):
 
     ds = 5
     tt = TChain("skimTree")
-    tt.Add("~/project/cal/lat/*.root")
+    # tt.Add("~/project/cal/lat/*.root")
+    tt.Add("~/project/cal/lat/latSkimDS1_run13774_0.root")
     # tt.Print("toponly")
     # return
 
     # tCut = "trapENFCal > 238 && trapENFCal < 239" # 238 kev wf, thesis plot
     # tCut = "trapENFCal >= 1.0 && trapENFCal < 1.2 && channel!=598  && trapENFCal > threshKeV+3*threshSigma && fitSlo < 100" # 1 kev wf, thesis plot
-    tCut = "trapENFCal > 4.0 && trapENFCal < 4.2 && trapENFCal > threshKeV+3*threshSigma && fitSlo < 100"
+
+    # tCut = "trapENFCal > 16 && trapENFCal < 16.1 && fitSlo < 100 && tOffset<10"
+    # tCut = "trapENFCal > 16 && trapENFCal < 16.1 && fitSlo > 100"
+
+    tCut = "trapENFCal >= 1.1 && trapENFCal <= 1.2"
+
 
     n = tt.Draw("Entry$:Iteration$",tCut,"goff")
     evt, itr = tt.GetV1(), tt.GetV2()
