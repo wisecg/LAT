@@ -91,14 +91,14 @@ int main(int argc, char** argv)
   string runDBOpt = "";
   vector<string> opt(argv+1, argv+argc);
   for (size_t i = 0; i < opt.size(); i++) {
-    if (opt[i] == "-raw") { raw=1; }
-    if (opt[i] == "-gds") { gds=1; }
-    if (opt[i] == "-db1") { lt=0; rdb=1; runDBOpt = opt[i+1]; }
-    if (opt[i] == "-db2") { lt=1; rdb=1; runDBOpt = opt[i+1]; }
+    if (opt[i] == "-raw")   { raw=1; }
+    if (opt[i] == "-gds")   { gds=1; }
+    if (opt[i] == "-db1")   { lt=0; rdb=1; runDBOpt = opt[i+1]; }
+    if (opt[i] == "-db2")   { lt=1; rdb=1; runDBOpt = opt[i+1]; }
     if (opt[i] == "-blind") { blind=1; }
-    if (opt[i] == "-c") { chanSel=1;    cout << "Using official chan sel files ...\n"; }
-    if (opt[i] == "-low") { lt=0; low=1; }
-    if (opt[i] == "-idx") { idx=1; }
+    if (opt[i] == "-c")     { chanSel=1;    cout << "Using official chan sel files ...\n"; }
+    if (opt[i] == "-low")   { lt=0; low=1; }
+    if (opt[i] == "-idx")   { idx=1; }
   }
 
   // -- Primary livetime routine, using DataSetInfo run sequences (default, no extra args) --
@@ -139,12 +139,9 @@ int main(int argc, char** argv)
 
   // -- Do primary livetime with a low-energy run+channel selection --
   if (low) {
-
     vector<int> runList = GetRunList(dsStr, blind);
     map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT,blind);
-
     map<int,vector<int>> loChSel = LoadLEChanSel(dsStr); // (low-energy run+channel selection)
-
     vector<pair<int,double>> times; // dummy (empty), don't need this
     calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges,times,loChSel);
   }
@@ -165,7 +162,7 @@ void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, b
   bool mod1=0, mod2=0;
   if (dsNum==0 || dsNum==1 || dsNum==2 || dsNum==3) { mod1=1; mod2=0; }
   else if (dsNum == 4)  { mod1=0; mod2=1; }
-  else if (dsNum == 5)  { mod1=1; mod2=1; }
+  else if (dsNum >= 5)  { mod1=1; mod2=1; }
 
   // Are we applying low-e run/ch selection?
   bool useLowChSel=0;
