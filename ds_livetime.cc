@@ -13,6 +13,7 @@
 #include <iterator>
 #include <array>
 #include <random>
+#include "TROOT.h"
 #include "TFile.h"
 #include "TChain.h"
 #include "TTreeReader.h"
@@ -27,7 +28,7 @@
 using namespace std;
 using namespace MJDB;
 
-void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx,
+void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx, bool verbose,
   map<int,vector<string>> ranges = map<int,vector<string>>(),
   vector<pair<int,double>> times = vector<pair<int,double>>(),
   map<int,vector<int>> loChSel = map<int,vector<int>>());
@@ -68,6 +69,7 @@ int main(int argc, char** argv)
          << "   -c: Use official channel selection files\n"
          << "   -low: Apply low energy run/channel selection\n"
          << "   -idx: Print results for each bkgIdx\n"
+         << "   -v: Create verbose ROOT output file\n"
          << " RunDB access (-db[12] option):\n"
          << "    partNum = P3LQK, P3KJR, P3LQG, etc.\n"
          << "    runRank = gold, silver, bronze, cal, etc.\n"
@@ -82,7 +84,7 @@ int main(int argc, char** argv)
   for(int i = 0; i < argc; i++) cout << argv[i] << " ";
   cout << endl;
 
-  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, blind=0, chanSel=0, idx=0;
+  bool raw=0, gds=0, lt=1, rdb=0, low=0, noDT=0, blind=0, chanSel=0, idx=0, verbose=0;
   int dsNum;
   string dsStr = argv[1];
   if (check_num(dsStr)) dsNum = stoi(dsStr);
@@ -99,13 +101,14 @@ int main(int argc, char** argv)
     if (opt[i] == "-c")     { chanSel=1;    cout << "Using official chan sel files ...\n"; }
     if (opt[i] == "-low")   { lt=0; low=1; }
     if (opt[i] == "-idx")   { idx=1; }
+    if (opt[i] == "-v")     { verbose=1; }
   }
 
   // -- Primary livetime routine, using DataSetInfo run sequences (default, no extra args) --
   if (lt && !rdb) {
     vector<int> runList = GetRunList(dsStr, blind);
     map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT,blind);
-    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges);
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,verbose,ranges);
   }
 
   // -- Do SIMPLE GATDataSet method and quit (-gds) --
@@ -134,7 +137,7 @@ int main(int argc, char** argv)
     vector<pair<int,double>> times;
     getDBRunList(dsNum, ElapsedTime, runDBOpt, runList, times); // auto-detects dsNum
     map<int, vector<string>> ranges = getDeadtimeMap(0,noDT,5); // we don't know what DS we're in, so load them all.
-    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges,times);
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,verbose,ranges,times);
   }
 
   // -- Do primary livetime with a low-energy run+channel selection --
@@ -143,11 +146,11 @@ int main(int argc, char** argv)
     map<int, vector<string>> ranges = getDeadtimeMap(dsNum,noDT,blind);
     map<int,vector<int>> loChSel = LoadLEChanSel(dsStr); // (low-energy run+channel selection)
     vector<pair<int,double>> times; // dummy (empty), don't need this
-    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,ranges,times,loChSel);
+    calculateLiveTime(runList,dsNum,dsStr,raw,rdb,noDT,chanSel,idx,verbose,ranges,times,loChSel);
   }
 }
 // =======================================================================================
-void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx,
+void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, bool runDB, bool noDT, bool chanSel, bool idx, bool verbose,
   map<int,vector<string>> ranges,
   vector<pair<int,double>> times,
   map<int,vector<int>> loChSel)
@@ -157,6 +160,23 @@ void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, b
 
   // was "idx" set?
   if (idx) cout << "'-idx' option selected. Printing results for each bkgIdx ...\n";
+
+  // are we creating the verbose ROOT output?
+  TFile *fOut = NULL;
+  TTree *tOut = NULL;
+  TDirectory* vDir = NULL;
+  int runOut = -1;
+  vector<int> chanOut(0);
+  vector<double> ltOut(0);
+  if (verbose) {
+    cout << "'-v' option selected.  Creating verbose ROOT output ... \n";
+    fOut = new TFile(Form("ds_%s_output.root",dsStr.c_str()),"RECREATE");
+    vDir = gROOT->CurrentDirectory();
+    tOut = new TTree("dsTree","verbose output from ds_livetime");
+    tOut->Branch("run", &runOut, "runOut/I");
+    tOut->Branch("channel", &chanOut);
+    tOut->Branch("livetime", &ltOut);
+  }
 
   // Do we have M1 and M2 enabled?
   bool mod1=0, mod2=0;
@@ -512,6 +532,11 @@ void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, b
 
 
     // ==== Calculate runtime, deadtime, and livetime of ONLY GOOD detectors. ====
+    if (verbose) {
+      runOut = run;
+      chanOut.resize(0);
+      ltOut.resize(0);
+    }
 
     // Add to HG and LG runtimes + livetimes
     vector<uint32_t> bestIDs = getBestIDs(enabledIDs);
@@ -594,7 +619,20 @@ void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, b
           return;
         }
       }
+
+      // '-v' option: output channel/livetime info (for HG channels only)
+      if (verbose){
+        if (ch%2==0) {
+          chanOut.push_back(ch);
+          ltOut.push_back(thisLiveTime);
+        }
+      }
     }
+
+    if (verbose) {
+      tOut->Fill();
+    }
+
     // cout << "dtfRunTimeHG " << dtfRunTimeHG << " dtfRunTimeLG " << dtfRunTimeLG << endl;
     // cout << "Now best\n";
 
@@ -959,6 +997,13 @@ void calculateLiveTime(vector<int> runList, int dsNum, string dsStr, bool raw, b
     double activeMass = actM4Det_g[detID]/1000;
 
     cout << Form("%-4i  %-8i  %-8.3f  %-10.4f  %-13.4f\n", chan,detID,activeMass,chRun,channelExposure[chan]);
+  }
+
+
+  if (verbose) {
+    gROOT->cd(vDir->GetPath());
+    tOut->Write();
+    fOut->Close();
   }
 }
 

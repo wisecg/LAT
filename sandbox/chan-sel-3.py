@@ -10,7 +10,19 @@ det = dsi.DetInfo()
 
 def main():
 
-    checkRates()
+    checkLTOutput()
+    # checkRates()
+
+
+def checkLTOutput():
+    from ROOT import TFile, TTree
+
+    tf = TFile("../ds_2_output.root")
+    tt = tf.Get("dsTree")
+    for i in range(tt.GetEntries()):
+        tt.GetEntry(i)
+        for j in range(tt.channel.size()):
+            print(tt.run, tt.channel[j], tt.livetime[j])
 
 
 def checkRates():

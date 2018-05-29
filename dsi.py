@@ -318,6 +318,31 @@ class DetInfo:
         self.allDetIDs.update(self.detIDs["M1"])
         self.allDetIDs.update(self.detIDs["M2"])
 
+        self.detActiveMass = {}
+        # if this is really annoying to have it by detector ID, come back and change it to CPD
+        # note: DataSetInfo.hh also has the active mass uncertainties if we need those too.
+        self.detActiveMass["M1"] = {
+            '1426981': 510, '1425750': 979, '1426612': 811, '1425380': 968,
+            '28474': 560, '1426640': 723, '1426650': 659, '1426622': 689,
+            '28480': 551, '1426980': 886, '1425381': 949, '1425730': 1024,
+            '28455': 558, '28470': 564, '28463': 567, '28465': 545, '28469': 557,
+            '28477': 553, '1425751': 730, '1426610': 632, '1425731': 982,
+            '1425742': 732, '1426611': 675, '1425740': 701, '1426620': 572.2,
+            '28482': 561, '1425741': 710, '1426621': 590.8, '1425370': 964
+        }
+        self.detActiveMass["M2"] = {
+            '28459': 556, '1426641': 576, '1427481': 903, '1427480': 917,
+            '28481': 581, '28576': 562, '28594': 559, '28595': 558, '28461': 577,
+            '1427490': 872, '1427491': 852, '1428530': 996, '28607': 558,
+            '28456': 579, '28621': 565, '28466': 566, '28473': 562, '28487': 557,
+            '1426651': 591, '1428531': 1031, '1427120': 802, '1235170': 462.2,
+            '1429091': 775, '1429092': 821, '1426652': 778,
+            '28619': 566, '1427121': 968, '1429090': 562, '28717': 567
+        }
+        self.allActiveMasses = {}
+        self.allActiveMasses.update(self.detActiveMass["M1"])
+        self.allActiveMasses.update(self.detActiveMass["M2"])
+
         # -- Load outputs from LAT/chan-sel.py --
         # Generated with LAT/chan-sel.py::fillDetInfo
         # Used BKG ranges, DS0-6 in LAT/data/runsBkg.json

@@ -1158,7 +1158,8 @@ def ltCalc():
     """
     dsList = [0,1,2,3,4,"5a","5b","5c"]
     for ds in dsList:
-        job = "./ds_livetime %s -low -idx" % (str(ds))
+        # job = "./ds_livetime %s -low -idx" % (str(ds)) # this is w/ low energy run/ch sel
+        job = "./ds_livetime %s -v" % (str(ds))          # this is w/ verbose mode
         if useJobQueue: sh("%s >& ./logs/lt-%s.txt" % (job, ds))
         else: sh("%s '%s'" % (jobStr, job))
 
