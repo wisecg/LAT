@@ -854,53 +854,53 @@ def getThreshDB():
 
 
 """
-** For BOTH of these, the DB has already been updated to reflect these changes **
+    ** For BOTH of these, the DB has already been updated to reflect these changes **
 
-fitSlo detectors cut:  (lat2::setSloCut)
-# Detectors to cut.  This is from inspecting the 'makePlots' output.
-# Criteria: nBin must be higher than 4 (50% statistical error in the bins)
-# NOTE: these detectors could be brought back if we included the DS6 cal runs
-# to bump up the stats in M2.
-cutDets = ['211','214','221','261','274']
+    fitSlo detectors cut:  (lat2::setSloCut)
+    # Detectors to cut.  This is from inspecting the 'makePlots' output.
+    # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
+    # NOTE: these detectors could be brought back if we included the DS6 cal runs
+    # to bump up the stats in M2.
+    cutDets = ['211','214','221','261','274']
 
-fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
-dbVals[ch] = [fsCut, fs200, nBin]
+    fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
+    dbVals[ch] = [fsCut, fs200, nBin]
 
 
-riseNoise chan/calIdx cut: (lat2::badRiseChans)
-# the corresponding plots are saved in ./plots/rise/ for reference
-removeList = {}
-removeList["ds0_m1"] = {
-    692:[26,27]   # HF burst
-    }
-removeList["ds1_m1"] = {
-    594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
-    692:[56]                    # too much curvature
-    }
-removeList["ds3_m1"] = {
-    594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
-    }
-removeList["ds4_m2"] = {
-    1106:[1,4,7,8], # HF burst
-    1136:[4,7,8],   # "
-    1144:[7],       # too much curvature
-    1296:[4,7,8],   # HF burst
-    1298:[4]        # "
-    }
-removeList["ds5_m1"] = {
-    584:[7],    # threshold noise causes too much curvature
-    608:[7,8],  # "
-    632:[7],    # "
-    662:[8],    # "
-    692:[7,8]   # "
-    }
-removeList["ds5_m2"] = {
-    1232:[4,5,6,7],     # threshold noise causes too much curvature
-    1236:[4,5,6,7,8],   # "
-    1298:[4,5,6,7],     # "
-    1330:[4,6,7,8],     # "
-    1332:[4]            # "
-    }
+    riseNoise chan/calIdx cut: (lat2::badRiseChans)
+    # the corresponding plots are saved in ./plots/rise/ for reference
+    removeList = {}
+    removeList["ds0_m1"] = {
+        692:[26,27]   # HF burst
+        }
+    removeList["ds1_m1"] = {
+        594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
+        692:[56]                    # too much curvature
+        }
+    removeList["ds3_m1"] = {
+        594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
+        }
+    removeList["ds4_m2"] = {
+        1106:[1,4,7,8], # HF burst
+        1136:[4,7,8],   # "
+        1144:[7],       # too much curvature
+        1296:[4,7,8],   # HF burst
+        1298:[4]        # "
+        }
+    removeList["ds5_m1"] = {
+        584:[7],    # threshold noise causes too much curvature
+        608:[7,8],  # "
+        632:[7],    # "
+        662:[8],    # "
+        692:[7,8]   # "
+        }
+    removeList["ds5_m2"] = {
+        1232:[4,5,6,7],     # threshold noise causes too much curvature
+        1236:[4,5,6,7,8],   # "
+        1298:[4,5,6,7],     # "
+        1330:[4,6,7,8],     # "
+        1332:[4]            # "
+        }
 """
 
 def checkDBCutCoverage(ds, cutType):
