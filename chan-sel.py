@@ -395,7 +395,7 @@ def dumpSettings(ds):
 
 
 def fillDetInfo():
-    """ ./chan-sel.py -fill
+    """ ./chan-sel.py -fillDetInfo
     Summarize the results of getSettings in LAT/data/runSettings-v2.npz.
     Create a file accessible by the DetInfo object in dsi.py
     It contains dictionaries of TRAP threshold, HV settings,
@@ -403,6 +403,7 @@ def fillDetInfo():
     that span an entire dataset (not broken down into separate calIdx's.)
     # FORMAT: {ds : {'det' : [(run1,val1),(run2,val2)...]} }
     """
+    print('here i am')
     # 1. maps of analysis channel to cpd, and pulser monitor channels
     detCH, pMons = {}, {}
     for ds in [0,1,2,3,4,5,6]:
@@ -420,7 +421,7 @@ def fillDetInfo():
     detPars = db.Query()
     cal = dsi.CalInfo()
     for ds in [0,1,2,3,4,5,6]:
-    # for ds in [3]:
+    # for ds in [0]:
         print("scanning ds",ds)
         detTH[ds] = {}
         detHV[ds] = {}
