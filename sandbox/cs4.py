@@ -136,7 +136,9 @@ def closeFence(ds, rates, kList, verbose=False):
         # exclude iE from rates, like the opposite of np.where
         rates = rates[~np.in1d(range(len(rates)),iE)]
 
-    return excList, rates
+    avg10, std10 = getMuStd(exc[:,0], exc[:,2])
+
+    return excList, avg10, std10#, rates
 
 
 def getOutliers():
@@ -149,9 +151,9 @@ def getOutliers():
 
     https://math.stackexchange.com/questions/966331/why-john-tukey-set-1-5-iqr-to-detect-outliers-instead-of-1-or-2
     """
+    kList = [5,3] # values for the closing fence
 
     for ds in [0,1,2,3,4,"5A","5B","5C"]:
-    # for ds in [1]:
 
         f = np.load('../data/cs4-rates-ds%s.npz' % ds)
         rateData = f['arr_0'].item()
@@ -168,12 +170,16 @@ def getOutliers():
                 else: nat.append(v)
         enr, nat = np.asarray(enr), np.asarray(nat) # [:,0]=rate10, [:,1]=rate250, [:,2]=expo, [:,3}=bkgIdx, [:,4]=cpd
 
-        excList, exc = closeFence(ds, enr, [5,3], False)
+        enrExc, aEnr10, sEnr10 = closeFence(ds, enr, kList, False)
+        print("DS-%s  Enr  r10 %.3f ± %.3f" % (ds, aEnr10, sEnr10))
+
+        natExc, aNat10, sNat10 = closeFence(ds, nat, kList, False)
+        print("DS-%s  Nat  r10 %.3f ± %.3f" % (ds, aNat, sNat10))
+
+
+
         # for cpd,bIdx in excList:
             # print(cpd, bIdx)
-
-        ea10, es10 = getMuStd(exc[:,0], exc[:,2])
-        print("DS-%s  Enr  r10 %.3f ± %.3f" % (ds, ea10, es10))
 
 
 
