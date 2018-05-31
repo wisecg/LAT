@@ -216,7 +216,7 @@ def outliers_iqr(ys):
     return np.where((ys > upper_bound) | (ys < lower_bound))
 
 
-def getOutliers(): ""
+def getOutliers():
 
     e10, e250, n10, n250 = [], [], [], []
 

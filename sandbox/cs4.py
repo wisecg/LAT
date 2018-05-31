@@ -12,8 +12,8 @@ det = dsi.DetInfo()
 def main(argv):
 
     # getRates()
-    printRates(0)
     getOutliers()
+
 
 def getRates():
 
@@ -38,7 +38,7 @@ def getRates():
         tl = TFile("../data/ds_%s_livetime.root" % str(ds))
         lt = tl.Get("dsTree")
         chList = det.getGoodChanList(dsNum)
-        dsRate = {det.getChanCPD(dsNum,ch):[] for ch in chList} # output dict
+        rateData = {det.getChanCPD(dsNum,ch):[] for ch in chList} # output dict
 
         for bIdx in range(bLo, bHi+1):
             rLo, rHi = runRanges[bIdx][0], runRanges[bIdx][-1]
@@ -80,74 +80,23 @@ def getRates():
                 if opt == "verbose":
                     print("DS %s  bIdx %d  ch %d  cpd %s  exp %.1f - %d  %d  %.1f  %.1f" % (ds, bIdx, ch, cpd, exposure[ch], n10,n250,r10,r250))
 
-                dsRate[cpd].append([r10,r250,expo,bIdx])
+                rateData[cpd].append([r10,r250,expo,bIdx,int(cpd)])
 
-        np.savez('../data/cs4-rates-ds%s.npz' % ds, dsRate, ds)
-        printRates(ds)
-
-
-def printRates(ds):
-
-    f = np.load('../data/cs4-rates-ds%s.npz' % ds)
-    dsRate = f['arr_0'].item()
-    dsNum = int(ds[0]) if isinstance(ds,str) else ds
-
-    # average rate in each detector
-    avgRateDS = {}
-    for cpd in sorted(dsRate):
-
-        r10  = [r[0] for r in dsRate[cpd]]
-        r250 = [r[1] for r in dsRate[cpd]]
-        expo = [r[2] for r in dsRate[cpd]]
-        bIdx = [r[3] for r in dsRate[cpd]]
-
-        dType = "enr" if det.allDetIDs[cpd] > 100000 else "nat"
-
-        if sum(expo)!=0:
-            ar10 = np.average(r10, weights=expo)
-            sr10 = math.sqrt( np.average((r10 - ar10)**2, weights=expo) )
-
-            ar250 = np.average(r250, weights=expo)
-            sr250 = math.sqrt( np.average((r250 - ar250)**2, weights=expo) )
-
-            # print("%s  %s  r10 %.3f ± %.3f  r250 %.3f ± %.3f" % (cpd, dType, ar10, sr10, ar250, sr250))
-        else:
-            ar10, sr10, ar250, sr250 = 0, 0, 0, 0
-            # print("%s  %s  exp = 0" % (cpd, dType))
-
-        avgRateDS[cpd] = [ar10,sr10,ar250,sr250]
-
-    # check output
-    # for cpd in avgRateDS:
-        # print(cpd, avgRateDS[cpd])
-
-    # average enriched rate, average natural rate
-    enr10, enr250, enrExp, nat10, nat250, natExp = [], [], [], [], [], []
-
-    for cpd in sorted(dsRate):
-        enr10.extend( [r[0] for r in dsRate[cpd] if det.allDetIDs[cpd] > 100000] )
-        enr250.extend( [r[1] for r in dsRate[cpd] if det.allDetIDs[cpd] > 100000] )
-        enrExp.extend( [r[2] for r in dsRate[cpd] if det.allDetIDs[cpd] > 100000] )
-
-        nat10.extend( [r[0] for r in dsRate[cpd] if det.allDetIDs[cpd] < 100000] )
-        nat250.extend( [r[1] for r in dsRate[cpd] if det.allDetIDs[cpd] < 100000] )
-        natExp.extend( [r[2] for r in dsRate[cpd] if det.allDetIDs[cpd] < 100000] )
-
-    ear10 = np.average(enr10, weights=enrExp)
-    esr10 = math.sqrt( np.average((enr10 - ear10)**2, weights=enrExp) )
-    ear250 = np.average(enr250, weights=enrExp)
-    esr250 = math.sqrt( np.average((enr250 - ear250)**2, weights=enrExp) )
-
-    nar10 = np.average(nat10, weights=natExp)
-    nsr10 = math.sqrt( np.average((nat10 - nar10)**2, weights=natExp) )
-    nar250 = np.average(nat250, weights=natExp)
-    nsr250 = math.sqrt( np.average((nat250 - nar250)**2, weights=natExp) )
-
-    print("DS-%s Enriched: r10 %.3f ± %.3f  r250 %.3f ± %.3f   Natural: r10 %.3f ± %.3f  r250 %.3f ± %.3f" % (ds,ear10,esr10,ear250,esr250,nar10,nsr10,nar250,nsr250))
+        np.savez('../data/cs4-rates-ds%s.npz' % ds, rateData, ds)
 
 
-def outliers_iqr(ys,k=1.5):
-    """ http://colingorrie.github.io/outlier-detection.html """
+def getMuStd(vals, wts):
+    mu = np.average(vals, weights=wts)
+    std = math.sqrt( np.average((vals-mu)**2, weights=wts) )
+    return mu, std
+
+
+def outliers_iqr(ys, k=1.5):
+    """ k is the Tukey fence.  1.5:"far out", 3:"way out"
+    https://www.itl.nist.gov/div898/handbook/prc/section1/prc16.htm
+    Returns indexes of outliers.
+    Thx Colin http://colingorrie.github.io/outlier-detection.html
+    """
     quartile_1, quartile_3 = np.percentile(ys, [25, 75])
     iqr = quartile_3 - quartile_1
     lower_bound = quartile_1 - (iqr * k)
@@ -155,41 +104,76 @@ def outliers_iqr(ys,k=1.5):
     return np.where((ys > upper_bound) | (ys < lower_bound))
 
 
-def getOutliers():
-    """ https://www.itl.nist.gov/div898/handbook/prc/section1/prc16.htm
-    1. Find outliers by cpd
-    2. Find outliers within a given cpd
-    3. Find runs causing the outliers
+def closeFence(ds, rates, kList, verbose=False):
+    """ Applies the IQR / Tukey fence method to reject outliers and update
+    the 'rates' object, repeating for the values in kList.
+    Returns a list [[cpd1,bIdx1],[cpd2,bIdx2],...] and the cleaned 'rates' object
     """
-    ds, dType = 0, "enr"
 
-    f = np.load('../data/cs4-rates-ds%s.npz' % ds)
-    dsRate = f['arr_0'].item()
+    excList = []
 
-    # exposure-weighted rate for each detector
-    avgRate = {}
-    for cpd in sorted(dsRate):
+    for k in kList:
 
-        isEnr = True if det.allDetIDs[cpd] > 100000 else False
-        if dType == "enr" and not isEnr: continue
-        elif dType == "nat" and isEnr: continue
+        # tag outliers from both 0-10 and 10-250
+        iE1 = outliers_iqr(rates[:,0], k)[0]
+        iE2 = outliers_iqr(rates[:,1], k)[0]
+        iE = np.append(iE1, iE2)
 
-        r10 = np.asarray([r[0] for r in dsRate[cpd]])
-        r250 = np.asarray([r[1] for r in dsRate[cpd]])
-        expo = np.asarray([r[2] for r in dsRate[cpd]])
-        bIdx = np.asarray([r[3] for r in dsRate[cpd]])
+        if verbose:
+            ea10, es10 = getMuStd(rates[:,0], rates[:,2])
+            print("DS-%s  Enr  r10 %.3f ± %.3f  %d/%d outliers, k=%.1f" % (ds, ea10, es10, len(iE), len(rates[:,0]), k))
 
-        a10 = np.average(r10, weights=expo)
-        s10 = math.sqrt( np.average((r10 - a10)**2, weights=expo) )
+        for i in iE:
 
-        idxOut10 = outliers_iqr(r10)
-        nOut = len(idxOut10[0])
+            # don't add zeros to the exclude list
+            if rates[:,0][i] == 0: continue
 
-        print("DS-%s  CPD %s  nTot %d  nOut %d  r10: %.2f ± %.2f" % (ds, cpd, len(r10), nOut, a10, s10))
-        for i in idxOut10[0]:
-            print("    bIdx %-3d  r10 %.2f" % (bIdx[i], r10[i]))
+            excList.append( [int(rates[:,4][i]), int(rates[:,3][i]) ]) # cpd, bkgIdx
 
-        avgRate[cpd] = [a10,s10]
+            if verbose:
+                print("iE %-4d  %-5d  bIdx %-3d  r10 %-8.2f" % (i, rates[:,4][i], rates[:,3][i], rates[:,0][i]))
+
+        # exclude iE from rates, like the opposite of np.where
+        rates = rates[~np.in1d(range(len(rates)),iE)]
+
+    return excList, rates
+
+
+def getOutliers():
+    """
+    1. Calculate typical rates in a DS
+    2. Find outliers by cpd
+    3. Find outliers within a given cpd
+    4. Find runs causing the outliers
+    5. Recalculate typical rates after rejecting outliers
+
+    https://math.stackexchange.com/questions/966331/why-john-tukey-set-1-5-iqr-to-detect-outliers-instead-of-1-or-2
+    """
+
+    for ds in [0,1,2,3,4,"5A","5B","5C"]:
+    # for ds in [1]:
+
+        f = np.load('../data/cs4-rates-ds%s.npz' % ds)
+        rateData = f['arr_0'].item()
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+
+        # split rate data into enr/nat groups
+        enr, nat = [], []
+        for i, cpd in enumerate(sorted(rateData)):
+            if len(rateData[cpd])==0:
+                continue
+            isEnr = True if det.allDetIDs[cpd] > 100000 else False
+            for v in np.asarray(rateData[cpd]):
+                if isEnr: enr.append(v)
+                else: nat.append(v)
+        enr, nat = np.asarray(enr), np.asarray(nat) # [:,0]=rate10, [:,1]=rate250, [:,2]=expo, [:,3}=bkgIdx, [:,4]=cpd
+
+        excList, exc = closeFence(ds, enr, [5,3], False)
+        # for cpd,bIdx in excList:
+            # print(cpd, bIdx)
+
+        ea10, es10 = getMuStd(exc[:,0], exc[:,2])
+        print("DS-%s  Enr  r10 %.3f ± %.3f" % (ds, ea10, es10))
 
 
 
