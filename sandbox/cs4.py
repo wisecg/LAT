@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, math
+import sys, os, math, glob
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
@@ -11,19 +11,23 @@ det = dsi.DetInfo()
 
 def main(argv):
     """
-    1. Calculate typical rates in a DS
-    2. Find outliers by cpd
-    3. Find outliers within a given cpd
-    4. Find runs causing the outliers
-    5. Recalculate typical rates after rejecting outliers
+    1. Calculate typical enr/nat rates in a DS
+    2. Find outliers in specific cpd/bIdx combinations
+    3. Recalculate typical rates after rejecting outliers
+    4? Find runs causing the outliers
     """
-    global rateWin1, rateWin2
-    rateWin1 = [0,10]
-    rateWin2 = [10,250]
+    global rateWin1, rateWin2, kList
+    rateWin1 = [0, 5]
+    rateWin2 = [5, 20]
+    # kList = [5, 1.5]
+    kList = [5, 3, 1.5]
 
     # getRates()
     # getOutliers(True)
-    plotRates()
+    # plotRates()
+    # makeCutFiles()
+    # plotSpecBeforeAfter()
+    plotSpectraAfter()
 
 
 def getRates():
@@ -111,11 +115,6 @@ def getOutliers(verbose=False):
     Return a list of excluded [ds,cpd,bIdx]'s.
     https://math.stackexchange.com/questions/966331/why-john-tukey-set-1-5-iqr-to-detect-outliers-instead-of-1-or-2
     """
-    # values for the closing fence
-    # kList = []
-    # kList = [5,1.5]
-    kList = [5,3]
-
     if verbose:
         print("rateWin1: %.1f - %.1f keV" % (rateWin1[0], rateWin1[1]))
         print("rateWin2: %.1f - %.1f keV" % (rateWin2[0], rateWin2[1]))
@@ -170,6 +169,9 @@ def getOutliers(verbose=False):
     enrRates = np.vstack(enrRates)
     natRates = np.vstack(natRates)
 
+    enrExc = np.asarray(enrExc)
+    natExc = np.asarray(natExc)
+
     return enrExc, natExc, enrRates, natRates
 
 
@@ -178,6 +180,11 @@ def closeFence(ds, rates, kList, name="", verbose=False):
     Returns a list [[ds,cpd1,bIdx1],[ds,cpd2,bIdx2],...] and the updated averages.
     """
     excList = []
+
+    dsNum = ds # this is a hack to keep the dataset in the numpy array
+    if ds=="5A": dsNum=50
+    if ds=="5B": dsNum=51
+    if ds=="5C": dsNum=52
 
     for k in kList:
 
@@ -196,7 +203,7 @@ def closeFence(ds, rates, kList, name="", verbose=False):
             print("    Applying outlier cut, k=%.1f, %d/%d total outliers" % (k, len(iE), len(rates)))
 
         for i in iE:
-            excList.append( [ds, int(rates[:,4][i]), int(rates[:,3][i]) ]) # ds, cpd, bkgIdx
+            excList.append( np.asarray([dsNum, int(rates[:,4][i]), int(rates[:,3][i]) ])) # dsNum, cpd, bkgIdx
 
             if verbose:
                 msg = ""
@@ -215,6 +222,8 @@ def closeFence(ds, rates, kList, name="", verbose=False):
 
     # if verbose:
         # print("DS-%-3s %s After rate %.3f ± %.3f  nIdx %d" % (ds, name, avg1, std1, len(rates[:,0])))
+
+    excList = np.asarray(excList)
 
     return excList, rates
 
@@ -286,6 +295,7 @@ def plotRates():
     plt.show()
 
     # Brian says stop messing w/ the box plot and fit a histogram of rates in each DS to a Poisson distribution
+    # he also says try a violin plot https://seaborn.pydata.org/generated/seaborn.violinplot.html
 
 
 def getBadRuns():
@@ -294,9 +304,9 @@ def getBadRuns():
     """
     enrExc, natExc, enrRates, natRates = getOutliers(False)
 
-    # print("enr")
-    # for ds,cpd,bIdx in enrExc:
-    #     print(ds,cpd,bIdx)
+    print("enr")
+    for ds,cpd,bIdx in enrExc:
+        print(ds,cpd,bIdx)
 
     # print("nat")
     # for ds,cpd,bIdx in natExc:
@@ -316,6 +326,225 @@ def getReduction():
     # print("nat")
     # for ds,cpd,bIdx in natExc:
     #     print(ds,cpd,bIdx)
+
+
+def makeCutFiles():
+
+    from ROOT import TFile, TTree, MGTWaveform
+
+    enrExc, natExc, enrRates, natRates = getOutliers(True)
+    # enrExc, natExc: [:,0]=dsNum, [:,1]=cpd, [:,2]=bkgIdx
+    # enrRates, natRates: [:,0]=rate1, [:,1]=rate2, [:,2]=expo, [:,3]=bkgIdx, [:,4]=cpd, [:,5]=ds
+
+    cutType = "fr"
+    outType = "frc"
+
+    for ds in [0,1,2,3,4,"5A","5B","5C"]:
+    # for ds in ["5B","5C"]:
+
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        runRanges = bkg.getRanges(dsNum)
+        chList = det.getGoodChanList(dsNum)
+
+        # clear out any files from a previous attempt
+        fList = ["%s/bkg/cut/%s/%s_ds%d_%d_*.root" % (dsi.dataDir, outType, outType, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        for f in fList:
+            fTmp = glob.glob(f)
+            for f in fTmp:
+                os.remove(f)
+
+        # build skip list
+        dsTmp = ds
+        if ds=="5A": dsTmp=50
+        if ds=="5B": dsTmp=51
+        if ds=="5C": dsTmp=52
+        iE = np.where(enrExc[:,0]==dsTmp)
+        iN = np.where(natExc[:,0]==dsTmp)
+        skipList = np.vstack((enrExc[iE], natExc[iN]))
+        print("DS-%s, skipList:" % ds)
+        print(skipList)
+
+        for bIdx in range(bLo, bHi+1):
+            print("DS-%s  bIdx %d" % (ds, bIdx))
+
+            # load the cut files
+            for ch in sorted(chList):
+
+                cpd = det.getChanCPD(dsNum,ch)
+
+                if len(np.where((skipList == (dsTmp, int(cpd), bIdx)).all(axis=1))[0]) > 0:
+                    # print("skipping det %s in bkgIdx %d" % (cpd, bIdx))
+                    continue
+
+                # skip nonexistent files.  other parts of chsel should tell us why these aren't here.
+                fName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, cutType, dsNum, bIdx, ch)
+                if not os.path.isfile(fName):
+                    # print("no file for det %s in bkgIdx %d" % (cpd, bIdx))
+                    continue
+
+                tf = TFile(fName)
+                tt = tf.Get("skimTree")
+                nEvt = tt.GetEntries()
+
+                outName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, outType, outType, dsNum, bIdx, ch)
+                outFile = TFile(outName, "RECREATE")
+                outTree = TTree()
+                outTree = tt.CopyTree("")
+                # print("Wrote %d entries." % outTree.GetEntries())
+
+                if nEvt != outTree.GetEntries():
+                    print("ERROR, number of entries don't match: input %d  output %d" % (nEvt, outTree.GetEntries()))
+
+                outTree.Write()
+                outFile.Close()
+                tf.Close()
+
+
+def plotSpecBeforeAfter():
+
+    from ROOT import TChain
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = ["5C"]
+
+    for ds in dsList:
+
+        tB = TChain("skimTree") # before
+        tA = TChain("skimTree") # after
+
+        # for ds in dsList:
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        fB = ["%s/bkg/cut/fr/fr_ds%d_%d_*.root" % (dsi.dataDir, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        for f in fB: tB.Add(f)
+        fA = ["%s/bkg/cut/frc/frc_ds%d_%d_*.root" % (dsi.dataDir, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        for f in fA: tA.Add(f)
+
+        print("before",tB.GetEntries(),"after",tA.GetEntries())
+
+        xLo, xHi, xpb = 0, 20, 0.1
+
+        fig = plt.figure(figsize=(8,7))
+        p0 = plt.subplot(211)
+        p1 = plt.subplot(212)
+
+        tCut = "!isEnr"
+
+        n = tB.Draw("trapENFCal",tCut,"goff")
+        hitE = tB.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hB = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        n = tA.Draw("trapENFCal",tCut,"goff")
+        hitE = tA.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hA = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        p0.semilogy(x, hB, lw=2, ls='steps', c='r', label='Natural, Before')
+        p0.semilogy(x, hA, lw=2, ls='steps', c='b', label='Natural, After')
+        p0.axvline(1., c='g', lw=2, alpha=0.5, label="1.0 keV")
+        p0.set_ylabel("Counts", ha='right', y=1)
+        p0.legend()
+
+        tCut = "isEnr"
+
+        n = tB.Draw("trapENFCal",tCut,"goff")
+        hitE = tB.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hB = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        n = tA.Draw("trapENFCal",tCut,"goff")
+        hitE = tA.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hA = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        p1.semilogy(x, hB, lw=2, ls='steps', c='r', label='Enriched, Before')
+        p1.semilogy(x, hA, lw=2, ls='steps', c='b', label='Enriched, After')
+        p1.axvline(1., c='g', lw=2, alpha=0.5, label="1.0 keV")
+        p1.set_xlabel("Energy (keV)", ha='right', x=1)
+        p1.legend()
+
+        plt.tight_layout()
+        # plt.show()
+
+        plt.savefig("../plots/cs4-comp-DS%s.pdf" % ds)
+
+        tB.Reset()
+        tA.Reset()
+
+
+def plotSpectraAfter():
+
+    from ROOT import TChain
+
+    dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [0]
+    plotName = "../plots/cs4-spec-DS-1-5C-0.2.pdf"
+
+    xLo, xHi, xpb = 0, 20, 0.2
+    # xLo, xHi, xpb = 0, 50, 0.1
+
+    # for ds in dsList:
+
+    tt = TChain("skimTree")
+
+    for ds in dsList: # indent this block
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        fList = ["%s/bkg/cut/frc/frc_ds%d_%d_*.root" % (dsi.dataDir, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        for f in fList: tt.Add(f)
+
+    fig = plt.figure(figsize=(8,7))
+    p0 = plt.subplot(211)
+    p1 = plt.subplot(212)
+
+    tCut = "!isEnr"
+
+    n = tt.Draw("trapENFCal",tCut,"goff")
+    hitE = tt.GetV1()
+    hitE = [hitE[i] for i in range(n)]
+    x, hNat = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+    p0.plot(x, hNat, lw=2, ls='steps', c='b', label='Natural')
+    p0.axvline(1., c='g', lw=2, alpha=0.5, label="1.0 keV")
+    p0.set_ylabel("Counts", ha='right', y=1)
+    p0.legend()
+
+    tCut = "isEnr"
+
+    n = tt.Draw("trapENFCal",tCut,"goff")
+    hitE = tt.GetV1()
+    hitE = [hitE[i] for i in range(n)]
+    x, hEnr = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+    n = tt.Draw("trapENFCal",tCut,"goff")
+    hitE = tt.GetV1()
+    hitE = [hitE[i] for i in range(n)]
+    x, hA = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+    p1.plot(x, hEnr, lw=2, ls='steps', c='b', label='Enriched')
+    p1.axvline(1., c='g', lw=2, alpha=0.5, label="1.0 keV")
+    p1.set_xlabel("Energy (keV)", ha='right', x=1)
+    p1.legend()
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig(plotName)
+
+    tt.Reset()
 
 
 

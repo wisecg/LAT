@@ -1359,7 +1359,7 @@ def applyCuts(ds, cutType):
         -cut rn : threshold + riseNoise
         -cut fr : threshold + fitSlo + riseNoise
     """
-    from ROOT import gROOT, TFile, TChain, TTree, TNamed
+    from ROOT import gROOT, TFile, TChain, TTree, TNamed, MGTWaveform
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
     # if this is set, don't overwrite good files.
