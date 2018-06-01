@@ -1298,9 +1298,11 @@ def badRiseChans():
     and use it in applyCuts anyway.
     """
     # the corresponding plots are saved in ./plots/rise/ for reference
+
+    # NOTE: these are calIdx's.
     removeList = {}
     removeList["ds0_m1"] = {
-        692:[26,27]   # HF burst
+        692:[26,27]   # HF burst.  this calIdx isn't used in DS0 anyway.
         }
     removeList["ds1_m1"] = {
         594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
@@ -1332,7 +1334,8 @@ def badRiseChans():
         }
 
     # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
-    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
+    calDB = db.TinyDB(dbFile)
     pars = db.Query()
     for calKey in removeList:
         for ch in removeList[calKey]:
@@ -1343,10 +1346,14 @@ def badRiseChans():
                 dbKey = "riseNoise_%s_ci%d_pol" % (calKey,bI)
                 dbVals = dsi.getDBRecord(dbKey,False,calDB,pars)
 
-                dbVals[ch][4] = False # this marks the entry bad in the DB
+                # dbVals[ch][4] = False # this marks the entry bad in the DB
+
+                print(dbVals[ch])
+                # return
 
                 if writeDB:
-                    dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+                    # dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, dbFile=dbFile, calDB=calDB, pars=pars)
+                    dsi.setDBRecord({"key":dbKey, "vals":dbVals}, True, dbFile, calDB, pars)
 
 
 def applyCuts(ds, cutType):
@@ -1410,6 +1417,7 @@ def applyCuts(ds, cutType):
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
 
+                # check the TCut string
                 thData = True if ch in bkgDict.keys() else False
                 fsData = True if ch in calDict.keys() and "fitSlo" in calDict[ch] else False
                 rnData = True if ch in calDict.keys() and "riseNoise" in calDict[ch] else False

@@ -9,6 +9,11 @@ import dsi
 bkg = dsi.BkgInfo()
 det = dsi.DetInfo()
 
+rateWin1 = [0, 5]
+rateWin2 = [5, 20]
+# kList = [5, 1.5]
+kList = [5, 3, 1.5]
+
 def main(argv):
     """
     1. Calculate typical enr/nat rates in a DS
@@ -16,11 +21,8 @@ def main(argv):
     3. Recalculate typical rates after rejecting outliers
     4? Find runs causing the outliers
     """
-    global rateWin1, rateWin2, kList
-    rateWin1 = [0, 5]
-    rateWin2 = [5, 20]
-    # kList = [5, 1.5]
-    kList = [5, 3, 1.5]
+    # global rateWin1, rateWin2, kList
+
 
     # getRates()
     # getOutliers(True)
@@ -301,6 +303,7 @@ def plotRates():
 def getBadRuns():
     """ For each bad [ds,cpd,bIdx], figure out if it's localized to just a few runs.
         Maybe apply the analysis threshold ??
+        Ehhh, if we can live with the exposure reduction from the full cpd/bIdx cut, it's not worth it.
     """
     enrExc, natExc, enrRates, natRates = getOutliers(False)
 
@@ -311,7 +314,6 @@ def getBadRuns():
     # print("nat")
     # for ds,cpd,bIdx in natExc:
     #     print(ds,cpd,bIdx)
-
 
 
 def getReduction():
@@ -486,9 +488,10 @@ def plotSpectraAfter():
 
     from ROOT import TChain
 
-    dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5A","5B","5C"]
+    dsList = [1,2,3,4,"5B","5C"]
     # dsList = [0]
-    plotName = "../plots/cs4-spec-DS-1-5C-0.2.pdf"
+    plotName = "../plots/cs4-spec-DS-14-5BC.pdf"
 
     xLo, xHi, xpb = 0, 20, 0.2
     # xLo, xHi, xpb = 0, 50, 0.1

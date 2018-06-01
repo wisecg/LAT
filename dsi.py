@@ -822,7 +822,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
     nCal = cIdxHi+1 - cIdxLo
 
     if cutType == '-b': cutType = "th"
-    if verbose: print("DS%d-M%d (%s) %s bIdx %d  (%d - %d)  nBkg %d  nCal %d" % (dsNum,mod,ds,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
+    if verbose: print("DS%d-M%d (%s) %s bIdx %d  %d--%d  nBkg %d  nCal %d" % (dsNum,mod,ds,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
 
     # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
     # bkgDict = {ch:None for ch in chList}
@@ -831,7 +831,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
     for sIdx, (runLo, runHi) in enumerate(subRanges):
 
         bRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-        if verbose: print("  bIdx %d %d (%d - %d)" % (bIdx, sIdx, runLo, runHi))
+        if verbose: print("  bIdx %-3d %d %d--%d" % (bIdx, sIdx, runLo, runHi))
 
         thD = getDBRecord("thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sIdx), False, calDB, pars)
 
@@ -876,7 +876,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
         runLo = rFirst if runCovMin < rFirst else runCovMin
         runHi = rLast if rLast < runCovMax else runCovMax
         cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
-        if verbose: print("  cIdx %d    (%d - %d)" % (cIdx, runLo, runHi))
+        if verbose: print("  cIdx %-3d   %d--%d" % (cIdx, runLo, runHi))
 
         fsD = getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
         rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
@@ -893,7 +893,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
 
             # "riseNoise_%s_ci%d_pol", "vals": {ch : [a,b,c99,c,fitPass] for ch in chList} }
             rnCut = None
-            if rnD[ch] is not None and rnD[ch][3]!=False:
+            if rnD[ch] is not None and rnD[ch][4] != False:
                 a, b, c99, c, fitPass = rnD[ch]
                 rnCut = "riseNoise < (%.2e*pow(trapENFCal,2) + %.2e*trapENFCal + %.3f)" % (a, b, c99)
                 calCov[ch][1].append(1)
