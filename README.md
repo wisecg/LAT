@@ -12,10 +12,9 @@ Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy
 - `lat3`: tune and apply burst cut
 - `lat-expo`: exposure and efficiency
 - `spec-fit`: final spectrum fits
-
-Properties of the data sets, including background, calibration, special runs, and detector info is stored in `dsi.py`
-Run lists come from `./data/runs*.json`
-Convenience functions are in `waveLibs.py`
+- `dsi.py`: properties of the data sets, including background, calibration, special runs, and detector info
+- `./data/runs*.json`: run lists for bkg runs (match `DataSetInfo.cc`), calibration, and special runs
+- `waveLibs.py`: convenience functions
 There are a lot of half-baked ideas, some useful, in `LAT/sandbox`.
 
 ### Authors
