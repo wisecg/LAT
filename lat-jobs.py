@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-========================= job-panda.py ========================
+========================= lat-jobs.py ========================
 A cute and adorable way to do various processing tasks.
 The functions are arranged mostly sequentially, i.e. this file
 documents the "procedure" necessary to produce LAT data,
@@ -217,7 +217,7 @@ def getSBatch(opt, getCores=True, nArr=1):
 
 
 def runBatch():
-    """ ./job-panda.py -b
+    """ ./lat-jobs.py -b
     http://www.nersc.gov/users/computational-systems/cori/running-jobs/queues-and-policies/
     http://www.nersc.gov/users/computational-systems/edison/running-jobs/queues-and-policies/
     http://www.nersc.gov/users/accounts/user-accounts/how-usage-is-charged/
@@ -294,7 +294,7 @@ def runBatch():
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -c -all"))
 
     # EX. 11: raw threshold, channel, and HV settings
-    # sh("%s slurm.slr %s" % (getSBatch("edison",False),"./chan-sel.py -t -v"))
+    # sh("%s slurm.slr %s" % (getSBatch("edison",False),"./latxp.py -t -v"))
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-test"))
 
     # EX. 12: run LAT2 scan
@@ -319,7 +319,7 @@ def runBatch():
 
 
 def getCalRunList(dsNum=None,subNum=None,runNum=None):
-    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx] -run [runNum])
+    """ ./lat-jobs.py -cal (-ds [dsNum] -sub [dsNum] [calIdx] -run [runNum])
         Create a calibration run list, using the CalInfo object in DataSetInfo.py .
         Note that the -sub option is re-defined here to mean a calibration range idx.
         Note that running with -cal alone will create a list for all datasets (mega mode).
@@ -368,7 +368,7 @@ def getCalRunList(dsNum=None,subNum=None,runNum=None):
 
 
 def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py [-q] -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+    """ ./lat-jobs.py [-q] -skim (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit skim_mjd_data jobs.
     """
     bkg = dsi.BkgInfo()
@@ -406,7 +406,7 @@ def runSkimmer(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py [-q] -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+    """ ./lat-jobs.py [-q] -wave (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Submit wave-skim jobs.
     """
     bkg = dsi.BkgInfo()
@@ -444,7 +444,7 @@ def runWaveSkim(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runAutoThresh(ds=None):
-    """./job-panda.py [-q] [-ds dsNum] -thresh
+    """./lat-jobs.py [-q] [-ds dsNum] -thresh
     Generates auto-thresh jobs.  Default is to do it for all datasets.
     """
     bkg = dsi.BkgInfo()
@@ -467,7 +467,7 @@ def runAutoThresh(ds=None):
 
 
 def splitTree(dsNum, subNum=None, runNum=None):
-    """ ./job-panda.py -split (-sub dsNum subNum) (-run dsNum runNum)
+    """ ./lat-jobs.py -split (-sub dsNum subNum) (-run dsNum runNum)
 
         Split a SINGLE waveSkim file into small (~50MB) files to speed up LAT parallel processing.
         Can call 'batchSplit' instead to submit each run in the list as a job, splitting the files in parallel.
@@ -513,7 +513,7 @@ def splitTree(dsNum, subNum=None, runNum=None):
 
 
 def batchSplit(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py [-q] [-cal] -batchSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum)
+    """ ./lat-jobs.py [-q] [-cal] -batchSplit (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum)
         Submit jobs that call splitTree for each run, splitting files into small chunks.
         NOTE: The data cleaning cut is NOT written into the output files and the
               function 'writeCut' must be called after these jobs are done.
@@ -532,7 +532,7 @@ def batchSplit(dsNum, subNum=None, runNum=None, calList=[]):
                     print("File",inPath,"not found. Continuing ...")
                     continue
                 else:
-                    job = "./job-panda.py -sub %d %d -split" % (dsNum, i)
+                    job = "./lat-jobs.py -sub %d %d -split" % (dsNum, i)
                     if useJobQueue: sh("%s >& ./logs/split-ds%d-%d.txt" % (job, dsNum, i))
                     else: sh("""%s '%s'""" % (jobStr, job))
         # -sub
@@ -542,7 +542,7 @@ def batchSplit(dsNum, subNum=None, runNum=None, calList=[]):
                 print("File",inPath,"not found.")
                 return
             else:
-                job = "./job-panda.py -sub %d %d -split" % (dsNum, i)
+                job = "./lat-jobs.py -sub %d %d -split" % (dsNum, i)
                 if useJobQueue: sh("%s >& ./logs/split-ds%d-%d.txt" % (job, dsNum, i))
                 else: sh("""%s '%s'""" % (jobStr, job))
         # -run
@@ -552,7 +552,7 @@ def batchSplit(dsNum, subNum=None, runNum=None, calList=[]):
                 print("File",inPath,"not found.")
                 return
             else:
-                job = "./job-panda.py -run %d %d -split" % (dsNum, runNum)
+                job = "./lat-jobs.py -run %d %d -split" % (dsNum, runNum)
                 if useJobQueue: sh("%s >& ./logs/split-ds%d-run%d.txt" % (job, dsNum, runNum))
                 else: sh("""%s '%s'""" % (jobStr, job))
 
@@ -569,13 +569,13 @@ def batchSplit(dsNum, subNum=None, runNum=None, calList=[]):
                 print("File",inPath,"not found. Continuing ...")
                 continue
             else:
-                job = "./job-panda.py -run %d %d -split" % (dsNum, run)
+                job = "./lat-jobs.py -run %d %d -split" % (dsNum, run)
                 if useJobQueue: sh("%s >& ./logs/split-ds%d-run%d.txt" % (job, dsNum, run))
                 else: sh("""%s '%s'""" % (jobStr, job))
 
 
 def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -writeCut (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+    """ ./lat-jobs.py -writeCut (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Assumes the cut used in the FIRST file (even in the whole DS) should be applied
         to ALL files.  This should be a relatively safe assumption.
     """
@@ -625,7 +625,7 @@ def writeCut(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def runLAT(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py [-q] -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+    """ ./lat-jobs.py [-q] -lat (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Runs LAT on splitSkim output.  Does not combine output files back together.
     """
     bkg = dsi.BkgInfo()
@@ -686,7 +686,7 @@ def mergeLAT():
 
 
 def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
-    """ ./job-panda.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
+    """ ./lat-jobs.py -pandify (-ds dsNum) (-sub dsNum subNum) (-run dsNum subNum) [-cal]
         Run ROOTtoPandas jobs.
     """
     # bg
@@ -710,8 +710,8 @@ def pandifySkim(dsNum, subNum=None, runNum=None, calList=[]):
 
 
 def tuneCuts(argString, dsNum=None):
-    """ ./job-panda.py -tuneCuts '[argString]' -- run over all ds's
-        ./job-panda.py -ds [dsNum] -tuneCuts '[argString]' -- just one DS
+    """ ./lat-jobs.py -tuneCuts '[argString]' -- run over all ds's
+        ./lat-jobs.py -ds [dsNum] -tuneCuts '[argString]' -- just one DS
 
     Submit a bunch of lat3.py jobs to the queues.
     NOTE:
@@ -743,7 +743,7 @@ def tuneCuts(argString, dsNum=None):
 
 
 def applyCuts(dsNum, cutType):
-    """ ./job-panda.py -lat3 [dsNum] [cutType]"""
+    """ ./lat-jobs.py -lat3 [dsNum] [cutType]"""
 
     if dsNum==-1:
         for ds in range(6):
@@ -753,12 +753,12 @@ def applyCuts(dsNum, cutType):
 
 
 def cronJobs():
-    """ ./job-panda.py -cron
+    """ ./lat-jobs.py -cron
     Uses the global string 'jobQueue'.
     Crontab should contain the following lines (crontab -e):
     SHELL=/bin/bash
     MAILTO="" # can put in some address here if you LOVE emails
-    #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/job-panda.py -cron >> ~/lat/cron.log 2>&1
+    #*/10 * * * * source ~/env/EnvBatch.sh; ~/lat/lat-jobs.py -cron >> ~/lat/cron.log 2>&1
     """
     os.chdir(home+"/lat/")
     print("Cron:",time.strftime('%X %x %Z'),"cwd:",os.getcwd())
@@ -791,13 +791,13 @@ def cronJobs():
 
 
 def shifterTest():
-    """ ./job-panda.py -shifter """
+    """ ./lat-jobs.py -shifter """
     print("Shifter:",time.strftime('%X %x %Z'),"cwd:",os.getcwd())
     sh("""sbatch shifter.slr 'python sandbox/bl2.py'""")
 
 
 def specialSkim():
-    """ ./job-panda.py [-q (use job queue)] -sskim """
+    """ ./lat-jobs.py [-q (use job queue)] -sskim """
     cal = dsi.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("delayedTrigger")
@@ -812,7 +812,7 @@ def specialSkim():
 
 
 def specialWave():
-    """ ./job-panda.py [-q (use queue)] -swave """
+    """ ./lat-jobs.py [-q (use queue)] -swave """
     cal = dsi.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("longCal",5)
@@ -826,7 +826,7 @@ def specialWave():
 
 
 def specialSplit():
-    """ ./job-panda.py [-q] -ssplit
+    """ ./lat-jobs.py [-q] -ssplit
     External pulser runs have no data cleaning cut.
     Has a memory leak (can't close both TFiles, damn you, ROOT); submit each run as a batch job.
     """
@@ -847,13 +847,13 @@ def specialSplit():
                 pass
 
         if useJobQueue:
-            sh("""./job-panda.py -splitf %s %s""" % (inPath,outPath))
+            sh("""./lat-jobs.py -splitf %s %s""" % (inPath,outPath))
         else:
-            sh("""%s './job-panda.py -splitf %s %s'""" % (jobStr,inPath,outPath))
+            sh("""%s './lat-jobs.py -splitf %s %s'""" % (jobStr,inPath,outPath))
 
 
 def splitFile(inPath,outPath):
-    """ ./job-panda.py -splitf [inPath] [outPath]
+    """ ./lat-jobs.py -splitf [inPath] [outPath]
     Used by specialSplit. """
     from ROOT import TFile, TTree, TObject
     inFile = TFile(inPath)
@@ -866,7 +866,7 @@ def splitFile(inPath,outPath):
 
 
 def specialWrite():
-    """ ./job-panda.py -swrite
+    """ ./lat-jobs.py -swrite
     Write TCuts from waveSkim files into splitSkim files.
     """
     from ROOT import TFile, TNamed, TObject
@@ -897,7 +897,7 @@ def specialWrite():
 
 
 def specialDelete():
-    """./job-panda.py -sdel"""
+    """./lat-jobs.py -sdel"""
 
     # remove all files for specific run numbers
     removeList = [5940, 5941, 5946, 5961, 5962, 5963, 5978, 6205]
@@ -945,7 +945,7 @@ def specialDelete():
 
 
 def specialLAT():
-    """ ./job-panda.py [-q (use job queue)] -slat"""
+    """ ./lat-jobs.py [-q (use job queue)] -slat"""
     cal = dsi.CalInfo()
     # runList = cal.GetSpecialRuns("extPulser")
     # runList = cal.GetSpecialRuns("longCal",5)
@@ -986,7 +986,7 @@ def specialLAT():
 
 
 def specialCheck():
-    """./job-panda.py -scheck
+    """./lat-jobs.py -scheck
     A next step could be to 'hadd' split files back together, but we'll wait for now.
     """
     from ROOT import TFile, TTree
@@ -1004,7 +1004,7 @@ def specialCheck():
 
 
 def specialBuild():
-    """ ./job-panda.py -sbuild
+    """ ./lat-jobs.py -sbuild
     Set 1 of the external pulser runs were built with --donotbuild.
     Let's manually build them.
 
@@ -1042,7 +1042,7 @@ def specialBuild():
 
 
 def chunkJobList():
-    """ ./job-panda.py -chunk
+    """ ./lat-jobs.py -chunk
     Split huge job lists into chunks.
     NOTE:  Edison has 48 cores/node, PDSF has 30, Cori has 60.
     It's probably good to have at least that many jobs in a chunk.
@@ -1079,7 +1079,7 @@ def chunkJobList():
 
 
 def quickTest():
-    """./job-panda.py -test """
+    """./lat-jobs.py -test """
     from ROOT import MGTWaveform, GATDataSet, TChain
     import datetime, time
     print("Sleeping 10 sec ...")
@@ -1100,7 +1100,7 @@ def quickTest():
 
 
 def scanLAT2(dsIn=None, subIn=None, modIn=None):
-    """ ./job-panda.py [-q] -lat2 """
+    """ ./lat-jobs.py [-q] -lat2 """
 
     skipDS6Cal = True
     cal = dsi.CalInfo()
@@ -1140,7 +1140,7 @@ def scanLAT2(dsIn=None, subIn=None, modIn=None):
 
 
 def cutLAT2():
-    """ ./job-panda.py [-q] -cuts """
+    """ ./lat-jobs.py [-q] -cuts """
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     optList = ["","fs","rn","fr"]
@@ -1153,7 +1153,7 @@ def cutLAT2():
 
 
 def ltCalc():
-    """ ./job-panda.py [-q] -lt
+    """ ./lat-jobs.py [-q] -lt
     Runs ds_livetime jobs w/ low-energy options.
     """
     dsList = [0,1,2,3,4,"5a","5b","5c"]

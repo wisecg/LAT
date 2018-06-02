@@ -14,7 +14,7 @@ def main():
 
 
 def threshCut():
-    """ ./job-panda.py -threshCut
+    """ ./lat-jobs.py -threshCut
         Applies a threshold cut.
     """
     import numpy as np

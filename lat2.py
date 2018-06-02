@@ -45,16 +45,16 @@ def main(argv):
         if opt=="-db":
             writeDB = True
 
-        # wrapper function for scanRuns
+        # wrapper function for scanRunsSlo
         if opt=="-load":
             loadRuns(ds,cIdx,mod)
 
-        # call scanRuns directly (used by job-panda)
+        # call scanRunsSlo directly (used by lat-jobs)
         if opt=="-scan":
             ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
             scanRunsSlo(ds,key,mod,cIdx)
 
-        # call scanRunsRise directly (used by job-panda)
+        # call scanRunsRise directly (used by lat-jobs)
         if opt == "-rscan":
             ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
             scanRunsRise(ds,key,mod,cIdx)
@@ -755,7 +755,7 @@ def setSloCut():
     # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
     # NOTE: these detectors could be brought back if we included the DS6 cal runs
     # to bump up the stats in M2.
-    cutDets = ['211','214','221','261','274'] # 5/11/2018 cgw
+    cutDets = ['211','214','221','261','274'] # 2018/5/11 cgw verified not in DB
 
     # --------------------------------------------------------------
     # Now that we've filled shiftVals and shiftCut, translate back to datasets and channels
@@ -1294,7 +1294,7 @@ def badRiseChans():
     manually identify channels which fail the fit.
     Update the riseNoise DB entries for these channels/calIdxs to be declared bad.
         (Just change the last parameter to False.)
-    This could maybe go in chan-sel.py but we're just gonna turn around
+    This could maybe go in lat-expo.py but we're just gonna turn around
     and use it in applyCuts anyway.
     """
     # the corresponding plots are saved in ./plots/rise/ for reference
@@ -1302,7 +1302,7 @@ def badRiseChans():
     # NOTE: these are calIdx's.
     removeList = {}
     removeList["ds0_m1"] = {
-        692:[26,27]   # HF burst.  this calIdx isn't used in DS0 anyway.
+        692:[26,27]   # HF burst.  this calIdx isn't used in DS0 anyway.  OK cgw 2018/06/01
         }
     removeList["ds1_m1"] = {
         594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
@@ -1370,7 +1370,7 @@ def applyCuts(ds, cutType):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
     # if this is set, don't overwrite good files.
-    cleanupMode = True
+    cleanupMode = False
     print("CLEANUP MODE?",cleanupMode)
 
     # if this is set, check that we get all files we should. (instead of writing new ones)

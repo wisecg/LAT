@@ -178,7 +178,7 @@ def lat3Test():
 
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
-    # access cal idx's the way job-panda would have
+    # access cal idx's the way lat-jobs would have
     # fileList = ds.getCalFiles(1, verbose=False)
 
     # applyDBCuts()

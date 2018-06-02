@@ -393,6 +393,8 @@ def makeCutFiles():
                 tt = tf.Get("skimTree")
                 nEvt = tt.GetEntries()
 
+                # TODO: zombie file check (need to know livetime)
+
                 outName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, outType, outType, dsNum, bIdx, ch)
                 outFile = TFile(outName, "RECREATE")
                 outTree = TTree()

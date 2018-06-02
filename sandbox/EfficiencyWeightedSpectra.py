@@ -8,7 +8,7 @@ def main():
     getEff
 
 def getEff():
-    """ ./job-panda.py -getEff
+    """ ./lat-jobs.py -getEff
 
     METHOD:
     open up the latskim file for each channel.

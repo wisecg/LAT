@@ -14,7 +14,7 @@ if [ -n "$SHIFTER_RUNTIME" ]; then
   echo "ROOT:"`root-config --version`
 fi
 
-# This runs whatever commands job-panda.py passes to it.
+# This runs whatever commands lat-jobs.py passes to it.
 echo "${@}"
 ${@}
 

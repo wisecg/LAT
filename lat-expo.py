@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-===================== LAT/chan-sel.py ======================
+===================== lat-expo.py ======================
 Perform necessary run/channel selection bookkeeping for
     LAT analysis, before and after cuts are applied.
-===================== C. Wiseman (USC) =====================
+=================== C. Wiseman (USC) ===================
 """
 import sys, os, time
 import tinydb as db
@@ -50,7 +50,7 @@ def main(argv):
         if opt=="-detID":
             getDetIDs()
 
-        # make a list of sub-ranges, usable by job-panda::runAutoThresh
+        # make a list of sub-ranges, usable by lat-jobs::runAutoThresh
         if opt=="-sub":
             getSubRanges()
 
@@ -831,6 +831,9 @@ def fillThreshDB():
 
 
 def getThreshDB():
+    """ ./chan-sel.py -getThreshDB
+    Just an example of getting all threshold values (accounting for sub-bIdx's) from the DB.
+    """
     calDB = db.TinyDB("%s/calDB-v2.json" % dsi.latSWDir)
     pars = db.Query()
     bkg = dsi.BkgInfo()
@@ -1005,6 +1008,82 @@ def checkDBCutCoverage(ds, cutType):
                 outStr += "\n"
                 f.write(outStr)
     print("Wrote cut file:",outFile)
+
+
+def getExposure():
+
+    import lat3
+    from ROOT import TFile, TTree
+
+    ds, cutType = 1, "fr"
+
+    # read files
+    dsLabel = str(dsNum)
+    if isinstance(ds, str):
+        if ds=="5A": dsLabel = "5a"
+        if ds=="5B": dsLabel = "5b"
+        if ds=="5C": dsLabel = "5c"
+    outFile = "./data/dbCut_%s_%s.txt" % (cutType,dsLabel)
+
+    ds = 0
+    cutType = "fr"
+
+    dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    dsMap = bkg.dsMap() # number of bIdx's
+    bkgRanges = bkg.getRanges(ds)
+    calKeys = cal.GetKeys(dsNum)
+
+    # load ds_livetime output
+    tl = TFile("../data/ds_%s_livetime.root" % str(ds))
+    lt = tl.Get("dsTree")
+
+    # have to treat modules separately
+    mods = [1]
+    if dsNum == 4: mods = [2]
+    if dsNum == 5: mods = [1,2]
+    for mod in mods:
+
+        chList = det.getGoodChanList(dsNum, mod)
+
+        for bIdx in bkgRanges:
+
+            # get the livetime and exposure of each channel in this bkgIdx
+            # live = {ch:0 for ch in chList} # days
+            # expo = {ch:0 for ch in chList} # kg-days
+            #
+            # n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (bkgRanges[bIdx][0], bkgRanges[bIdx][1]), 'goff')
+            # ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
+            # for i in range(n):
+            #     ch = ltChan[i]
+            #     if ch not in chList: continue # this skips M2 channels when we are looking at M1 and vice versa
+            #     cpd = det.getChanCPD(dsNum,ch)
+            #     detID = det.getDetIDChan(dsNum,ch)
+            #     aMass = det.allActiveMasses[detID]
+            #     live[ch] += ltLive[i]/86400
+            #     expo[ch] += ltLive[i]*aMass/86400/1000
+
+            # for ch in chList:
+            #     cpd = det.getChanCPD(dsNum,ch)
+            #     print("%s  %d  %s  %d  lt %.2f e %.2f" % (str(ds), bIdx, cpd, ch, live[ch], expo[ch]))
+            # continue
+
+            # get the cut values
+            bkgDict, calDict, _,_ = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars,False)
+            for ch in chList:
+                cpd = det.getChanCPD(dsNum,ch)
+
+                # To make a "fr" cut file, LAT2 requires ALL THREE [thData, fsData, rnData] to be True.
+                # If any bkg or cal sub-index was missing, the whole bIdx (for this channel) gets thrown out.
+                # This was easier than being really nitpicky about the run boundaries for a minimal exposure increase.
+
+                thData = True if ch in bkgDict.keys() else False
+                fsData = True if ch in calDict.keys() and "fitSlo" in calDict[ch] else False
+                rnData = True if ch in calDict.keys() and "riseNoise" in calDict[ch] else False
+
+                goodCh = True if thData and fsData and rnData else False
+
 
 
 if __name__=="__main__":

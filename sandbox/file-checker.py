@@ -19,7 +19,7 @@ def main():
 
     also, should it check if we have events down to 0.7 kev or whatever?
 
-    also, this should be moved to job-panda once it's working well.
+    also, this should be moved to lat-jobs once it's working well.
     """
     # checkBkgFiles()
     checkCalFiles()
@@ -59,7 +59,7 @@ def checkBkgFiles():
 
 
 def getCalRunList(dsNum=None,subNum=None):
-    """ ./job-panda.py -cal (-ds [dsNum] -sub [dsNum] [calIdx])
+    """ ./lat-jobs.py -cal (-ds [dsNum] -sub [dsNum] [calIdx])
         Create a calibration run list, using the CalInfo object in DataSetInfo.py .
         Note that the -sub option is re-defined here to mean a calibration range idx.
         Note that running with -cal alone will create a list for all datasets (mega mode).

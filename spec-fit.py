@@ -9,7 +9,7 @@ from ROOT import RooStats as RS
 import numpy as np
 from array import array
 """
-    specFit.py
+    spec-fit.py
     Likelihood analysis of MALBEK and MJD low energy spectra.
     Adapted from GPXFitter by Brian Zhu, LANL.  Much thanks to Brian, Graham, and Lukas.
     Clint Wiseman, USC
@@ -396,7 +396,7 @@ def plotSpectrum():
     fRes.addPlotable(res,"P")
 
     # -- print fit results --
-    print "-- SPECFIT RESULTS -- "
+    print "-- spec-fit RESULTS -- "
     print "%-10s = %.3f" % ("chiSq",chiSquare)
     fitValsFinal = getRooArgDict( fitResult.floatParsFinal() )
 

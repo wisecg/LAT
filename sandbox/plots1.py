@@ -117,7 +117,7 @@ def drawCut():
 
 def fitMu():
 
-    # load cal files the way job-panda does
+    # load cal files the way lat-jobs does
     dsNum = 3
     # nIdx = wl.getNCalIdxs(dsNum, module=1)
     calIdx = 15

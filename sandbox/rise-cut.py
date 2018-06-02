@@ -37,7 +37,7 @@ def main(argv):
     ds, cIdx, mod = None, None, None
     for i, opt in enumerate(argv):
 
-        # call scanRunsRise directly (used by job-panda)
+        # call scanRunsRise directly (used by lat-jobs)
         if opt=="-scan":
             ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
             scanRunsRise(ds,key,mod,cIdx)
