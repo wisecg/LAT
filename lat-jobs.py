@@ -1143,7 +1143,8 @@ def cutLAT2():
     """ ./lat-jobs.py [-q] -cuts """
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
-    optList = ["","fs","rn","fr"]
+    # optList = ["","fs","rn","fr"]
+    optList = ["fr"]
 
     for ds in dsList:
         for opt in optList:

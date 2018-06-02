@@ -15,6 +15,7 @@ Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy
 - `dsi.py`: properties of the data sets, including background, calibration, special runs, and detector info
 - `./data/runs*.json`: run lists for bkg runs (match `DataSetInfo.cc`), calibration, and special runs
 - `waveLibs.py`: convenience functions
+
 There are a lot of half-baked ideas, some useful, in `LAT/sandbox`.
 
 ### Authors

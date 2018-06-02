@@ -63,8 +63,7 @@ def main(argv):
 
         # check DB cuts
         if opt=="-cov":
-            checkDBCutCoverage(argv[i+1],argv[i+2]) # ds, cutType
-
+            getPSACutRuns(argv[i+1],argv[i+2]) # ds, cutType
 
     # compareCoverage()
     # spotCheckThresh()
@@ -907,9 +906,10 @@ def getThreshDB():
         }
 """
 
-def checkDBCutCoverage(ds, cutType):
-    """ ./chan-sel.py -cov [ds] [cutType]
-    Check which bkgIdx's we have good cut values for.
+def getPSACutRuns(ds, cutType):
+    """ ./chan-sl.py -cov [ds] [cutType]
+    Check which bkgIdx's we have good cut values for,
+    accounting for multiple bkg and cal sub-Idx's.
     This is a 5-layered loop, which is pretty badass.
     """
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
@@ -1009,6 +1009,8 @@ def checkDBCutCoverage(ds, cutType):
                 f.write(outStr)
     print("Wrote cut file:",outFile)
 
+    # Create output for
+
 
 def getExposure():
 
@@ -1084,6 +1086,12 @@ def getExposure():
 
                 goodCh = True if thData and fsData and rnData else False
 
+
+def makeFinalFiles():
+
+    # just TChain the 'frb' files for each dataset and make output files for spec-fit and others.
+
+    print("hi")
 
 
 if __name__=="__main__":

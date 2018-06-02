@@ -368,8 +368,23 @@ def makeCutFiles():
         print("DS-%s, skipList:" % ds)
         print(skipList)
 
+        # load ds_livetime output
+        tl = TFile("../data/ds_%s_livetime.root" % str(ds))
+        lt = tl.Get("dsTree")
+
         for bIdx in range(bLo, bHi+1):
             print("DS-%s  bIdx %d" % (ds, bIdx))
+
+            # get channel livetimes (to identify 'zombie' channels declared dead that have hits)
+            live = {ch:0 for ch in chList}
+            n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (runRanges[bIdx][0], runRanges[bIdx][1]), 'goff')
+            ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
+            for i in range(n):
+                ch = ltChan[i]
+                cpd = det.getChanCPD(dsNum,ch)
+                detID = det.getDetIDChan(dsNum,ch)
+                aMass = det.allActiveMasses[detID]
+                live[ch] += ltLive[i]
 
             # load the cut files
             for ch in sorted(chList):
@@ -390,7 +405,10 @@ def makeCutFiles():
                 tt = tf.Get("skimTree")
                 nEvt = tt.GetEntries()
 
-                # TODO: zombie file check
+                # skip zombie detectors
+                if live[ch]==0:
+                    print("Zombie detector, cpd %s  ch %d, lt=0, nHits %d.  Excluding..." % (cpd, ch, nEvt))
+                    continue
 
                 outName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, outType, outType, dsNum, bIdx, ch)
                 outFile = TFile(outName, "RECREATE")
@@ -400,6 +418,7 @@ def makeCutFiles():
 
                 if nEvt != outTree.GetEntries():
                     print("ERROR, number of entries don't match: input %d  output %d" % (nEvt, outTree.GetEntries()))
+                    return
 
                 outTree.Write()
                 outFile.Close()
