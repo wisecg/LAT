@@ -22,12 +22,12 @@ def main(argv):
     4? Find runs causing the outliers
     """
     # these can all be run sequentially
-    # getRates()
-    # getOutliers(True,usePass2=False)
-    # plotRates()
-    # makeCutFiles()
-    # plotSpecBeforeAfter()
-    # plotSpectraAfter()
+    getRates()
+    getOutliers(True,usePass2=False)
+    plotRates()
+    makeCutFiles()
+    plotSpecBeforeAfter()
+    plotSpectraAfter()
     combineSpectra()
 
 
@@ -393,7 +393,7 @@ def makeCutFiles():
     cutType = "fr"
 
     # which burst cut do we want?
-    pass2 = True
+    pass2 = False
     outType = "frb2" if pass2 else "frb"
 
     for ds in [0,1,2,3,4,"5A","5B","5C"]:
