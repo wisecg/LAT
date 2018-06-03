@@ -67,7 +67,6 @@ def main(argv):
 
     # compareCoverage()
     # spotCheckThresh()
-    # loadSubRanges()
 
 
 def compareCoverage():
@@ -696,16 +695,6 @@ def getSubRanges():
         if verbose: print("Saved file.")
 
 
-def loadSubRanges():
-
-    f = np.load("./data/thrHV_subRanges.npz")
-    thRanges = f['arr_0']
-    hvRanges = f['arr_1']
-
-    for val in hvRanges:
-        print(*val)
-
-
 def fillThreshDB():
     """ Fill threshold records in to LAT/calDB-v2.json.
         keys: thresh_ds[i]_bkg[j]_sub[k]
@@ -1009,7 +998,23 @@ def getPSACutRuns(ds, cutType):
                 f.write(outStr)
     print("Wrote cut file:",outFile)
 
-    # Create output for
+    # Create numpy output for getExposure?
+    # or maybe just return some object?
+
+
+def getReduction():
+    """ Calculate how much exposure we lose for a given outliers cut. """
+
+    enrExc, natExc, enrRates, natRates = getOutliers(False)
+
+    # print("enr")
+    # for ds,cpd,bIdx in enrExc:
+    #     print(ds,cpd,bIdx)
+
+    # print("nat")
+    # for ds,cpd,bIdx in natExc:
+    #     print(ds,cpd,bIdx)
+
 
 
 def getExposure():
@@ -1089,7 +1094,18 @@ def getExposure():
 
 def makeFinalFiles():
 
+    # mmm. there are still some threshold noise peaks in several of the spectra.
+
+    # you better figure out an analysis threshold (in lat3) before you do this.
+
     # just TChain the 'frb' files for each dataset and make output files for spec-fit and others.
+
+    print("hi")
+
+
+def makeWFMovies():
+
+    # just a thought, we'll certainly want to see these here.
 
     print("hi")
 
