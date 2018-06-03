@@ -435,7 +435,7 @@ def makeCutFiles():
 
             # get channel livetimes (to identify 'zombie' channels declared dead that have hits)
             live = {ch:0 for ch in chList}
-            n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (runRanges[bIdx][0], runRanges[bIdx][1]), 'goff')
+            n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (runRanges[bIdx][0], runRanges[bIdx][-1]), 'goff')
             ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
             for i in range(n):
                 ch = ltChan[i]

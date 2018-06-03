@@ -63,7 +63,28 @@ def main(argv):
 
         # check DB cuts
         if opt=="-cov":
-            getPSACutRuns(argv[i+1],argv[i+2]) # ds, cutType
+            # manual
+            # getPSACutRuns(argv[i+1],argv[i+2]) # ds, cutType
+
+            # batch
+            for ds in [0,1,2,3,4,"5A","5B","5C"]:
+                getPSACutRuns(ds,"fr")
+
+        # finally, calculate exposure!
+        if opt=="-e":
+            getExposure()
+
+        # generate efficiency functions
+        if opt=="-eff":
+            getEfficiency()
+
+        # make final output files
+        if opt=="-f":
+            makeFinalFiles()
+
+        if opt=="-m":
+            makeMovies()
+
 
     # compareCoverage()
     # spotCheckThresh()
@@ -895,7 +916,7 @@ def getThreshDB():
         }
 """
 
-def getPSACutRuns(ds, cutType):
+def getPSACutRuns(ds, cutType, verbose=False):
     """ ./chan-sl.py -cov [ds] [cutType]
     Check which bkgIdx's we have good cut values for,
     accounting for multiple bkg and cal sub-Idx's.
@@ -903,20 +924,22 @@ def getPSACutRuns(ds, cutType):
     """
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
-    print("Getting cut run/ch vals for DS-%s (%d) ..." % (ds, dsNum))
+    print("Getting PSA cut run/ch vals for DS-%s (%d) ..." % (ds, dsNum))
 
     if cutType not in ["fr","fs","rn","thr"]:
         print("Unknown cut type:",cutType,"... exiting ...")
         return
 
-    # set up output file.  i wish i'd made everything uppercase
-    dsLabel = str(dsNum)
-    if isinstance(ds, str):
-        if ds=="5A": dsLabel = "5a"
-        if ds=="5B": dsLabel = "5b"
-        if ds=="5C": dsLabel = "5c"
-    outFile = "./data/dbCut_%s_%s.txt" % (cutType,dsLabel)
-    dRanges = {} # this is what we'll write to text file at the end
+    # set up output file (deprecated)
+    # writeFile = True
+    # dsLabel = str(dsNum)
+    # if isinstance(ds, str):
+    #     if ds=="5A": dsLabel = "5a"
+    #     if ds=="5B": dsLabel = "5b"
+    #     if ds=="5C": dsLabel = "5c"
+    # outFile = "./data/dbCut_%s_%s.txt" % (cutType,dsLabel)
+
+    dRanges = {} # this is the list of ch/runs to exclude
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
@@ -964,7 +987,8 @@ def getPSACutRuns(ds, cutType):
                         runList = bkg.getRunList(ds, bIdx)
                         subList = [r for r in runList if runLo <= r <= runHi and cal.GetCalIdx(calKey,r) == cIdx]
                         if len(subList)==0:
-                            print("No good runs in this sub-sub-bkgIdx")
+                            if verbose:
+                                print("No good runs in this sub-sub-bkgIdx")
                             continue
                         covLo, covHi = subList[0], subList[-1]
 
@@ -986,110 +1010,145 @@ def getPSACutRuns(ds, cutType):
                             excludeMsg = " exclude, runs %d - %d" % (covLo, covHi)
                             dRanges[ch].extend([covLo, covHi])
 
-                        print("%s  bIdx %d  sbIdx %d  cIdx %d  ch %d  th %d  fs %d  rn %d  %s" % (calKey,bIdx,sbIdx,cIdx,ch,int(goodThr),int(goodSlo),int(goodRise),excludeMsg))
+                        if verbose:
+                            print("%s  bIdx %d  sbIdx %d  cIdx %d  ch %d  th %d  fs %d  rn %d  %s" % (calKey,bIdx,sbIdx,cIdx,ch,int(goodThr),int(goodSlo),int(goodRise),excludeMsg))
 
-    # Create output suitable for ds_livetime
-    with open(outFile, 'w') as f:
-        for ch in sorted(dRanges):
-            if len(dRanges[ch]) > 0:
-                outStr = "%d" % ch
-                for r in wl.niceList(dRanges[ch], "%d", "i"): outStr += " %d" % r
-                outStr += "\n"
-                f.write(outStr)
-    print("Wrote cut file:",outFile)
+    # Create output suitable for ds_livetime (deprecated)
+    # if writeFile:
+    #     with open(outFile, 'w') as f:
+    #         for ch in sorted(dRanges):
+    #             if len(dRanges[ch]) > 0:
+    #                 outStr = "%d" % ch
+    #                 for r in wl.niceList(dRanges[ch], "%d", "i"): outStr += " %d" % r
+    #                 outStr += "\n"
+    #                 f.write(outStr)
+    #     print("Wrote cut file:",outFile)
 
-    # Create numpy output for getExposure?
-    # or maybe just return some object?
-
-
-def getReduction():
-    """ Calculate how much exposure we lose for a given outliers cut. """
-
-    enrExc, natExc, enrRates, natRates = getOutliers(False)
-
-    # print("enr")
-    # for ds,cpd,bIdx in enrExc:
-    #     print(ds,cpd,bIdx)
-
-    # print("nat")
-    # for ds,cpd,bIdx in natExc:
-    #     print(ds,cpd,bIdx)
-
+    # Create numpy output for getExposure
+    np.savez('./data/lat-psaRunCut-ds%s.npz' % ds, dRanges)
 
 
 def getExposure():
-
+    """./lat-expo.py -e
+    """
     import lat3
     from ROOT import TFile, TTree
 
-    ds, cutType = 1, "fr"
+    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
+    # format of enrExc, natExc: [:,0]=dsNum, [:,1]=cpd, [:,2]=bkgIdx
 
-    # read files
-    dsLabel = str(dsNum)
-    if isinstance(ds, str):
-        if ds=="5A": dsLabel = "5a"
-        if ds=="5B": dsLabel = "5b"
-        if ds=="5C": dsLabel = "5c"
-    outFile = "./data/dbCut_%s_%s.txt" % (cutType,dsLabel)
-
-    ds = 0
     cutType = "fr"
+    burstType = "frb"
 
-    dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
-    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
-    pars = db.Query()
-    dsMap = bkg.dsMap() # number of bIdx's
-    bkgRanges = bkg.getRanges(ds)
-    calKeys = cal.GetKeys(dsNum)
+    grandTotEnr, grandTotNat = 0, 0
 
-    # load ds_livetime output
-    tl = TFile("../data/ds_%s_livetime.root" % str(ds))
-    lt = tl.Get("dsTree")
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [0]
 
-    # have to treat modules separately
-    mods = [1]
-    if dsNum == 4: mods = [2]
-    if dsNum == 5: mods = [1,2]
-    for mod in mods:
+    for ds in dsList:
 
-        chList = det.getGoodChanList(dsNum, mod)
+        f = np.load('./data/lat-psaRunCut-ds%s.npz' % ds)
+        psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
 
-        for bIdx in bkgRanges:
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        runRanges = bkg.getRanges(dsNum)
+        chList = det.getGoodChanList(dsNum)
 
-            # get the livetime and exposure of each channel in this bkgIdx
-            # live = {ch:0 for ch in chList} # days
-            # expo = {ch:0 for ch in chList} # kg-days
-            #
-            # n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (bkgRanges[bIdx][0], bkgRanges[bIdx][1]), 'goff')
-            # ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
-            # for i in range(n):
-            #     ch = ltChan[i]
-            #     if ch not in chList: continue # this skips M2 channels when we are looking at M1 and vice versa
-            #     cpd = det.getChanCPD(dsNum,ch)
-            #     detID = det.getDetIDChan(dsNum,ch)
-            #     aMass = det.allActiveMasses[detID]
-            #     live[ch] += ltLive[i]/86400
-            #     expo[ch] += ltLive[i]*aMass/86400/1000
+        # build burst cut
+        dsTmp = ds
+        if ds=="5A": dsTmp=50
+        if ds=="5B": dsTmp=51
+        if ds=="5C": dsTmp=52
+        iE = np.where(enrExc[:,0]==dsTmp)
+        iN = np.where(natExc[:,0]==dsTmp)
+        skipList = np.vstack((enrExc[iE], natExc[iN]))
+        # print(skipList)
 
-            # for ch in chList:
-            #     cpd = det.getChanCPD(dsNum,ch)
-            #     print("%s  %d  %s  %d  lt %.2f e %.2f" % (str(ds), bIdx, cpd, ch, live[ch], expo[ch]))
-            # continue
+        # load ds_livetime output
+        tl = TFile("./data/ds_%s_livetime.root" % str(ds))
+        lt = tl.Get("dsTree")
 
-            # get the cut values
-            bkgDict, calDict, _,_ = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars,False)
+        # totals for this DS
+        expTot = {ch:0 for ch in chList}
+        psaTot = {ch:0 for ch in chList}
+        burstTot = {ch:0 for ch in chList}
+
+        # loop over bIdx's
+        for bIdx in range(bLo, bHi+1):
+
+            rLo, rHi = runRanges[bIdx][0], runRanges[bIdx][-1]
+
+            psaCutRuns = {ch:[] for ch in chList}
+            for ch in chList:
+                if len(psaRuns[ch]) > 0:
+                    for i in range(0,len(psaRuns[ch]),2):
+                        psaCutRuns[ch].extend([r for r in range(psaRuns[ch][i],psaRuns[ch][i+1]+1) if rLo <= r <= rHi])
+
+            burstCutRuns = {ch:False for ch in chList}
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
+                iSkip = np.where((skipList == (dsTmp, int(cpd), bIdx)).all(axis=1))
+                if len(iSkip[0]) > 0:
+                    burstCutRuns[ch] = True
 
-                # To make a "fr" cut file, LAT2 requires ALL THREE [thData, fsData, rnData] to be True.
-                # If any bkg or cal sub-index was missing, the whole bIdx (for this channel) gets thrown out.
-                # This was easier than being really nitpicky about the run boundaries for a minimal exposure increase.
 
-                thData = True if ch in bkgDict.keys() else False
-                fsData = True if ch in calDict.keys() and "fitSlo" in calDict[ch] else False
-                rnData = True if ch in calDict.keys() and "riseNoise" in calDict[ch] else False
+            n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (rLo, rHi), 'goff')
+            ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
+            for i in range(n):
+                ch = ltChan[i]
+                cpd = det.getChanCPD(dsNum,ch)
+                detID = det.getDetIDChan(dsNum,ch)
+                aMass = det.allActiveMasses[detID]
+                expo = ltLive[i]*aMass/86400/1000
 
-                goodCh = True if thData and fsData and rnData else False
+                if ltRun[i] in psaCutRuns[ch]:
+                    psaTot[ch] += expo
+                    continue
+
+                if burstCutRuns[ltChan[i]] is True:
+                    burstTot[ch] += expo
+                    continue
+
+                expTot[ch] += expo
+
+        # sum channels for this DS
+        dsEnrExp, dsNatExp = 0, 0
+        psaEnrExp, psaNatExp = 0, 0
+        burstEnrExp, burstNatExp = 0, 0
+        for ch in expTot:
+            isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
+            if isEnr:
+                dsEnrExp += expTot[ch]
+                psaEnrExp += psaTot[ch]
+                burstEnrExp += burstTot[ch]
+            else:
+                dsNatExp += expTot[ch]
+                psaNatExp += psaTot[ch]
+                burstNatExp += burstTot[ch]
+
+        print("DS-%s" % ds)
+        rawEnrExp = dsEnrExp + psaEnrExp + burstEnrExp
+        rawNatExp = dsNatExp + psaNatExp + burstNatExp
+        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f" % (dsEnrExp, rawEnrExp, psaEnrExp, burstEnrExp))
+        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f" % (dsNatExp, rawNatExp, psaNatExp, burstNatExp))
+
+        grandTotEnr += dsEnrExp
+        grandTotNat += dsNatExp
+
+    # grand totals
+    grandTotEnr /= 365.25
+    grandTotNat /= 365.25
+    print("\nTotals for DS:",dsList)
+    print("Enriched (kg-y): %.4f" % (grandTotEnr))
+    print("Natural (kg-y) : %.4f" % (grandTotNat))
+
+    # np.savez("./data/expo-totals.npz", grand)
 
 
 def makeFinalFiles():
@@ -1103,7 +1162,7 @@ def makeFinalFiles():
     print("hi")
 
 
-def makeWFMovies():
+def makeMovies():
 
     # just a thought, we'll certainly want to see these here.
 
