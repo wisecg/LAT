@@ -38,6 +38,8 @@ def getRates():
 
     cutType = "fr"
 
+    tOffCut = "tOffset < 100"
+
     opt = ""
     # opt = "verbose"  # print results for every channel, every bIdx
     # opt = "zombie" # hits from a detector declared dead by livetime calc
@@ -98,14 +100,14 @@ def getRates():
                     # print("'Zombie' detector: DS-%s  bIdx %d  cpd %s  ch %d exposure 0, hits %d" % (ds, bIdx, cpd, ch, nEvt))
                     continue
 
-                n1 = tt.Draw("run:channel","trapENFCal >= %.1f && trapENFCal <= %.1f" % (rateWin1[0], rateWin1[1]), "goff")
+                n1 = tt.Draw("run:channel","trapENFCal >= %.1f && trapENFCal <= %.1f && %s" % (rateWin1[0], rateWin1[1], tOffCut), "goff")
                 hitC = tt.GetV2()
                 hitC = list(set([hitC[i] for i in range(n1)]))
                 if len(hitC) > 1:
                     print("ERROR: Looking for channel %d, found channels" % ch, hitC)
                     exit(1)
 
-                n2 = tt.Draw("Entry$:Iteration$","trapENFCal >= %.1f && trapENFCal <= %.1f" % (rateWin2[0], rateWin2[1]), "goff")
+                n2 = tt.Draw("Entry$:Iteration$","trapENFCal >= %.1f && trapENFCal <= %.1f && %s" % (rateWin2[0], rateWin2[1], tOffCut), "goff")
                 r1 = n1/expo/(rateWin1[1]-rateWin1[0]) # cts/kg-d-kev
                 r2 = n2/expo/(rateWin2[1]-rateWin2[0])
 
@@ -392,6 +394,8 @@ def makeCutFiles():
 
     cutType = "fr"
 
+    tOffCut = "tOffset < 100"
+
     # which burst cut do we want?
     pass2 = False
     outType = "frb2" if pass2 else "frb"
@@ -471,12 +475,12 @@ def makeCutFiles():
                 outName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, outType, outType, dsNum, bIdx, ch)
                 outFile = TFile(outName, "RECREATE")
                 outTree = TTree()
-                outTree = tt.CopyTree("")
+                outTree = tt.CopyTree(tOffCut)
                 # print("Wrote %d entries." % outTree.GetEntries())
 
-                if nEvt != outTree.GetEntries():
-                    print("ERROR, number of entries don't match: input %d  output %d" % (nEvt, outTree.GetEntries()))
-                    return
+                # if nEvt != outTree.GetEntries():
+                    # print("ERROR, number of entries don't match: input %d  output %d" % (nEvt, outTree.GetEntries()))
+                    # return
 
                 outTree.Write()
                 outFile.Close()

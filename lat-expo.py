@@ -71,7 +71,7 @@ def main(argv):
                 getPSACutRuns(ds,"fr")
 
         # finally, calculate exposure!
-        if opt=="-e":
+        if opt=="-xp":
             getExposure()
 
         # generate efficiency functions
@@ -82,83 +82,13 @@ def main(argv):
         if opt=="-f":
             makeFinalFiles()
 
-        if opt=="-m":
+        # make waveform movies
+        if opt=="-wfm":
             makeMovies()
 
-
+    # debug/cleanup functions
     # compareCoverage()
     # spotCheckThresh()
-
-
-def compareCoverage():
-    # seeing some discrepancies between the old version of getSettings (just used bkg lists)
-    # and the new version, which uses cal ranges.
-    # w/o accessing the data itself, make sure that we're covering all the runs we THINK we're covering.
-
-    # new method (by calIdx)
-    coveredRunsNew = []
-    for ds in [0,1,2,3,4,5,6]:
-        for key in cal.GetKeys(ds):
-            mod = -1
-            if "m1" in key: mod = 1
-            if "m2" in key: mod = 2
-            for cIdx in range(cal.GetIdxs(key)):
-                dbKeyTH = "trapThr_%s_c%d" % (key, cIdx)
-                runList = []
-                calLo, calHi = cal.GetCalRunCoverage(key,cIdx)
-                for run in bkg.getRunList(ds):
-                    if (calLo <= run <= calHi):
-                        runList.append(run)
-                        coveredRunsNew.append(run)
-                # calList = cal.GetCalList(key,cIdx)
-                # runList.append(calList[0])
-                # runList = sorted(runList)
-
-    coveredRunsOld = []
-    for ds in [0,1,2,3,4,5,6]:
-        runList = bkg.getRunList(ds)
-        for run in runList:
-            coveredRunsOld.append(run)
-
-    # find runs that are in one list but not the other
-    for run in list(set(coveredRunsOld+coveredRunsNew)):
-        if run not in coveredRunsOld:
-            print("run %d not in old run list!" % run)
-            break
-        if run not in coveredRunsNew:
-            print("run %d not in new run list!" % run)
-            break
-
-    print("Run lists match!")
-
-
-def spotCheckThresh():
-    from ROOT import GATDataSet, TFile, MJTChannelMap, MJTChannelSettings
-
-    run, ds, sub, cIdx = 5889, 0, 70, 23
-    checkDet = 122
-
-    gds = GATDataSet()
-    runPath = gds.GetPathToRun(run,GATDataSet.kGatified)
-    tf = TFile(runPath)
-    chSet = tf.Get("ChannelSettings")
-    chMap = tf.Get("ChannelMap")
-    for ch in chSet.GetEnabledIDList():
-
-        detName = chMap.GetString(ch, "kDetectorName")
-        detCPD = chMap.GetString(ch,"kStringName")+"D"+str(chMap.GetInt(ch,"kDetectorPosition"))
-        detID = ''.join(i for i in detCPD if i.isdigit())
-
-        # access threshold and HV settings
-        gretCrate = chMap.GetInt(ch,"kVME")
-        gretCard = chMap.GetInt(ch,"kCardSlot")
-        gretHG = chMap.GetInt(ch,"kChanHi")
-        gretLG = chMap.GetInt(ch,"kChanLo")
-        threshHG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretHG,"ORGretina4MModel")
-        threshLG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretLG,"ORGretina4MModel")
-
-        if detCPD=='C1P2D2':
-            print(ch, detCPD, detID, threshHG)
 
 
 def settingsMgr(dsIn=None, subIn=None, modIn=None, writeDB=False):
@@ -866,61 +796,129 @@ def getThreshDB():
                 print(key)
 
 
-"""
-    ** For BOTH of these, the DB has already been updated to reflect these changes **
+def compareCoverage():
+    # seeing some discrepancies between the old version of getSettings (just used bkg lists)
+    # and the new version, which uses cal ranges.
+    # w/o accessing the data itself, make sure that we're covering all the runs we THINK we're covering.
 
-    fitSlo detectors cut:  (lat2::setSloCut)
-    # Detectors to cut.  This is from inspecting the 'makePlots' output.
-    # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
-    # NOTE: these detectors could be brought back if we included the DS6 cal runs
-    # to bump up the stats in M2.
-    cutDets = ['211','214','221','261','274']
+    # new method (by calIdx)
+    coveredRunsNew = []
+    for ds in [0,1,2,3,4,5,6]:
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                dbKeyTH = "trapThr_%s_c%d" % (key, cIdx)
+                runList = []
+                calLo, calHi = cal.GetCalRunCoverage(key,cIdx)
+                for run in bkg.getRunList(ds):
+                    if (calLo <= run <= calHi):
+                        runList.append(run)
+                        coveredRunsNew.append(run)
+                # calList = cal.GetCalList(key,cIdx)
+                # runList.append(calList[0])
+                # runList = sorted(runList)
 
-    fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
-    dbVals[ch] = [fsCut, fs200, nBin]
+    coveredRunsOld = []
+    for ds in [0,1,2,3,4,5,6]:
+        runList = bkg.getRunList(ds)
+        for run in runList:
+            coveredRunsOld.append(run)
+
+    # find runs that are in one list but not the other
+    for run in list(set(coveredRunsOld+coveredRunsNew)):
+        if run not in coveredRunsOld:
+            print("run %d not in old run list!" % run)
+            break
+        if run not in coveredRunsNew:
+            print("run %d not in new run list!" % run)
+            break
+
+    print("Run lists match!")
 
 
-    riseNoise chan/calIdx cut: (lat2::badRiseChans)
-    # the corresponding plots are saved in ./plots/rise/ for reference
-    removeList = {}
-    removeList["ds0_m1"] = {
-        692:[26,27]   # HF burst
-        }
-    removeList["ds1_m1"] = {
-        594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
-        692:[56]                    # too much curvature
-        }
-    removeList["ds3_m1"] = {
-        594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
-        }
-    removeList["ds4_m2"] = {
-        1106:[1,4,7,8], # HF burst
-        1136:[4,7,8],   # "
-        1144:[7],       # too much curvature
-        1296:[4,7,8],   # HF burst
-        1298:[4]        # "
-        }
-    removeList["ds5_m1"] = {
-        584:[7],    # threshold noise causes too much curvature
-        608:[7,8],  # "
-        632:[7],    # "
-        662:[8],    # "
-        692:[7,8]   # "
-        }
-    removeList["ds5_m2"] = {
-        1232:[4,5,6,7],     # threshold noise causes too much curvature
-        1236:[4,5,6,7,8],   # "
-        1298:[4,5,6,7],     # "
-        1330:[4,6,7,8],     # "
-        1332:[4]            # "
-        }
-"""
+def spotCheckThresh():
+    from ROOT import GATDataSet, TFile, MJTChannelMap, MJTChannelSettings
+
+    run, ds, sub, cIdx = 5889, 0, 70, 23
+    checkDet = 122
+
+    gds = GATDataSet()
+    runPath = gds.GetPathToRun(run,GATDataSet.kGatified)
+    tf = TFile(runPath)
+    chSet = tf.Get("ChannelSettings")
+    chMap = tf.Get("ChannelMap")
+    for ch in chSet.GetEnabledIDList():
+
+        detName = chMap.GetString(ch, "kDetectorName")
+        detCPD = chMap.GetString(ch,"kStringName")+"D"+str(chMap.GetInt(ch,"kDetectorPosition"))
+        detID = ''.join(i for i in detCPD if i.isdigit())
+
+        # access threshold and HV settings
+        gretCrate = chMap.GetInt(ch,"kVME")
+        gretCard = chMap.GetInt(ch,"kCardSlot")
+        gretHG = chMap.GetInt(ch,"kChanHi")
+        gretLG = chMap.GetInt(ch,"kChanLo")
+        threshHG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretHG,"ORGretina4MModel")
+        threshLG = chSet.GetInt("TRAP Threshold",gretCrate,gretCard,gretLG,"ORGretina4MModel")
+
+        if detCPD=='C1P2D2':
+            print(ch, detCPD, detID, threshHG)
+
 
 def getPSACutRuns(ds, cutType, verbose=False):
     """ ./chan-sl.py -cov [ds] [cutType]
     Check which bkgIdx's we have good cut values for,
     accounting for multiple bkg and cal sub-Idx's.
     This is a 5-layered loop, which is pretty badass.
+
+        ** For BOTH of these, the DB has already been updated to reflect these changes **
+
+        ========= fitSlo detectors cut:  (lat2::setSloCut) =========
+        # Detectors to cut.  This is from inspecting the 'makePlots' output.
+        # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
+        # NOTE: these detectors could be brought back if we included the DS6 cal runs
+        # to bump up the stats in M2.
+        cutDets = ['211','214','221','261','274']
+
+        fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
+        dbVals[ch] = [fsCut, fs200, nBin]
+
+        ========= riseNoise chan/calIdx cut: (lat2::badRiseChans) =========
+        # the corresponding plots are saved in ./plots/rise/ for reference
+        removeList = {}
+        removeList["ds0_m1"] = {
+            692:[26,27]   # HF burst
+            }
+        removeList["ds1_m1"] = {
+            594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
+            692:[56]                    # too much curvature
+            }
+        removeList["ds3_m1"] = {
+            594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
+            }
+        removeList["ds4_m2"] = {
+            1106:[1,4,7,8], # HF burst
+            1136:[4,7,8],   # "
+            1144:[7],       # too much curvature
+            1296:[4,7,8],   # HF burst
+            1298:[4]        # "
+            }
+        removeList["ds5_m1"] = {
+            584:[7],    # threshold noise causes too much curvature
+            608:[7,8],  # "
+            632:[7],    # "
+            662:[8],    # "
+            692:[7,8]   # "
+            }
+        removeList["ds5_m2"] = {
+            1232:[4,5,6,7],     # threshold noise causes too much curvature
+            1236:[4,5,6,7,8],   # "
+            1298:[4,5,6,7],     # "
+            1330:[4,6,7,8],     # "
+            1332:[4]            # "
+            }
     """
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
@@ -1029,7 +1027,9 @@ def getPSACutRuns(ds, cutType, verbose=False):
 
 
 def getExposure():
-    """./lat-expo.py -e
+    """./lat-expo.py -xp
+
+    TODO: Add uncertainty from active mass?
     """
     import lat3
     from ROOT import TFile, TTree
@@ -1040,11 +1040,21 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
+    # # these detectors have noise features that the PSA and burst cuts aren't able to remove.
+    # finalDetCut = [
+    #     [0,'152'],    # enr, noise wall at ~2.8 keV
+    #     [0,'141'],    # nat, noise wall at ~2.1 keV
+    #     ['5A','253'], # enr, noise wall at ~5.2 keV
+    # ]
+
     grandTotEnr, grandTotNat = 0, 0
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
+
+    dsExpo = {} # save this to a file
 
     for ds in dsList:
 
@@ -1078,6 +1088,7 @@ def getExposure():
         expTot = {ch:0 for ch in chList}
         psaTot = {ch:0 for ch in chList}
         burstTot = {ch:0 for ch in chList}
+        # detTot = {ch:0 for ch in chList}
 
         # loop over bIdx's
         for bIdx in range(bLo, bHi+1):
@@ -1107,6 +1118,8 @@ def getExposure():
                 aMass = det.allActiveMasses[detID]
                 expo = ltLive[i]*aMass/86400/1000
 
+                expTot[ch] += expo
+
                 if ltRun[i] in psaCutRuns[ch]:
                     psaTot[ch] += expo
                     continue
@@ -1115,31 +1128,45 @@ def getExposure():
                     burstTot[ch] += expo
                     continue
 
-                expTot[ch] += expo
+                # if [ds,cpd] in finalDetCut:
+                #     detTot[ch] += expo
+                #     continue
 
         # sum channels for this DS
-        dsEnrExp, dsNatExp = 0, 0
+        rawEnrExp, rawNatExp = 0, 0
         psaEnrExp, psaNatExp = 0, 0
         burstEnrExp, burstNatExp = 0, 0
-        for ch in expTot:
+        # detEnrExp, detNatExp = 0, 0
+        dsEnrExp, dsNatExp = 0, 0   # results
+
+        for ch in chList:
             isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
             if isEnr:
-                dsEnrExp += expTot[ch]
+                rawEnrExp += expTot[ch]
                 psaEnrExp += psaTot[ch]
                 burstEnrExp += burstTot[ch]
+                # detEnrExp += detTot[ch]
+                dsEnrExp += expTot[ch] - psaTot[ch] - burstTot[ch]# - detTot[ch]
             else:
-                dsNatExp += expTot[ch]
+                rawNatExp += expTot[ch]
                 psaNatExp += psaTot[ch]
                 burstNatExp += burstTot[ch]
+                # detNatExp += detTot[ch]
+                dsNatExp += expTot[ch] - psaTot[ch] - burstTot[ch]# - detTot[ch]
 
         print("DS-%s" % ds)
-        rawEnrExp = dsEnrExp + psaEnrExp + burstEnrExp
-        rawNatExp = dsNatExp + psaNatExp + burstNatExp
-        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f" % (dsEnrExp, rawEnrExp, psaEnrExp, burstEnrExp))
-        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f" % (dsNatExp, rawNatExp, psaNatExp, burstNatExp))
+
+        enrDiff = dsEnrExp - rawEnrExp
+        natDiff = dsNatExp - rawNatExp
+
+        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsEnrExp,rawEnrExp,psaEnrExp,burstEnrExp,enrDiff))
+
+        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsNatExp,rawNatExp,psaNatExp,burstNatExp,natDiff))
 
         grandTotEnr += dsEnrExp
         grandTotNat += dsNatExp
+
+        dsExpo[ds] = [dsEnrExp, dsNatExp]
 
     # grand totals
     grandTotEnr /= 365.25
@@ -1148,25 +1175,189 @@ def getExposure():
     print("Enriched (kg-y): %.4f" % (grandTotEnr))
     print("Natural (kg-y) : %.4f" % (grandTotNat))
 
-    # np.savez("./data/expo-totals.npz", grand)
+    # save output
+    np.savez("./data/expo-totals.npz", dsExpo)
 
 
 def makeFinalFiles():
+    """ ./lat-expo.py -f
+    TChain the 'frb' files for each dataset and make output files for spec-fit and others.
+    Save the enriched & natural exposure into the files too
+    """
+    from ROOT import TChain, TFile, TTree, TNamed, MGTWaveform
 
-    # mmm. there are still some threshold noise peaks in several of the spectra.
+    cutType = "frb"
+    outType = "final"
 
-    # you better figure out an analysis threshold (in lat3) before you do this.
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5B"]
+    # dsList = [0]
 
-    # just TChain the 'frb' files for each dataset and make output files for spec-fit and others.
+    # these detectors have noise features that the PSA and burst cuts aren't able to remove.
+    # finalDetCut = [
+    #     [0,'152'],    # enr, noise wall at ~2.8 keV
+    #     [0,'141'],    # nat, noise wall at ~2.1 keV
+    #     ['5A','253'], # enr, noise wall at ~5.2 keV
+    # ]
 
-    print("hi")
+    for ds in dsList:
+
+        outName = "%s/bkg/cut/%s/%s_DS%s.root" % (dsi.dataDir, outType, outType, ds)
+        print("Writing final LAT output:",outName)
+
+        dummyTree = TChain("skimTree")
+
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        chList = det.getGoodChanList(dsNum)
+
+        for bIdx in range(bLo, bHi+1):
+            for ch in sorted(chList):
+
+                fName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, cutType, dsNum, bIdx, ch)
+                if not os.path.isfile(fName): continue
+
+                # cpd = det.getChanCPD(dsNum,ch)
+                # if [ds,cpd] in finalDetCut: continue
+
+                dummyTree.Add(fName)
+
+        # here is where you might put a last minute cut
+        tCut = ""
+
+        outFile = TFile(outName, "RECREATE")
+        outTree = TTree()
+        outTree = dummyTree.CopyTree(tCut)
+        outTree.Write()
+
+        f = np.load("./data/expo-totals.npz")
+        dsExpo = f['arr_0'].item()
+        enrExpTot = dsExpo[ds][0]
+        natExpTot = dsExpo[ds][1]
+        enrExp = TNamed("enrExp (kg-d)","%.4f" % enrExpTot)
+        natExp = TNamed("natExp (kg-d)","%.4f" % natExpTot)
+        enrExp.Write()
+        natExp.Write()
+
+        outFile.Close()
 
 
 def makeMovies():
+    """ ./lat-expo.py -wfm
+    Makes .mp4 movies of waveforms in our final spectra.
+    Default is only to save under 10 keV.
+    Requires ffmpeg.  (brew install ffmpeg)
+    """
+    from ROOT import TFile, TTree, MGTWaveform
+    import matplotlib.pyplot as plt
+    plt.style.use('./pltReports.mplstyle')
+    from matplotlib import animation
+    import pywt
 
-    # just a thought, we'll certainly want to see these here.
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    wfLimit = None
 
-    print("hi")
+    # dsList = [0]
+    # wfLimit = 500
+
+    for ds in dsList:
+
+        outFile = "./plots/final-wfs-DS%s.mp4" % ds
+        print("Saving WFs for DS-%s: %s" % (ds, outFile))
+
+        inFile = "%s/bkg/cut/final/final_DS%s.root" % (dsi.dataDir, ds)
+        tf = TFile(inFile)
+        tt = tf.Get("skimTree")
+
+        # make an entry list
+        tCut = "trapENFCal >= 1 && trapENFCal <= 10"
+
+        # simple entry list
+        # n = tt.Draw("Entry$:Iteration$",tCut,"goff")
+        # evt, itr = tt.GetV1(), tt.GetV2()
+        # evtList = [[int(evt[i]),int(itr[i])] for i in range(n)]
+
+        # fancy entry list, sorted by energy
+        n = tt.Draw("Entry$:Iteration$:trapENFCal",tCut,"goff")
+        evt, itr, ene = tt.GetV1(), tt.GetV2(), tt.GetV3()
+        ene = [ene[i] for i in range(n)]
+        eHit = np.argsort(ene) # sort by ascending energy
+        # eHit = np.flip(np.argsort(ene), axis=0) # sort by descending energy
+        evtList = [[int(evt[i]),int(itr[i])] for i in eHit]
+
+        # set up the figure, the axis, and the plot element we want to animate
+        fig = plt.figure(figsize=(10,6))
+        nFont = 14
+        a1 = plt.subplot(111)
+        a1.set_xlabel("Time (ns)", ha='right', x=1, fontsize=nFont)
+        a1.set_ylabel("Voltage (ADC)", ha='right', y=1, fontsize=nFont)
+
+        p1, = a1.plot(np.ones(1), np.ones(1), c='b')
+        p2, = a1.plot(np.ones(1), np.ones(1), c='k',alpha=0.6)
+
+        # initialization: plot the background of each frame
+        def init():
+            p1.set_data([],[])
+            return p1,
+
+        # this is the loop over entries
+        def animate(i):
+
+            iE = evtList[i][0]
+            iH = evtList[i][1]
+            tt.GetEntry(iE)
+
+            run = tt.run
+            chan = tt.channel.at(iH)
+            hitE = tt.trapENFCal.at(iH)
+            fSlo = tt.fitSlo.at(iH)
+            rise = tt.riseNoise.at(iH)
+
+            wf = tt.MGTWaveforms.at(iH)
+            truncLo, truncHi = 0, 2
+            if ds==6 or ds==2: truncLo = 4
+            signal = wl.processWaveform(wf,truncLo,truncHi)
+
+            waveBLSub = signal.GetWaveBLSub()
+            waveTS = signal.GetTS()
+            p1.set_ydata(waveBLSub)
+            p1.set_xdata(waveTS)
+
+            # wavelet denoised
+            wp = pywt.WaveletPacket(waveBLSub, 'db2', 'symmetric', maxlevel=4)
+            new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
+            new_wp['aaa'] = wp['aaa'].data
+            waveDenoised = new_wp.reconstruct(update=False)
+            diff = len(waveDenoised) - len(waveBLSub)
+            if diff > 0: waveDenoised = waveDenoised[diff:]
+            p2.set_ydata(waveDenoised)
+            p2.set_xdata(waveTS)
+
+            plt.title("Run %d  Ch %d  iE %d/%d  trapENFCal %.1f  fitSlo %.1f  riseNoise %.1f" % (run,chan,i,len(evtList),hitE,fSlo,rise), fontsize=nFont)
+
+            # dynamically scale the axes
+            xmin, xmax = np.amin(waveTS), np.amax(waveTS)
+            a1.set_xlim([xmin,xmax])
+
+            ymin, ymax = np.amin(waveDenoised), np.amax(waveDenoised)
+            yLo = -7 if ymin-abs(0.1 * ymin) < 7 else ymin-abs(0.1 * ymin)
+            yHi = ymax + abs(0.5+ymax)
+            a1.set_ylim([yLo,yHi])
+
+            # print("%d / %d  Run %d  nCh %d  chan %d  trapE %.1f  samp %d" % (i,nList,run,nChans,chan,energy,wf.GetLength()))
+            if i % 500 == 0 and i != 0:
+                print("%d / %d entries saved (%.2f %% done)." % (i,len(evtList),100*(float(i)/len(evtList))))
+            return p1,
+
+        # make the movie
+        nWF = wfLimit if wfLimit is not None else len(evtList)
+        anim = animation.FuncAnimation(fig, animate, init_func=init, frames=nWF, interval=0, blit=False)
+        anim.save(outFile, fps=20)#, extra_args=['-vcodec', 'libx264'])
 
 
 if __name__=="__main__":

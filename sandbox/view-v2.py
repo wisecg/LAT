@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 import numpy as np
+import pywt
 import waveLibs as wl
 from scipy.signal import butter, lfilter
-from ROOT import TChain, TTree
+from ROOT import TFile, TChain, TTree
 
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
@@ -16,12 +17,10 @@ def main(argv):
             print("Quick draw mode selected.")
             quickDraw = True
 
-    ds = 5
-    tt = TChain("skimTree")
+    ds = "5A"
+    # tt = TChain("skimTree")
     # tt.Add("~/project/cal/lat/*.root")
-    tt.Add("~/project/cal/lat/latSkimDS1_run13774_0.root")
-    # tt.Print("toponly")
-    # return
+    # tt.Add("~/project/cal/lat/latSkimDS1_run13774_0.root")
 
     # tCut = "trapENFCal > 238 && trapENFCal < 239" # 238 kev wf, thesis plot
     # tCut = "trapENFCal >= 1.0 && trapENFCal < 1.2 && channel!=598  && trapENFCal > threshKeV+3*threshSigma && fitSlo < 100" # 1 kev wf, thesis plot
@@ -29,8 +28,11 @@ def main(argv):
     # tCut = "trapENFCal > 16 && trapENFCal < 16.1 && fitSlo < 100 && tOffset<10"
     # tCut = "trapENFCal > 16 && trapENFCal < 16.1 && fitSlo > 100"
 
-    tCut = "trapENFCal >= 1.1 && trapENFCal <= 1.2"
+    # don't open the final files as tchains, it made a big segfault??
+    tf = TFile("~/project/bkg/cut/final/final_DS%s.root" % ds)
+    tt = tf.Get("skimTree")
 
+    tCut = "trapENFCal >= 1 && trapENFCal < 4"
 
     n = tt.Draw("Entry$:Iteration$",tCut,"goff")
     evt, itr = tt.GetV1(), tt.GetV2()
@@ -90,9 +92,20 @@ def main(argv):
         B, A = butter(2,1e6/(1e8/2), btype='lowpass')
         waveLP = lfilter(B, A, waveBLSub)
 
+        # wavelet denoised
+        wp = pywt.WaveletPacket(waveBLSub, 'db2', 'symmetric', maxlevel=4)
+        new_wp = pywt.WaveletPacket(data=None, wavelet='db2', mode='symmetric')
+        new_wp['aaa'] = wp['aaa'].data
+        waveDenoised = new_wp.reconstruct(update=False)
+        # resize in a smart way
+        diff = len(waveDenoised) - len(waveBLSub)
+        if diff > 0: waveDenoised = waveDenoised[diff:]
+
         plt.cla()
-        plt.plot(waveTS, waveBLSub, 'b', label='Raw WF, %.2f keV' % (hitE))
-        plt.plot(waveTS, waveLP, 'r', alpha=0.7, label='Low-pass filter')
+        plt.plot(waveTS, waveBLSub, 'b', alpha=0.2, label='Raw WF, %.2f keV' % (hitE))
+        # plt.plot(waveTS, waveLP, 'r', alpha=0.7, label='Low-pass filter')
+        plt.plot(waveTS, waveDenoised, "r", label="Denoised WF")
+
 
         plt.xlabel("Time (ns)", ha='right', x=1)
         plt.ylabel("Voltage (ADC)", ha='right',y=1)
