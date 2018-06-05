@@ -74,10 +74,6 @@ def main(argv):
         if opt=="-xp":
             getExposure()
 
-        # generate efficiency functions
-        if opt=="-eff":
-            getEfficiency()
-
         # make final output files
         if opt=="-f":
             makeFinalFiles()
@@ -85,6 +81,10 @@ def main(argv):
         # make waveform movies
         if opt=="-wfm":
             makeMovies()
+
+        # get efficiency functions
+        if opt == "-eff":
+            getEfficiency()
 
     # debug/cleanup functions
     # compareCoverage()
@@ -1282,7 +1282,7 @@ def makeMovies():
         # evt, itr = tt.GetV1(), tt.GetV2()
         # evtList = [[int(evt[i]),int(itr[i])] for i in range(n)]
 
-        # fancy entry list, sorted by energy
+        # slightly fancy entry list, sorted by energy
         n = tt.Draw("Entry$:Iteration$:trapENFCal",tCut,"goff")
         evt, itr, ene = tt.GetV1(), tt.GetV2(), tt.GetV3()
         ene = [ene[i] for i in range(n)]
@@ -1358,6 +1358,275 @@ def makeMovies():
         nWF = wfLimit if wfLimit is not None else len(evtList)
         anim = animation.FuncAnimation(fig, animate, init_func=init, frames=nWF, interval=0, blit=False)
         anim.save(outFile, fps=20)#, extra_args=['-vcodec', 'libx264'])
+
+
+def getEfficiency():
+    """ ./lat-expo.py -eff
+    Same structure as getPSACutRuns, looping over sub-sub-bkgIdx's.
+    Wow, it's a 6-layer loop.  Can I get a degree yet?
+    """
+    import lat3
+    from ROOT import TFile, TTree
+    import matplotlib.pyplot as plt
+    plt.style.use('./pltReports.mplstyle')
+
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
+
+    mode = "trig"  # trigger efficiency only
+    # mode = "all"   # does all PS
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = ["5A"]
+
+    # efficiency output
+    xLo, xHi = 0, 50
+    xEff = np.arange(xLo, xHi, 0.01)
+    totEnrEff = {ds:np.zeros(len(xEff)) for ds in dsList}
+    totNatEff = {ds:np.zeros(len(xEff)) for ds in dsList}
+    detEff = {ds:{} for ds in dsList}
+    for ds in dsList:
+        detEff[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
+
+    # recalculate these, make sure they match getExposure
+    enrExp = {ds:0 for ds in dsList}
+    natExp = {ds:0 for ds in dsList}
+
+    # 1. loop over datasett
+    for ds in dsList:
+
+        # set DS stuff
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        nBkg = bkg.dsMap()[dsNum]
+        bLo, bHi = 0, nBkg
+        if ds=="5A": bLo, bHi = 0, 79
+        if ds=="5B": bLo, bHi = 80, 112
+        if ds=="5C": bLo, bHi = 113, 121
+        bkgRanges = bkg.getRanges(ds)
+
+        # get psa cut runs and detector fitSlo efficiencies
+        f = np.load('./data/lat-psaRunCut-ds%s.npz' % ds)
+        psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
+        fsD = dsi.getDBRecord("fitSlo_cpd_eff", False, calDB, pars)
+
+        # get burst cut
+        dsTmp = ds
+        if ds=="5A": dsTmp=50
+        if ds=="5B": dsTmp=51
+        if ds=="5C": dsTmp=52
+        iE = np.where(enrExc[:,0]==dsTmp)
+        iN = np.where(natExc[:,0]==dsTmp)
+        skipList = np.vstack((enrExc[iE], natExc[iN]))
+        # print(skipList)
+
+        # load ds_livetime output
+        tl = TFile("./data/ds_%s_livetime.root" % str(ds))
+        lt = tl.Get("dsTree")
+
+        # 2. loop over modules
+        mods = [1]
+        if dsNum == 4: mods = [2]
+        if dsNum == 5: mods = [1,2]
+        for mod in mods:
+
+            calKey = "ds%d_m%d" % (dsNum, mod)
+            if ds == "5C": calKey = "ds5c"
+            if calKey not in cal.GetKeys(dsNum):
+                print("Error: Unknown cal key:",calKey)
+                return
+
+            print("Scanning DS-%s, m%d ..." % (ds, mod))
+
+            chList = det.getGoodChanList(dsNum, mod)
+
+            # save total efficiency for each channel in this DS
+            totEff = {ch:np.zeros(len(xEff)) for ch in chList}
+            trigEff = {ch:np.zeros(len(xEff)) for ch in chList}
+            fSloEff = {ch:np.zeros(len(xEff)) for ch in chList}
+
+            # 3. loop over bkgIdx
+            for i, bIdx in enumerate(bkgRanges):
+
+                # load bkg (trigger) and cal (PSA) cut coverage
+                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,False)
+
+                rLo, rHi = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
+
+                # get psa cut runs
+                psaCutRuns = {ch:[] for ch in chList}
+                for ch in chList:
+                    if len(psaRuns[ch]) > 0:
+                        for i in range(0,len(psaRuns[ch]),2):
+                            psaCutRuns[ch].extend([r for r in range(psaRuns[ch][i],psaRuns[ch][i+1]+1) if rLo <= r <= rHi])
+
+                # get burst cut runs
+                burstCutRuns = {ch:False for ch in chList}
+                for ch in chList:
+                    cpd = det.getChanCPD(dsNum,ch)
+                    iSkip = np.where((skipList == (dsTmp, int(cpd), bIdx)).all(axis=1))
+                    if len(iSkip[0]) > 0:
+                        burstCutRuns[ch] = True
+
+                # 4. loop over sub-bIdx
+                subRanges = bkg.GetSubRanges(ds, bIdx)
+                if len(subRanges) == 0: subRanges.append((rLo, rHi))
+                for sbIdx, (subLo, subHi) in enumerate(subRanges):
+
+                    # load trigger efficiencies
+                    key = "thresh_ds%d_bkg%d_sub%d" % (dsNum, bIdx, sbIdx)
+                    thD = dsi.getDBRecord(key, False, calDB, pars)
+
+                    # 5. loop over cIdx's in this sub-bIdx
+                    cIdxLo, cIdxHi = cal.GetCalIdx(calKey, subLo), cal.GetCalIdx(calKey, subHi)
+                    for i, cIdx in enumerate(range(cIdxLo, cIdxHi+1)):
+
+                        # get the run coverage of this sub-sub-bIdx
+                        if cIdxLo==cIdxHi:
+                            covLo, covHi = subLo, subHi
+                        else:
+                            runList = bkg.getRunList(ds, bIdx)
+                            subList = [r for r in runList if subLo <= r <= subHi and cal.GetCalIdx(calKey,r) == cIdx]
+                            if len(subList)==0: continue
+                            covLo, covHi = subList[0], subList[-1]
+
+                        # calculate exposure for this sub-sub-bIdx
+                        subExpo = {ch:0 for ch in chList}
+                        n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (covLo, covHi), 'goff')
+                        ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
+                        for j in range(n):
+                            ch = ltChan[j]
+                            detID = det.getDetIDChan(dsNum,ch)
+                            aMass = det.allActiveMasses[detID]
+                            expo = ltLive[j]*aMass/86400/1000
+
+                            # since we're splitting by module, ignore channels in the other module
+                            # print(ds, mod, int(cpd[0]))
+                            # exit()
+
+                            if ch < 1000 and mod!=1: continue
+                            if ch > 1000 and mod!=2: continue
+
+                            if ltRun[j] in psaCutRuns[ch]:
+                                continue
+                            if burstCutRuns[ltChan[j]] is True:
+                                continue
+                            subExpo[ch] += expo
+
+                            if detID > 100000:
+                                enrExp[ds] += expo
+                            else:
+                                natExp[ds] += expo
+
+                        # 6. loop over channels
+                        for ch in chList:
+
+                            goodThr = True if bkgCov[ch][sbIdx] else False
+                            goodSlo = True if calCov[ch][0][i+1] else False
+                            goodRise = True if calCov[ch][1][i+1] else False
+                            if not (goodThr and goodSlo and goodRise):
+                                continue
+
+                            # finally, get trigger, fitSlo, and riseNoise efficiencies and scale by exposure
+
+                            # trigger
+                            mu, sig, isGood = thD[ch]
+                            if isGood != 0:
+                                print("error, bad threshold, ch",ch)
+                                exit(1)
+                            effThresh = mu + 3*sig
+                            idx = np.where(xEff >= effThresh)
+                            nPad = len(xEff) - len(xEff[idx])
+                            tEff = wl.erFunc(xEff[idx],mu,sig,1)
+                            tEff = np.pad(tEff, (nPad,0), 'constant')
+                            tEff = np.multiply(tEff, subExpo[ch])
+
+                            trigEff[ch] += tEff
+
+                            # fitSlo & riseNoise
+                            cpd = int(det.getChanCPD(dsNum,ch))
+                            c, loc, scale, amp = fsD[cpd][3], fsD[cpd][4], fsD[cpd][5], fsD[cpd][2]
+                            fEff = wl.weibull(xEff,c,loc,scale,amp)
+
+                            riseEff = 0.995 # riseNoise is defined to be 99.5% efficient, no energy dependence
+                            fEff = np.multiply(fEff, riseEff)
+
+                            fSloEff[ch] += fEff
+
+                            # total efficiency
+                            if mode == "trig":
+                                totEff[ch] += tEff
+                            elif mode == "all":
+                                totEff[ch] += np.multiply(tEff, fEff) # this is what we want
+                            else:
+                                print("Unknown mode! exiting ...")
+                                exit()
+
+            # plot individual efficiencies
+            # for ch in chList:
+            #     plt.plot(xEff, trigEff[ch], '-')
+            #     plt.plot(xEff, fSloEff[ch], '-')
+            #     plt.plot(xEff, totEff[ch], '-')
+            # plt.xlim(0,10)
+            # plt.show()
+
+            for ch in chList:
+                cpd = det.getChanCPD(dsNum,ch)
+                detEff[ds][cpd] = totEff[ch]
+                # print(ch, cpd, detEff[ds][cpd][500:520], totEff[ch][500:520])
+
+            # plt.plot(xEff,detEff[ds]['164'])
+            # plt.show()
+            # exit()
+
+        # ========= Done w/ 5 layer loop.  whew! =======
+
+        # get total enr/nat efficiency for this DS
+        for cpd in detEff[ds]:
+
+            if det.allDetIDs[cpd] > 100000:
+                totEnrEff[ds] += detEff[ds][cpd]
+            else:
+                totNatEff[ds] += detEff[ds][cpd]
+
+    # done w/ loop over datasets.
+
+    for ds in dsList:
+        plt.cla()
+
+        # comment these out to get 'exposure' vs energy
+        enrEff = np.divide(totEnrEff[ds], np.amax(totEnrEff[ds]))
+        natEff = np.divide(totNatEff[ds], np.amax(totNatEff[ds]))
+
+        plt.plot(xEff, enrEff, '-r', label="Enriched, %.3f kg-y" % enrExp[ds])
+        plt.plot(xEff, natEff, '-b', label="Natural,  %.3f kg-y" % natExp[ds])
+        plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV")
+        plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV")
+
+        plt.xlabel("Energy (keV)", ha='right', x=1.)
+        # plt.ylabel("Exposure (kg-d)", ha='right', y=1.)
+        plt.ylabel("RooFit Efficiency", ha='right', y=1.)
+        plt.legend()
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("./plots/lat-expo-eff-%s-ds%s.pdf" % (mode, ds))
+
+    # Finally, save output.
+    np.savez("./data/lat-expo-efficiency-%s.npz" % mode, xEff, totEnrEff, totNatEff, enrExp, natExp)
+
+
+def getEfficiencyROOT():
+
+    # load trigger efficiency npz file and convert to TH1D for RooFit.
+
+    # enrEff = np.zeros(len(xEff))
+    # natEff = np.zeros(len(xEff))
+    # for ds in dsList:
+    #     enrEff += totEnrEff[ds]
+    #     natEff += totNatEff[ds]
+
+
+    print("hi")
 
 
 if __name__=="__main__":
