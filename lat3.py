@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""
+===================== lat3.py ======================
+Apply a final run/channel selection "burst cut" to
+data passing the PSA cuts from LAT2.
+Use the "Tukey fence" method to detect anomalous rates
+in cpd/bIdx's, and flag them for removal.
+Generates "cut files" from LAT2 data.
+=================== C. Wiseman (USC) ===================
+"""
 import sys, os, math, glob
 import numpy as np
 import matplotlib.pyplot as plt

@@ -7,7 +7,8 @@ Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy
 - `wave-skim`: grab all waveforms for hits passing basic data cleaning cuts
 - `ds_livetime`: calculate livetime w/o low-e run and channel selection
 - `lat-jobs`: control job submission
-- `lat`: waveform fitting
+- `lat-settings`: save channel map and threshold/HV settings for all runs
+- `lat`: waveform fitting and wavelet packet decomposition (PSA parameters)
 - `lat2`: tune and apply PSA cuts
 - `lat3`: tune and apply burst cut
 - `lat-expo`: exposure and efficiency

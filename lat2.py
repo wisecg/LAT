@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-====== LAT2.py =======
-Tunes cut parameters,
-calculates cut efficiencies.
-C. Wiseman, USC
-v1. 17 Apr 2018
-======================
+===================== lat2.py ======================
+Tunes cut parameters for fitSlo and riseNoise,
+our two primary PSA cuts.
+Calculates efficiency of PSA cuts, saves data for
+each cIdx into the calDB, and generates files with
+PSA cuts applied.
+=================== C. Wiseman (USC) ===================
 """
 import sys, os, time
 import numpy as np
