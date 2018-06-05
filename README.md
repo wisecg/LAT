@@ -11,6 +11,7 @@ Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy
 - `lat`: waveform fitting and wavelet packet decomposition (PSA parameters)
 - `lat2`: tune and apply PSA cuts
 - `lat3`: tune and apply burst cut
+- `lat-check`: data integrity checks for all files
 - `lat-expo`: exposure and efficiency
 - `spec-fit`: final spectrum fits
 - `dsi.py`: properties of the data sets, including background, calibration, special runs, and detector info

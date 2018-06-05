@@ -795,9 +795,7 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
 
 
 def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
-    """ Load cut data from the calDB and translate to TCut format.
-    Used by: lat2.py, check-files.py
-    """
+    """ Load cut data from the calDB and translate to TCut format. """
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
 
     # load metadata and print a status message.

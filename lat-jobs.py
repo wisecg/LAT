@@ -290,8 +290,8 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/calLAT_ds5c_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 10: file integrity checks
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -all"))
-    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./check-files.py -c -all"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat-check.py -all"))
+    # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat-check.py -c -all"))
 
     # EX. 11: raw threshold, channel, and HV settings
     # sh("%s slurm.slr %s" % (getSBatch("edison",False),"./latxp.py -t -v"))

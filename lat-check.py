@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+===================== lat-check.py ======================
+Perform consistency checks on all stages of the LAT
+processing: skim, wave-skim, split, and LAT files.
+Make sure no entries are being dropped, all files exist,
+no branches are corrupted, etc.
+=================== C. Wiseman (USC) ===================
+"""
 import sys, os
 sys.argv.append("-b")
 import tinydb as db
@@ -22,8 +30,8 @@ def main(argv):
     """ NOTE: don't use globs when getting files.
     Manually make sure everything is here.
     Can submit these commands as separate batch jobs:
-        ./check-files.py -all
-        ./check-files.py -c -all
+        ./lat-check.py -all
+        ./lat-check.py -c -all
     """
     global checkCal
     checkCal = False
@@ -48,7 +56,7 @@ def main(argv):
 
 
 def checkSkim():
-    """ ./check-files.py [-c] -s """
+    """ ./lat-check.py [-c] -s """
     print("Checking skims.  Cal?", checkCal)
 
     # make file list
@@ -134,7 +142,7 @@ def checkSkim():
 
 
 def checkWave():
-    """ ./check-files.py [-c] -w """
+    """ ./lat-check.py [-c] -w """
     print("Checking waves.  Cal?", checkCal)
 
     fileList = []
@@ -233,7 +241,7 @@ def checkWave():
 
 
 def checkSplit():
-    """ ./check-files.py [-c] -p """
+    """ ./lat-check.py [-c] -p """
     # make sure every file has a TCut
     # do a sum file size check - make sure sum(size(splits)) = size(waves)
     print("Checking splits.  Cal?", checkCal)
@@ -332,7 +340,7 @@ def checkSplit():
 
 
 def checkLAT():
-    """ ./check-files.py [-c] -l """
+    """ ./lat-check.py [-c] -l """
     # make sure nLat matches nSplit files
     # repeat the checkWave checks
     print("Checking lats.  Cal?", checkCal)
@@ -465,7 +473,7 @@ def unpackFileName(splitList):
 
 
 def makeJobList():
-    """ ./check-files.py -m """
+    """ ./lat-check.py -m """
 
     # bkg
     if not checkCal:
@@ -533,7 +541,7 @@ def makeJobList():
 
 
 def testDraw():
-    """ ./check-files.py -t
+    """ ./lat-check.py -t
     Make sure we can actually do a Draw on the final product! """
     from ROOT import TChain
 
