@@ -218,6 +218,8 @@ class CalInfo:
     def GetCalFiles(self, dsNum, calIdx=None, modNum=None, verbose=False, cDir=calDir):
         """ Get a list of all files for a particular dsNum+calIdx.
             This will match the cut record entries in the DB.
+            DEPRECATED, uses a hardcoded run limit.
+            See lat-check.py for a good way to get a buncha LAT cal files.
         """
         calKeys = self.GetKeys(dsNum)
 
@@ -352,6 +354,9 @@ class DetInfo:
         self.detTH = f['arr_1'].item()
         self.detCH = f['arr_2'].item()
         self.pMons = f['arr_3'].item()
+
+    def isEnr(self, cpd):
+        return True if self.allDetIDs[str(cpd)] > 100000 else False
 
     def getPMon(self,ds=None):
         """ {ds : [chan1, chan2 ...] }

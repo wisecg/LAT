@@ -25,7 +25,11 @@ def main():
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
     # m2s238_hit_spec()
-    slowness_vs_energy()
+    # save_slowness_data()
+    # slowness_vs_energy()
+    # fitSlo_stability()
+    # fitSlo_distribution()
+    fitSlo_efficiency()
 
 
 def spec():
@@ -721,13 +725,254 @@ def m2s238_hit_spec():
     plt.savefig("./plots/lat-238hits.pdf")
 
 
+def save_slowness_data():
+    """ Save the data for a plot of fitSlo vs energy, shifted and unshifted.
+    Saving s/t I can use the thesis plot format on my mac.
+    """
+    from ROOT import TChain
+    import tinydb as db
+
+    ds, cIdx, calKey = 1, 1, "ds1_m1"
+
+    # load the fitSlo values for this cIdx
+    shiftVals = {}
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
+    chList = det.getGoodChanList(ds)
+    for ch in chList:
+        if ch not in fsD.keys():
+            print("Error, channel %d not found" % ch)
+            exit()
+        # "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+        # NOTE: fsCut is the 90% value, already shifted back for this calibration index
+        #       fs200 is the mean fitSlo value for this channel.
+        # print(ch, fsD[ch][0], fsD[ch][1])
+        if fsD[ch] is not None and fsD[ch][0] > 0:
+            shiftVals[ch] = fsD[ch][1]
+    cutChanList = sorted(shiftVals.keys())
+    # for ch in cutChanList:
+        # print(ch, shiftVals[ch])
+
+    # load the cal runs
+    fList = []
+    cRuns = cal.GetCalList(calKey, cIdx)
+    for run in cRuns:
+        latList = dsi.getSplitList("%s/latSkimDS%d_run%d*" % (dsi.calLatDir, ds, run), run)
+        tmpList = [f for idx, f in sorted(latList.items())]
+        fList.extend(tmpList)
+
+
+    tt = TChain("skimTree")
+    for f in fList: tt.Add(f)
+
+    n = tt.Draw("trapENFCal:fitSlo:channel","","goff")
+    hitE, fSlo, chan = tt.GetV1(), tt.GetV2(), tt.GetV3()
+    hitE = [hitE[i] for i in range(n)]
+    fSlo = [fSlo[i] for i in range(n)]
+    chan = [chan[i] for i in range(n)]
+
+    # unshifted values
+    hitE1 = [hitE[i] for i in range(n) if chan[i] in cutChanList]
+    fSlo1 = [fSlo[i] for i in range(n) if chan[i] in cutChanList]
+
+    # shifted values
+    hitE2 = hitE1
+    fSlo2 = [fSlo[i] - shiftVals[chan[i]] for i in range(n) if chan[i] in cutChanList]
+
+    np.savez("./data/lat-slowness.npz", hitE1, fSlo1, fSlo2)
+
+
 def slowness_vs_energy():
-    """ Adapted from LAT/sandbox/mult4.py
+
+    from matplotlib import colors
+    myNorm = colors.PowerNorm(gamma=0.2)
+    # myNorm = colors.PowerNorm(gamma=1)
+    # myNorm = colors.LogNorm()
+
+    f = np.load("./data/lat-slowness.npz")
+    hitE1, fSlo1, fSlo2 = f['arr_0'], f['arr_1'], f['arr_2']
+
+    fig = plt.figure(figsize=(9,5))
+    p1 = plt.subplot(121)
+    p2 = plt.subplot(122)
+
+    xLo, xHi, xpb = 0, 250, 1
+    nbx = int((xHi-xLo)/xpb)
+    yLo, yHi, ypb = 0, 200, 1
+    nby = int((yHi-yLo)/ypb)
+
+    p1.hist2d(hitE1, fSlo1, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet', norm=myNorm)
+    p1.set_xlabel("Energy (keV)", ha='right', x=1)
+    p1.set_ylabel("fitSlo", ha='right', y=1)
+    p1.annotate('Unshifted', xy=(240, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75))
+
+    yLo, yHi, ypb = -75, 125, 1
+    nby = int((yHi-yLo)/ypb)
+
+    p2.hist2d(hitE1, fSlo2, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet', norm=myNorm)
+    p2.set_xlabel("Energy (keV)", ha='right', x=1)
+    p2.annotate('Shifted', xy=(240, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75))
+    # p2.set_ylabel("fitSlo (shifted)", ha='right', y=1)
+
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig("./plots/lat-fitSlo-dist.pdf")
+
+
+def fitSlo_stability():
+    """ Adapted from LAT/sandbox/slo-cut.py::plotEff
+    That function made seven plots:
+    1. hit spectrum, all channels, 0-250
+    2. bar plot, hits in all channels
+    3. 2d hits vs channels, 0-20 keV
+    4. typical fitSlo values
+    5. m2s238 slowness
+    5. difference between m2s238 and pk238 90pct cut values
+    6. stability of fitSlo vs run number (calIdx)
+    """
+    import os
+
+    # arrays to plot m2s238 data
+    effHitE = []  # [hitE1, hitE2 , ...] (remove sub-list of input format)
+    effChan = []  # [chan1, chan2 , ...]
+    effSlo = []   # [fSlo1, fSlo2, ...]
+    effRise = []  # [rise1, rise2, ...]
+    effRun = []   # [run1, run1, ...]
+
+    sloSpec = [] # array of fitSlo histo dicts (i should have used pandas probably)
+
+    # load efficiency files
+    fList = []
+    for ds in [4]:
+        # print("Loading DS-%d" % ds)
+        for key in cal.GetKeys(ds):
+            mod = -1
+            if "m1" in key: mod = 1
+            if "m2" in key: mod = 2
+            for cIdx in range(cal.GetIdxs(key)):
+                eFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+                if os.path.isfile(eFile):
+                    fList.append([ds,cIdx,mod,eFile])
+                else:
+                    print("File not found:",eFile)
+                    continue
+    for ds,ci,mod,ef in fList:
+        # print(ds,ci,mod,ef)
+        f = np.load(ef)
+        evtIdx = f['arr_0']          # m2s238 event [[run,iE] , ...]
+        evtSumET = f['arr_1']        # m2s238 event [sumET , ...]
+        evtHitE = f['arr_2']         # m2s238 event [[hitE1, hitE2] , ...]
+        evtChans = f['arr_3']        # m2s238 event [[chan1, chan2] , ...]
+        thrCal = f['arr_4'].item()   # {ch : [run,thrM,thrS,thrK] for ch in goodList(ds)}
+        thrFinal = f['arr_5'].item() # {ch : [thrAvg, thrDev] for ch in goodList(ds)}
+        evtCtr = f['arr_6']          # num m2s238 evts
+        totCtr = f['arr_7']          # num total evts
+        runTime = f['arr_8']         # cal run time
+        fSloSpec = f['arr_9'].item() # fitSlo histos (all hits) {ch:[h10, h200, h238] for ch in chList}
+        fSloX = f['arr_10']          # xVals for fitSlo histos
+        evtSlo = f['arr_11']         # m2s238 event [[fSlo1, fSlo2], ...]
+        evtRise = f['arr_12']        # m2s238 event [[rise1, rise2], ...]
+
+        sloSpec.append(fSloSpec)
+
+        # remove the hit pair
+        for i in range(len(evtHitE)):
+            effHitE.extend(evtHitE[i])
+            effChan.extend(evtChans[i])
+            effSlo.extend(evtSlo[i])
+            effRise.extend(evtRise[i])
+            effRun.extend([evtIdx[i][0],evtIdx[i][0]])
+
+    effHitE = np.asarray(effHitE)
+    effChan = np.asarray(effChan)
+    effSlo = np.asarray(effSlo)
+    effRun = np.asarray(effRun)
+
+    chList = det.getGoodChanList(ds)
+    cpdList = sorted([det.getChanCPD(ds,ch) for ch in chList])
+
+    # plot 6 -- stability of DS4
+
+    fig = plt.figure()
+    cmap = plt.cm.get_cmap('jet', len(chList)+1)
+
+    for i, cpd in enumerate(cpdList):
+        ch = det.getCPDChan(ds, cpd)
+        type = "e" if det.allDetIDs[cpd] > 100000 else "n"
+        # print(i, cpd, ch)
+        plt.plot(np.nan, np.nan, ".-", c=cmap(i), label="C%sP%sD%s (%s)" % (cpd[0],cpd[1],cpd[2], type))
+
+        fs200, x200, fsm2s238 = [], [], []
+        for ci in range(len(sloSpec)):
+
+            # only save the value if we have a nonzero number of counts
+            spec = sloSpec[ci][ch][1]
+            nCts = np.sum(spec)
+            if nCts < 2: continue
+            # print(ds,ch,ci,nCts)
+
+            # get the width
+            max, avg, std, pct, wid = wl.getHistInfo(fSloX, sloSpec[ci][ch][1])
+
+            # TODO: smarter way to get the width
+            # like a FWHM.  find the max, then find the point of 50% reduction on either side
+
+            fs200.append(fSloX[np.argmax(sloSpec[ci][ch][1])])
+            x200.append(ci)
+
+            # get m2s238 events from this calIdx and find the typical value
+            idx = np.where(effChan==ch)
+            tmpS = effSlo[idx]
+            tmpC = effChan[idx]
+            tmpR = effRun[idx]
+            thisFS = []
+            for j in range(len(tmpR)):
+                key = "ds%d_m1" % ds if ch < 1000 else "ds%d_m2" % ds
+                if ci == cal.GetCalIdx(key,tmpR[j]):
+                    thisFS.append(tmpS[j])
+            nEff = len(thisFS)
+
+            yLo, yHi, ypb = -50, 400, 1
+            x, hSlo = wl.GetHisto(thisFS, yLo, yHi, ypb)
+            maxEff = np.nan if len(thisFS)==0 else x[np.argmax(hSlo)]
+
+            # NOTE: the diff is NEVER more than 1.
+            # print("%d  %-3d  nTot %-8d  nEff %-5d  wid %-4.0f  fs200 %-4.0f  fsEff %-4.0f  diff %.0f" % (ch, ci, nCts, nEff, wid, fs200[-1], maxEff, fs200[-1]-maxEff))
+
+            fsm2s238.append(maxEff)
+
+
+        # plot the raw value (stability)
+        plt.plot(x200, fs200, ".-", c=cmap(i))
+        # plt.axhline(np.mean(fs200), c=cmap(i), linewidth=0.5, label="ch%d: %.2f")
+        plt.ylim(0,150)
+
+        # plot the difference from the average (deviation)
+        # fAvg = np.mean(fs200)
+        # fDev = [(f-fAvg) for f in fs200]
+        # p2.plot(x200, fDev, ".", c=cmap(i), label="ch%d  fAvg %.0f" % (ch, fAvg))
+
+        # plot the difference between the raw value and the m2s238 value
+        # man, i shoulda just added the calIdx of the m2s238 hits
+
+    plt.xlabel("DS4, calIdx", ha='right', x=1)
+    plt.ylabel("fitSlo", ha='right', y=1)
+    plt.xticks(np.arange(0,len(sloSpec),1))
+    plt.legend(loc=3, ncol=3, fontsize=14)
+    # if ds!=5: p1.legend(ncol=3)
+    # else: p1.legend(ncol=6, fontsize=8)
+    # p2.set_ylabel("fitSlo Deviation from avg", ha='right', y=1)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat-stability-ds%d.pdf" % (ds))
+
+
+def fitSlo_distribution():
+    """ Adapted from mult4.py::plotFitSloHist.
     hitData : [mHT, sumET, dt[mHT]]
     hitList : [hitE, chan, fSlo, rise, dtpc]  (same length as hitData)
     """
-    applyShift = False
-
     # fitSlo results from tuneFitSlo.
     fsVals = {
         584: 102.5, 592: 75.5, 608: 73.5, 610: 76.5, 614: 94.5, 624: 69.5,
@@ -735,55 +980,249 @@ def slowness_vs_energy():
         660: 127.5, 662: 84.5, 672: 80.5, 678: 82.5, 680: 86.5, 688: 77.5,
         690: 80.5, 694: 80.5
         }
+
     chList = list(fsVals.keys())
 
+    # peak fit results from mult2.  could retune, but it shouldn't matter much
     mHT = 2
+    sumPks = [
+        (2,238,237.28,239.46), (2,583,581.26,584.46), (2,2615,2610.57,2618.01),
+        (3,238,237.13,239.43), (3,583,581.04,584.36), (3,2615,2610.10,2617.92)
+        ]
 
-    f1 = np.load("./data/mult4-hitE.npz")
-    # f1 = np.load("./data/mult4-hitE-histats.npz")
+    # f1 = np.load("./data/mult4-hitE.npz")
+    f1 = np.load("./data/mult4-hitE-histats.npz")
     runTime, hitList, hitData, eCut = f1['arr_0'], f1['arr_1'], f1['arr_2'], f1['arr_3']
 
     hitE, chan, fSlo = [], [], []
     for i in range(len(hitData)):
-        if hitData[i][0]==mHT and 237.28 < hitData[i][1] < 239.46:  # m2s238 only
+        if hitData[i][0]==mHT and 237.28 < hitData[i][1] < 239.46:
             hitE.extend(hitList[i][0])
             chan.extend(hitList[i][1])
             fSlo.extend(hitList[i][2])
     n = len(hitE)
     hitE = [hitE[i] for i in range(n) if chan[i] in fsVals.keys()]
     fSloShift = [fSlo[i]-fsVals[chan[i]] for i in range(n) if chan[i] in chList]
-    fSloUnshift = [fSlo[i] for i in range(n) if chan[i] in chList]
+    print("peak evts:",n)
+
+    cLo, cHi = 0, 230
+
+    hitE2, chan2, fSlo2 = [], [], []
+    for i in range(len(hitData)):
+        if hitData[i][0]==mHT and cLo < hitData[i][1] < cHi:
+            hitE2.extend(hitList[i][0])
+            chan2.extend(hitList[i][1])
+            fSlo2.extend(hitList[i][2])
+    n = len(hitE2)
+    hitE2 = [hitE2[i] for i in range(n) if chan2[i] in fsVals.keys()]
+    fSloShift2 = [fSlo2[i]-fsVals[chan2[i]] for i in range(n) if chan2[i] in chList]
+    print("cont evts:",n)
 
     fig = plt.figure()
 
     xLo, xHi, xpb = 0, 250, 1
     nbx = int((xHi-xLo)/xpb)
+    yLo, yHi, ypb = -50, 400, 1
+    nby = int((yHi-yLo)/ypb)
 
-    if applyShift:
+    # # ===== 1.  2d fitSlo vs energy, m2s238 hits, shifted. ======
+    #
+    # hitE2, chan2, fSlo2 = [], [], []
+    # for i in range(len(hitData)):
+    #     if hitData[i][0]==mHT and cLo < hitData[i][1] < cHi:
+    #         hitE2.extend(hitList[i][0])
+    #         chan2.extend(hitList[i][1])
+    #         fSlo2.extend(hitList[i][2])
+    # n = len(hitE2)
+    # hitE2 = [hitE2[i] for i in range(n) if chan2[i] in fsVals.keys()]
+    # fSloShift = [fSlo2[i]-fsVals[chan2[i]] for i in range(n) if chan2[i] in chList]
+    # print("cont evts:",n)
+    #
+    # plt.hist2d(hitE2, fSloShift, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet', label='m=2, hits 0-230 keV')
+    # plt.colorbar()
+    # plt.xlabel("Energy (keV)", ha='right', x=1.)
+    # plt.ylabel("fitSlo", ha='right', y=1.)
+    # plt.tight_layout()
+    # plt.savefig("./plots/mult4-fitSlo-shift2-hist.png")
 
-        yLo, yHi, ypb = -50, 400, 1
-        nby = int((yHi-yLo)/ypb)
-        _,_,_,im = plt.hist2d(hitE, fSloShift, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
-        cb = plt.colorbar()
 
-    else:
+    # ===== 2.
 
-        # print(len(hitE), len(fSlo))
-        # return
+    # cb.remove()
+    plt.cla()
+    xLo, xHi, xpb = -50, 300, 1
 
-        yLo, yHi, ypb = -50, 400, 1
-        nby = int((yHi-yLo)/ypb)
-        _,_,_,im = plt.hist2d(hitE, fSloUnshift, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
-        cb = plt.colorbar()
+    x, y238 = wl.GetHisto(fSloShift,xLo,xHi,xpb)
+    x, yCon = wl.GetHisto(fSloShift2,xLo,xHi,xpb)
 
+    # integral238
+    tot238 = np.sum(y238)
+    int238, x238 = 0, 0
+    for i in range(len(y238)):
+        int238 += y238[i]
+        if int238/tot238 > 0.90:
+            x238 = x[i]
+            break
 
-    plt.xlabel("Energy (keV)", ha='right', x=1.)
-    plt.ylabel("fitSlo", ha='right', y=1.)
+    # integralCon
+    totCon = np.sum(yCon)
+    intCon, xCon = 0, 0
+    for i in range(len(yCon)):
+        intCon += yCon[i]
+        if intCon/totCon > 0.95:
+            xCon = x[i]
+            break
+
+    plt.semilogy(x, yCon/np.sum(yCon), 'r', ls='steps', label='All hits, %d-%d keV' % (cLo, cHi))
+    plt.semilogy(x, y238/np.sum(y238), 'b', ls='steps', label='m2s238 Hits')
+
+    # plt.axvline(x238, c='g', label='m2s238 90%, all dets')
+
+    plt.xlabel("fitSlo (Shifted)", ha='right', x=1.)
+    plt.ylabel("Counts (Normalized)", ha='right', y=1.)
+
+    plt.legend(loc=1)
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig("./plots/lat-fitSlo-hist.pdf")
 
 
-    # plt.savefig("./lat/lat-fitSlo-hist.pdf")
+def fitSlo_efficiency():
+    """ Load the efficiencies from LAT2 directly for faster plotting. """
+    from statsmodels.stats import proportion
+    from scipy.optimize import curve_fit
+
+    # must match lat2
+    xPassLo, xPassHi, xpbPass = 0, 50, 1      # "low energy" region
+
+    # change the plot region
+    eFitHi = 50
+    xPassLo, xPassHi = 0, 50
+
+    # load efficiency data
+    f = np.load('./data/lat2-eff-data.npz')
+    effData = f['arr_0'].item()
+
+    fig = plt.figure(3) # efficiency plot
+    p1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p2 = plt.subplot2grid((3,1), (2,0), sharex=p1)
+
+    print("CPD  amp  c     loc      scale   e1keV   nBin   maxR   chi2")
+    detList = det.allDets
+    for i, cpd in enumerate(detList):
+    # for i, cpd in enumerate(['123']):
+    # for i, cpd in enumerate(['262']):
+
+        if cpd not in effData.keys():
+            # print(cpd)
+            # print("%s & & & & & & & & & \\\\" % cpd)
+            continue
+
+        xEff, sloEff, ci_low, ci_upp = effData[cpd][0], effData[cpd][1], effData[cpd][2], effData[cpd][3]
+        hPass, hFail, hTot, xELow = effData[cpd][4], effData[cpd][5], effData[cpd][6], effData[cpd][7]
+
+        # get the average number of counts per bin under 10 kev, both passing and failing
+        # nBin = np.sum(hTot[np.where(xELow < 10)])/(10/xpbPass)
+        nBin = np.sum(hPass[np.where(xELow < 10)])/(10/xpbPass)
+
+        # efficiency for low-E region (xPassLo, xPassHi)
+
+        # start by only looking at points where we have >0 hits passing
+        idxP = np.where(hPass > 0)
+        sloEff = hPass[idxP] / hTot[idxP]
+        xEff = xELow[idxP]
+
+        # calculate confidence intervals for each point (error bars)
+        ci_low, ci_upp = proportion.proportion_confint(hPass[idxP], hTot[idxP], alpha=0.1, method='beta')
+
+        # limit the fit energy range
+        idxE = np.where((xEff < xPassHi) & (xEff > 1))
+        xEff, sloEff, ci_low, ci_upp = xEff[idxE], sloEff[idxE], ci_low[idxE], ci_upp[idxE]
+
+        # ** this is essential, otherwise the blue dots show up on the right side of
+        # where the bin center would be, and throw off the fit by half a bin width
+        xEff -= xpbPass/2.
+
+        # fit to constrained weibull (c, loc, scale, amp)
+        b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this one is working best
+        popt, pcov = curve_fit(wl.weibull, xEff, sloEff, bounds=b3)
+
+        # save pars and errors
+        perr = np.sqrt(np.diag(pcov))
+        c, loc, sc, amp = popt
+        cE, locE, scE, ampE = perr
+        eff1 = wl.weibull(1.,*popt)
+
+        from scipy.stats import chisquare
+        # "This test is invalid when the observed or expected frequencies in each category are too small. A typical rule is that all of the observed and expected frequencies should be at least 5."
+        # wenqin: the bin errors are binomial.  see https://root.cern.ch/doc/master/classTEfficiency.html
+        chi2, p = chisquare(sloEff, wl.weibull(xEff,*popt))
+
+        # get residual
+        hResidSig = []
+        n = len(sloEff)
+        for i in range(n):
+            diff = wl.weibull(xEff[i], *popt) - sloEff[i]
+            sig = ci_upp[i] if diff > 0 else ci_low[i]
+            if sig==0:
+                # print("zero at",xEff[i],"kev")
+                hResidSig.append(0)
+                continue
+            hResidSig.append(diff/sig)
+        hResidSig = np.asarray(hResidSig)
+
+        # find abs. max of residual
+        maxR = np.max(np.fabs(hResidSig))
+
+        # print results
+        # print("%s  %-4.3f  %-4.1f  %-7.2f  %-5.2f  %-3.2f  %d  %.3f  %.3f" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+
+        # print latexable results
+        print("%s & %-4.3f & %-4.1f & %-7.2f & %-5.2f & %-3.2f & %d & %.3f & %.3f \\\\" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+
+        # print ugly one with errors
+        # print("%s  a %.3f (%.3f)  c %.1f (%.1f)  loc %.2f (%.2f)  sc %.2f (%.2f)  eff1 %.2f  nBin %d" % (cpd, amp, ampE, c, cE, loc, locE, sc, scE, eff1, nBin))
+
+        # === make the efficiency plot, with sigma residual ===
+
+        # plot efficiency
+        p1.cla()
+        p1.plot(xEff, sloEff, '.b', ms=10., label='C%sP%sD%s, nBin %.1f' % (cpd[0],cpd[1],cpd[2],nBin))
+        p1.errorbar(xEff, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+        xFunc = np.arange(xPassLo, xPassHi, 0.1)
+        p1.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label=r'Weibull CDF')
+        p1.axvline(1.,color='b', lw=1., label='1.0 keV acceptance: %.2f' % wl.weibull(1.,*popt))
+
+        p1.set_xlim(xPassLo, xPassHi)
+        p1.set_ylim(0,1)
+        # p1.set_xlabel("hitE (keV)", ha='right', x=1)
+        p1.set_ylabel("Efficiency", ha='right', y=1)
+        p1.yaxis.set_label_coords(-0.095, 1.)
+        p1.legend(loc=4)
+
+        # plot residual
+        p2.cla()
+        p2.plot(xEff, hResidSig, ".g")
+        p2.annotate('Residual, Fit - Data', xy=(470, 80), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
+        p2.axvline(1.,color='b', lw=1.)
+
+        p2.set_xlim(xPassLo, xPassHi)
+        yLo = -0.4 if np.min(hResidSig) > -0.4 else np.min(hResidSig) * 1.1
+        yHi = 0.4 if np.max(hResidSig) < 0.4 else np.max(hResidSig) * 1.1
+        p2.set_ylim(yLo, yHi)
+
+        p2.set_ylabel("Residual (Sigma)")
+        p2.set_xlabel("Energy (keV)", ha='right', x=1)
+        p2.set_xticks(np.arange(0,51,5))
+
+        plt.tight_layout()
+        fig.subplots_adjust(hspace=0.01)
+        plt.setp(p1.get_xticklabels(), visible=False)
+
+        # plt.show()
+        # exit()
+        plt.savefig("./plots/lat2-eff-%s.pdf" % cpd)
 
 
 if __name__=="__main__":

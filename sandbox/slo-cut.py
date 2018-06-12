@@ -711,8 +711,6 @@ def plotEff():
         # plot the difference between the raw value and the m2s238 value
         # man, i shoulda just added the calIdx of the m2s238 hits
 
-
-
     p1.set_xlabel("calIdx", ha='right', x=1)
     p1.set_ylabel("fitSlo", ha='right', y=1)
     if ds!=5: p1.legend(ncol=3)
