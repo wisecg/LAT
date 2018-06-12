@@ -6,6 +6,8 @@ import os, imp, ROOT
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.misc import factorial
 ds = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
 sns.set(style='darkgrid', context='talk')
 
@@ -13,12 +15,19 @@ detInfo = ds.DetInfo()
 
 def main():
     outDir = os.environ['LATDIR'] + '/plots/AlphaRate'
-    # dsList, module = [0,1,2,3,5,6], 1
-    dsList, module = [4,5,6], 2
+    dsList, module = [6], 1
+    # dsList, module = [4,5,6], 2
+    # dsList, module = [0, 1, 2, 3, 4,5,6], 2
     # dsList, module = [4], 2
 
-    theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && mHL==1 && globalTime > 0 && C=={}".format(module)
-    pbCut = theCut + "&&trapENFCalC>45.5&&trapENFCalC<47.5"
+    theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && !muVeto && mHL==1 && !(channel==592 && run>=11348 && run<=11488) && !((channel & 0xFFFFFFF0) == 0x2B0 && run >= 4239 && run <= 4436)"
+    # pbCut = theCut + "&&trapENFCalC>45.5&&trapENFCalC<47.5"
+    # pbCut = theCut + "&& avse>-1 && dcr99<0 && ((trapENFCalC>=1950 && trapENFCalC<=2094) || (trapENFCalC>=2127 && trapENFCalC<=2195) || (trapENFCalC>=2212 && trapENFCalC<=2350))" # Now this stands for ROI
+    # pbCut = theCut + "&& avse>-1 && dcr99<0 && ((trapENFCalC>=1950 && trapENFCalC<=2034) || (trapENFCalC>=2044 && trapENFCalC<=2099) || (trapENFCalC>=2109 && trapENFCalC<=2113) || (trapENFCalC>=2123 && trapENFCalC<=2199) || (trapENFCalC>=2209 && trapENFCalC<=2350))" # Now this stands for ROI
+
+    # pbCut = theCut + "&& avse>-1 && dcr99<0 && ((trapENFCalC>=1950 && trapENFCalC<=2099) || (trapENFCalC>=2109 && trapENFCalC<=2113) || (trapENFCalC>=2123 && trapENFCalC<=2199) || (trapENFCalC>=2209 && trapENFCalC<=2350))" # Now this stands for ROI
+    pbCut = theCut + "&& avse>-1 && dcr99<0 && trapENFCalC>=1500 && trapENFCalC<=2500" # Now
+
     dcrCut = theCut + "&&trapENFCalC>2000&&trapENFCalC<4000&&avse>-1&&dcr99>=0"
     alphaCut = theCut + "&&trapENFCalC>4000&&trapENFCalC<8000"
 
@@ -39,13 +48,20 @@ def main():
         print ("Scanning dataset {}, module {}".format(ds, module))
         skimOpen = ROOT.TChain("skimTree")
         if ds == 5:
+            # DS5a and DS5b
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
             # DS5b
-            for i in range(80, 113):
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_{}.root".format(ds,i))
+            # for i in range(80, 113):
+                # skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_{}.root".format(ds,i))
             # DS5c
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-51-g69c5025/skimDS{}_*.root".format(ds))
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
         elif ds == 6:
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
+        elif ds == 1 or ds == 2:
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
+            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
         else:
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
 
@@ -97,25 +113,54 @@ def main():
         dcrLen = len(dcrch)
         alphaLen = len(alphach)
         maxLength = max(pbLen, dcrLen, alphaLen)
+
+
         xList = np.linspace(1, maxLength, maxLength)
-        ax1.bar(xList-bar_width, pbchCount, bar_width, label='Pb210 (45.5 - 47.5 keV)')
+        ax1.bar(xList-bar_width, pbchCount, bar_width, label='Background (350 keV window)')
         ax1.bar(xList, dcrchCount, bar_width, label='DCR Rejected (2 - 4 MeV)')
         ax1.bar(xList+bar_width, alphachCount, bar_width, label='Alpha (4 - 8 MeV)')
         ax1.set_xticks(xList)
         ax1.set_xticklabels(pbch)
-        ax1.set_title('DS{} (Module {}) Pb210 vs Alpha Comparison'.format(ds, module))
+        ax1.set_title('DS{} Background Comparison'.format(ds))
         ax1.set_xlabel('Channel')
         ax1.set_ylabel('Counts')
         ax1.legend()
         plt.tight_layout()
-        fig1.savefig(outDir+'/DS{}_AlphaComparison_M{}.png'.format(ds,module))
+        # fig1.savefig(outDir+'/DS{}_BkgComparison.png'.format(ds))
 
         # print('Channels:',chList)
-        print("Pb210 (45.5-47.5 keV): ", len(pbDict[ds]['trapENFCalC']))
+        print("Background (350 keV window): ", len(pbDict[ds]['trapENFCalC']))
         print("DCR Rejected (2-4 MeV): ", len(dcrDict[ds]['trapENFCalC']))
         print("Alphas (4-8 MeV)", len(alphaDict[ds]['trapENFCalC']))
+        for E, Ch in zip(pbDict[ds]['trapENFCalC'], pbDict[ds]['channel']):
+            print(Ch, E)
+
+        for ch, count in zip(pbch, pbchCount):
+            pbTot.setdefault(ch, []).append(count)
         # plt.show()
 
+    print(pbDict)
+    print(pbTot)
+    countArr = []
+    for ch, countList in pbTot.items():
+        print(ch, sum(countList))
+        countArr.append(sum(countList))
+    print(countArr)
+
+    fig2, ax2 = plt.subplots(figsize=(10,6))
+    entries, bin_edges, patches = ax2.hist(countArr,bins=np.arange(0,10,1))
+    bin_middles = 0.5*(bin_edges[1:] + bin_edges[:-1])
+    ax2.set_title('DS5 and 6 Enriched Poisson Fit (350 keV window)')
+    ax2.set_ylabel('Counts/Detector')
+    ax2.set_xlabel('Counts')
+    # fit with curve_fit
+    parameters, cov_matrix = curve_fit(poisson, bin_middles, entries)
+    print(parameters)
+    print(cov_matrix)
+    x_plot = np.linspace(0, 10, 500)
+    plt.plot(x_plot, poisson(x_plot, *parameters), 'r-', lw=2)
+    plt.tight_layout()
+    plt.show()
 
 
 def getTreeList(tree, parList=None, cut=None, ds=None):
@@ -140,17 +185,23 @@ def getTreeList(tree, parList=None, cut=None, ds=None):
             parN = tree.GetV3()
         elif idx == 3:
             parN = tree.GetV4()
-        if par == "channel":
-            chList = list(parN[n] for n in range(nEvents))
-            cpdList = ['C{}P{}D{}'.format(*str(detInfo.getChanCPD(ds,ch)))
-                        if ch%2==0 else 'C{}P{}D{}'.format(*str(detInfo.getChanCPD(ds, ch-1)))
-                        for ch in chList ]
-            eventDic.setdefault(par, cpdList)
+        if par == "blah":
+            continue
+        #     chList = list(parN[n] for n in range(nEvents))
+        #     cpdList = ['C{}P{}D{}'.format(*str(detInfo.getChanCPD(ds,ch)))
+        #                 if ch%2==0 else 'C{}P{}D{}'.format(*str(detInfo.getChanCPD(ds, ch-1)))
+        #                 for ch in chList ]
+        #     eventDic.setdefault(par, cpdList)
 
         else:
             eventDic.setdefault(par, list(parN[n] for n in range(nEvents)))
 
     return eventDic
+
+# poisson function, parameter lamb is the fit parameter
+def poisson(k, lamb, a):
+    return a*(lamb**k/factorial(k)) * np.exp(-lamb)
+
 
 if __name__ == "__main__":
 	main()

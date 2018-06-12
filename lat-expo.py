@@ -49,6 +49,9 @@ def main(argv):
         if opt == "-eff":
             getEfficiency()
 
+        # get efficiency functions in ROOT histogram
+        if opt == "-root":
+            getEfficiencyROOT()
 
 
 
@@ -806,17 +809,58 @@ def getEfficiency():
 
 
 def getEfficiencyROOT():
+    from ROOT import TFile, TH1D
 
     # load trigger efficiency npz file and convert to TH1D for RooFit.
+    f = np.load(dsi.latSWDir+'/data/lat-expo-efficiency-all.npz')
 
-    # enrEff = np.zeros(len(xEff))
-    # natEff = np.zeros(len(xEff))
-    # for ds in dsList:
-    #     enrEff += totEnrEff[ds]
-    #     natEff += totNatEff[ds]
+    xEff = f['arr_0']
+    eMin, eMax, nBins = 0, 50, len(xEff)
+    totEnrEff = f['arr_1'].tolist()
+    totNatEff = f['arr_2'].tolist()
+    enrExp = f['arr_3'].tolist()
+    natExp = f['arr_4'].tolist()
 
+    hEnr, hNat = {}, {}
+    hEnrNorm, hNatNorm = {}, {}
+    fFile = TFile(dsi.latSWDir+'/data/lat-expo-efficiency.root', 'RECREATE')
+    fFile.cd()
 
-    print("hi")
+    for ds in totEnrEff:
+        hEnr[ds] = TH1D('hDS{}_Enr'.format(ds), 'Dataset {} (Enriched) Efficiency'.format(ds),  nBins, eMin, eMax)
+        hNat[ds] = TH1D('hDS{}_Nat'.format(ds), 'Dataset {} (Natural) Efficiency'.format(ds),  nBins, eMin, eMax)
+        hEnrNorm[ds] = TH1D('hDS{}_Norm_Enr'.format(ds), 'Dataset {} (Enriched) Normalized Efficiency'.format(ds),  nBins, eMin, eMax)
+        hNatNorm[ds] = TH1D('hDS{}_Norm_Nat'.format(ds), 'Dataset {} (Natural) Normalized Efficiency'.format(ds),  nBins, eMin, eMax)
+
+        for idx in range(len(xEff)):
+            # Divide by 10 to account for rebinning later
+            hEnr[ds].SetBinContent(idx, totEnrEff[ds][idx]/10.)
+            hNat[ds].SetBinContent(idx, totNatEff[ds][idx]/10.)
+            hEnrNorm[ds].SetBinContent(idx, totEnrEff[ds][idx]/enrExp[ds]/10.)
+            hNatNorm[ds].SetBinContent(idx, totNatEff[ds][idx]/natExp[ds]/10.)
+
+        # Rebin to 0.1 keV bins
+        hEnr[ds].Rebin(10)
+        hNat[ds].Rebin(10)
+        hEnrNorm[ds].Rebin(10)
+        hNatNorm[ds].Rebin(10)
+
+        # Make stuff pretty
+        hEnr[ds].GetXaxis().SetTitle('Energy (keV)')
+        hEnr[ds].GetYaxis().SetTitle('Efficiency (kg-d)')
+        hNat[ds].GetXaxis().SetTitle('Energy (keV)')
+        hNat[ds].GetYaxis().SetTitle('Efficiency (kg-d)')
+
+        hEnrNorm[ds].GetXaxis().SetTitle('Energy (keV)')
+        hEnrNorm[ds].GetYaxis().SetTitle('Efficiency')
+        hNatNorm[ds].GetXaxis().SetTitle('Energy (keV)')
+        hNatNorm[ds].GetYaxis().SetTitle('Efficiency')
+
+        hEnr[ds].Write()
+        hNat[ds].Write()
+        hEnrNorm[ds].Write()
+        hNatNorm[ds].Write()
+    fFile.Close()
 
 
 if __name__=="__main__":

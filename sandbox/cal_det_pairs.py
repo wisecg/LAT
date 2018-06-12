@@ -11,7 +11,9 @@ sns.set(style='darkgrid')
 # load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
+dsi = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
 calInfo = ds.CalInfo()
+detInfo = dsi.DetInfo()
 
 # load threshold data
 import tinydb as db
@@ -41,14 +43,14 @@ def main():
     # print('Mean Distance: ', sum(distList)/len(distList))
     # print('Absolute Distance: ', sum(absdistList)/len(absdistList))
 
-    # simMatrix, simdetLabel = loadMatrix('Sim')
+    simMatrix, simdetLabel = loadMatrix('Sim')
     # calMatrix, detLabel = loadMatrix('Cal')
 
     # Get Total Counts
     # totCounts = np.sum(calMatrix)
-    # totCountsSim = np.sum(simMatrix)
+    totCountsSim = np.sum(simMatrix)
     # print('Total Counts (Calibration): ', totCounts)
-    # print('Total Counts (Simulation): ', totCountsSim)
+    print('Total Counts (Simulation): ', totCountsSim)
 
     # Draw heatmap
     # fig1, ax1 = plt.subplots(figsize=(10,8))
@@ -61,17 +63,45 @@ def main():
     # plt.tight_layout()
     # fig1.savefig('{}/CrazyMatrix_Cal_C1_Percent.png'.format(outDir))
     #
-    # fig2, ax2 = plt.subplots(figsize=(10,8))
-    # sns.heatmap(np.round(simMatrix/totCountsSim*100.,1), cmap="YlGnBu", xticklabels=simdetLabel, yticklabels=simdetLabel, annot=True, ax=ax2)
-    # ax2.set_title('DS5 Sim Calibration -- M2 Sum 238 Peak -- Percentage of Counts <{} keV'.format(energyCut))
-    # ax2.set_xlabel('Low Energy Hit')
-    # ax2.set_ylabel('High Energy Hit')
-    # plt.xticks(rotation=90)
-    # plt.yticks(rotation=0)
-    # plt.tight_layout()
+    fig2, ax2 = plt.subplots(figsize=(10,8))
+    sns.heatmap(np.round(simMatrix/totCountsSim*100.,1), cmap="YlGnBu", xticklabels=simdetLabel, yticklabels=simdetLabel, annot=True, ax=ax2)
+    ax2.set_title('DS5 Sim Calibration -- M2 Sum 238 Peak -- Percentage of Counts <{} keV'.format(energyCut))
+    ax2.set_xlabel('Low Energy Hit')
+    ax2.set_ylabel('High Energy Hit')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.tight_layout()
     # fig2.savefig('{}/CrazyMatrix_Sim_C1_Percent.png'.format(outDir))
-    # plt.show()
 
+
+    enrList = detInfo.getGoodChanList(5, mod=1, detType='Enr')
+    natList = detInfo.getGoodChanList(5, mod=1, detType='Nat')
+    enrCPD = ['C{}P{}D{}'.format(*str(detInfo.getChanCPD(5, i))) for i in enrList]
+    natCPD = ['C{}P{}D{}'.format(*str(detInfo.getChanCPD(5, i))) for i in natList]
+
+    simtotCounts = np.sum(simMatrix)
+    simchCounts = np.sum(simMatrix, axis=0)
+    simchFrac = simchCounts/float(simtotCounts)
+    simchFracEnr = np.asarray([simchFrac[i] if simdetLabel[i] in enrCPD else 0. for i in range(len(simchFrac))])
+    simchFracNat = np.asarray([simchFrac[i] if simdetLabel[i] in natCPD else 0. for i in range(len(simchFrac))])
+
+    print(simchFracEnr)
+    print(simchFracNat)
+
+    xList = np.linspace(1, len(simdetLabel), len(simdetLabel))
+    bar_width = 0.35
+    fig3, ax3 = plt.subplots(figsize=(12,7))
+    ax3.bar(xList, simchFracEnr, bar_width, label='Enriched')
+    ax3.bar(xList, simchFracNat, bar_width, label='Natural')
+    ax3.set_xticks(xList + bar_width/2)
+    ax3.set_xticklabels(simdetLabel, rotation=50)
+    ax3.set_title('DS5 Calibration Simulation -- M2 Sum 238 Peak -- Fraction of Events <{} keV'.format(energyCut))
+    ax3.set_ylabel("Fraction of Events")
+    ax3.legend()
+    plt.tight_layout()
+    fig3.savefig('{}/CrazyBar_C1_NatEnr.png'.format(outDir))
+    plt.show()
+    return
 
     # Bar plot showing fractions for each detector
     chCounts = np.sum(calMatrix, axis=0)
@@ -389,22 +419,18 @@ def loadScatter():
     return interceptList, distList, absdistList
 
 
-def loadMatrix(dType = 'Cal'):
+def loadMatrix(dType = 'Sim', chType=None):
     """
         Loops through event list and fills a matrix of hit pairs
     """
 
     inDir, outDir = os.environ['LATDIR'], os.environ['LATDIR']+'/plots/CalPairs'
-    df = pd.read_hdf('{}/DS5_{}_HitData.h5'.format(inDir, dType))
+    # df = pd.read_hdf('{}/DS5_{}_HitData.h5'.format(inDir, dType))
+    df = pd.read_hdf('{}/DS5_{}_HitData_G41004.h5'.format(inDir, dType))
     df['EMirror'] = 238.63 - df['trapENFCal2']
     # Select 238 sum peak, select only module 1 detectors
     # This is here right now because I'm a dumbass and I forgot to scale the sum energy
-    lowCut, highCut = 0,0
-    # Sim cut is using MeV
-    if dType == 'Sim':
-        lowCut, highCut = 0.237, 0.240
-    elif dType == 'Cal':
-        lowCut, highCut = 237, 240
+    lowCut, highCut = 237, 240
     dfCut = df.loc[(df['sumET'] > lowCut) & (df['sumET'] < highCut) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
     # Select module 2 detectors
     # dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] > 200) & (df['CPD2'] > 200)]
@@ -462,6 +488,7 @@ def loadFraction():
     totHistVals, totHistBins = np.histogram(totArr, bins=50, range=(0, 50))
     surfHistVals, surfHistBins = np.histogram(surfArr, bins=50, range=(0, 50))
 
+
     fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(10,8))
     ax1.step(totHistBins[:-1]+0.5, totHistVals, label='All Events')
     ax1.step(totHistBins[:-1]+0.5, surfHistVals, label='Transition Layer')
@@ -475,7 +502,11 @@ def loadFraction():
     ax2.set_xlabel('Energy (keV)')
     ax1.legend()
     ax2.legend()
-    fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module1.png')
+
+    print(np.sum(totHistVals))
+    print(np.sum(surfHistVals))
+
+    # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module2.png')
     # plt.show()
 
     # Now go through detector lists
@@ -511,7 +542,7 @@ def loadFraction():
         ax2.set_xlabel('Energy (keV)')
         ax1.legend()
         ax2.legend()
-        fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
+        # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
 
 
 if __name__=="__main__":
