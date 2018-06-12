@@ -562,8 +562,11 @@ def getEfficiency():
     mode = "trig"  # trigger efficiency only
     # mode = "all"   # does all PS
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = [0,1,2,3,4,"5A","5B","5C"]  # default
+
+    debugMode = True
     # dsList = ["5A"]
+    dsList = [3]
 
     # efficiency output
     xLo, xHi = 0, 50
@@ -747,13 +750,14 @@ def getEfficiency():
                                 print("Unknown mode! exiting ...")
                                 exit()
 
-            # plot individual efficiencies
+            # thesis plot: individual efficiencies
             # for ch in chList:
             #     plt.plot(xEff, trigEff[ch], '-')
             #     plt.plot(xEff, fSloEff[ch], '-')
             #     plt.plot(xEff, totEff[ch], '-')
             # plt.xlim(0,10)
             # plt.show()
+            exit()
 
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
@@ -797,7 +801,8 @@ def getEfficiency():
         plt.savefig("./plots/lat-expo-eff-%s-ds%s.pdf" % (mode, ds))
 
     # Finally, save output.
-    np.savez("./data/lat-expo-efficiency-%s.npz" % mode, xEff, totEnrEff, totNatEff, enrExp, natExp)
+    if not debugMode:
+        np.savez("./data/lat-expo-efficiency-%s.npz" % mode, xEff, totEnrEff, totNatEff, enrExp, natExp)
 
 
 def getEfficiencyROOT():

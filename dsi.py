@@ -659,7 +659,9 @@ def getSplitList(filePathRegexString, subNum, uniqueKey=False, dsNum=None):
 
 
 def GetExposureDict(dsNum, modNum, dPath="%s/data" % latSWDir, verbose=False):
-    """ Parse granular exposure output from ds_livetime.cc """
+    """ Parse granular exposure output from ds_livetime.cc (-idx option).
+    Deprecated in favor of ds_livetime ROOT output.
+    """
 
     chList = GetGoodChanList(dsNum)
     if dsNum==5 and modNum==1: chList = [ch for ch in chList if ch < 1000 and ch!=692]

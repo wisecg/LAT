@@ -22,7 +22,7 @@ def makeSubDSPlot():
 
     ds = "5A"
 
-    rBkg = []
+    rBkg, rCalM1, rCalM2 = [], [], []
 
     # set DS stuff
     dsNum = int(ds[0]) if isinstance(ds,str) else ds
@@ -49,6 +49,12 @@ def makeSubDSPlot():
             return
 
         rFirst, rLast = bkgRanges[bLo][0], bkgRanges[bHi][-1]
+
+        nCal = cal.GetNCalIdxs(dsNum, mod)
+
+        for i in range(nCal):
+            if mod==1: rCalM1.append(cal.GetCalList(calKey,i)[0])
+            if mod==2: rCalM2.append(cal.GetCalList(calKey,i)[0])
 
         # 2. loop over bkgIdx
         for bIdx in range(bLo, bHi+1):
@@ -104,11 +110,36 @@ def makeSubDSPlot():
 
     # p0.annotate("%d" % rFirst, xy=(rFirst, 0.9), xytext=(rFirst-200, 0.85), fontsize=15)
     # p0.annotate("%d" % rLast, xy=(rLast, 0.9), xytext=(rLast-200, 0.85), fontsize=15)
-    p0.annotate("DS-%s" % ds, xy=(rLast, 0.9), xytext=(rLast-200, 0.85), fontsize=15)
+    # p0.annotate("DS-%s" % ds, xy=(rLast, 0.9), xytext=(rLast-200, 0.85), fontsize=15)
+    p0.annotate("Bkg    Cal", xy=(rLast, 0.9), xytext=(rLast-200, 0.85), fontsize=15)
 
-    p0.annotate('bIdx %d' % 78, xy=(rBkg[78],0.95), xytext=(rBkg[78]-800, 0.85), fontsize=15, \
-        arrowprops=dict(arrowstyle="->"))
+    # p0.annotate('bIdx %d' % 78, xy=(rBkg[78],0.95), xytext=(rBkg[78]-800, 0.85), fontsize=15, \
+        # arrowprops=dict(arrowstyle="->"))
 
+
+    # 2. whole-ds plot, with calIdx positions
+
+    p1.plot((rFirst, rLast), (1, 1), '-k')
+
+    p1.plot((rFirst, rFirst), (0.9, 1.1), '-k')
+    p1.plot((rLast, rLast), (0.9, 1.1), '-k')
+
+    for r in rCalM1:
+        p1.plot((r,r),(0.95,1.05),'-g', lw=2)
+
+    for r in rCalM2:
+        p1.plot((r,r),(0.95,1.05),'-m', lw=2)
+
+    p1.set_ylim(0.8, 1.2)
+    p1.set_xlim(rFirst-100, rLast+100)
+
+    # plt.show()
+    plt.savefig("../plots/bkgCalIdxs2.pdf")
+
+
+
+
+    return
 
     # 2. bIdx 78, which has multiple sbIdx and scIdx's
     p1.set_ylim(0.6, 1.35)

@@ -9,9 +9,9 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 # sys.argv.append("-b")
-ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/DataSetInfo.py')
-wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
-calInfo = ds.CalInfo()
+import dsi
+import waveLibs as wl
+calInfo = dsi.CalInfo()
 
 def main():
 
@@ -38,7 +38,8 @@ def main():
     # getPhysProbability()
     # get2615()
     # plot2615()
-    plotCrosstalk()
+    # plotCrosstalk()
+    physProb2()
 
 
 def getSumEne(tree, theCut):
@@ -1378,6 +1379,24 @@ def plotCrosstalk():
     plt.tight_layout()
     # plt.savefig("../plots/longCal-2615-mult.png")
     plt.show()
+
+
+def physProb2():
+    from scipy.stats import poisson
+
+    rMult = [0, 319.48, 54.35, 8.06, 1.01]
+    # dt = [0, 8e-6, 12e-6, 16e-6, 20e-6] # us
+    dt = 12e-6 # the maximum m==2 window
+
+    pm1 = poisson.pmf(1, rMult[1] * dt)
+    p2m1 = poisson.pmf(2, rMult[1] * dt)
+    pm2 = poisson.pmf(1, rMult[2] * dt)
+
+    print("Probability of one mH==1 hit:  %.3e" % pm1)
+    print("Probability of one mH==2 hit:  %.3e" % pm2)
+    # print("Probability of two mH==1 hits: %.3e" % (pm1*pm1))
+    print("Probability of two mH==1 hits: %.3e" % p2m1)
+    print("Fraction of double m==1 hits in the m==2 population: ", p2m1/pm2)
 
 
 if __name__=="__main__":
