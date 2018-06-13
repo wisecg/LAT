@@ -32,7 +32,8 @@ def main():
     # fitSlo_distribution()
     # fitSlo_det_efficiencies()
     # fitSlo_tot_eff()
-    ext_pulser_fast_distribution()
+    # get_ext_pulser_data()
+    plot_ext_pulser()
 
 
 def spec():
@@ -1263,115 +1264,132 @@ def fitSlo_tot_eff():
     plt.show()
 
 
-def ext_pulser_fast_distribution():
-    """ Adapted from ext2.py::getEff """
-    # from ROOT import TChain, GATDataSet
+def get_ext_pulser_data():
+    """ Adapted from ext2.py::getEff
+    Just gets data and save into a npz file.
+    """
+    from ROOT import TChain, GATDataSet
+    import glob
 
-    extPulserInfo = cal.GetSpecialList()["extPulserInfo"]
-    syncChan = wl.getChan(0,10,0) # 672
+    # this is the output
+    extData = {} # {run: [pIdx, runTime, extChan, hitE, fSlo]}
 
-    ds, cIdx, bIdx, sIdx = 0, 33, 75, 0 # runs 6887-6963, closest to this one
+    for pIdx in [19,20,21]:
+    # for pIdx in [19]:
 
-    calDB = db.TinyDB('./calDB.json')
-    pars = db.Query()
-    fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % ("ds0_m1", cIdx), False, calDB, pars)
-    thD = dsi.getDBRecord("thresh_ds%d_bkg%d_sub%d" % (ds, bIdx, sIdx), False, calDB, pars)
-
-    # for pIdx in [19,20,21]:
-    for pIdx in [19]:
-
-        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
-        attList = extPulserInfo[pIdx][0]
+        extPulserInfo = cal.GetSpecialList()["extPulserInfo"]
+        attList = extPulserInfo[pIdx][0] # unused
         extChan = extPulserInfo[pIdx][-1]
-        fsCut = fsD[extChan][2] # 90% value (used in LAT3)
+        syncChan = wl.getChan(0,10,0) # 672
 
-        effVals, threshVals, trigVals = [], [], []
-        eneVals, sloVals, rtVals = [], [], []
-        for i, run in enumerate(runList):
-            if run in [7225, 7233]:
-                continue
+        runList = cal.GetSpecialRuns("extPulser",pIdx)
+        for run in runList:
 
             # elogs: "20 Hz, 150 second runs"
             gds = GATDataSet(run)
             runTime = gds.GetRunTime() # sec
-            pulseRate = 20 # Hz
+            # pulseRate = 20 # Hz
 
-            fList = dsi.getLATRunList([run],"%s/lat" % (ds.specialDir))
+            fList = glob.glob(dsi.specialDir+"/lat/latSkimDS0_run%d_*.root" % run)
+            tt = TChain("skimTree")
+            for f in fList: tt.Add(f)
 
+            tCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
+            n = tt.Draw("trapENFCal:channel:fitSlo",tCut,"goff")
+            hitE, chan, fSlo = tt.GetV1(), tt.GetV2(), tt.GetV3()
+            hitE = np.asarray([hitE[i] for i in range(n) if chan[i]==extChan])
+            fSlo = np.asarray([fSlo[i] for i in range(n) if chan[i]==extChan])
 
-            return
-            latChain = TChain("skimTree")
-            for f in fList:
-                latChain.Add("%s/lat/%s" % (ds.specialDir,f))
-
-            tNames = ["Entry$","mH","channel","trapENFCal","fitSlo","den90","den10","threshKeV","threshSigma"]
-            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
-            tVals = wl.GetVX(latChain,tNames,theCut)
-            nPass = len(tVals["Entry$"])
-
-            enfArr = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
-            sloArr = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
-
-            if len(enfArr)==0:
-                print("Run %d, No hits in channel %d found.  Continuing ..." % (run,extChan))
+            if len(hitE)==0:
                 continue
 
-            eneVals.extend(enfArr)
-            sloVals.extend(sloArr)
-            rtVals.extend(rtArr)
+            extData[run] = [pIdx, runTime, extChan, hitE, fSlo]
 
-            thr = [tVals["threshKeV"][i] for i in range(nPass) if tVals["channel"][i]==extChan][0]
-            sig = [tVals["threshSigma"][i] for i in range(nPass) if tVals["channel"][i]==extChan][0]
-            if thr < 99999 and sig < 99999:
-                threshVals.append((thr,sig))
+            tt.Reset()
 
-            muE, stdE = np.mean(np.asarray(enfArr)), np.std(np.asarray(enfArr))
-            muF, stdF = np.mean(np.asarray(sloArr)), np.std(np.asarray(sloArr))
-            nTot = len(sloArr)
-            nAcc = len([fs for fs in sloArr if fs < fsCut])
-            eff = (nAcc/nTot)
-            effVals.append((muE,eff))
+    # save output
+    np.savez("./data/lat-extPulser.npz",extData)
 
-            nHits = len(enfArr)
-            expHits = runTime * pulseRate
-            trigEff = nHits / expHits
-            trigVals.append((muE,trigEff))
 
-            print("pIdx %d  run %d  chan %d  nHits %d  (exp %d) muE %.2f  muFS %.2f  eff %.2f  trigEff %.2f" % (pIdx,run,extChan,nHits,expHits,muE,muF,eff,trigEff))
+def plot_ext_pulser():
+    """ The ext pulser data doesn't have the same centroid as the physics data
+    since it wasn't tuned quite right.  So we find the centroid of a higher-E set for each channel
+    and plot the other ones relative to that. """
 
-        eneVals, sloVals, rtVals = np.asarray(eneVals), np.asarray(sloVals), np.asarray(rtVals)
+    ds, cIdx, bIdx, sIdx = 0, 33, 75, 0 # runs 6887-6963, closest to this one
+    # calDB = db.TinyDB('./calDB.json')
+    # pars = db.Query()
+    # fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % ("ds0_m1", cIdx), False, calDB, pars)
+    # thD = dsi.getDBRecord("thresh_ds%d_bkg%d_sub%d" % (ds, bIdx, sIdx), False, calDB, pars)
 
-        fig = plt.figure(figsize=(8,8),facecolor='w')
-        p1 = plt.subplot(211)
-        p2 = plt.subplot(212)
+    f = np.load("./data/lat-extPulser.npz")
+    extData = f['arr_0'].item()  # {run: [pIdx, runTime, extChan, hitE, fSlo]}
 
-        xLo, xHi, bpX = 0, 50, 0.2
-        yLo, yHi, bpY = 0, 300, 1.
-        nbX, nbY = int((xHi-xLo)/bpX), int((yHi-yLo)/bpY)
+    # get centroids
+    # for run in extData:
+    #     ch = extData[run][2]
+    #     muE = np.mean(extData[run][3])
+    #     stdE = np.std(extData[run][3])
+    #     muFS = np.mean(extData[run][4])
+    #     stdFS = np.std(extData[run][4])
+    #     print("run %d  ch %d  E %.2f pm %.2f  FS %.2f pm %.2f" % (run, ch, muE, stdE, muFS, stdFS))
+    # run 7236  ch 624  E 54.78 pm 0.14  FS 74.80 pm 1.41
+    # run 7249  ch 688  E 46.83 pm 0.11  FS 67.14 pm 1.81
+    # run 7220  ch 674  E 71.53 pm 1.30  FS 67.56 pm 95.30
+    # runMap = {7236:624, 7249:688, 7220:674}
 
-        _,_,_,im = p1.hist2d(eneVals, sloVals, bins=[nbX, nbY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
-        fig.colorbar(im, ax=p1)
-        p1.axhline(fsCut, color='black', linewidth=3)
+    # cent = {}
+    # for run in extData:
+    #     if run not in runMap: continue
+    #     ch = extData[run][2]
+    #     fLo, fHi, fpb = 50, 100, 0.5
+    #     x, hist = wl.GetHisto(extData[run][4], fLo, fHi, fpb)
+    #     fMax = x[np.argmax(hist)]
+    #     cent[ch] = fMax
+    #     # plt.plot(x, hist, ls='steps')
+    #     # plt.axvline(fMax, c='r')
+    #     # plt.show()
 
-        p1.set_title("pIdx %d  channel %d  fsCut %.2f" % (pIdx, extChan, fsCut))
-        p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-        p1.set_ylabel("fitSlo", horizontalalignment='right',y=1.0)
+    # this is the result of the above block
+    centMap = {624: 74.75, 688: 67.25, 674: 65.75}
 
-        xvals = np.asarray([val[0] for val in sorted(effVals) if 1. < val[0] < 10.])
-        yvals = np.asarray([val[1] for val in sorted(effVals) if 1. < val[0] < 10.])
-        p2.plot(xvals, yvals, "o", c='b', markersize=5, label='data')
+    fig = plt.figure(figsize=(8,6))
+    p1 = plt.subplot(211)
+    p2 = plt.subplot(212)
 
-        popt1kev,_ = curve_fit(threshFunc, xvals, yvals)
-        xnew = np.arange(0, max(xvals), 0.1)
-        p2.plot(xnew, threshFunc(xnew, *popt1kev), 'r-', label="fit mu=%.2f\nfit sig=%.2f" % tuple(popt1kev))
+    # hitE, fSlo = [], []
+    cols = {624:'r', 688:'g', 674:'b'}
+    for run in extData:
+        ch = extData[run][2]
+        hitE = extData[run][3]
+        # fSlo = extData[run][4] # unshifted
+        fSlo = [fs - centMap[ch] for fs in extData[run][4]] # shifted
+        p1.plot(hitE, fSlo, '.', c=cols[ch], ms=0.5, alpha=0.7)
 
-        p2.set_title("fitSlo efficiency vs. trapENFCal")
-        p2.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
-        p2.set_ylabel("fitSlo Efficiency (%)", horizontalalignment='right',y=1.0)
-        p2.legend(loc='best')
+        fLo, fHi, fpb = -50, 200, 2
+        x, hist = wl.GetHisto(fSlo, fLo, fHi, fpb)
+        fMax = x[np.argmax(hist)]
+        muE = np.mean(hitE)
+        p2.plot(muE, fMax, ".", c=cols[ch], ms=10)
 
-        plt.tight_layout()
-        plt.savefig("../plots/efficiency_idx%d.pdf" % pIdx)
+    for ch in cols:
+        cpd = det.getChanCPD(ds, ch)
+        p1.plot(np.nan, np.nan, '.', c=cols[ch], label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
+        p2.plot(np.nan, np.nan, '.', c=cols[ch], label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
+
+    p1.set_ylim(-100, 150) # shifted
+    # p1.set_ylim(0, 200) # unshifted
+
+    p1.set_xlim(0, 20)
+    p2.set_xlim(0, 20)
+    p2.legend()
+    p2.set_xlabel("Energy (keV)", ha='right', x=1)
+    p2.set_ylabel("fitSlo Centroid", ha='right', y=1)
+    p1.set_ylabel("fitSlo", ha='right', y=1)
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat-extPulser-centroid.pdf")
 
 
 if __name__=="__main__":
