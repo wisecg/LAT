@@ -15,13 +15,14 @@ bkg = dsi.BkgInfo()
 det = dsi.DetInfo()
 cal = dsi.CalInfo()
 import waveLibs as wl
+import tinydb as db
 
 def main():
 
     # spec()
     # spec_vs_cpd()
     # thresh_cut_cal()
-    # ds3_trig_eff()
+    # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
     # m2s238_hit_spec()
@@ -29,7 +30,9 @@ def main():
     # slowness_vs_energy()
     # fitSlo_stability()
     # fitSlo_distribution()
-    fitSlo_efficiency()
+    # fitSlo_det_efficiencies()
+    # fitSlo_tot_eff()
+    ext_pulser_fast_distribution()
 
 
 def spec():
@@ -272,9 +275,10 @@ def thresh_cut_cal():
     plt.savefig("./plots/lat-dtm1-thresh.pdf")
 
 
-def ds3_trig_eff():
+def ds3_det_eff():
     """ Adapted from lat-expo.py::getEfficiency.
     Plots the combined trigger efficiency from each detector in DS3 separately.
+    Also plots the slowness efficiency separately
     """
     import tinydb as db
     import lat3
@@ -293,7 +297,7 @@ def ds3_trig_eff():
     dsList = [3]
 
     # efficiency output
-    xLo, xHi = 0, 20
+    xLo, xHi = 0, 30
     xEff = np.arange(xLo, xHi, 0.01)
     totEnrEff = {ds:np.zeros(len(xEff)) for ds in dsList}
     totNatEff = {ds:np.zeros(len(xEff)) for ds in dsList}
@@ -486,16 +490,25 @@ def ds3_trig_eff():
                 idx = np.where(xEff < 2)
                 print(cpd, np.sum(trigEff[ch][idx]))
 
-                plt.plot(xEff, trigEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
-                # plt.plot(xEff, fSloEff[ch], '-')
+                # plot 1 - trigger efficiency only
+                # plt.plot(xEff, trigEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 1
+
+                # plot 2 - slowness efficiency only
+                plt.plot(xEff, fSloEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
+
+                # plot 3 - total efficiency
                 # plt.plot(xEff, totEff[ch], '-')
-            plt.xlim(0.5,6)
+
+            # plt.xlim(0.5,6) # trigger limit
+            plt.xlim(0.5, 30) # slowness limit
+
             plt.xlabel("Energy (keV)", ha='right', x=1)
             plt.ylabel("Enr. Exposure (kg-d)", ha='right', y=1)
             plt.legend(loc=4, ncol=3, fontsize=14)
             plt.tight_layout()
             # plt.show()
-            plt.savefig("./plots/lat-trigEff-DS3.pdf")
+            # plt.savefig("./plots/lat-trigEff-DS3.pdf")
+            plt.savefig("./plots/lat-sloEff-DS3.pdf")
             exit()
 
         #     for ch in chList:
@@ -1087,7 +1100,7 @@ def fitSlo_distribution():
     plt.savefig("./plots/lat-fitSlo-hist.pdf")
 
 
-def fitSlo_efficiency():
+def fitSlo_det_efficiencies():
     """ Load the efficiencies from LAT2 directly for faster plotting. """
     from statsmodels.stats import proportion
     from scipy.optimize import curve_fit
@@ -1223,6 +1236,142 @@ def fitSlo_efficiency():
         # plt.show()
         # exit()
         plt.savefig("./plots/lat2-eff-%s.pdf" % cpd)
+
+
+def fitSlo_tot_eff():
+
+    f = np.load(dsi.latSWDir+'/data/lat-expo-efficiency-all.npz')
+
+    xEff = f['arr_0']
+    eMin, eMax, nBins = 0, 50, len(xEff)
+    totEnrEff = f['arr_1'].tolist()
+    totNatEff = f['arr_2'].tolist()
+    enrExp = f['arr_3'].tolist()
+    natExp = f['arr_4'].tolist()
+
+    cmap = plt.cm.get_cmap('brg',len(totEnrEff)+1)
+
+    for i, ds in enumerate(totEnrEff):
+        plt.plot(xEff, 0.9 * totEnrEff[ds]/np.max(totEnrEff[ds]), c=cmap(i), label="DS-%s" % str(ds))
+
+    plt.xlim(0,15)
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Enr. Acceptance", ha='right', y=1)
+    plt.yticks(np.arange(0,1.1,0.1))
+    plt.legend(loc=4)
+    plt.tight_layout()
+    plt.show()
+
+
+def ext_pulser_fast_distribution():
+    """ Adapted from ext2.py::getEff """
+    # from ROOT import TChain, GATDataSet
+
+    extPulserInfo = cal.GetSpecialList()["extPulserInfo"]
+    syncChan = wl.getChan(0,10,0) # 672
+
+    ds, cIdx, bIdx, sIdx = 0, 33, 75, 0 # runs 6887-6963, closest to this one
+
+    calDB = db.TinyDB('./calDB.json')
+    pars = db.Query()
+    fsD = dsi.getDBRecord("fitSlo_%s_idx%d_m2s238" % ("ds0_m1", cIdx), False, calDB, pars)
+    thD = dsi.getDBRecord("thresh_ds%d_bkg%d_sub%d" % (ds, bIdx, sIdx), False, calDB, pars)
+
+    # for pIdx in [19,20,21]:
+    for pIdx in [19]:
+
+        runList = calInfo.GetSpecialRuns("extPulser",pIdx)
+        attList = extPulserInfo[pIdx][0]
+        extChan = extPulserInfo[pIdx][-1]
+        fsCut = fsD[extChan][2] # 90% value (used in LAT3)
+
+        effVals, threshVals, trigVals = [], [], []
+        eneVals, sloVals, rtVals = [], [], []
+        for i, run in enumerate(runList):
+            if run in [7225, 7233]:
+                continue
+
+            # elogs: "20 Hz, 150 second runs"
+            gds = GATDataSet(run)
+            runTime = gds.GetRunTime() # sec
+            pulseRate = 20 # Hz
+
+            fList = dsi.getLATRunList([run],"%s/lat" % (ds.specialDir))
+
+
+            return
+            latChain = TChain("skimTree")
+            for f in fList:
+                latChain.Add("%s/lat/%s" % (ds.specialDir,f))
+
+            tNames = ["Entry$","mH","channel","trapENFCal","fitSlo","den90","den10","threshKeV","threshSigma"]
+            theCut = "(channel==%d || channel==%d) && mH==2" % (syncChan, extChan) # enforce correct sync
+            tVals = wl.GetVX(latChain,tNames,theCut)
+            nPass = len(tVals["Entry$"])
+
+            enfArr = [tVals["trapENFCal"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+            sloArr = [tVals["fitSlo"][i] for i in range(nPass) if tVals["channel"][i]==extChan]
+
+            if len(enfArr)==0:
+                print("Run %d, No hits in channel %d found.  Continuing ..." % (run,extChan))
+                continue
+
+            eneVals.extend(enfArr)
+            sloVals.extend(sloArr)
+            rtVals.extend(rtArr)
+
+            thr = [tVals["threshKeV"][i] for i in range(nPass) if tVals["channel"][i]==extChan][0]
+            sig = [tVals["threshSigma"][i] for i in range(nPass) if tVals["channel"][i]==extChan][0]
+            if thr < 99999 and sig < 99999:
+                threshVals.append((thr,sig))
+
+            muE, stdE = np.mean(np.asarray(enfArr)), np.std(np.asarray(enfArr))
+            muF, stdF = np.mean(np.asarray(sloArr)), np.std(np.asarray(sloArr))
+            nTot = len(sloArr)
+            nAcc = len([fs for fs in sloArr if fs < fsCut])
+            eff = (nAcc/nTot)
+            effVals.append((muE,eff))
+
+            nHits = len(enfArr)
+            expHits = runTime * pulseRate
+            trigEff = nHits / expHits
+            trigVals.append((muE,trigEff))
+
+            print("pIdx %d  run %d  chan %d  nHits %d  (exp %d) muE %.2f  muFS %.2f  eff %.2f  trigEff %.2f" % (pIdx,run,extChan,nHits,expHits,muE,muF,eff,trigEff))
+
+        eneVals, sloVals, rtVals = np.asarray(eneVals), np.asarray(sloVals), np.asarray(rtVals)
+
+        fig = plt.figure(figsize=(8,8),facecolor='w')
+        p1 = plt.subplot(211)
+        p2 = plt.subplot(212)
+
+        xLo, xHi, bpX = 0, 50, 0.2
+        yLo, yHi, bpY = 0, 300, 1.
+        nbX, nbY = int((xHi-xLo)/bpX), int((yHi-yLo)/bpY)
+
+        _,_,_,im = p1.hist2d(eneVals, sloVals, bins=[nbX, nbY], range=[[xLo,xHi],[yLo,yHi]], norm=LogNorm(), cmap='jet')
+        fig.colorbar(im, ax=p1)
+        p1.axhline(fsCut, color='black', linewidth=3)
+
+        p1.set_title("pIdx %d  channel %d  fsCut %.2f" % (pIdx, extChan, fsCut))
+        p1.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
+        p1.set_ylabel("fitSlo", horizontalalignment='right',y=1.0)
+
+        xvals = np.asarray([val[0] for val in sorted(effVals) if 1. < val[0] < 10.])
+        yvals = np.asarray([val[1] for val in sorted(effVals) if 1. < val[0] < 10.])
+        p2.plot(xvals, yvals, "o", c='b', markersize=5, label='data')
+
+        popt1kev,_ = curve_fit(threshFunc, xvals, yvals)
+        xnew = np.arange(0, max(xvals), 0.1)
+        p2.plot(xnew, threshFunc(xnew, *popt1kev), 'r-', label="fit mu=%.2f\nfit sig=%.2f" % tuple(popt1kev))
+
+        p2.set_title("fitSlo efficiency vs. trapENFCal")
+        p2.set_xlabel("trapENFCal (keV)", horizontalalignment='right',x=1.0)
+        p2.set_ylabel("fitSlo Efficiency (%)", horizontalalignment='right',y=1.0)
+        p2.legend(loc='best')
+
+        plt.tight_layout()
+        plt.savefig("../plots/efficiency_idx%d.pdf" % pIdx)
 
 
 if __name__=="__main__":

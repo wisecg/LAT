@@ -54,7 +54,6 @@ def main(argv):
             getEfficiencyROOT()
 
 
-
 def getPSACutRuns(ds, cutType, verbose=False):
     """ ./chan-sl.py -cov [ds] [cutType]
     Check which bkgIdx's we have good cut values for,
@@ -562,14 +561,17 @@ def getEfficiency():
     pars = db.Query()
     enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
 
-    mode = "trig"  # trigger efficiency only
+    # mode = "trig"  # trigger efficiency only
+    mode = "slo"     # slowness efficiency only
     # mode = "all"   # does all PS
 
     # dsList = [0,1,2,3,4,"5A","5B","5C"]  # default
-
-    debugMode = True
     # dsList = ["5A"]
     dsList = [3]
+
+    debugMode = True
+    if debugMode:
+        print("WARNING: debug mode.  dsList:",dsList)
 
     # efficiency output
     xLo, xHi = 0, 50
@@ -747,6 +749,8 @@ def getEfficiency():
                             # total efficiency
                             if mode == "trig":
                                 totEff[ch] += tEff
+                            elif mode == "slo":
+                                totEff[ch] += fEff
                             elif mode == "all":
                                 totEff[ch] += np.multiply(tEff, fEff) # this is what we want
                             else:
@@ -754,12 +758,12 @@ def getEfficiency():
                                 exit()
 
             # thesis plot: individual efficiencies
-            # for ch in chList:
-            #     plt.plot(xEff, trigEff[ch], '-')
-            #     plt.plot(xEff, fSloEff[ch], '-')
-            #     plt.plot(xEff, totEff[ch], '-')
-            # plt.xlim(0,10)
-            # plt.show()
+            for ch in chList:
+                # plt.plot(xEff, trigEff[ch], '-')
+                plt.plot(xEff, fSloEff[ch], '-')
+                # plt.plot(xEff, totEff[ch], '-')
+            plt.xlim(0,10)
+            plt.show()
             exit()
 
             for ch in chList:
@@ -776,7 +780,7 @@ def getEfficiency():
         # get total enr/nat efficiency for this DS
         for cpd in detEff[ds]:
 
-            if det.allDetIDs[cpd] > 100000:
+            if det.isEnr(cpd):
                 totEnrEff[ds] += detEff[ds][cpd]
             else:
                 totNatEff[ds] += detEff[ds][cpd]
@@ -797,13 +801,15 @@ def getEfficiency():
 
         plt.xlabel("Energy (keV)", ha='right', x=1.)
         # plt.ylabel("Exposure (kg-d)", ha='right', y=1.)
-        plt.ylabel("RooFit Efficiency", ha='right', y=1.)
+        plt.ylabel("Acceptance", ha='right', y=1.)
         plt.legend()
         plt.tight_layout()
         # plt.show()
         plt.savefig("./plots/lat-expo-eff-%s-ds%s.pdf" % (mode, ds))
 
     # Finally, save output.
+    if debugMode:
+        print("I'm not saving output, I'm in debug mode, dsList:",dsList)
     if not debugMode:
         np.savez("./data/lat-expo-efficiency-%s.npz" % mode, xEff, totEnrEff, totNatEff, enrExp, natExp)
 

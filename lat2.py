@@ -602,42 +602,44 @@ def setSloCut():
             plt.tight_layout()
             plt.savefig("./plots/lat2-%s.pdf" % cpd)
 
+
+            # === don't save this one, the version in lat-plots is better ===
             # plot efficiency vs energy.
-            plt.figure(3)
-            p31.cla()
-
-            p31.plot(xEff, sloEff, '.b', ms=10., label='C%sP%sD%s  nBin %.1f' % (cpd[0],cpd[1],cpd[2], nBin))
-            p31.errorbar(xEff, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
-
-            xFunc = np.arange(xPassLo, xPassHi, 0.1)
-            p31.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label='Weibull CDF')
-            p31.axvline(1.,color='r', lw=1., label='1keV eff: %.2f' % wl.weibull(1.,*popt))
-
-            p31.set_xlim(xPassLo, xPassHi)
-            p31.set_ylim(0,1)
-            p31.set_xlabel("Energy (keV)", ha='right', x=1)
-            p31.set_ylabel("Efficiency", ha='right', y=1)
-            p31.legend(loc=4)
-
-            p32.cla()
-            p32.set_xlim(xPassLo, xPassHi)
-
-            hResid = 100*(wl.weibull(xEff, *popt) - sloEff)
-            meanRes, stdRes = np.mean(hResid), np.std(hResid)
-            p32.axhline(meanRes, c='b', alpha=0.3, label='mean:%.2f%%' % meanRes)
-            p32.axhline(meanRes+stdRes, c='m', alpha=0.3, label='std:%.2f%%' % stdRes)
-            p32.axhline(meanRes-stdRes, c='m', alpha=0.3)
-
-            p32.plot(xEff, hResid, ".g")
-            p32.errorbar(xEff, np.zeros(len(xEff)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), \
-                 color='k', linewidth=0.8, fmt='none')
-            p32.axvline(1.,color='r', lw=1.)
-            p32.set_ylabel("Resid(%)")
-
-            plt.legend(loc=1,ncol=2,fontsize=8)
-
-            plt.tight_layout()
-            plt.savefig("./plots/lat2-eff-%s.pdf" % cpd)
+            # plt.figure(3)
+            # p31.cla()
+            #
+            # p31.plot(xEff, sloEff, '.b', ms=10., label='C%sP%sD%s  nBin %.1f' % (cpd[0],cpd[1],cpd[2], nBin))
+            # p31.errorbar(xEff, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+            #
+            # xFunc = np.arange(xPassLo, xPassHi, 0.1)
+            # p31.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label='Weibull CDF')
+            # p31.axvline(1.,color='r', lw=1., label='1keV eff: %.2f' % wl.weibull(1.,*popt))
+            #
+            # p31.set_xlim(xPassLo, xPassHi)
+            # p31.set_ylim(0,1)
+            # p31.set_xlabel("Energy (keV)", ha='right', x=1)
+            # p31.set_ylabel("Efficiency", ha='right', y=1)
+            # p31.legend(loc=4)
+            #
+            # p32.cla()
+            # p32.set_xlim(xPassLo, xPassHi)
+            #
+            # hResid = 100*(wl.weibull(xEff, *popt) - sloEff)
+            # meanRes, stdRes = np.mean(hResid), np.std(hResid)
+            # p32.axhline(meanRes, c='b', alpha=0.3, label='mean:%.2f%%' % meanRes)
+            # p32.axhline(meanRes+stdRes, c='m', alpha=0.3, label='std:%.2f%%' % stdRes)
+            # p32.axhline(meanRes-stdRes, c='m', alpha=0.3)
+            #
+            # p32.plot(xEff, hResid, ".g")
+            # p32.errorbar(xEff, np.zeros(len(xEff)), yerr=100*np.asarray([sloEff - ci_low, ci_upp - sloEff]), \
+            #      color='k', linewidth=0.8, fmt='none')
+            # p32.axvline(1.,color='r', lw=1.)
+            # p32.set_ylabel("Resid(%)")
+            #
+            # plt.legend(loc=1,ncol=2,fontsize=8)
+            #
+            # plt.tight_layout()
+            # plt.savefig("./plots/lat2-eff-%s.pdf" % cpd)
 
     # make total (all-detector) plots
     if makePlots:
@@ -649,7 +651,7 @@ def setSloCut():
         plt.bar(x, hAll, 0.95, color='b', label='All m2s238 hits')
         hLow = [ctsU10[cpd] for cpd in detList]
         plt.bar(x, hLow, 0.95, color='r', label='m2s238 hits < 10 keV')
-        plt.gca().set_ylim(1)
+        plt.gca().set_ylim(10)
         plt.gca().set_yscale('log')
         plt.xlabel("CPD (Detector)", ha='right', x=1.)
         xticks = np.arange(0, len(detList))
