@@ -9,7 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
-sns.set(style='darkgrid')
+sns.set(style='darkgrid', context='talk')
 
 """
     Simulated WF study
@@ -28,56 +28,95 @@ sns.set(style='darkgrid')
 
 
 # load LAT libraries
-import DataSetInfo as ds
 wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 
-fig = plt.figure(figsize=(12,7), facecolor='w')
-p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
-p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
-p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
-p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
-p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
-p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
-p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
+# fig = plt.figure(figsize=(12,7), facecolor='w')
+# p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
+# p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
+# p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
+# p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
+# p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
+# p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
+# p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
 
 
 def main():
     # procSim(10000)
-    # compareSim()
-    compareSloSim()
+    compareSim()
+    # compareSloSim()
 
 def compareSim():
-    plt.close(fig)
+    # plt.close(fig)
 
     inDir = os.environ['LATDIR']+'/data'
-    # dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_log.h5'.format(inDir))
-    dfSig2_low = pd.read_hdf('{}/SimPSA_sig2_low.h5'.format(inDir))
-    dfSig2 = pd.read_hdf('{}/SimPSA_sig2.h5'.format(inDir))
-    dfSig2['Distance'] = dfSig2['R']*dfSig2['R'] + dfSig2['Z']+dfSig2['Z']
-    dfSig2_low['Distance'] = dfSig2_low['R']*dfSig2_low['R'] + dfSig2_low['Z']+dfSig2_low['Z']
-    dfSig2_low = dfSig2_low.append(dfSig2, ignore_index=True)
-    # dfCut = dfSig2_low.loc[dfSig2_low['Amp'] < 8]
-    dfCut = dfSig2_low.loc[(dfSig2_low['Amp'] < 14) & (dfSig2_low['fitSlo'] > 2)]
+    dfSig = pd.read_hdf('{}/SimPSA_P42574A.h5'.format(inDir))
+    dfSig['Distance'] = dfSig['R']*dfSig['R'] + dfSig['Z']+dfSig['Z']
+    dfSig['fitSloShift'] = dfSig['fitSlo'] - 84.5
+    dfSig['trapENFCal'] = dfSig['Amp']*0.3959
+    dfCut = dfSig.loc[(dfSig['fitSlo'] > 3) & (dfSig['Amp'] > 2)]
+    # dfCut = dfSig.loc[(dfSig['Amp'] < 14) & (dfSig['fitSlo'] > 2)]
 
-    # g1 = sns.FacetGrid(dfCut, hue='Distance', size=7)
-    # g1 = g1.map(plt.scatter, 'Amp', 'fitSlo').add_legend()
-    # g1 = sns.FacetGrid(dfSig2.loc[dfSig2['Amp'] == 6], hue='Dist', size=7)
-    # g1 = g1.map(plt.hist, 'fitSlo', bins=np.linspace(0,1000,100), alpha=0.5).add_legend()
-    # g1 = g1.map(plt.hist, 'fitSlo', bins=np.linspace(0,2500,250), alpha=0.5).add_legend()
+    # g1 = sns.lmplot(x='Amp', y='fitSlo', data=dfCut, fit_reg=False, size=7, scatter_kws={'alpha':0.3}, legend_out=False)
     # g1.set(yscale='log')
-
-    g1 = sns.lmplot(x='Amp', y='fitSlo', data=dfCut, hue='Distance', fit_reg=False, x_jitter=0.3, size=7, scatter_kws={'alpha':0.3}, legend_out=False)
-    g1.set(yscale='log')
-    plt.subplots_adjust(top=0.95)
-    g1.fig.suptitle('fitSlo vs Amplitude (Simulated Waveforms)')
-    g1.set_axis_labels('Amplitude (ADC)', 'fitSlo')
+    # plt.subplots_adjust(top=0.95)
+    # g1.fig.suptitle('fitSlo vs Amplitude (Simulated Waveforms)')
+    # g1.set_axis_labels('Amplitude (ADC)', 'fitSlo')
 
 
-    # g2 = sns.FacetGrid(dfCut, hue='Amp', size=7)
-    # g2 = g2.map(plt.hist, 'fitSlo', bins=np.linspace(0,2500,250), alpha=0.50).add_legend()
+    # g2 = sns.FacetGrid(dfCut,size=7)
+    # g2 = g2.map(plt.hist, 'fitSloShift', bins=np.linspace(-200,200,200), alpha=0.50)
     # g2.set(yscale='log')
 
-    # plt.tight_layout()
+
+    fig3, (ax3, ax4, ax5) = plt.subplots(nrows=3, figsize=(10,7))
+    fLo, fHi, fpb = -100, 150, 2
+
+    centList, cutList = [],[]
+    accList = []
+    diffList = []
+
+    eRangesList = [[1, 2], [2, 4], [4, 5], [5, 8]]
+
+    for amp in np.unique(dfCut['trapENFCal']):
+    # for idx, [emin, emax] in enumerate(eRangesList):
+        dfCh = dfCut.loc[(dfCut['trapENFCal'] == amp)]
+        # dfCh = dfCut.loc[(dfCut['trapENFCal'] >= emin) & (dfCut['trapENFCal'] <= emax)]
+        fSlo = dfCh['fitSloShift'].values
+        x, h = wl.GetHisto(fSlo, fLo, fHi, fpb, shift=False)
+        fMax = x[np.argmax(h)]
+        n90 = np.percentile(fSlo, 90.)
+        # print(amp, fMax, n90)
+        centList.append(fMax)
+        cutList.append(n90)
+        diffList.append(n90 - fMax)
+
+    # Average the last 10 values
+    cutVal = cutList[-1]
+    for amp in np.unique(dfCut['trapENFCal']):
+        dfCh = dfCut.loc[(dfCut['trapENFCal'] == amp)]
+        fSlo = dfCh['fitSloShift'].values
+        nKeep = len(np.where(fSlo < cutVal)[0])
+        accList.append(100.*nKeep/len(fSlo))
+
+    ax3.plot(np.unique(dfCut['trapENFCal']), cutList, 'o', color='r',label='90%')
+    ax3.plot(np.unique(dfCut['trapENFCal']), centList, 'o', color='b', label='Centroid')
+    ax3.set_title('fitSlo vs Energy')
+    ax3.set_xlabel('trapENFCal (keV)')
+    ax3.set_ylabel('fitSlo (shifted)')
+    ax3.legend()
+    ax4.plot(np.unique(dfCut['trapENFCal']), diffList, '-', color='b',label='Difference')
+    ax4.set_ylabel('fitSlo difference')
+    ax4.set_xlabel('trapENFCal (keV)')
+    ax4.legend()
+    ax5.plot(np.unique(dfCut['trapENFCal']), accList, '-', color='b',label='Fast Pulse Acceptance')
+    ax5.set_ylabel('Acceptance (%)')
+    ax5.set_xlabel('trapENFCal (keV)')
+    ax5.set_ylim(0, 100)
+    ax5.legend()
+
+    print(accList)
+    print(np.unique(dfCut['trapENFCal']).tolist())
+    plt.tight_layout()
     plt.show()
     # g1.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_vs_Amplitude_Scatter.png')
     # g2.savefig('/Users/brianzhu/macros/code/LAT/plots/Systematics/fitSlo/Sim_fitSlo_AmpComparison_log.png')
@@ -274,7 +313,7 @@ def convertDF(series):
         return 0
 
 
-def procSim(nMax = 5000):
+def procSim(nMax = None):
     """
         Get sum and hit spectra w/ threshold cut, without ch. 598 (it's noisy.)
         Here we use "mHT" and "sumET" exclusively.
@@ -288,18 +327,27 @@ def procSim(nMax = 5000):
     f1 = TFile('{}/waveSkimDS0_run4201.root'.format(inDir))
     skimTree = f1.Get('skimTree')
 
-    dfSigGen = pd.read_hdf('{}/SigGen_WFs_low.h5'.format(inDir))
-    sigList = [0, 20, 40, 60]
+    dfSigGen = pd.read_hdf('{}/SigGen_WFs_P42574A.h5'.format(inDir))
+    # sigList = [0, 20, 40, 60]
+    sigList = [0]
     # Truncates to 2017 samples, cuz we in 2017
     truncLo, truncHi = 8,6
     dataList = []
 
     print('Total Entries: ', skimTree.GetEntries())
-    for idx in range(min(nMax,skimTree.GetEntries())):
+    maxVal = 0
+    if nMax:
+        maxVal = min(nMax,skimTree.GetEntries())
+    else:
+        maxVal = skimTree.GetEntries()
+
+    for idx in range(maxVal):
         if idx%100 == 0:
             print("Processed Entry ", idx)
         skimTree.GetEntry(idx)
         if skimTree.mH > 1: continue # Only care about mH1 for noise
+        channel = skimTree.channel.at(0)
+        if channel != 624: continue
         wf = MGTWaveform()
         wf = skimTree.MGTWaveforms.at(0)
         signal = wl.processWaveform(wf,truncLo,truncHi)
@@ -310,8 +358,8 @@ def procSim(nMax = 5000):
         # Generate one fake WF at each amplitude/r/z combination (30 total)
         for index, row in dfSigGen.iterrows():
             # Skip the waveforms that are far
-            if row['r'] != 34.0: continue
-            if row['z'] != 50.0: continue
+            # if row['r'] != 34.0: continue
+            # if row['z'] != 50.0: continue
             for sigma in sigList:
                 dataMap = {}
                 if sigma == 0:
@@ -332,7 +380,7 @@ def procSim(nMax = 5000):
 
     df = pd.DataFrame.from_dict(dataList)
     print(df.head())
-    df.to_hdf('{}/SimPSA_GaussianFilter_Full.h5'.format(inDir), 'skimTree')
+    df.to_hdf('{}/SimPSA_P42574A.h5'.format(inDir), 'skimTree')
 
 
 def addSigToBaseline(data_blSub, sigWF):

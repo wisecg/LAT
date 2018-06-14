@@ -503,8 +503,15 @@ def loadFraction():
     ax1.legend()
     ax2.legend()
 
+    print(totHistVals)
+    print(surfHistVals)
+
     print(np.sum(totHistVals))
     print(np.sum(surfHistVals))
+
+    np.savez("../data/efficiency-corr2.npz", totHistVals, surfHistVals)
+
+    return
 
     # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module2.png')
     # plt.show()

@@ -25,7 +25,8 @@ def main():
     # amps = [2]
     # Amplitudes from 2 to 20 ADC (1 - 10 keV)
     # amps = [2*i for i in range(1,11)]
-    amps = [1,2,3,4,5,6,7,8,9,10]
+    # amps = [1,2,3,4,5,6,7,8,9,10]
+    amps = [i for i in range(1, 151)]
 
     # Secret Parameters without wiggles
     det.lp_num = [1.]
@@ -61,7 +62,7 @@ def main():
     # Save waveforms for later -- remember, only saving 1000 samples, ~500 before and ~500 after
     df = pd.DataFrame.from_dict(dataList)
     print(df.head())
-    df.to_hdf('{}/data/SigGen_WFs_low.h5'.format(outDir), 'skimTree')
+    df.to_hdf('{}/data/SigGen_WFs_full.h5'.format(outDir), 'skimTree')
 
 
 if __name__ == "__main__":
