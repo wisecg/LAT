@@ -33,7 +33,7 @@ def main():
     # fitSlo_det_efficiencies()
     # fitSlo_tot_eff()
     # get_ext_pulser_data()
-    plot_ext_pulser()
+    # plot_ext_pulser()
 
 
 def spec():
@@ -495,7 +495,10 @@ def ds3_det_eff():
                 # plt.plot(xEff, trigEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 1
 
                 # plot 2 - slowness efficiency only
-                plt.plot(xEff, fSloEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
+                # plt.plot(xEff, fSloEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
+
+                # plot 2a - normalized efficiency
+                plt.plot(xEff, fSloEff[ch]/np.amax(fSloEff[ch]), '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
 
                 # plot 3 - total efficiency
                 # plt.plot(xEff, totEff[ch], '-')
@@ -504,12 +507,14 @@ def ds3_det_eff():
             plt.xlim(0.5, 30) # slowness limit
 
             plt.xlabel("Energy (keV)", ha='right', x=1)
-            plt.ylabel("Enr. Exposure (kg-d)", ha='right', y=1)
+            # plt.ylabel("Enr. Exposure (kg-d)", ha='right', y=1)
+            plt.ylabel("Acceptance", ha='right', y=1)
             plt.legend(loc=4, ncol=3, fontsize=14)
             plt.tight_layout()
             # plt.show()
             # plt.savefig("./plots/lat-trigEff-DS3.pdf")
-            plt.savefig("./plots/lat-sloEff-DS3.pdf")
+            # plt.savefig("./plots/lat-sloEff-DS3.pdf")
+            plt.savefig("./plots/lat-sloEff-DS3-acc.pdf")
             exit()
 
         #     for ch in chList:
@@ -1308,7 +1313,7 @@ def get_ext_pulser_data():
             tt.Reset()
 
     # save output
-    np.savez("./data/lat-extPulser.npz",extData)
+    # np.savez("./data/lat-extPulser.npz",extData)
 
 
 def plot_ext_pulser():
@@ -1391,6 +1396,137 @@ def plot_ext_pulser():
     # plt.show()
     plt.savefig("./plots/lat-extPulser-centroid.pdf")
 
+
+def ext_pulser_width():
+
+    f = np.load("../data/lat-extPulser.npz")
+    extData = f['arr_0'].item()  # {run: [pIdx, runTime, extChan, hitE, fSlo]}
+
+    extInfo = {624:[7236, 74.75, 'r'], 688:[7249, 67.25, 'g'], 674:[7220, 65.75, 'b']}
+
+    def xGaussPDF(x,k,loc,scale,amp):
+        """ amp=overall multip factor, loc=mu, sc=sigma, k=tau """
+        from scipy.stats import exponnorm
+        return amp * exponnorm.pdf(x,k,loc,scale)
+
+    def xGaussCDF(x,k,loc,scale,amp):
+        from scipy.stats import exponnorm
+        return exponnorm.cdf(x,k,loc,scale)
+
+    fsMax, fsLo, fsHi, fsE, fsR = [], [], [], [], []
+
+    xgFits = {}
+
+    for i, run in enumerate(extData):
+
+        ch = extData[run][2]
+        cpd = det.getChanCPD(0, ch)
+
+        # if ch != 674: continue
+        # if i != 14: continue
+        if run in [7233]: continue
+
+        hitE = extData[run][3]
+        fSlo = extData[run][4]
+        idx = np.where(np.isfinite(hitE))
+        hitE, fSlo = hitE[idx], fSlo[idx]
+
+        muE = np.average(hitE)
+        sdE = np.std(hitE)
+        if muE < 1.: continue
+        if muE > 100: continue
+
+        runTime = extData[run][1]/1e9 # elogs: 20 Hz, 150 sec runs
+        pulseRate = 20 # Hz
+        nExp = int(runTime * pulseRate)
+        nTot = len(hitE)
+        tEff = nTot / nExp
+
+        # fSlo = extData[run][4] # unshifted
+        fSlo = [fs - extInfo[ch][1] for fs in extData[run][4]] # shifted
+
+        fLo, fHi = np.percentile(fSlo,1) * 1.2, np.percentile(fSlo,97) * 1.2
+        if fHi > 50: fHi = 50
+
+        nb = 100
+        fpb = (fHi-fLo)/nb
+
+        x, h = wl.GetHisto(fSlo, fLo, fHi, fpb, shift=False)
+        fMax = x[np.argmax(h)]
+        pct = []
+        for p in [10, 90]:
+            tmp = np.cumsum(h)/np.sum(h)*100
+            idx = np.where(tmp > p)
+            pct.append(x[idx][0])
+        wid = pct[1]-pct[0]
+
+        fsMax.append(fMax)
+        fsLo.append(pct[0])
+        fsHi.append(pct[1])
+        fsE.append(muE)
+        fsR.append(run)
+
+        tau, mu, sig, amp = 10, fMax, 10, 10000
+        np.seterr(invalid='ignore', over='ignore')
+        popt,_ = curve_fit(xGaussPDF, x, h, p0=(tau, mu, sig, amp)) # tau, mu, sig, amp
+        np.seterr(invalid='warn', over='warn')
+        xgFits[run] = popt
+
+        # print("%d  %d  %d  lo %.2f  hi %.2f  fpb %.2f  E %-5.1f  rt %.1f  %d/%d (%.3f)  FS  10%% %-5.1f  max %-5.1f  90%% %-5.1f  W %.1f" % (i, run, ch, fLo, fHi, fpb, muE, runTime, nTot, nExp, tEff, pct[0], fMax, pct[1], wid))
+
+        # plt.plot(x, h, ls='steps-mid', c=extInfo[ch][2], label="C%sP%sD%s, E %.1f  Max %.1f  Wid %.1f" % \
+        #     (cpd[0],cpd[1],cpd[2],muE, fMax,wid))
+        # xFunc = np.arange(fLo, fHi, 0.01)
+        # tau, mu, sig, amp = popt
+        # xgFit = xGaussPDF(xFunc, *popt)
+        # xgMax = xFunc[np.argmax(xgFit)]
+        # plt.plot(xFunc, xgFit, '-b', label = "xGaus, tau %.1f  mu %.1f  sig %.1f  amp %.1f" % (tau, mu, sig, amp))
+        # # get CDF
+        # # xgInt = xGaussCDF(xFunc, *popt)
+        # # distMax = np.amax(xgFit)
+        # # plt.plot(xFunc, xgInt, '-k', label = "xGauss CDF")
+        # # plt.axvline(xgMax, c='m', label='xg max %.1f' % xgMax)
+        # # plt.axvline(fMax, c='k')
+        # plt.axvline(pct[0], c='b')
+        # plt.axvline(pct[1], c='g')
+        # plt.xlabel("fitSlo (shifted)", ha='right', x=1)
+        # plt.legend(loc=1, fontsize=10)
+        # plt.tight_layout()
+        # plt.show()
+
+        # return
+
+    # ======== plot the fast pulse envelope ========
+
+    fsMax, fsLo, fsHi, fsE, fsR = np.asarray(fsMax), np.asarray(fsLo), np.asarray(fsHi), np.asarray(fsE). np.asarray(fsR)
+    idx = np.argsort(fsE)
+    fsMax, fsLo, fsHi, fsE = fsMax[idx], fsLo[idx], fsHi[idx], fsE[idx]
+    wid = fsHi[-1] - fsLo[-1]
+    fsWid = (fsHi-fsLo)/wid
+
+    # for i in range(len(fsE)):
+        # print("E %.1f  fMax %.1f  fWid %.1f" % (fsE[i], fsMax[i], fsWid[i]))
+
+    plt.errorbar(fsE, fsMax, yerr=[fsMax-fsLo, fsHi-fsMax], ms=7, lw=3, c='k', fmt='o')
+    # plt.errorbar(fsE, fsMax, yerr=fsWid, ms=1, lw=2, c='r', fmt='o')
+
+    def exp1(x, a, b, t): return a * np.exp(x / t) + b
+    def exp2(x, a, b, t): return a * (1 - np.exp(x / t)) + b
+
+    poptUP,_ = curve_fit(exp1, fsE, fsHi, p0=(90, 3, -3))
+    poptCT,_ = curve_fit(exp2, fsE, fsMax, p0=(100, -100, -3))
+    poptLO,_ = curve_fit(exp2, fsE, fsLo, p0=(100, -100, -3))
+
+    xFunc = np.arange(1, 20, 0.01)
+    plt.plot(xFunc, exp1(xFunc,*poptUP), "-r")
+    plt.plot(xFunc, exp2(xFunc,*poptCT), "-g")
+    plt.plot(xFunc, exp2(xFunc,*poptLO), "-r")
+
+    plt.xlim(1, 2)
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("fitSlo (shifted)", ha='right', y=1)
+    plt.tight_layout()
+    plt.show()
 
 if __name__=="__main__":
     main()

@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
 sns.set(style='darkgrid', context='talk')
-
 """
     Simulated WF study
     -- Generate simulated WFs from SigGen from within the bulk and near the surface of the detector
@@ -23,27 +22,16 @@ sns.set(style='darkgrid', context='talk')
     -- Add to force-triggered baselines
     -- Process with simplified LAT
     -- Study distributions
-
 """
 
-
 # load LAT libraries
-wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
-
-# fig = plt.figure(figsize=(12,7), facecolor='w')
-# p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
-# p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
-# p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
-# p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
-# p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
-# p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
-# p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
-
+import waveLibs as wl
 
 def main():
     # procSim(10000)
     compareSim()
     # compareSloSim()
+
 
 def compareSim():
     # plt.close(fig)
@@ -61,7 +49,6 @@ def compareSim():
     # plt.subplots_adjust(top=0.95)
     # g1.fig.suptitle('fitSlo vs Amplitude (Simulated Waveforms)')
     # g1.set_axis_labels('Amplitude (ADC)', 'fitSlo')
-
 
     # g2 = sns.FacetGrid(dfCut,size=7)
     # g2 = g2.map(plt.hist, 'fitSloShift', bins=np.linspace(-200,200,200), alpha=0.50)
@@ -114,7 +101,7 @@ def compareSim():
     ax5.set_ylim(0, 100)
     ax5.legend()
 
-    print(accList)
+    # print(accList)
     print(np.unique(dfCut['trapENFCal']).tolist())
     plt.tight_layout()
     plt.show()
@@ -321,6 +308,15 @@ def procSim(nMax = None):
         Save detailed info for events with hits < 2630 keV.
     """
     from ROOT import TFile, TTree, MGTWaveform
+
+    # fig = plt.figure(figsize=(12,7), facecolor='w')
+    # p0 = plt.subplot2grid((6,10), (0,0), colspan=10, rowspan=3) # waveform fit
+    # p1 = plt.subplot2grid((6,10), (3,0), colspan=10, rowspan=1) # residual
+    # p2 = plt.subplot2grid((6,10), (4,0), colspan=2, rowspan=2) # traces
+    # p3 = plt.subplot2grid((6,10), (4,2), colspan=2, rowspan=2)
+    # p4 = plt.subplot2grid((6,10), (4,4), colspan=2, rowspan=2)
+    # p5 = plt.subplot2grid((6,10), (4,6), colspan=2, rowspan=2)
+    # p6 = plt.subplot2grid((6,10), (4,8), colspan=2, rowspan=2)
 
     # Use the force acquisition baseline + SigGen waveforms
     inDir = os.environ['LATDIR']+'/data'

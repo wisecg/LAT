@@ -6,7 +6,8 @@ from statsmodels.stats import proportion
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
-sns.set(style='darkgrid')
+# sns.set(style='darkgrid')
+plt.style.use('../pltReports.mplstyle')
 
 # load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
@@ -35,7 +36,8 @@ def main():
     # getSpecPandas()
     # getSimPandas()
     # loadSpec()
-    loadFraction()
+    # loadFraction()
+    plotFraction()
     return
 
     # interceptList, distList, absdistList = loadScatter()
@@ -471,8 +473,9 @@ def loadFraction():
     """
         Loops through channels and draws fraction of surface/total events per channel/detector
     """
+    makePlots = False
 
-    inDir = os.environ['LATDIR']
+    inDir = os.environ['LATDIR'] + "/data"
     # df = pd.read_hdf('{}/DS5_Cal_HitData.h5'.format(inDir))
     df1 = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
     df2 = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
@@ -485,44 +488,51 @@ def loadFraction():
     totArr = np.concatenate((dfCut['trapENFCal1'].values, dfCut['trapENFCal2'].values))
     surfArr = np.concatenate((dfSurf1['trapENFCal1'].values, dfSurf2['trapENFCal2'].values))
 
-    totHistVals, totHistBins = np.histogram(totArr, bins=50, range=(0, 50))
-    surfHistVals, surfHistBins = np.histogram(surfArr, bins=50, range=(0, 50))
 
 
-    fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(10,8))
-    ax1.step(totHistBins[:-1]+0.5, totHistVals, label='All Events')
-    ax1.step(totHistBins[:-1]+0.5, surfHistVals, label='Transition Layer')
-    ax2.step(totHistBins[:-1]+0.5, np.divide(surfHistVals, totHistVals, dtype=float), label='Percentage')
-    ax1.set_xlim(0, 50)
-    ax2.set_xlim(0, 50)
-    ax1.set_title('Module 1 - Fraction of Transition Layer Events')
-    ax1.set_ylabel('Counts/keV')
-    ax1.set_xlabel('Energy (keV)')
-    ax2.set_ylabel('Fraction')
-    ax2.set_xlabel('Energy (keV)')
-    ax1.legend()
-    ax2.legend()
+    xLo, xHi, xpb = 0, 50, 1
+    xTot, hTot = wl.GetHisto(totArr, xLo, xHi, xpb, shift=False)
+    xSurf, hSurf = wl.GetHisto(surfArr, xLo, xHi, xpb, shift=False)
+    hFrac = np.divide(hSurf, hTot, dtype=float)
 
-    print(totHistVals)
-    print(surfHistVals)
+    if makePlots:
+        fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
 
-    print(np.sum(totHistVals))
-    print(np.sum(surfHistVals))
+        ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events")
+        ax1.plot(xSurf, hSurf, ls='steps', c='r', label="Transition Events")
+        ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+        ax2.plot(xTot, hFrac, ls='steps', c='r')
+        ax2.axvline(1, c='b', lw=1, label="1.0 keV")
 
-    np.savez("../data/efficiency-corr2.npz", totHistVals, surfHistVals)
+        ax1.set_xlim(0, 50)
+        ax2.set_xlim(0, 50)
+        # ax1.set_title('Module 1 - Fraction of Transition Layer Events')
+        ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
+        # ax1.set_xlabel('Energy (keV)', ha='right', x=1)
+        ax2.set_ylabel('Slow Fraction', ha='right', y=1)
+        ax2.set_xlabel('Energy (keV)', ha='right', x=1)
+        ax1.legend()
+        ax2.legend()
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig('../plots/sim-sloFrac-allDets.pdf')
+        # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module2.png')
 
-    return
 
-    # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_Module2.png')
-    # plt.show()
-
-    # Now go through detector lists
+    # === Now go through detector lists ===
     detList1 = np.unique(dfCut['CPD1'])
     detList2 = np.unique(dfCut['CPD2'])
     # Combine detector lists with union
     detListFull = np.union1d(detList1, detList2)
 
+    # save the histos into this dict
+    simHists = {}
+
+    plt.close()
+    fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+
     for det in detListFull:
+        print("Scanning det", det)
         ax1.cla()
         ax2.cla()
 
@@ -530,26 +540,94 @@ def loadFraction():
         dfCh2 = dfCut.loc[dfCut['CPD2'] == det]
         dfSurfCh1 = dfCh1.loc[dfCh1['fActiveness1'] < 1]
         dfSurfCh2 = dfCh2.loc[dfCh2['fActiveness2'] < 1]
+        totArrDet = np.concatenate((dfCh1['trapENFCal1'].values, dfCh2['trapENFCal2'].values))
+        surfArrDet = np.concatenate((dfSurfCh1['trapENFCal1'].values, dfSurfCh2['trapENFCal2'].values))
 
-        totArrCh = np.concatenate((dfCh1['trapENFCal1'].values, dfCh2['trapENFCal2'].values))
-        surfArrCh = np.concatenate((dfSurfCh1['trapENFCal1'].values, dfSurfCh2['trapENFCal2'].values))
+        xLo, xHi, xpb = 0, 50, 1
+        xTot, hTot = wl.GetHisto(totArrDet, xLo, xHi, xpb, shift=False)
+        xSurf, hSurf = wl.GetHisto(surfArrDet, xLo, xHi, xpb, shift=False)
+        hFrac = np.divide(hSurf, hTot, dtype=float)
 
-        totHistValsCh, _ = np.histogram(totArrCh, bins=50, range=(0, 50))
-        surfHistValsCh, _ = np.histogram(surfArrCh, bins=50, range=(0, 50))
-        fracCh = np.divide(surfHistValsCh, totHistValsCh, dtype=float)
-        ax1.step(totHistBins[:-1]+0.5, totHistValsCh, label='All Events')
-        ax1.step(totHistBins[:-1]+0.5, surfHistValsCh, label='Transition Layer')
-        ax2.step(totHistBins[:-1]+0.5, fracCh, label='Percentage')
+        simHists[str(det)] = [hTot, hSurf, xTot] # save output
+
+        if makePlots:
+
+            ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events, C{}P{}D{}".format(*str(det)))
+            ax1.plot(xSurf, hSurf, ls='steps', c='r', label="Transition Events")
+            ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+            ax2.plot(xTot, hFrac, ls='steps', c='r')
+            ax2.axvline(1, c='b', lw=1, label="1.0 keV")
+
+            ax1.set_xlim(0, 50)
+            ax2.set_xlim(0, 50)
+            ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
+            ax2.set_ylabel('Slow Fraction', ha='right', y=1)
+            ax2.set_xlabel('Energy (keV)', ha='right', x=1)
+            ax1.legend()
+            ax2.legend()
+            plt.tight_layout()
+            plt.show()
+            # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
+            return
+
+    # save hists for each detector, and the overall total, into one npz file
+    np.savez("../data/efficiency-corr2.npz", hTot, hSurf, xTot, simHists)
+
+
+def plotFraction():
+
+    f = np.load('../data/efficiency-corr2.npz')
+    hTot, hSurf, xTot, simHists = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3'].item()
+
+    xLo, xHi, xpb = 0, 50, 1
+    hFrac = np.divide(hSurf, hTot, dtype=float)
+
+    fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+
+    ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events")
+    ax1.plot(xTot, hSurf, ls='steps', c='r', label="Transition Events")
+    ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+    ax2.plot(xTot, hFrac, ls='steps', c='r')
+    ax2.axvline(1, c='b', lw=1, label="1.0 keV")
+    ax1.set_xlim(0, 50)
+    ax2.set_xlim(0, 50)
+    # ax1.set_title('Module 1 - Fraction of Transition Layer Events')
+    ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
+    # ax1.set_xlabel('Energy (keV)', ha='right', x=1)
+    ax2.set_ylabel('Slow Fraction', ha='right', y=1)
+    ax2.set_xlabel('Energy (keV)', ha='right', x=1)
+    ax1.legend()
+    ax2.legend()
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('../plots/sim-sloFrac-allDets.pdf')
+
+    for det in simHists:
+        if det!='163': continue
+        print(det)
+        hTot, hSurf, xTot = simHists[det]
+        hFrac = np.divide(hSurf, hTot, dtype=float)
+
+        plt.close()
+        fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+        ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events, C{}P{}D{}".format(*str(det)))
+        ax1.plot(xTot, hSurf, ls='steps', c='r', label="Transition Events")
+        ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+        ax2.plot(xTot, hFrac, ls='steps', c='r')
+        ax2.axvline(1, c='b', lw=1, label="1.0 keV")
         ax1.set_xlim(0, 50)
         ax2.set_xlim(0, 50)
-        ax1.set_title('C{}P{}D{} - Fraction of Transition Layer Events'.format(*str(det)))
-        ax1.set_ylabel('Counts/keV')
-        ax1.set_xlabel('Energy (keV)')
-        ax2.set_ylabel('Fraction')
-        ax2.set_xlabel('Energy (keV)')
+        ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
+        ax2.set_ylabel('Slow Fraction', ha='right', y=1)
+        ax2.set_xlabel('Energy (keV)', ha='right', x=1)
         ax1.legend()
         ax2.legend()
-        # fig1.savefig(inDir + '/plots/DeadLayer/G41003/TransitionFrac_C{}P{}D{}.png'.format(*str(det)))
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("../plots/sim-sloFrac-%s.pdf" % det)
+
+        # return
+
 
 
 if __name__=="__main__":

@@ -5,7 +5,7 @@ figure.figsize   : 8, 5         # figure size in inches
 #figure.dpi       : 200          # figure dots per inch
 figure.facecolor : white
 figure.edgecolor : white
-#figure.autolayout : True        # Automatically apply 'plt.tight_layout'
+# figure.autolayout : True        # Automatically apply 'plt.tight_layout'
 
 lines.linewidth : 3
 lines.markersize : 10

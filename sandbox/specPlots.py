@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ Let's reproduce ALL the input PDF's for the specFit routine,
     get ALL the correct scaling factors, and make sure there are NO surprises.
     C. Wiseman 23 Oct. 2017
@@ -12,8 +12,9 @@ gStyle.SetOptStat(0)
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT messages
 
 def main():
-    # runAllPlots()
-    generatePDFs()
+
+    runAllPlots()
+    # generatePDFs()
 
 
 def runAllPlots():
@@ -28,7 +29,16 @@ def runAllPlots():
     pks = [1.739, 1.836, 2.307, 2.464, 6.404]
     frankFlux = [4.95e+38, 4.95e+38, 3.94e+38, 2.27e+38, 4.06e+38]
 
-    redondoScale = 1e19 * 0.511e-10**-2 # convert table to [cts / (keV cm^2 d)]
+    # Redondo note: I calculated the flux using gae = 0.511*10^-10
+    # for other values of gae use:
+    # FLUX = Table*[gae/(0.511*10^-10)]^2
+    gaeR = 5.11e-11
+    gaeP = 4.35e-12 # PandaX PRL, Nov 2017 (gae2.py)
+    gae = 1
+    rat = gaeP/gaeR
+    redondoScale = 1e19 * rat**2 # convert table to [cts / (keV cm^2 d)]
+    # redondoScale = 1
+
     jcapScale = 1e-13**2. * 365 * 1e4  * 1e-20 # (gae in paper * per yr * per m^2 * 10^-20 scaling)
     barnsPerAtom = 120.5
     nAvo = 6.0221409e+23
@@ -249,18 +259,21 @@ def runAllPlots():
 
     c.Clear()
     h3.SetLineColor(ROOT.kBlue)
-    h3.SetMinimum(2e39)
-    h3.SetMaximum(4e42)
+    # h3.SetMinimum(2e39)
+    # h3.SetMaximum(4e42)
     h3.GetXaxis().SetTitle("Energy (keV)")
-    h3.GetYaxis().SetTitle("flux cts kev^{-1} d^{-1} kg^{-1}")
+    h3.GetYaxis().SetTitle("Expected Counts keV^{-1} d^{-1} kg^{-1}")
     h3.Draw("hist")
     c.Print("../plots/axionConv.pdf")
+
+    print("debug mode: exiting early")
+    return
 
 
     # 7. reproduce the rest of frank's numbers in his tables from MY HISTOGRAMS
     # and calculate g_ae
 
-    print "sig_ae factor: ",sigAeScale
+    print("sig_ae factor: ",sigAeScale)
 
     binRange = 2.
     phos, axos, cFlux, cRateHist = [], [], [], []
@@ -291,13 +304,13 @@ def runAllPlots():
     class prettyfloat(float):
         def __repr__(self): return "%.2e" % self
 
-    print "T3,C2: E^2 * (sigAeScale)             ", map(prettyfloat, [np.power(ax, 2.) * sigAeScale for ax in pks])
-    print "T3,C3: sig_pe (cm^2/atom)             ", map(prettyfloat, phos)
-    print "T3,C4: sig_ae                         ", map(prettyfloat, axos)
-    print "T4,C2 (old): Phi_a (cm^2/d)           ", map(prettyfloat, frankFlux)
-    print "T4,C2 (new):                          ", map(prettyfloat, clintFlux)
-    print "T4,C4 (table): Phi_a * sig_ae (cts/d) ", map(prettyfloat, cRateTable)
-    print "T4,C4 (histo):                        ", map(prettyfloat, cRateHist)
+    print("T3,C2: E^2 * (sigAeScale)             ", map(prettyfloat, [np.power(ax, 2.) * sigAeScale for ax in pks]))
+    print("T3,C3: sig_pe (cm^2/atom)             ", map(prettyfloat, phos))
+    print("T3,C4: sig_ae                         ", map(prettyfloat, axos))
+    print("T4,C2 (old): Phi_a (cm^2/d)           ", map(prettyfloat, frankFlux))
+    print("T4,C2 (new):                          ", map(prettyfloat, clintFlux))
+    print("T4,C4 (table): Phi_a * sig_ae (cts/d) ", map(prettyfloat, cRateTable))
+    print("T4,C4 (histo):                        ", map(prettyfloat, cRateHist))
 
     # exposure,  expected counts, upper bound on g_ae
     malbekExpo = 89.5 # kg-d
@@ -308,19 +321,19 @@ def runAllPlots():
     # Compare methods
     N_exp = exposure * sum(frankFlux[i] * axos[i] for i in range(4))
     g_ae = np.power(N_obs / N_exp, 1./4.) # upper bound
-    print "Frank's Table g_ae: %.2e" % g_ae
+    print("Frank's Table g_ae: %.2e" % g_ae)
 
     N_exp = exposure * sum(cRateTable[i] for i in range(4))
     g_ae = np.power(N_obs / N_exp, 1./4.) # upper bound
-    print "Clint's Table g_ae: %.2e" % g_ae
+    print("Clint's Table g_ae: %.2e" % g_ae)
 
     N_exp = exposure * sum(cRateHist[i] for i in range(4))
     g_ae = np.power(N_obs / N_exp, 1./4.) # upper bound
-    print "Clint's Histo g_ae: %.2e" % g_ae
+    print("Clint's Histo g_ae: %.2e" % g_ae)
 
-    print "Histo peaks expected counts: ",N_exp
+    print("Histo peaks expected counts: ",N_exp)
     N_exp = h3.Integral(ax3.FindBin(1.5), ax3.FindBin(8.)) * kpb * axConvScale * exposure
-    print "Continuum expected counts: ",N_exp
+    print("Continuum expected counts: ",N_exp)
 
 
     # 8. do the tritium plot
@@ -359,7 +372,7 @@ def runAllPlots():
             trit = np.mean(tritData[idx][:,1])
             if np.isnan(trit): trit = 0.
             h4.SetBinContent(i, trit)
-            if trit==0.: print "Trit bin %d is zero" % i
+            if trit==0.: print("Trit bin %d is zero" % i)
 
     h4.SetLineColor(ROOT.kBlue)
     h4.Draw("hist same")

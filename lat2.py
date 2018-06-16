@@ -33,6 +33,9 @@ def main(argv):
     writeDB = False
     ds, cIdx, mod = None, None, None
 
+    # a very important parameter, use 90 or 95
+    pctTot = 90
+
     for i, opt in enumerate(argv):
 
         # set dataset and options
@@ -53,7 +56,7 @@ def main(argv):
         # call scanRunsSlo directly (used by lat-jobs)
         if opt=="-scan":
             ds, key, mod, cIdx = int(argv[i+1]), argv[i+2], int(argv[i+3]), int(argv[i+4])
-            scanRunsSlo(ds,key,mod,cIdx)
+            scanRunsSlo(ds,key,mod,cIdx,pctTot)
 
         # call scanRunsRise directly (used by lat-jobs)
         if opt == "-rscan":
@@ -62,7 +65,7 @@ def main(argv):
 
         # set fitSlo cut
         if opt=="-fs":
-            setSloCut()
+            setSloCut(pctTot)
 
         # set riseNoise cut
         if opt=="-rn":
@@ -114,8 +117,10 @@ def loadRuns(dsIn=None,subIn=None,modIn=None):
                 scanRunsSlo(ds, key, mod, cIdx)
 
 
-def scanRunsSlo(ds, key, mod, cIdx):
+def scanRunsSlo(ds, key, mod, cIdx, pctTot):
     from ROOT import TFile, TTree
+
+    print("Saving m2s238 data with pctTot cut == %d" % pctTot)
 
     # load file and channel list
     fileList = []
@@ -127,14 +132,14 @@ def scanRunsSlo(ds, key, mod, cIdx):
     chList = det.getGoodChanList(ds)
 
     print("Scanning DS:%d  calIdx %d  mod %d  key %s  nFiles:%d" % (ds, cIdx, mod, key, len(fileList)), time.strftime('%X %x %Z'))
-    outFile = "%s/eff_%s_c%d.npz" % (dsi.effDir, key, cIdx)
+    outFile = "%s/eff_%s_c%d_%d.npz" % (dsi.effDir, key, cIdx, pctTot)
     print("Saving output in:",outFile)
 
     # declare the output stuff
     evtIdx, evtSumET, evtHitE, evtChans, evtSlo, evtRise, evtToE = [], [], [], [], [], [], []
     thrCal = {ch:[] for ch in chList}
-    fLo, fHi, fpb = -200, 400, 1
-    nbf = int((fHi-fLo)/fpb)+1
+    fAllLo, fAllHi, fpbAll = -200, 1000, 1       # raw fitSlo vals (same as setSloCut)
+    nbf = int((fAllHi-fAllLo)/fpbAll)+1
     fSloSpec = {ch:[np.zeros(nbf) for i in range(3)] for ch in chList} # 0-10, 10-200, 236-240
 
     # loop over LAT cal files
@@ -218,7 +223,7 @@ def scanRunsSlo(ds, key, mod, cIdx):
                 en = tt.trapENFCal.at(i)
                 ch = tt.channel.at(i)
                 fs = tt.fitSlo.at(i)
-                if fLo < fs < fHi:
+                if fAllLo < fs < fAllHi:
                     if 0 < en < 10:
                         fs10[ch].append(fs)
                     if 10 < en < 200:
@@ -245,9 +250,9 @@ def scanRunsSlo(ds, key, mod, cIdx):
 
         # fill the fitSlo histograms w/ the events from this file
         for ch in chList:
-            x, h1 = wl.GetHisto(fs10[ch],fLo,fHi,fpb)
-            x, h2 = wl.GetHisto(fs200[ch],fLo,fHi,fpb)
-            x, h3 = wl.GetHisto(fs238[ch],fLo,fHi,fpb)
+            x, h1 = wl.GetHisto(fs10[ch],fAllLo,fAllHi,fpbAll)
+            x, h2 = wl.GetHisto(fs200[ch],fAllLo,fAllHi,fpbAll)
+            x, h3 = wl.GetHisto(fs238[ch],fAllLo,fAllHi,fpbAll)
             fSloSpec[ch][0] = np.sum([fSloSpec[ch][0], h1], axis=0)
             fSloSpec[ch][1] = np.sum([fSloSpec[ch][1], h2], axis=0)
             fSloSpec[ch][2] = np.sum([fSloSpec[ch][2], h3], axis=0)
@@ -349,20 +354,19 @@ def loadSloData(key):
     return eff
 
 
-def setSloCut():
+def setSloCut(pctTot):
     """ ./lat2.py -fs
     Set slow pulse cut for each detector in each DS.
     Uses the combined m2s238 events from ALL datasets, in each detector.
     If makePlots is true, output plots w/ the efficiency functions for each detector.
     Sandbox version: LAT/sandbox/slo-cut.py :: combineDSEff
 
-    NOTE: uses a 90% cut on m2s238 events.  Someone may ask for this to change someday,
-          it might be worth making it a parameter at the top of the code.
+    NOTE: uses a (pctTot)% cut on m2s238 events.  It's a parameter at the top of the code.
 
     DB entries:
-    "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+    "fitSlo_[calKey]_idx[ci]_m2s238_[pctTot]" : {ch : [fsCut, fs200] for ch in chList}}
         and
-    "fitSlo_cpd_eff" : {cpd:[fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE] for cpd in detList}
+    "fitSlo_cpd_eff_[pctTot]" : {cpd:[fsShiftCut, nBin, amp, sig, mu, ampE, sigE, muE] for cpd in detList}
     """
     from statsmodels.stats import proportion
     if writeDB:
@@ -370,6 +374,8 @@ def setSloCut():
         print("Writing results to DB :",dbFile)
         calDB = db.TinyDB(dbFile)
         pars = db.Query()
+
+    print("Setting m2s238 slow cut with pctTot == %d" % pctTot)
 
     makePlots = True
     printTable = True
@@ -383,8 +389,9 @@ def setSloCut():
     # parameter limits and binning
     xAllLo, xAllHi, xpbAll = 0, 250, 0.5        # all hits < 250
     xPassLo, xPassHi, xpbPass = 0, 50, 1        # "low energy" region
-    fAllLo, fAllHi, fpbAll = -200, 400, 1       # raw fitSlo vals
-    fShiftLo, fShiftHi, fpbShift = -50, 50, 1   # shifted fitSlo
+    fAllLo, fAllHi, fpbAll = -200, 1000, 1       # raw fitSlo vals (same as scanRunsSlo)
+    # fShiftLo, fShiftHi, fpbShift = -50, 50, 1   # shifted fitSlo, v1.  this is wrong
+    fShiftLo, fShiftHi, fpbShift = -100, 1000, 1  # this is better ...
 
     nbxAll = int((xAllHi-xAllLo)/xpbAll)
     nbxPass = int((xPassHi-xPassLo)/xpbPass)
@@ -398,9 +405,7 @@ def setSloCut():
 
     # ** these two dicts are what we use to fill the DB for calIdx/channel pairs **
     shiftVals = {} # store the UNshifted 10-200 fitSlo peak vals
-    shiftCut = {}  # store the 90% vals of the SHIFTED fitSlo peaks
-
-    # shiftSpec = {cpd:np.zeros(nbyShift+1) for cpd in detList} # these are the 10-200 fitSlo hits (unused)
+    shiftCut = {}  # store the (pctTot)% vals of the SHIFTED fitSlo peaks
 
     # save the hits in the "low energy" region
     hitE = {cpd:[] for cpd in detList}
@@ -441,13 +446,12 @@ def setSloCut():
                     ch = chMap[cpd]
                     h1 = eff["spec"][ci][ch][1]
                     x1 = eff["specX"]
-                    # shiftSpec[cpd] = np.add(shiftSpec[cpd], h1) # unused
                     if np.sum(h1)==0:
                         # print("ci %d  cpd %d  no counts" % (ci, cpd))
                         shiftVals[key][ci][cpd] = -1
                         continue
 
-                    # get mode (maximum) of the 10-200 hits and save it
+                    # get centroid of the 10-200 hits and save it
                     fMax = x1[np.argmax(h1)]
                     shiftVals[key][ci][cpd] = fMax
 
@@ -483,7 +487,7 @@ def setSloCut():
         ctsAll[cpd] = len(hitE[cpd])
         ctsU10[cpd] = len(hTmp[idx])
 
-        # plot fitSlo 1D, calculate the 90% value
+        # plot fitSlo 1D, calculate the (pctTot)% value
         xS, hSlo = wl.GetHisto(fSlo[cpd], fShiftLo, fShiftHi, fpbShift)
         if np.sum(hSlo)==0:
             if printTable: print(cpd)
@@ -491,7 +495,13 @@ def setSloCut():
         max, avg, std, pct, wid = wl.getHistInfo(xS,hSlo)
 
         # ***************************
-        fsShiftCut = pct[2] # 90% val
+        if pctTot==90:
+            fsShiftCut = pct[2]
+        elif pctTot==95:
+            fsShiftCut = pct[3]
+        else:
+            print("WTF are you doing??")
+            exit()
         # ***************************
 
         # zoom on low-E region & fit erf
@@ -512,7 +522,6 @@ def setSloCut():
         # efficiency for low-E region (xPassLo, xPassHi)
 
         # get the average number of counts per bin under 10 kev
-        # nBin = len(hitPass[np.where(hitPass < 10)])/(10/xpbPass)
         nBin = np.sum(hPass[np.where(xELow < 10)])/(10/xpbPass)
 
         # start by only looking at points where we have >0 hits passing
@@ -573,7 +582,7 @@ def setSloCut():
             # plot SHIFTED fs
             p2.cla()
             p2.plot(hSlo, xS, ls='steps', c='k', label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
-            p2.axhline(fsShiftCut, c='r', label="90%% value: %.0f" % fsShiftCut)
+            p2.axhline(fsShiftCut, c='r', label="%d%% value: %.0f" % (pctTot, fsShiftCut))
             p2.set_xlabel("Counts", ha='right', x=1)
             p2.set_ylabel("fitSlo", ha='right', y=1)
             p2.legend(loc=1)
@@ -749,7 +758,7 @@ def setSloCut():
 
     # save efficiency for faster plotting
     if writeEffData:
-        np.savez('./data/lat2-eff-data.npz',effData)
+        np.savez('./data/lat2-eff-data-%d.npz' % pctTot, effData)
 
     # this is here to emphasize looking at the 'makePlots' output before writing to the DB.
     if not writeDB:
@@ -767,7 +776,7 @@ def setSloCut():
 
     # reminder:
     # shiftVals = {} # store the UNshifted 10-200 fitSlo peak vals
-    # shiftCut = {}  # store the 90% vals of the SHIFTED fitSlo peaks, and the fit results
+    # shiftCut = {}  # store the (pctTot)% vals of the SHIFTED fitSlo peaks, and the fit results
     #     {cpd:[fsShiftCut, nBin, amp, c, loc, sc, ampE, cE, locE, scE]}
 
     for key in shiftVals:
@@ -784,7 +793,7 @@ def setSloCut():
         print(chList)
 
         for ci in shiftVals[key]:
-            dbKey = "fitSlo_%s_idx%d_m2s238" % (key, ci)
+            dbKey = "fitSlo_%s_idx%d_m2s238_%d" % (key, ci, pctTot)
             dbVals = {}
             # print("pass 1:")
             # print(dbKey)
@@ -796,7 +805,7 @@ def setSloCut():
                 fsShiftCut, nBin, amp, c, loc, sc, ampE, cE, locE, scE = shiftCut[cpd]
 
                 if fs200 > 0:
-                    fsCut = fs200 + fsShiftCut # ****** this is the 90% cut value for this channel ******
+                    fsCut = fs200 + fsShiftCut # ****** this is the (pctTot)% cut value for this channel ******
                 else:
                     fsCut, nBin = -1, -1
 
@@ -828,7 +837,7 @@ def setSloCut():
 
     # Finally, write the fit function parameters as a separate DB entry for each cpd (all DS's)
     if writeDB:
-        dbKey = "fitSlo_cpd_eff"
+        dbKey = "fitSlo_cpd_eff_%s" % pctTot
         dbVals = shiftCut
         dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
         print("DB filled:",dbKey)
