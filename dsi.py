@@ -827,7 +827,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, pctTot, verbose=True):
     nCal = cIdxHi+1 - cIdxLo
 
     if cutType == '-b': cutType = "th"
-    if verbose: print("DS%d-M%d (%s) eff%d  %s bIdx %d  %d--%d  nBkg %d  nCal %d" % (dsNum,mod,ds,pctTot,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
+    if verbose: print("DS%d-M%d (%s) eff%s  %s bIdx %d  %d--%d  nBkg %d  nCal %d" % (dsNum,mod,ds,pctTot,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
 
     # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
     # bkgDict = {ch:None for ch in chList}
@@ -883,7 +883,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, pctTot, verbose=True):
         cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
         if verbose: print("  cIdx %-3d   %d--%d" % (cIdx, runLo, runHi))
 
-        fsD = getDBRecord("fitSlo_%s_idx%d_m2s238_eff%d" % (calKey, cIdx, pctTot), False, calDB, pars)
+        fsD = getDBRecord("fitSlo_%s_idx%d_m2s238_eff%s" % (calKey, cIdx, pctTot), False, calDB, pars)
         rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
 
         for ch in chList:

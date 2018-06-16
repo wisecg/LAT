@@ -1259,11 +1259,8 @@ def applyCuts(ds, cutType, pctTot):
     from ROOT import gROOT, TFile, TChain, TTree, TNamed, MGTWaveform
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
-    print("Using fitSlo pctTotal:",pctTotal)
-    return
-
     # if this is set, don't overwrite good files.
-    cleanupMode = False
+    cleanupMode = True
     print("CLEANUP MODE?",cleanupMode)
 
     # if this is set, check that we get all files we should. (instead of writing new ones)
@@ -1331,7 +1328,7 @@ def applyCuts(ds, cutType, pctTot):
                     chanCut += "&& %s" % calDict[ch]
 
                 elif cutType=="fr" and fsData and rnData:
-                    outFile = "%s/fr/fr_ds%d_%d_ch%d.root" % (dsi.cutDir,dsNum,bIdx,ch)
+                    outFile = "%s/fr%s/fr_ds%d_%d_ch%d.root" % (dsi.cutDir,pctTot,dsNum,bIdx,ch)
                     chanCut += "&& %s" % calDict[ch]
 
                 else:
@@ -1404,6 +1401,8 @@ def applyCuts(ds, cutType, pctTot):
                     cutUsed.Write()
                     print("Wrote",outTree.GetEntries(),"entries.")
                     outFile.Close()
+
+    print("All done!")
 
 
 if __name__=="__main__":
