@@ -31,7 +31,8 @@ def main():
     # fitSlo_stability()
     # fitSlo_distribution()
     # fitSlo_det_efficiencies()
-    # fitSlo_tot_eff()
+    fitSlo_tot_efficiencies()
+    # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
     # plot_ext_pulser()
 
@@ -1107,30 +1108,37 @@ def fitSlo_distribution():
 
 
 def fitSlo_det_efficiencies():
-    """ Load the efficiencies from LAT2 directly for faster plotting. """
+    """ Load the efficiency data from LAT2 directly for faster plotting.
+    This is where we do the final efficiency fit, apparently.
+    """
     from statsmodels.stats import proportion
     from scipy.optimize import curve_fit
 
     # must match lat2
+    # pctTot = 90
+    pctTot = 95
     xPassLo, xPassHi, xpbPass = 0, 50, 1      # "low energy" region
 
-    # change the plot region
-    eFitHi = 50
-    xPassLo, xPassHi = 0, 50
+    print("Using pctTot ==",pctTot)
+
+    # weibull fit constraints: energy, (c, loc, scale, amp)
+    eFitHi = 30
+    # fitBnd = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this is the original
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99)) # eFitHi=30 and these works!
 
     # load efficiency data
-    f = np.load('./data/lat2-eff-data.npz')
+    f = np.load('./data/lat2-eff-data-%d.npz' % pctTot)
     effData = f['arr_0'].item()
 
     fig = plt.figure(3) # efficiency plot
     p1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
     p2 = plt.subplot2grid((3,1), (2,0), sharex=p1)
 
-    print("CPD  amp  c     loc      scale   e1keV   nBin   maxR   chi2")
+    print("CPD   amp     c       loc      scale   e1keV  nBin   maxR    chi2")
     detList = det.allDets
     for i, cpd in enumerate(detList):
-    # for i, cpd in enumerate(['123']):
-    # for i, cpd in enumerate(['262']):
+    # for i, cpd in enumerate(['122', '114', '273', '133']): # these have convergence issues
+    # for i, cpd in enumerate(['133']):
 
         if cpd not in effData.keys():
             # print(cpd)
@@ -1154,7 +1162,7 @@ def fitSlo_det_efficiencies():
         # calculate confidence intervals for each point (error bars)
         ci_low, ci_upp = proportion.proportion_confint(hPass[idxP], hTot[idxP], alpha=0.1, method='beta')
 
-        # limit the fit energy range
+        # limit the energy range
         idxE = np.where((xEff < xPassHi) & (xEff > 1))
         xEff, sloEff, ci_low, ci_upp = xEff[idxE], sloEff[idxE], ci_low[idxE], ci_upp[idxE]
 
@@ -1162,9 +1170,11 @@ def fitSlo_det_efficiencies():
         # where the bin center would be, and throw off the fit by half a bin width
         xEff -= xpbPass/2.
 
-        # fit to constrained weibull (c, loc, scale, amp)
-        b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this one is working best
-        popt, pcov = curve_fit(wl.weibull, xEff, sloEff, bounds=b3)
+        # limit the fit energy range
+        idxF = np.where(xEff <= eFitHi)
+
+        # run the fit
+        popt, pcov = curve_fit(wl.weibull, xEff[idxF], sloEff[idxF], bounds=fitBnd)
 
         # save pars and errors
         perr = np.sqrt(np.diag(pcov))
@@ -1197,7 +1207,7 @@ def fitSlo_det_efficiencies():
         # print("%s  %-4.3f  %-4.1f  %-7.2f  %-5.2f  %-3.2f  %d  %.3f  %.3f" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
 
         # print latexable results
-        print("%s & %-4.3f & %-4.1f & %-7.2f & %-5.2f & %-3.2f & %d & %.3f & %.3f \\\\" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+        print("%s & %-4.3f & %-4.1f & %-7.2f & %-5.2f & %-3.2f & %-4d & %-5.3f & %-5.3f \\\\" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
 
         # print ugly one with errors
         # print("%s  a %.3f (%.3f)  c %.1f (%.1f)  loc %.2f (%.2f)  sc %.2f (%.2f)  eff1 %.2f  nBin %d" % (cpd, amp, ampE, c, cE, loc, locE, sc, scE, eff1, nBin))
@@ -1211,7 +1221,7 @@ def fitSlo_det_efficiencies():
 
         xFunc = np.arange(xPassLo, xPassHi, 0.1)
         p1.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', label=r'Weibull CDF')
-        p1.axvline(1.,color='b', lw=1., label='1.0 keV acceptance: %.2f' % wl.weibull(1.,*popt))
+        p1.axvline(1.,color='b', lw=1., label='1.0 keV efficiency: %.2f' % wl.weibull(1.,*popt))
 
         p1.set_xlim(xPassLo, xPassHi)
         p1.set_ylim(0,1)
@@ -1241,10 +1251,153 @@ def fitSlo_det_efficiencies():
 
         # plt.show()
         # exit()
-        plt.savefig("./plots/lat2-eff-%s.pdf" % cpd)
+        plt.savefig("./plots/lat2-eff%d-%s.pdf" % (pctTot,cpd))
 
 
-def fitSlo_tot_eff():
+def fitSlo_tot_efficiencies():
+    """ Combine all enriched/natural detectors and plot an overall efficiency.
+    This is more for curiosity
+    """
+    from statsmodels.stats import proportion
+    from scipy.optimize import curve_fit
+
+    # very important parameter
+    pctTot = 90
+    # pctTot = 95
+
+    print("Using pctTot ==",pctTot)
+
+    # overall hit and efficiency plots (low-E region)
+    xPassLo, xPassHi, xpbPass = 0, 50, 1      # "low energy" region
+    xTot, hPassEnr = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hFailEnr = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hTotEnr = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hPassNat = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hFailNat = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+    xTot, hTotNat = wl.GetHisto([], xPassLo, xPassHi, xpbPass, shift=False)
+
+    # weibull fit constraints: energy, (c, loc, scale, amp)
+    eFitHi = 30
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99)) # eFitHi=30 and these works!
+
+    # load efficiency data
+    f = np.load('./data/lat2-eff-data-%d.npz' % pctTot)
+    effData = f['arr_0'].item()
+    detList = det.allDets
+    for i, cpd in enumerate(detList):
+        if cpd not in effData.keys():
+            continue
+        xEff, sloEff, ci_low, ci_upp = effData[cpd][0], effData[cpd][1], effData[cpd][2], effData[cpd][3]
+        hPass, hFail, hTot, xELow = effData[cpd][4], effData[cpd][5], effData[cpd][6], effData[cpd][7]
+
+        if det.isEnr(cpd):
+            hTotEnr = np.add(hTotEnr, hTot)
+            hPassEnr = np.add(hPassEnr, hPass)
+            hFailEnr = np.add(hFailEnr, hFail)
+        else:
+            hTotNat = np.add(hTotNat, hTot)
+            hPassNat = np.add(hPassNat, hPass)
+            hFailNat = np.add(hFailNat, hFail)
+
+    # === calculate enr/nat efficiency, see above for a more verbose explanation  ===
+
+    fig = plt.figure()
+
+    # enriched efficiency
+    nBinEnr = np.sum(hPassEnr[np.where(xELow < 10)])/(10/xpbPass)
+    idxP = np.where(hPassEnr > 0)
+    sloEffEnr = hPassEnr[idxP] / hTotEnr[idxP]
+    xEffEnr = xELow[idxP]
+    ciLowEnr, ciUppEnr = proportion.proportion_confint(hPassEnr[idxP], hTotEnr[idxP], alpha=0.1, method='beta')
+    idxE = np.where((xEffEnr < xPassHi) & (xEffEnr > 1))
+    xEffEnr, sloEffEnr, ciLowEnr, ciUppEnr = xEffEnr[idxE], sloEffEnr[idxE], ciLowEnr[idxE], ciUppEnr[idxE]
+    xEffEnr -= xpbPass/2.
+    idxF = np.where(xEffEnr <= eFitHi)
+    poptEnr,_ = curve_fit(wl.weibull, xEffEnr[idxF], sloEffEnr[idxF], bounds=fitBnd)
+
+    # natural efficiency
+    nBinNat = np.sum(hPassNat[np.where(xELow < 10)])/(10/xpbPass)
+    idxP = np.where(hPassNat > 0)
+    sloEffNat = hPassNat[idxP] / hTotNat[idxP]
+    xEffNat = xELow[idxP]
+    ciLowNat, ciUppNat = proportion.proportion_confint(hPassNat[idxP], hTotNat[idxP], alpha=0.1, method='beta')
+    idxE = np.where((xEffNat < xPassHi) & (xEffNat > 1))
+    xEffNat, sloEffNat, ciLowNat, ciUppNat = xEffNat[idxE], sloEffNat[idxE], ciLowNat[idxE], ciUppNat[idxE]
+    xEffNat -= xpbPass/2.
+    idxF = np.where(xEffNat <= eFitHi)
+    poptNat,_ = curve_fit(wl.weibull, xEffNat[idxF], sloEffNat[idxF], bounds=fitBnd)
+
+    # plot overall enr/nat hit spectrum
+    plt.plot(xTot, hTotEnr, ls='steps', c='k', label="Enr, Total Hits")
+    plt.plot(xTot, hPassEnr, ls='steps', c='b', label="Enr, Pass")
+    plt.plot(xTot, hFailEnr, ls='steps', c='r', label="Enr, Fail")
+    plt.plot(xTot, hTotNat, ls='steps', c='m', label="Nat, Total Hits")
+    plt.plot(xTot, hPassNat, ls='steps', c='g', label="Nat, Pass")
+    plt.plot(xTot, hFailNat, ls='steps', c='orange', label="Nat, Fail")
+
+    plt.axvline(1., c='g', lw=1, label='1 kev')
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts/%.1f keV" % xpbPass, ha='right', y=1)
+    plt.xlim(xPassLo, xPassHi)
+    plt.legend(loc=1, bbox_to_anchor=(0., 0.5, 1, 0.2))
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat2-eff%d-totHits.pdf" % pctTot)
+
+    # efficiency plot, with sigma residual
+
+    # renaming key:
+    # xEff, sloEff, nBin, ci_low, ci_upp, popt
+    # xEffEnr, sloEffEnr, nBinEnr, ciLowEnr, ciUppEnr, poptEnr
+    # xEffNat, sloEffNat, nBinNat, ciLowNat, ciUppNat, poptNat
+
+    plt.close()
+    # fig = plt.figure(figsize=(8,6))
+    # p1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    # p2 = plt.subplot2grid((3,1), (2,0), sharex=p1)
+    fig = plt.figure()
+    p1 = plt.subplot(111)
+    xFunc = np.arange(xPassLo, xPassHi, 0.1)
+    p1.axvline(1, c='k', lw=1)
+    # p2.axvline(1, c='k', lw=1)
+
+    p1.plot(xEffEnr, sloEffEnr, '.b', ms=10., label='Enriched Detectors, nBin %.1f' % (nBinEnr))
+    p1.errorbar(xEffEnr, sloEffEnr, yerr=[sloEffEnr - ciLowEnr, ciUppEnr - sloEffEnr], color='k', linewidth=0.8, fmt='none')
+    p1.plot(xFunc, wl.weibull(xFunc, *poptEnr), 'b-', lw=2, alpha=0.8)
+    p1.axvline(np.nan, np.nan, c="w", label='1.0 keV enr eff: %.2f' % wl.weibull(1.,*poptEnr))
+
+    p1.plot(xEffNat, sloEffNat, '.m', ms=10., label='Natural Detectors, nBin %.1f' % (nBinNat))
+    p1.errorbar(xEffNat, sloEffNat, yerr=[sloEffNat - ciLowNat, ciUppNat - sloEffNat], color='k', linewidth=0.8, fmt='none')
+    p1.plot(xFunc, wl.weibull(xFunc, *poptNat), 'm-', lw=2, alpha=0.8)
+    p1.axvline(np.nan, np.nan, c="w", label='1.0 keV nat eff: %.2f' % wl.weibull(1.,*poptNat))
+
+    p1.set_xlim(xPassLo, xPassHi)
+    p1.set_ylim(0.2,1)
+    p1.set_xlabel("hitE (keV)", ha='right', x=1)
+    p1.set_ylabel("Efficiency", ha='right', y=1)
+    p1.yaxis.set_label_coords(-0.095, 1.)
+    p1.legend(loc=4)
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat2-eff%d.pdf" % (pctTot))
+
+    # p2.plot(xEff, hResidSig, ".g")
+    # p2.annotate('Residual, Fit - Data', xy=(470, 80), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
+    # p2.axvline(1.,color='b', lw=1.)
+    # p2.set_xlim(xPassLo, xPassHi)
+    # yLo = -0.4 if np.min(hResidSig) > -0.4 else np.min(hResidSig) * 1.1
+    # yHi = 0.4 if np.max(hResidSig) < 0.4 else np.max(hResidSig) * 1.1
+    # p2.set_ylim(yLo, yHi)
+    # p2.set_ylabel("Residual (Sigma)")
+    # p2.set_xlabel("Energy (keV)", ha='right', x=1)
+    # p2.set_xticks(np.arange(0,51,5))
+    # plt.tight_layout()
+    # fig.subplots_adjust(hspace=0.01)
+    # plt.setp(p1.get_xticklabels(), visible=False)
+
+
+def fitSlo_exposure_weighted_eff():
 
     f = np.load(dsi.latSWDir+'/data/lat-expo-efficiency-all.npz')
 
@@ -1527,6 +1680,7 @@ def ext_pulser_width():
     plt.ylabel("fitSlo (shifted)", ha='right', y=1)
     plt.tight_layout()
     plt.show()
+
 
 if __name__=="__main__":
     main()

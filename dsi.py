@@ -801,7 +801,7 @@ def setDBRecord(entry, forceUpdate=False, dbFile="calDB.json", calDB=None, pars=
         print("WARNING: Multiple records found for key '%s'.  Need to do some cleanup!!")
 
 
-def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
+def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, pctTot, verbose=True):
     """ Load cut data from the calDB and translate to TCut format. """
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
 
@@ -827,7 +827,7 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
     nCal = cIdxHi+1 - cIdxLo
 
     if cutType == '-b': cutType = "th"
-    if verbose: print("DS%d-M%d (%s) %s bIdx %d  %d--%d  nBkg %d  nCal %d" % (dsNum,mod,ds,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
+    if verbose: print("DS%d-M%d (%s) eff%d  %s bIdx %d  %d--%d  nBkg %d  nCal %d" % (dsNum,mod,ds,pctTot,cutType,bIdx,rFirst,rLast,len(subRanges),nCal))
 
     # -- 1. get data for cuts tuned by bkgIdx (thresholds) --
     # bkgDict = {ch:None for ch in chList}
@@ -883,12 +883,12 @@ def GetDBCuts(ds, bIdx, mod, cutType, calDB, pars, verbose=True):
         cRunCut = "run>=%d && run<=%d" % (runLo, runHi)
         if verbose: print("  cIdx %-3d   %d--%d" % (cIdx, runLo, runHi))
 
-        fsD = getDBRecord("fitSlo_%s_idx%d_m2s238" % (calKey, cIdx), False, calDB, pars)
+        fsD = getDBRecord("fitSlo_%s_idx%d_m2s238_eff%d" % (calKey, cIdx, pctTot), False, calDB, pars)
         rnD = getDBRecord("riseNoise_%s_ci%d_pol" % (calKey, cIdx), False, calDB, pars)
 
         for ch in chList:
 
-            # "fitSlo_[calKey]_idx[ci]_m2s238" : {ch : [fsCut, fs200] for ch in chList}}
+            # "fitSlo_[calKey]_idx[ci]_m2s238_eff[pctTot]" : {ch : [fsCut, fs200] for ch in chList}}
             fsCut = None
             if fsD[ch] is not None and fsD[ch][0] > 0:
                 fsCut = "fitSlo<%.2f" % fsD[ch][0]

@@ -128,7 +128,7 @@ def getSBatch(opt, getCores=True, nArr=1):
             "--image=wisecg/mjsw:v2",
             "-n14", # match nCores for pdsf below.  14 is new maximum?
             "-p long",
-            "-t 8:00:00",
+            "-t 12:00:00",
             # "-t 5:00:00",
         ],
         "pdsf-test": [
@@ -206,7 +206,7 @@ def getSBatch(opt, getCores=True, nArr=1):
     sbStr = "sbatch "+' '.join(batchOpts[opt])
 
     if getCores:
-        # if "pdsf" in opt: return sbStr, 30, 33 # sbatch cmd, nCores, peakLoad
+        # if "pdsf" in opt: return sbStr, 15, 18 # sbatch cmd, nCores, peakLoad
         if "pdsf" in opt: return sbStr, 14, 18 # sbatch cmd, nCores, peakLoad
         if "cori-knl" in opt: return sbStr, 270, 280
         if "cori" in opt: return sbStr, 60, 66
@@ -298,9 +298,10 @@ def runBatch():
     # sh("%s slurm.slr './job-pump.sh jobs/test.ls python3 %d %d'" % getSBatch("pdsf-test"))
 
     # EX. 12: run LAT2 scan
-    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan9095.ls python3 %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("edison-shared"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan.ls python3 %d %d'" % getSBatch("cori-knl"))
+    # sh("%s slurm.slr './job-pump.sh jobs/lat2_scan9095.ls python3 %d %d'" % getSBatch("cori-knl"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_rscan.ls python3 %d %d'" % getSBatch("cori-knl")) # riseNoise
@@ -310,6 +311,8 @@ def runBatch():
     # sh("%s slurm.slr %s" % (getSBatch("pdsf-single",False),"./lat2.py -cut fs"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts.ls python3 %d %d'" % getSBatch("pdsf-pump"))
     # sh("%s slurm.slr './job-pump.sh jobs/lat2_cuts_cleanup.ls python3 %d %d'" % getSBatch("pdsf-pump"))
+
+    sh("%s slurm.slr './job-pump.sh jobs/lat2_cutsFR9095.ls python3 %d %d'" % getSBatch("pdsf-pump"))
 
     # EX. 14: run livetime calc
 
@@ -1129,14 +1132,15 @@ def scanLAT2(dsIn=None, subIn=None, modIn=None):
                     continue
 
                 # this does the fitSlo scan
-                # job = "./lat2.py -scan %d %s %d %d" % (ds, key, mod, cIdx)
-                # if useJobQueue: sh("%s >& ./logs/lat2-%s-%d.txt" % (job, key, cIdx))
-                # else: sh("%s '%s'" % (jobStr, job))
+                for pctTot in [90, 95]:
+                    job = "./lat2.py -scan %d %s %d %d %d" % (ds, key, mod, cIdx, pctTot)
+                    if useJobQueue: sh("%s >& ./logs/lat2-scan%d-%s-%d.txt" % (job, pctTot, key, cIdx))
+                    else: sh("%s '%s'" % (jobStr, job))
 
                 # this does the riseNoise scan
-                job = "./lat2.py -rscan %d %s %d %d" % (ds, key, mod, cIdx)
-                if useJobQueue: sh("%s >& ./logs/lat2-rise-%s-%d.txt" % (job, key, cIdx))
-                else: sh("%s '%s'" % (jobStr, job))
+                # job = "./lat2.py -rscan %d %s %d %d" % (ds, key, mod, cIdx)
+                # if useJobQueue: sh("%s >& ./logs/lat2-rise-%s-%d.txt" % (job, key, cIdx))
+                # else: sh("%s '%s'" % (jobStr, job))
 
 
 def cutLAT2():
@@ -1148,9 +1152,10 @@ def cutLAT2():
 
     for ds in dsList:
         for opt in optList:
-            job = "./lat2.py -ds %s -cut %s" % (str(ds),opt)
-            if useJobQueue: sh("%s >& ./logs/lat2-cuts-%s-%s.txt" % (job, ds, opt))
-            else: sh("%s '%s'" % (jobStr, job))
+            for pctTot in [90, 95]:
+                job = "./lat2.py -ds %s -cut %s %s" % (str(ds),opt,pctTot)
+                if useJobQueue: sh("%s >& ./logs/lat2-cuts-%s-%s-eff%d.txt" % (job, ds, opt, pctTot))
+                else: sh("%s '%s'" % (jobStr, job))
 
 
 def ltCalc():
