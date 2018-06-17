@@ -19,10 +19,16 @@ import tinydb as db
 
 def main():
 
+    # a very important parameter, use 90 or 95
+    global pctTot
+    pctTot = 90
+    # pctTot = 95 # <-- use this one
+    print("Using pctTot ==",pctTot)
+
     # spec()
     # spec_vs_cpd()
     # thresh_cut_cal()
-    # ds3_det_eff()
+    ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
     # m2s238_hit_spec()
@@ -31,7 +37,7 @@ def main():
     # fitSlo_stability()
     # fitSlo_distribution()
     # fitSlo_det_efficiencies()
-    fitSlo_tot_efficiencies()
+    # fitSlo_tot_efficiencies()
     # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
     # plot_ext_pulser()
@@ -290,10 +296,10 @@ def ds3_det_eff():
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
-    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
+    enrExc, natExc,_,_ = lat3.getOutliers(verbose=False, usePass2=False)
 
-    mode = "trig"  # trigger efficiency only
-    # mode = "all"   # does all PS
+    # mode = "trig"  # trigger efficiency only
+    mode = "all"   # does all PS
 
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
     dsList = [3]
@@ -324,9 +330,9 @@ def ds3_det_eff():
         bkgRanges = bkg.getRanges(ds)
 
         # get psa cut runs and detector fitSlo efficiencies
-        f = np.load('./data/lat-psaRunCut-ds%s.npz' % ds)
+        f = np.load('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot,ds))
         psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
-        fsD = dsi.getDBRecord("fitSlo_cpd_eff", False, calDB, pars)
+        fsD = dsi.getDBRecord("fitSlo_cpd_eff%d" % pctTot, False, calDB, pars)
 
         # get burst cut
         dsTmp = ds
@@ -368,7 +374,7 @@ def ds3_det_eff():
 
 
                 # load bkg (trigger) and cal (PSA) cut coverage
-                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,False)
+                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,pctTot,False)
 
                 rLo, rHi = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
 
@@ -496,10 +502,10 @@ def ds3_det_eff():
                 # plt.plot(xEff, trigEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 1
 
                 # plot 2 - slowness efficiency only
-                # plt.plot(xEff, fSloEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
+                plt.plot(xEff, fSloEff[ch], '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
 
                 # plot 2a - normalized efficiency
-                plt.plot(xEff, fSloEff[ch]/np.amax(fSloEff[ch]), '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
+                # plt.plot(xEff, fSloEff[ch]/np.amax(fSloEff[ch]), '-', c=cmap(iD), label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2])) # 2
 
                 # plot 3 - total efficiency
                 # plt.plot(xEff, totEff[ch], '-')
@@ -508,14 +514,14 @@ def ds3_det_eff():
             plt.xlim(0.5, 30) # slowness limit
 
             plt.xlabel("Energy (keV)", ha='right', x=1)
-            # plt.ylabel("Enr. Exposure (kg-d)", ha='right', y=1)
-            plt.ylabel("Acceptance", ha='right', y=1)
+            plt.ylabel("Enr. Exposure (kg-d)", ha='right', y=1)
+            # plt.ylabel("Acceptance", ha='right', y=1)
             plt.legend(loc=4, ncol=3, fontsize=14)
             plt.tight_layout()
             # plt.show()
             # plt.savefig("./plots/lat-trigEff-DS3.pdf")
             # plt.savefig("./plots/lat-sloEff-DS3.pdf")
-            plt.savefig("./plots/lat-sloEff-DS3-acc.pdf")
+            plt.savefig("./plots/lat-sloEff-DS3-acc%d.pdf" % pctTot)
             exit()
 
         #     for ch in chList:

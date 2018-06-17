@@ -34,7 +34,7 @@ def main(argv):
 
     # a very important parameter, use 90 or 95
     # pctTot = 90
-    pctTot = 95
+    pctTot = 95 # <-- use this one
 
     for i, opt in enumerate(argv):
 
@@ -388,6 +388,11 @@ def setSloCut(pctTot):
     detList = det.allDets
     detIDs = det.allDetIDs
 
+    # weibull fit constraints: energy, (c, loc, scale, amp)
+    eFitHi = 30
+    # fitBnd = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this is the original
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99)) # eFitHi=30 and these works!
+
     # parameter limits and binning
     xAllLo, xAllHi, xpbAll = 0, 250, 0.5        # all hits < 250
     xPassLo, xPassHi, xpbPass = 0, 50, 1        # "low energy" region
@@ -540,9 +545,11 @@ def setSloCut(pctTot):
         # where the bin center would be, and throw off the fit by half a bin width
         xEff -= xpbPass/2.
 
+        # limit the fit energy range
+        idxF = np.where(xEff <= eFitHi)
+
         # fit to constrained weibull (c, loc, scale, amp)
-        b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this one is working best
-        popt, pcov = curve_fit(wl.weibull, xEff, sloEff, bounds=b3)
+        popt, pcov = curve_fit(wl.weibull, xEff[idxF], sloEff[idxF], bounds=fitBnd)
 
         # save pars and errors
         perr = np.sqrt(np.diag(pcov))
@@ -1260,7 +1267,7 @@ def applyCuts(ds, cutType, pctTot):
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 
     # if this is set, don't overwrite good files.
-    cleanupMode = True
+    cleanupMode = False
     print("CLEANUP MODE?",cleanupMode)
 
     # if this is set, check that we get all files we should. (instead of writing new ones)

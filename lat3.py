@@ -25,8 +25,8 @@ kList = [5, 2] # < -- use this one
 
 # a very important parameter, use 90 or 95
 global pctTot
-# pctTot = 90
-pctTot = 95
+pctTot = 90
+# pctTot = 95 # < -- use this one
 print("Using pctTot ==",pctTot)
 
 def main(argv):
