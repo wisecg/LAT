@@ -15,6 +15,12 @@ bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
 det = dsi.DetInfo()
 
+# a very important parameter, use 90 or 95
+global pctTot
+# pctTot = 90
+pctTot = 95 # < -- use this one
+print("Using pctTot ==",pctTot)
+
 def main():
 
     # loadSloData()
@@ -233,7 +239,7 @@ def save_m2s238_hits():
     np.savez("../data/slo2-m2s238-hits.npz", hitE, fSlo, shiftVals)
 
 
-def get90(yVals, pctLo=1, pctHi=91, cut90=None):
+def getTot(yVals, pctLo=1, pctHi=91, cutTot=None):
     """ take an array of fitSlo values and find the 90% value """
 
     # method 1 -- cool xgauss fit
@@ -254,27 +260,27 @@ def get90(yVals, pctLo=1, pctHi=91, cut90=None):
     # xFunc = np.arange(fLo, fHi, 0.01)
     # xgInt = xGaussCDF(xFunc, *popt)
     #
-    # xg90 = 0
+    # xgTot = 0
     # idx = np.where(xgInt > 0.9)
     # if len(idx[0])!=0:
-    #     xg90 = xFunc[idx][0]
+    #     xgTot = xFunc[idx][0]
     #
-    # if cut90 is not None:
-    #     eff90 = xGaussCDF(cut90, *popt)
-    #     return xg90, eff90
+    # if cutTot is not None:
+    #     effTot = xGaussCDF(cutTot, *popt)
+    #     return xgTot, effTot
     #
-    # return xg90
+    # return xgTot
 
     # method 2 -- percentiles
-    pct90 = np.percentile(yVals, 90)
-    fShiftLo, fShiftHi, fpbShift = -50, 50, 1   # shifted fitSlo
+    pctPass = np.percentile(yVals, pctTot)
+    fShiftLo, fShiftHi, fpbShift = -100, 1000, 1  # this is better ...
     x, h = wl.GetHisto(yVals, fShiftLo, fShiftHi, fpbShift)
     tmp = np.cumsum(h)/np.sum(h)
-    idx = np.where(x >= cut90)
-    eff90 = tmp[idx][0]
-    if cut90 is not None:
-        return pct90, eff90
-    return pct90
+    idx = np.where(x >= cutTot)
+    effTot = tmp[idx][0]
+    if cutTot is not None:
+        return pctPass, effTot
+    return pctPass
 
 
 def acceptance_study():
@@ -282,16 +288,11 @@ def acceptance_study():
     All for C1P6D3.
     Finally, plot the 3 efficiencies on the same plot.
     """
-
     xLo, xHi = 0, 50
     yLo, yHi = -100, 220
 
     xPassLo, xPassHi, xpbPass = xLo, xHi, 1     # "low energy" region
-
-    fShiftLo, fShiftHi, fpbShift = -50, 50, 1   # this is what LAT2 CURRENTLY uses to find the 90% cut ...
-
-    fShiftLo, fShiftHi, fpbShift = -100, 1000, 1  # this is better ...
-
+    fShiftLo, fShiftHi, fpbShift = -100, 1000, 1  # this is what LAT2 uses
     # fShiftLo, fShiftHi, fpbShift = -100, 20, 1  # debug
 
     # save the acc/efficiency and plot them below
@@ -323,10 +324,16 @@ def acceptance_study():
         fSlo = [fs - extInfo[ch][1] for fs in extData[run][4]] # shifted
         fsAll.extend(fSlo)
 
-    # find the 90% value the way we do it in lat2
+    # find the (pctTot)% value the way we do it in lat2
     xSloExt, hSloExt = wl.GetHisto(fsAll, fShiftLo, fShiftHi, fpbShift)
     max, avg, std, pct, wid = wl.getHistInfo(xSloExt,hSloExt)
-    fsShiftCutExt = pct[2] # 90% val
+    if pctTot==90:
+        fsShiftCutExt = pct[2]
+    elif pctTot==95:
+        fsShiftCutExt = pct[3]
+    else:
+        print("WTF are you doing??")
+        exit()
 
     # plot the slices
     for i, run in enumerate(extData):
@@ -346,14 +353,14 @@ def acceptance_study():
         fSlo = [fs - extInfo[ch][1] for fs in extData[run][4]] # shifted
         p1.plot(xE, fSlo, '.b', ms=2)
 
-        xg90, acc90 = get90(fSlo, cut90=fsShiftCutExt)
-        p1.plot(muE, xg90, '.r', ms=10)
+        xgTot, accTot = getTot(fSlo, cutTot=fsShiftCutExt)
+        p1.plot(muE, xgTot, '.r', ms=10)
 
         xVal.append(xE)
         yVal.append(fSlo)
 
     p1.plot(np.nan, np.nan, ".b", ms=10, label="Ext.Pulser, C1P6D3")
-    p1.axhline(fsShiftCutExt, c='orange', label="90%% Overall Cut: %.1f" % fsShiftCutExt)
+    p1.axhline(fsShiftCutExt, c='orange', label="%d%% Overall Cut: %.1f" % (pctTot, fsShiftCutExt))
 
     # try histogram pass/fail method from LAT2
     hitExt, sloExt = [], []
@@ -370,9 +377,9 @@ def acceptance_study():
     hTot = np.add(hPass, hFail)
     for i in range(len(xELow)):
         if hTot[i]==0: continue
-        eff90 = hPass[i]/hTot[i]
-        x90 = xELow[i] - xpbPass/2
-        accExtPulser.append([x90, eff90])
+        effTot = hPass[i]/hTot[i]
+        xTot = xELow[i] - xpbPass/2
+        accExtPulser.append([xTot, effTot])
     # plt.close()
     # plt.plot(xELow, hTot, ls='steps', c='k')
     # plt.plot(xELow, hPass, ls='steps', c='b')
@@ -385,7 +392,7 @@ def acceptance_study():
 
     import pandas as pd
     dfSig = pd.read_hdf('../data/SimPSA_P42574A.h5')
-    dfSig['Distance'] = dfSig['R'] * dfSig['R'] + dfSig['Z'] + dfSig['Z']
+    # dfSig['Distance'] = dfSig['R'] * dfSig['R'] + dfSig['Z'] + dfSig['Z']
     dfSig['trapENFCal'] = dfSig['Amp'] * 0.3959
 
     # find center value
@@ -405,23 +412,30 @@ def acceptance_study():
     p2.plot(dfCut['trapENFCal'], dfCut['fitSloShift'], '.b', ms=2, label="")
     p2.plot(np.nan, np.nan, ".b", ms=10, label="Simulated WFs, C1P6D3")
 
-    # find the 90% value the way we do it in lat2
+    # find the (pctTot)% value the way we do it in lat2
     xSloSim, hSloSim = wl.GetHisto(dfCut['fitSloShift'].values, fShiftLo, fShiftHi, fpbShift)
     max, avg, std, pct, wid = wl.getHistInfo(xSloSim,hSloSim)
-    fsShiftCutSim = pct[2] # 90% val
+    if pctTot==90:
+        fsShiftCutSim = pct[2]
+    elif pctTot==95:
+        fsShiftCutSim = pct[3]
+    else:
+        print("WTF are you doing??")
+        exit()
 
-    # plot the 90% values for each slice
+
+    # plot the (pctTot)% values for each slice
     # xVals = sorted(list(set(dfCut['trapENFCal'])))
     xVals = np.unique(dfCut['trapENFCal'])
     for xE in xVals:
         dfSlice = dfCut.loc[dfCut['trapENFCal']==xE]
         yVals = dfSlice['fitSloShift']
-        xg90, acc90 = get90(yVals, pctLo=1, pctHi=98, cut90=fsShiftCutSim)
-        p2.plot(xE, xg90, '.r', ms=10)
+        xgTot, accTot = getTot(yVals, pctLo=1, pctHi=98, cutTot=fsShiftCutSim)
+        p2.plot(xE, xgTot, '.r', ms=10)
 
-        # accSimWF.append([xE, acc90])
+        # accSimWF.append([xE, accTot])
 
-    p2.axhline(fsShiftCutSim, c='orange', label="90%% Overall Cut: %.1f" % fsShiftCutSim)
+    p2.axhline(fsShiftCutSim, c='orange', label="%d%% Overall Cut: %.1f" % (pctTot, fsShiftCutSim))
 
     # try histogram pass/fail method from LAT2
     hitPass, hitFail = [], []
@@ -435,9 +449,9 @@ def acceptance_study():
     hTot = np.add(hPass, hFail)
     for i in range(len(xELow)):
         if hTot[i]==0: continue
-        eff90 = hPass[i]/hTot[i]
-        x90 = xELow[i] - xpbPass/2
-        accSimWF.append([x90, eff90])
+        effTot = hPass[i]/hTot[i]
+        xTot = xELow[i] - xpbPass/2
+        accSimWF.append([xTot, effTot])
     # plt.close()
     # plt.plot(xELow, hTot, ls='steps', c='k')
     # plt.plot(xELow, hPass, ls='steps', c='b')
@@ -460,19 +474,25 @@ def acceptance_study():
         xVal.append((eHi-eLo)/2 + eLo)
         yVal.append(fSlo[cpd][idx])
 
-    # find the 90% value the way we do it in lat2
+    # find the (pctTot)% value the way we do it in lat2
     xSloData, hSloData = wl.GetHisto(fSlo[cpd], fShiftLo, fShiftHi, fpbShift)
     max, avg, std, pct, wid = wl.getHistInfo(xSloData,hSloData)
-    fsShiftCutData = pct[2] # 90% val
+    if pctTot==90:
+        fsShiftCutData = pct[2]
+    elif pctTot==95:
+        fsShiftCutData = pct[3]
+    else:
+        print("WTF are you doing??")
+        exit()
 
     # plot the slices and 90% dots
     for i in range(len(xVal)):
         xV = xVal[i] * np.ones(len(yVal[i]))
         p3.plot(xV, yVal[i], ".b", ms=3.)
 
-        xg90, eff90 = get90(yVal[i], cut90=fsShiftCutData)
-        p3.plot(xVal[i], xg90, '.r', ms=10)
-        # effM2S238.append([xVal[i],eff90])
+        xgTot, effTot = getTot(yVal[i], cutTot=fsShiftCutData)
+        p3.plot(xVal[i], xgTot, '.r', ms=10)
+        # effM2S238.append([xVal[i],effTot])
 
     # try histogram pass/fail method from LAT2
     hitPass, hitFail = [], []
@@ -485,12 +505,12 @@ def acceptance_study():
     hTot = np.add(hPass, hFail)
     for i in range(len(xELow)):
         if hTot[i]==0: continue
-        eff90 = hPass[i]/hTot[i]
-        x90 = xELow[i] - xpbPass/2
-        effM2S238.append([x90, eff90])
+        effTot = hPass[i]/hTot[i]
+        xTot = xELow[i] - xpbPass/2
+        effM2S238.append([xTot, effTot])
 
     p3.plot(np.nan, np.nan, ".b", ms=10, label="m2s238 Events, C1P6D3")
-    p3.axhline(fsShiftCutData, c='orange', label="90%% Overall Cut: %.1f" % fsShiftCutData)
+    p3.axhline(fsShiftCutData, c='orange', label="%d%% Overall Cut: %.1f" % (pctTot, fsShiftCutData))
 
     # special -- load slowness fraction
     fS = np.load('../data/efficiency-corr2.npz')
@@ -501,28 +521,28 @@ def acceptance_study():
 
     for i in range(len(xELow)):
         if hTot[i]==0: continue
-        eff90corr = (hPass[i]/(1-hFracSim[i]))/hTot[i]
-        x90 = xELow[i] - xpbPass/2
-        effM2S238Corr.append([x90, eff90corr])
+        effTotcorr = (hPass[i]/(1-hFracSim[i]))/hTot[i]
+        xTot = xELow[i] - xpbPass/2
+        effM2S238Corr.append([xTot, effTotcorr])
 
     # thesis plot, don't delete
-    plt.close()
-    plt.plot(xELow, hTot, ls='steps', c='k', label='total, m2s238 C1P6D3')
-    plt.plot(xELow, hPass, ls='steps', c='b', label='pass')
-    plt.plot(xELow, hFail, ls='steps', c='r', label='fail')
-    plt.plot(xTotSim, hFracSim * hTot, ls='steps', c='m', label='sim, slow fraction of total')
-    plt.plot(xTotSim, hPass/(1-hFracSim), ls='steps', c='g', label='pass, sim-corrected')
-    plt.legend(loc=1, bbox_to_anchor=(0., 0.5, 1, 0.2))
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts", ha='right', y=1)
-    plt.tight_layout()
-    # plt.show()
-    plt.savefig("../plots/lat-sloFrac-%s.pdf" % cpd)
-    return
+    # plt.close()
+    # plt.plot(xELow, hTot, ls='steps', c='k', label='total, m2s238 C1P6D3')
+    # plt.plot(xELow, hPass, ls='steps', c='b', label='pass')
+    # plt.plot(xELow, hFail, ls='steps', c='r', label='fail')
+    # plt.plot(xTotSim, hFracSim * hTot, ls='steps', c='m', label='sim, slow fraction of total')
+    # plt.plot(xTotSim, hPass/(1-hFracSim), ls='steps', c='g', label='pass, sim-corrected')
+    # plt.legend(loc=1, bbox_to_anchor=(0., 0.5, 1, 0.2))
+    # plt.xlabel("Energy (keV)", ha='right', x=1)
+    # plt.ylabel("Counts", ha='right', y=1)
+    # plt.tight_layout()
+    # # plt.show()
+    # plt.savefig("../plots/lat-sloFrac-%s.pdf" % cpd)
+    # return
 
-    p1.plot(np.nan, np.nan, ".r", label="90% of slice")
-    p2.plot(np.nan, np.nan, ".r", label="90% of slice")
-    p3.plot(np.nan, np.nan, ".r", label="90% of slice")
+    p1.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
+    p2.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
+    p3.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
 
     p1.legend(loc=1)
     p2.legend(loc=1)
@@ -575,17 +595,17 @@ def acceptance_study():
     plt.savefig("../plots/lat-acceptance-vals.pdf")
 
 
-    # ===== plot the fitSlo distributions for all events with their 90% cuts =====
+    # ===== plot the fitSlo distributions for all events with their (pctTot)% cuts =====
     plt.close()
 
     plt.semilogy(xSloExt, hSloExt/np.amax(hSloExt), c='r', lw=2, ls='steps', label='Ext. Pulser')
-    plt.axvline(fsShiftCutExt, c='m', lw=2, label="Ext 90%%: %.1f" % fsShiftCutExt)
+    plt.axvline(fsShiftCutExt, c='m', lw=2, label="Ext %d%%: %.1f" % (pctTot, fsShiftCutExt))
 
     plt.semilogy(xSloSim, hSloSim/np.amax(hSloSim), c='g', lw=2, ls='steps', alpha=0.8, label='Simulated WFs')
-    plt.axvline(fsShiftCutSim, c='k', lw=2, label="Simulated 90%%: %.1f" % fsShiftCutSim)
+    plt.axvline(fsShiftCutSim, c='k', lw=2, label="Simulated %d%%: %.1f" % (pctTot, fsShiftCutSim))
 
     plt.semilogy(xSloData, hSloData/np.amax(hSloData), c='b', lw=2, ls='steps', alpha=0.7, label='m2s238 Data')
-    plt.axvline(fsShiftCutData, c='c', lw=2, label="m2s238 90%%: %.1f" % fsShiftCutData)
+    plt.axvline(fsShiftCutData, c='c', lw=2, label="m2s238 %d%%: %.1f" % (pctTot, fsShiftCutData))
 
     plt.legend()
 
@@ -597,7 +617,7 @@ def acceptance_study():
     plt.savefig("../plots/lat-acceptance-slo.pdf")
 
 
-    # === fit the "new 90%" efficiency to weibull and recreate the "standard" efficiency plot ===
+    # === fit the "new (pctTot)%" efficiency to weibull and recreate the "standard" efficiency plot ===
     plt.close()
 
     # plt.plot(effM2S238[:,0], effM2S238[:,1], '-c', ls='steps',ms=10, label="m2s238 Efficiency")
@@ -610,8 +630,10 @@ def acceptance_study():
     idxE = np.where((xEff < xPassHi) & (xEff > 1))
     xEff, sloEff, ci_low, ci_upp = xEff[idxE], sloEff[idxE], ci_low[idxE], ci_upp[idxE]
     xEff -= xpbPass/2.
-    b3 = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this one is working best
-    popt, pcov = curve_fit(wl.weibull, xEff, sloEff, bounds=b3)
+    eFitHi = 30
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99))
+    idxF = np.where(xEff <= eFitHi)
+    popt, pcov = curve_fit(wl.weibull, xEff[idxF], sloEff[idxF], bounds=fitBnd)
     perr = np.sqrt(np.diag(pcov))
     c, loc, sc, amp = popt
     cE, locE, scE, ampE = perr

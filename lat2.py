@@ -14,8 +14,6 @@ import tinydb as db
 from scipy.optimize import curve_fit
 
 import matplotlib as mpl
-mpl.use('Agg')
-sys.argv.append("-b")
 import matplotlib.pyplot as plt
 plt.style.use('pltReports.mplstyle')
 from matplotlib.colors import LogNorm, Normalize
@@ -972,7 +970,7 @@ def setRiseCut():
                         leg = plt.legend(loc='best', fontsize=12)
                         leg.get_frame().set_alpha(0.5)
                         plt.savefig("./plots/rise-ds%d-ci%d-ch%d.png" % (ds, ci, ch))
-                        # return
+                        return
 
                 # final db check
                 if not writeDB: print(dbKey)
@@ -998,8 +996,8 @@ def riseStability():
     Track problem channels in riseNoise and return a (suggested)
     list of channels to cut, along w/ a diagnostic plot. """
 
-    dsList = [0,1,2,3,4,5]
-    # dsList = [3]
+    # dsList = [0,1,2,3,4,5]
+    dsList = [3]
 
     makeStabilityPlot = True
     makeChannelPlots = True
@@ -1122,10 +1120,10 @@ def riseStability():
             nby = int((yHi-yLo)/ypb)
             _, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
 
-            fig = plt.figure(figsize=(18,6))
-            p1 = plt.subplot(131)
-            p2 = plt.subplot(132)
-            p3 = plt.subplot(133)
+            plt.close()
+            fig = plt.figure(figsize=(9, 5)) # diagnostic riseNoise plot
+            p1 = plt.subplot(121)
+            p2 = plt.subplot(122)
 
             # print a good channel, just for comparison
             # checkList = [[0,578]]
@@ -1146,40 +1144,46 @@ def riseStability():
                 p1.set_aspect('auto')
                 x, y = np.meshgrid(xe, ye)
                 p1.pcolormesh(x, y, hRise.T, norm=LogNorm())
-                p1.plot(np.nan, np.nan, '.w', label='cIdx %d ch%d C%sP%sD%s' % (ci, ch, tuple(cpd)))
+                p1.plot(np.nan, np.nan, '.w', label='C%sP%sD%s, cIdx %d' % (cpd[0],cpd[1],cpd[2], ci))
 
                 a,b,c99,c,fitPass = dbVals[ci][ch]
                 if not fitPass:
-                    print("warning: this riseNoise fit failed!")
+                    print("Warning: this riseNoise fit failed! ds %d  ci %d  ch %d cpd %s" % (ds,ci,ch,cpd))
                 xFit = np.arange(xLo, xHi, 0.1)
-                p1.plot(xFit, wl.pol1(xFit, a, b, c), 'g-', label="a %.1e b %.1e c %.4f" % (a,b,c))
+                p1.plot(xFit, wl.pol1(xFit, a, b, c), 'g-', label="a %.1e b %.1e     c %.4f" % (a,b,c))
                 p1.plot(xFit, wl.pol1(xFit, a, b, c99), 'r-', label="a %.1e b %.1e c99 %.4f" % (a,b,c99))
 
                 p1.set_xlabel("Energy (keV)", ha='right', x=1)
                 p1.set_ylabel("riseNoise", ha='right', y=1)
 
-                p1.legend(loc=4)
+                p1.legend(loc=4, fontsize=14)
 
-                # -- 2. 1d projection, energy
+                # # -- 2. 1d projection, riseNoise. show the E=0 and E=238 cut vals
+                # p2.cla()
+                # yR = np.sum(hRise, axis=0)
+                # xR = ye[:-1] + 0.5*(ye[1]-ye[0])
+                # p2.plot(yR, xR, "b", ls='steps')
+                #
+                # p2.axhline(wl.pol1(0,a,b,c99), c='r', label='@E=0 : %.2f' % wl.pol1(0,a,b,c99))
+                # p2.axhline(wl.pol1(238,a,b,c99), c='r', label='@E=238 : %.2f' % wl.pol1(238,a,b,c99))
+                # p2.set_ylabel("riseNoise", ha='right', x=1)
+                # p2.legend(loc=1, fontsize=10)
+
+                # NOW i'm thinking this should just be a 2-plot thing
+                # 1 - rn vs E, show cut values
+                # 2 - E projection, hits passing cuts
+
+                # -- 2. 1d projection, energy, hits passing cuts
                 p2.cla()
                 yE = np.sum(hRise, axis=1)
                 xE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
                 p2.plot(xE, yE, "b", ls='steps')
                 p2.set_xlabel("Energy (keV)", ha='right', x=1)
 
-                # -- 3. 1d projection, riseNoise. show the E=0 and E=238 cut vals
-                p3.cla()
-                yR = np.sum(hRise, axis=0)
-                xR = ye[:-1] + 0.5*(ye[1]-ye[0])
-                p3.plot(xR, yR, "b", ls='steps')
-
-                p3.axvline(wl.pol1(0,a,b,c99), c='r', label='@E=0 : %.2f' % wl.pol1(0,a,b,c99))
-                p3.axvline(wl.pol1(238,a,b,c99), c='r', label='@E=238 : %.2f' % wl.pol1(238,a,b,c99))
-                p3.set_xlabel("riseNoise", ha='right', x=1)
-                p3.legend(loc=1, fontsize=10)
-
                 plt.tight_layout()
-                plt.savefig("./plots/rise-%s-ci%d-ch%d.png" % (calKey,ci,ch))
+                plt.show()
+                # plt.savefig("./plots/rise-%s-ci%d-ch%d.png" % (calKey,ci,ch))
+                return
 
             print("Cut candidates,",calKey)
             print(checkList)

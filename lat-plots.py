@@ -28,7 +28,7 @@ def main():
     # spec()
     # spec_vs_cpd()
     # thresh_cut_cal()
-    ds3_det_eff()
+    # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
     # m2s238_hit_spec()
@@ -40,7 +40,7 @@ def main():
     # fitSlo_tot_efficiencies()
     # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
-    # plot_ext_pulser()
+    plot_ext_pulser()
 
 
 def spec():
@@ -1517,9 +1517,9 @@ def plot_ext_pulser():
     # this is the result of the above block
     centMap = {624: 74.75, 688: 67.25, 674: 65.75}
 
-    fig = plt.figure(figsize=(8,6))
-    p1 = plt.subplot(211)
-    p2 = plt.subplot(212)
+    # fig = plt.figure(figsize=(8,6))
+    p1 = plt.subplot(111)
+    # p2 = plt.subplot(212)
 
     # hitE, fSlo = [], []
     cols = {624:'r', 688:'g', 674:'b'}
@@ -1534,26 +1534,26 @@ def plot_ext_pulser():
         x, hist = wl.GetHisto(fSlo, fLo, fHi, fpb)
         fMax = x[np.argmax(hist)]
         muE = np.mean(hitE)
-        p2.plot(muE, fMax, ".", c=cols[ch], ms=10)
+        # p2.plot(muE, fMax, ".", c=cols[ch], ms=10)
 
     for ch in cols:
         cpd = det.getChanCPD(ds, ch)
         p1.plot(np.nan, np.nan, '.', c=cols[ch], label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
-        p2.plot(np.nan, np.nan, '.', c=cols[ch], label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
+        # p2.plot(np.nan, np.nan, '.', c=cols[ch], label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
 
-    p1.set_ylim(-100, 150) # shifted
+    p1.set_ylim(-80, 200) # shifted
     # p1.set_ylim(0, 200) # unshifted
 
     p1.set_xlim(0, 20)
-    p2.set_xlim(0, 20)
-    p2.legend()
-    p2.set_xlabel("Energy (keV)", ha='right', x=1)
-    p2.set_ylabel("fitSlo Centroid", ha='right', y=1)
+    # p2.set_xlim(0, 20)
+    p1.legend(loc=1)
+    p1.set_xlabel("Energy (keV)", ha='right', x=1)
+    # p2.set_ylabel("fitSlo Centroid", ha='right', y=1)
     p1.set_ylabel("fitSlo", ha='right', y=1)
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("./plots/lat-extPulser-centroid.pdf")
+    plt.savefig("./plots/lat-extPulser-centroid.png")
 
 
 def ext_pulser_width():
