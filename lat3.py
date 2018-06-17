@@ -18,10 +18,16 @@ import dsi
 bkg = dsi.BkgInfo()
 det = dsi.DetInfo()
 
-rateWin1 = [0, 5]
+rateWin1 = [0, 5] # < -- use this one
 rateWin2 = [5, 20]
 # kList = [5, 1.5]
-kList = [5, 2]
+kList = [5, 2] # < -- use this one
+
+# a very important parameter, use 90 or 95
+global pctTot
+# pctTot = 90
+pctTot = 95
+print("Using pctTot ==",pctTot)
 
 def main(argv):
     """
@@ -30,6 +36,7 @@ def main(argv):
     3. Recalculate typical rates after rejecting outliers
     4? Find runs causing the outliers
     """
+
     # these can all be run sequentially
     getRates()
     getOutliers(True,usePass2=False)
@@ -95,7 +102,7 @@ def getRates():
                 aMass = det.allActiveMasses[detID]
 
                 # skip nonexistent files.  other parts of chsel should tell us why these aren't here.
-                fName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, cutType, dsNum, bIdx, ch)
+                fName = "%s/bkg/cut/%s%d/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, pctTot, cutType, dsNum, bIdx, ch)
                 if not os.path.isfile(fName): continue
 
                 tf = TFile(fName)
@@ -127,10 +134,10 @@ def getRates():
 
                 rateData[cpd].append([r1,r2,expo,bIdx,int(cpd),dsTmp,n1])
 
-        np.savez('./data/lat3-rates-ds%s.npz' % ds, rateData, ds)
+        np.savez('./data/lat3-rates-ds%s-e%d.npz' % (ds, pctTot), rateData, ds)
 
 
-def getOutliers(verbose=False,usePass2=False):
+def getOutliers(verbose=False, usePass2=False):
     """ Apply the "closeFence" method to enriched and natural detectors in each data set separately.
     Return a list of excluded [ds,cpd,bIdx]'s.
     https://math.stackexchange.com/questions/966331/why-john-tukey-set-1-5-iqr-to-detect-outliers-instead-of-1-or-2
@@ -151,7 +158,7 @@ def getOutliers(verbose=False,usePass2=False):
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds # this is used for getGoodChanList
 
-        f = np.load('./data/lat3-rates-ds%s.npz' % ds)
+        f = np.load('./data/lat3-rates-ds%s-e%d.npz' % (ds, pctTot))
         rateData = f['arr_0'].item()
 
         dsTmp = ds # this is a hack to keep the dataset in the numpy array
@@ -371,7 +378,7 @@ def plotRates():
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("./plots/lat3-rates-after-burst-withzeros.pdf")
+    plt.savefig("./plots/lat3-rates-after-burst-withzeros-e%d.pdf" % (pctTot))
 
     # Brian says stop messing w/ the box plot and fit a histogram of rates in each DS to a Poisson distribution
     # he also says try a violin plot https://seaborn.pydata.org/generated/seaborn.violinplot.html
@@ -403,11 +410,12 @@ def makeCutFiles():
 
     cutType = "fr"
 
+    # additional DC cuts can go here
     tOffCut = "tOffset < 100"
 
     # which burst cut do we want?
     pass2 = False
-    outType = "frb2" if pass2 else "frb"
+    outType = "frb2%d" % pctTot if pass2 else "frb%d" % pctTot
 
     for ds in [0,1,2,3,4,"5A","5B","5C"]:
     # for ds in [0]:
@@ -467,7 +475,7 @@ def makeCutFiles():
                     continue
 
                 # skip nonexistent files.  other parts of chsel should tell us why these aren't here.
-                fName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, cutType, dsNum, bIdx, ch)
+                fName = "%s/bkg/cut/%s%d/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, cutType, pctTot, cutType, dsNum, bIdx, ch)
                 if not os.path.isfile(fName):
                     # print("no file for det %s in bkgIdx %d" % (cpd, bIdx))
                     continue
@@ -503,7 +511,7 @@ def plotSpecBeforeAfter():
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = ["5C"]
 
-    plotName = "./plots/lat3-comp-allDS.pdf"
+    plotName = "./plots/lat3-comp-allDS-e%d.pdf" % pctTot
 
     tB = TChain("skimTree") # before
     tA = TChain("skimTree") # after
@@ -521,9 +529,9 @@ def plotSpecBeforeAfter():
         if ds=="5A": bLo, bHi = 0, 79
         if ds=="5B": bLo, bHi = 80, 112
         if ds=="5C": bLo, bHi = 113, 121
-        fB = ["%s/bkg/cut/fr/fr_ds%d_%d_*.root" % (dsi.dataDir, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        fB = ["%s/bkg/cut/fr%d/fr_ds%d_%d_*.root" % (dsi.dataDir, pctTot, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
         for f in fB: tB.Add(f)
-        fA = ["%s/bkg/cut/frb/frb_ds%d_%d_*.root" % (dsi.dataDir, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
+        fA = ["%s/bkg/cut/frb%d/frb%d_ds%d_%d_*.root" % (dsi.dataDir, pctTot, pctTot, dsNum, bIdx) for bIdx in range(bLo, bHi+1)]
         for f in fA: tA.Add(f)
 
     print("before",tB.GetEntries(),"after",tA.GetEntries())
@@ -587,9 +595,9 @@ def plotSpectraAfter():
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = ["5A","5B","5C"]
 
-    # cType = "fr"   # before burst cut
-    cType = "frb"  # after burst cut
-    # cType = "frb2" # after pass 2 burst cut
+    # cType = "fr"             # before burst cut
+    cType = "frb%d" % pctTot   # after burst cut <-- use this one
+    # cType = "frb2"           # after pass 2 burst cut
 
     for ds in dsList:
 
@@ -847,12 +855,12 @@ def combineSpectra():
         dsList = spec[0]
         xLo, xHi, xpb = spec[1]
 
-        plotName = "./plots/lat3-ds"
+        plotName = "./plots/lat3-ds-e%d-" % pctTot
         for ds in dsList: plotName += str(ds)
         plotName += "-%.1fkev.pdf" % xHi
 
         # cType = "fr"   # before burst cut
-        cType = "frb"  # after burst cut
+        cType = "frb%d" % pctTot  # after burst cut <---- use this one
         # cType = "frb2" # after pass 2 burst cut
 
         tt = TChain("skimTree")

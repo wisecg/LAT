@@ -19,7 +19,15 @@ cal = dsi.CalInfo()
 det = dsi.DetInfo()
 import waveLibs as wl
 
+
 def main(argv):
+
+    # a very important parameter, use 90 or 95
+    global pctTot
+    # pctTot = 90
+    pctTot = 95
+    print("Using pctTot ==",pctTot)
+
 
     # NOTE: the options outline a rough 'procedure' to use this code.
     for i, opt in enumerate(argv):
@@ -65,10 +73,12 @@ def getPSACutRuns(ds, cutType, verbose=False):
         ========= fitSlo detectors cut:  (lat2::setSloCut) =========
         # Detectors to cut.  This is from inspecting the 'makePlots' output.
         # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
-        # NOTE: these detectors could be brought back if we included the DS6 cal runs
-        # to bump up the stats in M2.
-        cutDets = ['211','214','221','261','274']
-
+        # NOTE: these detectors could probably be brought back if we included the
+        # DS6 cal runs to bump up the stats in M2.
+        cutDets = {
+            90: ['211','214','221','254','261','274'],
+            95: ['211','214','221','261','274']
+        }
         fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
         dbVals[ch] = [fsCut, fs200, nBin]
 
@@ -151,7 +161,7 @@ def getPSACutRuns(ds, cutType, verbose=False):
         for i, bIdx in enumerate(bkgRanges):
 
             # bkgDict, calDict are only filled when we have good entries, bkgCov, calCov are always filled.
-            bkgDict, calDict, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars,False)
+            bkgDict, calDict, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,cutType,calDB,pars,pctTot,False)
 
             rFirst, rLast = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
             dsSub = ds if ds in ["5A","5B","5C"] else int(ds)
@@ -210,18 +220,19 @@ def getPSACutRuns(ds, cutType, verbose=False):
     #     print("Wrote cut file:",outFile)
 
     # Create numpy output for getExposure
-    np.savez('./data/lat-psaRunCut-ds%s.npz' % ds, dRanges)
+    np.savez('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot, ds), dRanges)
 
 
 def getExposure():
     """./lat-expo.py -xp
-
+    NOTE: pctTotal has to be changed in lat3 to match its setting here.
     TODO: Add uncertainty from active mass?
     """
     import lat3
     from ROOT import TFile, TTree
 
-    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
+    # be careful, you have to change pctTotal in lat3 to the right value
+    enrExc, natExc, _, _ = lat3.getOutliers(False, usePass2=False)
     # format of enrExc, natExc: [:,0]=dsNum, [:,1]=cpd, [:,2]=bkgIdx
 
     cutType = "fr"
@@ -245,7 +256,7 @@ def getExposure():
 
     for ds in dsList:
 
-        f = np.load('./data/lat-psaRunCut-ds%s.npz' % ds)
+        f = np.load('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot, ds))
         psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds
@@ -346,9 +357,9 @@ def getExposure():
         enrDiff = dsEnrExp - rawEnrExp
         natDiff = dsNatExp - rawNatExp
 
-        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsEnrExp,rawEnrExp,psaEnrExp,burstEnrExp,enrDiff))
+        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA%d  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsEnrExp,rawEnrExp,pctTot,psaEnrExp,burstEnrExp,enrDiff))
 
-        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsNatExp,rawNatExp,psaNatExp,burstNatExp,natDiff))
+        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA%d %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsNatExp,rawNatExp,pctTot,psaNatExp,burstNatExp,natDiff))
 
         grandTotEnr += dsEnrExp
         grandTotNat += dsNatExp
@@ -363,18 +374,18 @@ def getExposure():
     print("Natural (kg-y) : %.4f" % (grandTotNat))
 
     # save output
-    np.savez("./data/expo-totals.npz", dsExpo)
+    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo)
 
 
 def makeFinalFiles():
     """ ./lat-expo.py -f
-    TChain the 'frb' files for each dataset and make output files for spec-fit and others.
+    TChain the 'frb(pctTot)' files for each dataset and make output files for spec-fit and others.
     Save the enriched & natural exposure into the files too
     """
     from ROOT import TChain, TFile, TTree, TNamed, MGTWaveform
 
-    cutType = "frb"
-    outType = "final"
+    cutType = "frb%d" % pctTot
+    outType = "final%d" % pctTot
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
@@ -422,7 +433,7 @@ def makeFinalFiles():
         outTree = dummyTree.CopyTree(tCut)
         outTree.Write()
 
-        f = np.load("./data/expo-totals.npz")
+        f = np.load("./data/expo-totals-e%d.npz" % pctTot)
         dsExpo = f['arr_0'].item()
         enrExpTot = dsExpo[ds][0]
         natExpTot = dsExpo[ds][1]
@@ -454,10 +465,10 @@ def makeMovies():
 
     for ds in dsList:
 
-        outFile = "./plots/final-wfs-DS%s.mp4" % ds
+        outFile = "./plots/final%d-wfs-DS%s.mp4" % (pctTot, ds)
         print("Saving WFs for DS-%s: %s" % (ds, outFile))
 
-        inFile = "%s/bkg/cut/final/final_DS%s.root" % (dsi.dataDir, ds)
+        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
         tt = tf.Get("skimTree")
 
@@ -599,9 +610,9 @@ def getEfficiency():
         bkgRanges = bkg.getRanges(ds)
 
         # get psa cut runs and detector fitSlo efficiencies
-        f = np.load('./data/lat-psaRunCut-ds%s.npz' % ds)
+        f = np.load('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot,ds))
         psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
-        fsD = dsi.getDBRecord("fitSlo_cpd_eff", False, calDB, pars)
+        fsD = dsi.getDBRecord("fitSlo_cpd_eff%d" % pctTot, False, calDB, pars)
 
         # get burst cut
         dsTmp = ds
@@ -642,7 +653,7 @@ def getEfficiency():
             for i, bIdx in enumerate(bkgRanges):
 
                 # load bkg (trigger) and cal (PSA) cut coverage
-                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,False)
+                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,False,pctTot)
 
                 rLo, rHi = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
 
@@ -758,13 +769,14 @@ def getEfficiency():
                                 exit()
 
             # thesis plot: individual efficiencies
-            for ch in chList:
-                # plt.plot(xEff, trigEff[ch], '-')
-                plt.plot(xEff, fSloEff[ch], '-')
-                # plt.plot(xEff, totEff[ch], '-')
-            plt.xlim(0,10)
-            plt.show()
-            exit()
+            if debugMode:
+                for ch in chList:
+                    # plt.plot(xEff, trigEff[ch], '-')
+                    plt.plot(xEff, fSloEff[ch], '-')
+                    # plt.plot(xEff, totEff[ch], '-')
+                plt.xlim(0,10)
+                plt.show()
+                exit()
 
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
