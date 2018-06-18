@@ -378,7 +378,7 @@ def setSloCut(pctTot):
 
     print("Setting m2s238 slow cut with pctTot == %d" % pctTot)
 
-    makePlots = False
+    makePlots = True
     writeEffData = False
 
     dsList = [0,1,2,3,4,5]
@@ -583,7 +583,7 @@ def setSloCut(pctTot):
 
             # plot SHIFTED fs
             p2.cla()
-            p2.plot(hSlo, xS, ls='steps', c='k', label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
+            p2.semilogx(hSlo, xS, ls='steps', c='k', label='C%sP%sD%s' % (cpd[0],cpd[1],cpd[2]))
             p2.axhline(fsShiftCut, c='r', label="%d%% value: %.0f" % (pctTot, fsShiftCut))
             p2.set_xlabel("Counts", ha='right', x=1)
             p2.set_ylabel("fitSlo", ha='right', y=1)
@@ -996,16 +996,18 @@ def riseStability():
     Track problem channels in riseNoise and return a (suggested)
     list of channels to cut, along w/ a diagnostic plot. """
 
-    # dsList = [0,1,2,3,4,5]
-    dsList = [3]
+    dsList = [0,1,2,3,4,5]
+    # dsList = [0]
+    # dsList = [5]
 
     makeStabilityPlot = True
-    makeChannelPlots = True
+    makeChannelPlots = False
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
 
     for ds in dsList:
+        print("Scanning DS",ds)
 
         for calKey in cal.GetKeys(ds):
             chList = det.getGoodChanList(ds)
@@ -1035,18 +1037,18 @@ def riseStability():
             avgB, stdB = np.mean(allB), np.std(allB)
             avgC, stdC = np.mean(allC), np.std(allC)
 
-            fig = plt.figure(figsize=(18,6))
-            p1 = plt.subplot(131)
-            p2 = plt.subplot(132)
-            p3 = plt.subplot(133)
-            cmap = plt.cm.get_cmap('tab20',len(chList)+1)
+            fig, (p1,p2,p3,p4) = plt.subplots(1,4,figsize=(12,4))
+            cmap = plt.cm.get_cmap('jet',len(chList)+1)
 
             # these are the threshold values for a candidate for a bad riseNoise channel
             chk = {'a':[-500,2000], 'b':[0,200], 'c':[50,200]}
 
             checkList = [] # this is what we fill with bad stuff
 
-            for i, ch in enumerate(chList):
+            cpdList = sorted([det.getChanCPD(ds,ch) for ch in chList])
+
+            for i, cpd in enumerate(cpdList):
+                ch = det.getCPDChan(ds,cpd)
                 x = [ci for ci in range(nCal) if dbVals[ci][ch] is not None]
                 yA, yB, yC = [], [], []
                 for ci in range(nCal):
@@ -1068,34 +1070,52 @@ def riseStability():
                         if not dbVals[ci][ch][4]:
                             checkList.append([ci,ch])
 
+                cpd = det.getChanCPD(ds,ch)
                 if makeStabilityPlot:
                     yA, yB, yC = np.asarray(yA), np.asarray(yB), np.asarray(yC)
-                    p1.plot(x, yA*100, ".", ms=10, c=cmap(i), label=ch)
+                    p1.plot(x, yA*100, ".", ms=10, c=cmap(i))
                     p2.plot(x, yB*100, ".", ms=10, c=cmap(i))
                     p3.plot(x, yC*100, ".", ms=10, c=cmap(i))
+                    p4.plot(np.nan, np.nan, '.', c=cmap(i), ms=10, label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
 
             if makeStabilityPlot:
-                p1.axhline(100, c='g', alpha=0.5, label='avgA %.2e' % avgA)
-                p1.axhline(chk['a'][0], c='r', alpha=0.5, label='bad:%d' % chk['a'][0])
-                p1.axhline(chk['a'][1], c='r', alpha=0.5, label='bad:%d' % chk['a'][1])
-                p1.set_xlabel("calIdx", ha='right', x=1)
-                p1.set_ylabel("Pct.Deviation from Avg.", ha='right', y=1)
-                p1.legend(loc='best', ncol=4, fontsize=10)
+                nDiv = 5 if ds!=1 else 10
 
-                p2.axhline(100, c='g', alpha=0.5, label='avgB %.2e' % avgB)
-                p2.axhline(chk['b'][0], c='r', alpha=0.5, label='bad:%d' % chk['b'][0])
-                p2.axhline(chk['b'][1], c='r', alpha=0.5, label='bad:%d' % chk['b'][1])
-                p2.set_xlabel("calIdx", ha='right', x=1)
-                p2.legend(loc='best', fontsize=10)
+                p1.axhline(100, c='g', alpha=0.5)
+                p1.axhline(chk['a'][0], c='r', alpha=0.5)
+                p1.axhline(chk['a'][1], c='r', alpha=0.5)
+                p1.set_xlabel("DS-%s, calIdx" % ds, ha='right', x=1)
+                p1.set_ylabel("Pct. Deviation", ha='right', y=1)
+                p1.set_xticks(np.arange(0, nCal, nDiv))
+                # p1.legend(loc=1, ncol=3, fontsize=8)
+                p1.annotate(r'A  ($\mu_A$=%.1e)' % avgA, xy=(10, 205), xycoords='axes points', size=14, ha='left', va='center',bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
 
-                p3.axhline(100, c='g', alpha=0.5, label='avgC %.2f' % avgC)
-                p3.axhline(chk['c'][0], c='r', alpha=0.5, label='bad:%d' % chk['c'][0])
-                p3.axhline(chk['c'][1], c='r', alpha=0.5, label='bad:%d' % chk['c'][1])
-                p3.set_xlabel("calIdx", ha='right', x=1)
-                p3.legend(loc='best', fontsize=10)
+                p2.axhline(100, c='g', alpha=0.5)
+                p2.axhline(chk['b'][0], c='r', alpha=0.5)
+                p2.axhline(chk['b'][1], c='r', alpha=0.5)
+                # p2.set_xlabel("DS-%s, calIdx" % ds, ha='right', x=1)
+                p2.set_xticks(np.arange(0, nCal, nDiv))
+                p2.annotate(r'B  ($\mu_B$=%.1e)' % avgB, xy=(10, 205), xycoords='axes points', size=14, ha='left', va='center',bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
+
+                p3.axhline(100, c='g', alpha=0.5)
+                p3.axhline(chk['c'][0], c='r', alpha=0.5)
+                p3.axhline(chk['c'][1], c='r', alpha=0.5)
+                # p3.set_xlabel("DS-%s, calIdx" % ds, ha='right', x=1)
+                p3.set_xticks(np.arange(0, nCal, nDiv))
+                p3.annotate(r'C  ($\mu_C$=%.1f)' % avgC, xy=(10, 205), xycoords='axes points', size=14, ha='left', va='center',bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
+
+                fs, ncol = 12,2
+                if calKey == "ds5c": fs, ncol = 8, 3
+
+                p4.legend(loc=1, ncol=ncol, fontsize=fs)
+                p4.axis('off')
+                p4.get_xaxis().set_visible(False)
+                p4.get_yaxis().set_visible(False)
 
                 plt.tight_layout()
-                plt.savefig("./plots/rise-stability-%s.png" % calKey)
+                # plt.show()
+                # exit()
+                plt.savefig("./plots/rise-stability-%s.pdf" % calKey)
 
 
             # ============================================================
@@ -1121,14 +1141,15 @@ def riseStability():
             _, xe, ye = np.histogram2d([],[],bins=[nbx,nby], range=[[xLo,xHi],[yLo,yHi]])
 
             plt.close()
-            fig = plt.figure(figsize=(9, 5)) # diagnostic riseNoise plot
-            p1 = plt.subplot(121)
-            p2 = plt.subplot(122)
+
+            fig, p1 = plt.subplots(1, 1, figsize=(8,5)) # riseNoise vs E, 2d
+            # fig, (p1, p2) = plt.subplots(1,2,figsize=(9,5)) # 2d and hits passing cuts
 
             # print a good channel, just for comparison
             # checkList = [[0,578]]
+            # checkList = [[0,598]]
 
-            print("Removal candidates:")
+            print("Removal candidates:") # remember, it's ok to get duplicates here
             for ci, ch in checkList:
                 cpd = det.getChanCPD(ds,ch)
                 # print("ci",ci,"ch",ch,"cpd",cpd)
@@ -1143,47 +1164,47 @@ def riseStability():
                 p1.cla()
                 p1.set_aspect('auto')
                 x, y = np.meshgrid(xe, ye)
-                p1.pcolormesh(x, y, hRise.T, norm=LogNorm())
-                p1.plot(np.nan, np.nan, '.w', label='C%sP%sD%s, cIdx %d' % (cpd[0],cpd[1],cpd[2], ci))
+                p1.pcolormesh(x, y, hRise.T, norm=LogNorm(), cmap='jet')
+                p1.plot(np.nan, np.nan, '.w', label='DS-%d  C%sP%sD%s  cIdx %d' % (ds,cpd[0],cpd[1],cpd[2],ci))
 
                 a,b,c99,c,fitPass = dbVals[ci][ch]
-                if not fitPass:
-                    print("Warning: this riseNoise fit failed! ds %d  ci %d  ch %d cpd %s" % (ds,ci,ch,cpd))
+                # if not fitPass:
+                    # print("Warning: this riseNoise fit failed! ds %d  ci %d  ch %d cpd %s" % (ds,ci,ch,cpd))
                 xFit = np.arange(xLo, xHi, 0.1)
-                p1.plot(xFit, wl.pol1(xFit, a, b, c), 'g-', label="a %.1e b %.1e     c %.4f" % (a,b,c))
-                p1.plot(xFit, wl.pol1(xFit, a, b, c99), 'r-', label="a %.1e b %.1e c99 %.4f" % (a,b,c99))
+                p1.plot(xFit, wl.pol1(xFit, a, b, c), 'g-', label="a %.1e  b %.1e      c %.4f" % (a,b,c))
+                p1.plot(xFit, wl.pol1(xFit, a, b, c99), 'r-', label="a %.1e  b %.1e  c99 %.4f" % (a,b,c99))
 
+                # p1.set_ylim(ymin=-0.1, ymax=5)
                 p1.set_xlabel("Energy (keV)", ha='right', x=1)
                 p1.set_ylabel("riseNoise", ha='right', y=1)
+                p1.legend(loc=3, fontsize=14)
 
-                p1.legend(loc=4, fontsize=14)
-
-                # # -- 2. 1d projection, riseNoise. show the E=0 and E=238 cut vals
-                # p2.cla()
-                # yR = np.sum(hRise, axis=0)
-                # xR = ye[:-1] + 0.5*(ye[1]-ye[0])
-                # p2.plot(yR, xR, "b", ls='steps')
-                #
-                # p2.axhline(wl.pol1(0,a,b,c99), c='r', label='@E=0 : %.2f' % wl.pol1(0,a,b,c99))
-                # p2.axhline(wl.pol1(238,a,b,c99), c='r', label='@E=238 : %.2f' % wl.pol1(238,a,b,c99))
-                # p2.set_ylabel("riseNoise", ha='right', x=1)
-                # p2.legend(loc=1, fontsize=10)
-
-                # NOW i'm thinking this should just be a 2-plot thing
-                # 1 - rn vs E, show cut values
-                # 2 - E projection, hits passing cuts
-
-                # -- 2. 1d projection, energy, hits passing cuts
+                # -- 2. 1d projection, energy, hits passing and failing cuts
                 p2.cla()
-                yE = np.sum(hRise, axis=1)
+                # yE = np.sum(hRise, axis=1)
                 xE = xe[:-1] + 0.5*(xe[1]-xe[0]) # center the bin edges
-                p2.plot(xE, yE, "b", ls='steps')
+                eVec = np.arange(xLo, xHi, xpb) # hitE values of each bin
+                rVec = np.arange(yLo, yHi, ypb) # rise values of each bin
+                hPass = np.zeros(len(eVec))
+                hFail = np.zeros(len(eVec))
+                for i in range(len(eVec)):
+                    rCut = wl.pol1(eVec[i], a, b, c99)
+                    for j in range(len(rVec)):
+                        ctsBin = hRise[i,j]
+                        if rVec[j] >= rCut:
+                            hFail[i] += hRise[i,j]
+                        else:
+                            hPass[i] += hRise[i,j]
+                p2.plot(xE, hPass, ls='steps', lw=2, c='b', label='Pass, %d cts' % np.sum(hPass))
+                p2.plot(xE, hFail, ls='steps', lw=2, c='r', label='Fail, %d cts' % np.sum(hFail))
+                p2.axvline(3, c='g', lw=1)
                 p2.set_xlabel("Energy (keV)", ha='right', x=1)
+                p2.legend(loc=2)
 
                 plt.tight_layout()
-                plt.show()
-                # plt.savefig("./plots/rise-%s-ci%d-ch%d.png" % (calKey,ci,ch))
-                return
+                # plt.show()
+                plt.savefig("./plots/rise-fail/rise-%s-ci%d-ch%d.pdf" % (calKey,ci,ch))
+                # return
 
             print("Cut candidates,",calKey)
             print(checkList)

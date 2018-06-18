@@ -465,7 +465,7 @@ def acceptance_study():
     cpd = '163'
     f2 = np.load("../data/slo2-m2s238-hits.npz")
     hitE, fSlo, shiftVals = f2['arr_0'].item(), f2['arr_1'].item(), f2['arr_2'].item()
-    eSlice = np.arange(xLo, xHi+1, 1) # 1 keV slices, 0 - 250
+    eSlice = np.arange(xLo, xHi+1, 2) # 2 keV slices, 0 - 250
     xVal, yVal = [], []
     for i in range(len(eSlice)-1):
         eLo = eSlice[i]
@@ -553,14 +553,14 @@ def acceptance_study():
     p2.set_xlim(xLo, xHi)
     p2.set_ylim(yLo, yHi)
     p3.set_xlim(xLo, xHi)
-    p3.set_ylim(yLo, yHi)
+    p3.set_ylim(yLo, 700)
 
     p1.set_ylabel("fitSlo (shifted)", ha='right', y=1)
     p3.set_xlabel("Energy (keV)", ha='right', x=1)
 
     p1.set_yticks([-80, 0, 100, 200])
     p2.set_yticks([-80, 0, 100, 200])
-    p3.set_yticks([-80, 0, 100, 200])
+    p3.set_yticks([-80, 0, 200, 400, 600])
 
     plt.tight_layout()
     fig.subplots_adjust(hspace=0.05)
@@ -569,6 +569,7 @@ def acceptance_study():
 
     # plt.show()
     plt.savefig('../plots/lat-acceptance-study.png')
+    return
 
 
     # ========= acceptance / efficiency plot =========

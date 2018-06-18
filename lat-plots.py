@@ -21,12 +21,13 @@ def main():
 
     # a very important parameter, use 90 or 95
     global pctTot
-    pctTot = 90
-    # pctTot = 95 # <-- use this one
+    # pctTot = 90
+    pctTot = 95 # <-- use this one
     print("Using pctTot ==",pctTot)
 
     # spec()
     # spec_vs_cpd()
+    spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
@@ -40,7 +41,7 @@ def main():
     # fitSlo_tot_efficiencies()
     # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
-    plot_ext_pulser()
+    # plot_ext_pulser()
 
 
 def spec():
@@ -51,7 +52,7 @@ def spec():
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
     for ds in dsList:
-        inFile = "%s/bkg/cut/final/final_DS%s.root" % (dsi.dataDir, ds)
+        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
         enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
         natExp += float(tf.Get("natExp (kg-d)").GetTitle())
@@ -90,7 +91,8 @@ def spec():
     p1.legend(loc=1)
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig("./plots/lat-final%d-specFinal.pdf" % pctTot)
 
 
 def spec_vs_cpd():
@@ -101,7 +103,7 @@ def spec_vs_cpd():
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
     for ds in dsList:
-        inFile = "%s/bkg/cut/final/final_DS%s.root" % (dsi.dataDir, ds)
+        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
         enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
         natExp += float(tf.Get("natExp (kg-d)").GetTitle())
@@ -110,7 +112,6 @@ def spec_vs_cpd():
     print("enrExp %.2f  natExp %.2f, ds" % (enrExp/365.25, natExp/365.25),dsList)
 
     # the channel map changes across datasets, so we have to plot by CPD
-
     cpdList = []
     for ds in dsList:
         dsTmp = int(ds[0]) if isinstance(ds,str) else ds
@@ -126,7 +127,6 @@ def spec_vs_cpd():
     natList = [cpd for cpd in cpdList if det.allDetIDs[str(cpd)] < 100000]
     cpdNatMap = {natList[i]:i for i in range(len(natList))}
     # natLabels =
-
 
     fig = plt.figure(figsize=(8,7))
     p0 = plt.subplot(211)
@@ -174,7 +174,7 @@ def spec_vs_cpd():
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("./plots/lat-spec-vs-cpd.pdf")
+    plt.savefig("./plots/lat-spec-vs-cpd-e%d.pdf" % pctTot)
 
     # ========= get detector counts =========
 
@@ -190,6 +190,138 @@ def spec_vs_cpd():
     for cpd in enrList:
         col = cpdEnrMap[cpd]
         print(cpd, int(np.sum(hEnr[bLo:bHi,col])))
+
+
+def spec_summary():
+    """ Make separate plots for enr/nat, with the spectrum and efficiency,
+    and then a 2d by channel under it. """
+
+    from ROOT import TFile, TChain, TTree
+
+    # dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5A","5B","5C"]
+    dsList = [1]
+
+    # xLo, xHi, xpb = 0, 20, 0.1
+    xLo, xHi, xpb = 0, 50, 0.2
+
+    # type = "enr"
+    type = "nat"
+
+    tt = TChain("skimTree")
+    enrExp, natExp = 0, 0
+    for ds in dsList:
+        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
+        tf = TFile(inFile)
+        enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
+        natExp += float(tf.Get("natExp (kg-d)").GetTitle())
+        tf.Close()
+        tt.Add(inFile)
+    if type=="enr":
+        detExp = enrExp
+        specLabel = "Enriched"
+    if type=="nat":
+        detExp = natExp
+        specLabel = "Natural"
+    print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
+
+    # load efficiency correction
+    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
+    xEff = f['arr_0']
+    totEnrEff, totNatEff = f['arr_1'].item(), f['arr_2'].item()
+
+    detEff = np.zeros(len(xEff))
+    for ds in dsList:
+        if type=="enr": detEff += totEnrEff[ds]
+        if type=="nat": detEff += totNatEff[ds]
+
+    # normalize the efficiency
+    effNorm = (np.amax(detEff)/365.25) / (detExp/365.25)
+    detEff = effNorm * np.divide(detEff, np.amax(detEff))
+    idxE = np.where((xEff <= xHi) & (xEff >= xLo))
+    xEff, detEff = xEff[idxE], detEff[idxE]
+
+    # make the plot!
+    fig, (p1, p2) = plt.subplots(2,1, figsize=(8,7))
+
+    # ==== 1. energy spectrum ====
+
+    if type=="enr": tCut = "isEnr"
+    if type=="nat": tCut = "!isEnr"
+
+    n = tt.Draw("trapENFCal",tCut,"goff")
+    hitE = tt.GetV1()
+    hitE = [hitE[i] for i in range(n)]
+    x, hSpec = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+    hSpec = np.divide(hSpec, detExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+
+    if xHi > 40:
+        print("Rate 20-40:",np.sum( xpb * hSpec[np.where((x>=20) & (x<=40))])/20  )
+
+    p1.plot(x, hSpec, 'b', ls='steps', lw=2, label="%s, DS%s--%s" % (specLabel, dsList[0], dsList[-1]))
+
+    p1.plot(np.nan, np.nan, '--r', alpha=0.8, lw=2, label="Eff, %.2f%% at %d keV" % (effNorm*100, xHi))
+    p1.axvline(1, c='g', lw=1, alpha=0.8, label="1.0 keV")
+    # p1.axvline(1.5, c='m', lw=1, alpha=0.8, label="1.5 keV")
+
+    p1.set_xlim(xLo, xHi)
+    p1.set_xticks(np.arange(xLo, xHi+1, (xHi-xLo)/10))
+    # p1.set_xlabel("Energy (keV)", ha='right', x=1)
+    p1.set_ylabel("Counts/keV-kg-d", ha='right', y=1)
+    p1.legend(loc=1, fontsize=14, bbox_to_anchor=(0., 0.7, 1, 0.2))
+
+    p1a = p1.twinx()
+    p1a.plot(xEff, detEff, '--r', alpha=0.8, lw=2)
+    p1a.set_ylabel('Efficiency', color='r', ha='right', y=1)
+    p1a.set_yticks(np.arange(0,1.1, 0.2))
+    p1a.tick_params('y', colors='r')
+
+    # ==== 2. spectrum by detector ====
+    n = tt.Draw("trapENFCal:C:P:D",tCut,"goff")
+    hitE, hitC, hitP, hitD = tt.GetV1(), tt.GetV2(), tt.GetV3(), tt.GetV4()
+    hitE = [hitE[i] for i in range(n)]
+    hitCPD = [int("%d%d%d" % (hitC[i],hitP[i],hitD[i])) for i in range(n)]
+
+    # the channel map changes across datasets, so we have to plot by CPD
+    cpdList = []
+    for ds in dsList:
+        dsTmp = int(ds[0]) if isinstance(ds,str) else ds
+        chTmp = det.getGoodChanList(dsTmp)
+        # cpdTmp = sorted([int(det.getChanCPD(dsTmp, ch)) for ch in chTmp])
+        # print(ds, cpdTmp)
+        for ch in chTmp:
+            cpd = det.getChanCPD(dsTmp,ch)
+            if type=="enr" and det.isEnr(cpd): cpdList.append(int(cpd))
+            if type=="nat" and not det.isEnr(cpd): cpdList.append(int(cpd))
+
+    cpdList = sorted(list(set(cpdList)))
+
+    rejectedDetectors = [cpd for cpd in cpdList if int(cpd) not in set(hitCPD)]
+    print("Rejected detectors:",rejectedDetectors)
+
+    # if we check for the set, we don't plot detectors that have been completely killed by cuts from the good detector list
+    if type=="enr": cpdList = [cpd for cpd in cpdList if det.isEnr(cpd) and int(cpd) in set(hitCPD)]
+    if type=="nat": cpdList = [cpd for cpd in cpdList if not det.isEnr(cpd) and int(cpd) in set(hitCPD)]
+
+    cpdMap = {cpdList[i]:i for i in range(len(cpdList))}
+    hitCPD = [ cpdMap[int("%d%d%d" % (hitC[i],hitP[i],hitD[i])) ] for i in range(n)]
+
+    yLo, yHi = 0, len(cpdList)
+    nbx, nby = int((xHi-xLo)/xpb), len(cpdList)
+
+    hEnr,_,_,im1 = p2.hist2d(hitE, hitCPD, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet')
+    p2.set_xlabel("Energy (keV)", ha='right', x=1.)
+    p2.set_xticks(np.arange(xLo, xHi+1, (xHi-xLo)/10))
+    p2.set_ylabel("CPD, %s" % specLabel, ha='right', y=1.)
+    p2.set_yticks(np.arange(0, len(cpdList))+0.5)
+    p2.set_yticklabels(cpdList, fontsize=8)
+
+    # cb1 = fig.colorbar(im1, ax=p2)
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat-final%d-%s-DS%s-%d.pdf" % (pctTot, type, ''.join([str(d) for d in dsList]), xHi))
+
 
 
 def thresh_cut_cal():

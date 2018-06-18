@@ -35,11 +35,11 @@ def main(argv):
         # check DB cuts
         if opt=="-cov":
             # manual
-            # getPSACutRuns(argv[i+1],argv[i+2]) # ds, cutType
+            getPSACutRuns(argv[i+1],argv[i+2], verbose=True) # ds, cutType
 
-            # batch
-            for ds in [0,1,2,3,4,"5A","5B","5C"]:
-                getPSACutRuns(ds,"fr")
+            # batch <-- use this one
+            # for ds in [0,1,2,3,4,"5A","5B","5C"]:
+                # getPSACutRuns(ds,"fr")
 
         # finally, calculate exposure!
         if opt=="-xp":
@@ -120,6 +120,10 @@ def getPSACutRuns(ds, cutType, verbose=False):
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
     print("Getting PSA cut run/ch vals for DS-%s (%d) ..." % (ds, dsNum))
+
+    debugMode = True
+    if debugMode:
+        print("DEBUG MODE.  Not writing output file!")
 
     if cutType not in ["fr","fs","rn","thr"]:
         print("Unknown cut type:",cutType,"... exiting ...")
@@ -206,7 +210,8 @@ def getPSACutRuns(ds, cutType, verbose=False):
                             dRanges[ch].extend([covLo, covHi])
 
                         if verbose:
-                            print("%s  bIdx %d  sbIdx %d  cIdx %d  ch %d  th %d  fs %d  rn %d  %s" % (calKey,bIdx,sbIdx,cIdx,ch,int(goodThr),int(goodSlo),int(goodRise),excludeMsg))
+                            if ch==692: # it seems that this channel always failed auto-thresh in bkg runs
+                                print("%s  bIdx %d  sbIdx %d  cIdx %d  ch %d  cpd %d  th %d  fs %d  rn %d  %s" % (calKey,bIdx,sbIdx,cIdx,ch,int(det.getChanCPD(dsNum,ch)), int(goodThr),int(goodSlo),int(goodRise),excludeMsg))
 
     # Create output suitable for ds_livetime (deprecated)
     # if writeFile:
@@ -220,7 +225,8 @@ def getPSACutRuns(ds, cutType, verbose=False):
     #     print("Wrote cut file:",outFile)
 
     # Create numpy output for getExposure
-    np.savez('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot, ds), dRanges)
+    if not debugMode:
+        np.savez('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot, ds), dRanges)
 
 
 def getExposure():
@@ -561,7 +567,7 @@ def makeMovies():
 def getEfficiency():
     """ ./lat-expo.py -eff
     Same structure as getPSACutRuns, looping over sub-sub-bkgIdx's.
-    Wow, it's a 6-layer loop.  Can I get a degree yet?
+    Wow, it's a 6-layer loop.  Can I get a degree now?
     """
     import lat3
     from ROOT import TFile, TTree
@@ -573,14 +579,14 @@ def getEfficiency():
     enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
 
     # mode = "trig"  # trigger efficiency only
-    mode = "slo"     # slowness efficiency only
-    # mode = "all"   # does all PS
+    # mode = "slo"   # slowness efficiency only
+    mode = "all"   # does all PS <-- use this one
 
-    # dsList = [0,1,2,3,4,"5A","5B","5C"]  # default
+    dsList = [0,1,2,3,4,"5A","5B","5C"]  # default
     # dsList = ["5A"]
-    dsList = [3]
+    # dsList = [3]
 
-    debugMode = True
+    debugMode = False
     if debugMode:
         print("WARNING: debug mode.  dsList:",dsList)
 
@@ -592,6 +598,8 @@ def getEfficiency():
     detEff = {ds:{} for ds in dsList}
     for ds in dsList:
         detEff[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
+    finalEnrEff = np.zeros(len(xEff))
+    finalNatEff = np.zeros(len(xEff))
 
     # recalculate these, make sure they match getExposure
     enrExp = {ds:0 for ds in dsList}
@@ -653,7 +661,7 @@ def getEfficiency():
             for i, bIdx in enumerate(bkgRanges):
 
                 # load bkg (trigger) and cal (PSA) cut coverage
-                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,False,pctTot)
+                _,_, bkgCov, calCov = dsi.GetDBCuts(ds,bIdx,mod,"fr",calDB,pars,pctTot,False)
 
                 rLo, rHi = bkgRanges[bIdx][0], bkgRanges[bIdx][-1]
 
@@ -768,7 +776,6 @@ def getEfficiency():
                                 print("Unknown mode! exiting ...")
                                 exit()
 
-            # thesis plot: individual efficiencies
             if debugMode:
                 for ch in chList:
                     # plt.plot(xEff, trigEff[ch], '-')
@@ -799,38 +806,54 @@ def getEfficiency():
 
     # done w/ loop over datasets.
 
+    # plot overall enriched/natural efficiency
+    finalEnrExp, finalNatExp = 0, 0
     for ds in dsList:
-        plt.cla()
+        finalEnrEff += totEnrEff[ds]
+        finalNatEff += totNatEff[ds]
+        finalEnrExp += enrExp[ds]/365.25
+        finalNatExp += natExp[ds]/365.25
 
-        # comment these out to get 'exposure' vs energy
-        enrEff = np.divide(totEnrEff[ds], np.amax(totEnrEff[ds]))
-        natEff = np.divide(totNatEff[ds], np.amax(totNatEff[ds]))
+    plt.plot(xEff, finalEnrEff/365.25, '-r', ls='steps', label="Enriched: %.2f kg-y" % finalEnrExp)
+    plt.plot(xEff, finalNatEff/365.25, '-b', ls='steps', label="Natural: %.2f kg-y" % finalNatExp)
+    plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV")
+    plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV")
 
-        plt.plot(xEff, enrEff, '-r', label="Enriched, %.3f kg-y" % enrExp[ds])
-        plt.plot(xEff, natEff, '-b', label="Natural,  %.3f kg-y" % natExp[ds])
-        plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV")
-        plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV")
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Exposure (kg-y)", ha='right', y=1)
+    plt.legend(loc=1, bbox_to_anchor=(0., 0.5, 1, 0.2))
+    plt.xlim(0,30)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('./plots/lat-eff%d-finalEff.pdf'% pctTot)
 
-        plt.xlabel("Energy (keV)", ha='right', x=1.)
-        # plt.ylabel("Exposure (kg-d)", ha='right', y=1.)
-        plt.ylabel("Acceptance", ha='right', y=1.)
-        plt.legend()
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig("./plots/lat-expo-eff-%s-ds%s.pdf" % (mode, ds))
+    # for ds in dsList:
+    #     plt.cla()
+    #     plt.plot(xEff, enrEff, '-r', label="Enriched, %.3f kg-y" % enrExp[ds])
+    #     plt.plot(xEff, natEff, '-b', label="Natural,  %.3f kg-y" % natExp[ds])
+    #     plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV")
+    #     plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV")
+    #
+    #     plt.xlabel("Energy (keV)", ha='right', x=1.)
+    #     plt.ylabel("Exposure (kg-d)", ha='right', y=1.)
+    #     # plt.ylabel("Acceptance", ha='right', y=1.)
+    #     plt.legend()
+    #     plt.tight_layout()
+    #     plt.show()
+    #     plt.savefig("./plots/lat-expo-eff-%s-ds%s.pdf" % (mode, ds))
 
     # Finally, save output.
     if debugMode:
         print("I'm not saving output, I'm in debug mode, dsList:",dsList)
     if not debugMode:
-        np.savez("./data/lat-expo-efficiency-%s.npz" % mode, xEff, totEnrEff, totNatEff, enrExp, natExp)
+        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp)
 
 
 def getEfficiencyROOT():
     from ROOT import TFile, TH1D
 
     # load trigger efficiency npz file and convert to TH1D for RooFit.
-    f = np.load(dsi.latSWDir+'/data/lat-expo-efficiency-all.npz')
+    f = np.load(dsi.latSWDir+'/data/lat-expo%d-efficiency-all.npz' % pctTot)
 
     xEff = f['arr_0']
     eMin, eMax, nBins = 0, 50, len(xEff)
@@ -839,9 +862,13 @@ def getEfficiencyROOT():
     enrExp = f['arr_3'].tolist()
     natExp = f['arr_4'].tolist()
 
+    # do this to normalize the max value to 1, that's what roofit needs
+    # enrRooEff = np.divide(totEnrEff[ds], np.amax(totEnrEff[ds]))
+    # natRooEff = np.divide(totNatEff[ds], np.amax(totNatEff[ds]))
+
     hEnr, hNat = {}, {}
     hEnrNorm, hNatNorm = {}, {}
-    fFile = TFile(dsi.latSWDir+'/data/lat-expo-efficiency.root', 'RECREATE')
+    fFile = TFile(dsi.latSWDir+'/data/lat-expo%d-efficiency.root' % pctTot, 'RECREATE')
     fFile.cd()
 
     for ds in totEnrEff:
