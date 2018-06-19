@@ -356,6 +356,10 @@ def acceptance_study():
         xgTot, accTot = getTot(fSlo, cutTot=fsShiftCutExt)
         p1.plot(muE, xgTot, '.r', ms=10)
 
+        xT, yT = wl.GetHisto(fSlo, fShiftLo, fShiftHi, fpbShift)
+        fCtr = xT[np.argmax(yT)]
+        p1.plot(muE, fCtr, '.c', ms=10)
+
         xVal.append(xE)
         yVal.append(fSlo)
 
@@ -424,7 +428,7 @@ def acceptance_study():
         exit()
 
 
-    # plot the (pctTot)% values for each slice
+    # plot the (pctTot)% values for each slice and the centroids
     # xVals = sorted(list(set(dfCut['trapENFCal'])))
     xVals = np.unique(dfCut['trapENFCal'])
     for xE in xVals:
@@ -433,7 +437,9 @@ def acceptance_study():
         xgTot, accTot = getTot(yVals, pctLo=1, pctHi=98, cutTot=fsShiftCutSim)
         p2.plot(xE, xgTot, '.r', ms=10)
 
-        # accSimWF.append([xE, accTot])
+        xT, yT = wl.GetHisto(yVals, fShiftLo, fShiftHi, fpbShift)
+        fCtr = xT[np.argmax(yT)]
+        p2.plot(xE, fCtr, '.c', ms=10)
 
     p2.axhline(fsShiftCutSim, c='orange', label="%d%% Overall Cut: %.1f" % (pctTot, fsShiftCutSim))
 
@@ -485,7 +491,7 @@ def acceptance_study():
         print("WTF are you doing??")
         exit()
 
-    # plot the slices and 90% dots
+    # plot the slices, (pctTot)% dots, and centroid dots
     for i in range(len(xVal)):
         xV = xVal[i] * np.ones(len(yVal[i]))
         p3.plot(xV, yVal[i], ".b", ms=3.)
@@ -493,6 +499,10 @@ def acceptance_study():
         xgTot, effTot = getTot(yVal[i], cutTot=fsShiftCutData)
         p3.plot(xVal[i], xgTot, '.r', ms=10)
         # effM2S238.append([xVal[i],effTot])
+
+        xT, yT = wl.GetHisto(yVal[i], fShiftLo, fShiftHi, fpbShift)
+        fCtr = xT[np.argmax(yT)]
+        p3.plot(xVal[i], fCtr, '.c', ms=10)
 
     # try histogram pass/fail method from LAT2
     hitPass, hitFail = [], []
@@ -521,9 +531,9 @@ def acceptance_study():
 
     for i in range(len(xELow)):
         if hTot[i]==0: continue
-        effTotcorr = (hPass[i]/(1-hFracSim[i]))/hTot[i]
+        effTotCorr = (hPass[i]/(1-hFracSim[i]))/hTot[i]
         xTot = xELow[i] - xpbPass/2
-        effM2S238Corr.append([xTot, effTotcorr])
+        effM2S238Corr.append([xTot, effTotCorr])
 
     # thesis plot, don't delete
     # plt.close()
@@ -543,10 +553,13 @@ def acceptance_study():
     p1.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
     p2.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
     p3.plot(np.nan, np.nan, ".r", label="%d%% of slice" % pctTot)
+    p1.plot(np.nan, np.nan, ".c", label="Max of slice")
+    p2.plot(np.nan, np.nan, ".c", label="Max of slice")
+    p3.plot(np.nan, np.nan, ".c", label="Max of slice")
 
-    p1.legend(loc=1)
-    p2.legend(loc=1)
-    p3.legend(loc=1)
+    p1.legend(loc=1, fontsize=14)
+    p2.legend(loc=1, fontsize=14)
+    p3.legend(loc=1, fontsize=14)
 
     p1.set_xlim(xLo, xHi)
     p1.set_ylim(yLo, yHi)
@@ -681,6 +694,9 @@ def acceptance_study():
     plt.tight_layout()
     # plt.show()
     plt.savefig("../plots/lat-efficiency-weibull-%s.pdf" % cpd)
+
+
+# def sim_compton_edge():
 
 
 

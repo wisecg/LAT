@@ -27,12 +27,12 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    spec_summary()
+    # spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
-    # m2s238_hit_spec()
+    m2s238_hit_spec()
     # save_slowness_data()
     # slowness_vs_energy()
     # fitSlo_stability()
@@ -866,14 +866,39 @@ def m2s238_hit_spec():
     # x, hEBulk = wl.GetHisto(eneBulk, xLo, xHi, xpb)
     # x, hETrans = wl.GetHisto(eneTrans, xLo, xHi, xpb)
 
-    f = plt.figure()
+    fig = plt.figure()
 
-    # plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
-    # plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
+    plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
+    plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
     plt.plot(x, hFast, ls='steps', c='b', label="m2s238 Hits")
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Counts / %.1f keV" % xpb, ha='right', y=1)
     plt.axvline(123.3, c='g', lw=4, alpha=0.7, label=r"$E_C$: 123.3 keV")
+
+
+    # # now plot the simulated data
+    # f3 = np.load('./data/efficiency-corr2.npz')
+    # hTot, hSurf, xTot, simHists = f3['arr_0'], f3['arr_1'], f3['arr_2'], f3['arr_3'].item()
+    # hFrac = np.divide(hSurf, hTot, dtype=float)
+    # fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+    # ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events")
+    # ax1.plot(xTot, hSurf, ls='steps', c='r', label="Transition Events")
+    # ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+    # ax2.plot(xTot, hFrac, ls='steps', c='r')
+    # ax2.axvline(1, c='b', lw=1, label="1.0 keV")
+    # ax1.set_xlim(xLo, xHi)
+    # ax2.set_xlim(xLo, xHi)
+    # # ax1.set_title('Module 1 - Fraction of Transition Layer Events')
+    # ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
+    # # ax1.set_xlabel('Energy (keV)', ha='right', x=1)
+    # ax2.set_ylabel('Slow Fraction', ha='right', y=1)
+    # ax2.set_xlabel('Energy (keV)', ha='right', x=1)
+    # ax1.legend()
+    # ax2.legend()
+    # plt.tight_layout()
+    # plt.show()
+    # return
+
 
     plt.ylim(ymax=np.amax(hFast)*1.3)
     plt.legend(loc=1)
