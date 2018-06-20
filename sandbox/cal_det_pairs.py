@@ -38,7 +38,7 @@ def main():
     # loadSpec()
     loadFraction()
     # plotFraction()
-    plotComptonEdge()
+    # plotComptonEdge()
     return
 
     # interceptList, distList, absdistList = loadScatter()
@@ -481,6 +481,7 @@ def loadFraction():
     df1 = pd.read_hdf('{}/DS5_Sim_HitData.h5'.format(inDir))
     df2 = pd.read_hdf('{}/DS5_Sim_HitData_G41004.h5'.format(inDir))
     df = pd.concat([df1, df2])
+    # df = df1
     # df['EMirror'] = 238.63 - df['trapENFCal2']
     dfCut = df.loc[(df['sumET'] > 237) & (df['sumET'] < 240) & (df['CPD1'] < 200) & (df['CPD2'] < 200)]
     dfSurf1 = dfCut.loc[(dfCut['fActiveness1'] < 1)]
@@ -490,7 +491,8 @@ def loadFraction():
     surfArr = np.concatenate((dfSurf1['trapENFCal1'].values, dfSurf2['trapENFCal2'].values))
 
     # xLo, xHi, xpb = 0, 50, 1 # acceptance study
-    xLo, xHi, xpb = 0, 250, 2 # compton edge study
+    xLo, xHi, xpb = 0, 250, 1 # compton edge study
+    # xLo, xHi, xpb = 0, 250, 2 # compton edge study, 2 kev bins
 
     xTot, hTot = wl.GetHisto(totArr, xLo, xHi, xpb, shift=False)
     xSurf, hSurf = wl.GetHisto(surfArr, xLo, xHi, xpb, shift=False)
@@ -544,11 +546,11 @@ def loadFraction():
         totArrDet = np.concatenate((dfCh1['trapENFCal1'].values, dfCh2['trapENFCal2'].values))
         surfArrDet = np.concatenate((dfSurfCh1['trapENFCal1'].values, dfSurfCh2['trapENFCal2'].values))
 
-        xTot, hTot = wl.GetHisto(totArrDet, xLo, xHi, xpb, shift=False)
-        xSurf, hSurf = wl.GetHisto(surfArrDet, xLo, xHi, xpb, shift=False)
-        hFrac = np.divide(hSurf, hTot, dtype=float)
+        # xTot, hTot = wl.GetHisto(totArrDet, xLo, xHi, xpb, shift=False)
+        # xSurf, hSurf = wl.GetHisto(surfArrDet, xLo, xHi, xpb, shift=False)
+        # hFrac = np.divide(hSurf, hTot, dtype=float)
 
-        simHists[str(det)] = [hTot, hSurf, xTot] # save output
+        # simHists[str(det)] = [hTot, hSurf, xTot] # save output
 
         if makePlots:
 
@@ -572,7 +574,7 @@ def loadFraction():
 
     # save hists for each detector, and the overall total, into one npz file
     # np.savez("../data/efficiency-corr2.npz", hTot, hSurf, xTot, simHists)
-    np.savez("../data/efficiency-corr250.npz", hTot, hSurf, xTot, simHists)
+    np.savez("../data/efficiency-corr250-2kev.npz", hTot, hSurf, xTot, simHists)
 
 
 def plotFraction():
@@ -635,28 +637,35 @@ def plotComptonEdge():
     f = np.load('../data/efficiency-corr250.npz')
     hTot, hSurf, xTot, simHists = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3'].item()
 
-    xLo, xHi, xpb = 0, 250, 2
+    xLo, xHi, xpb = 0, 250, 1
     hFrac = np.divide(hSurf, hTot, dtype=float)
 
-    fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+    # fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
+    fig1 = plt.figure(figsize=(8,6))
+    ax1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    ax2 = plt.subplot2grid((3,1), (2,0), sharex=ax1)
 
     ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events")
     ax1.plot(xTot, hSurf, ls='steps', c='r', label="Transition Events")
     ax1.axvline(1, c='b', lw=1, label="1.0 keV")
+    ax1.axvline(238, c='g', lw=1, label='238 keV')
     ax2.plot(xTot, hFrac, ls='steps', c='r')
     ax2.axvline(1, c='b', lw=1, label="1.0 keV")
+    ax1.axvline(238, c='g', lw=1, label='238 keV')
     ax1.set_xlim(0, 250)
+    ax1.set_ylim(ymax=np.amax(hTot)*1.4)
     ax2.set_xlim(0, 250)
+
     # ax1.set_title('Module 1 - Fraction of Transition Layer Events')
     ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
     # ax1.set_xlabel('Energy (keV)', ha='right', x=1)
     ax2.set_ylabel('Slow Fraction', ha='right', y=1)
     ax2.set_xlabel('Energy (keV)', ha='right', x=1)
-    ax1.legend()
-    ax2.legend()
+    ax1.legend(loc=1, fontsize=12)
+    ax2.legend(loc=1, fontsize=12)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('../plots/sim-sloFrac-allDets.pdf')
+    plt.show()
+    # plt.savefig('../plots/sim-sloFrac-allDets.pdf')
 
 
 if __name__=="__main__":

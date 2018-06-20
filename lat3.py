@@ -38,13 +38,13 @@ def main(argv):
     """
 
     # these can all be run sequentially
-    getRates()
-    getOutliers(True,usePass2=False)
-    plotRates()
+    # getRates()
+    # getOutliers(True,usePass2=False)
+    # plotRates()
     makeCutFiles()
-    plotSpecBeforeAfter()
-    plotSpectraAfter()
-    combineSpectra()
+    # plotSpecBeforeAfter()
+    # plotSpectraAfter()
+    # combineSpectra()
 
 
 def getRates():
@@ -137,7 +137,7 @@ def getRates():
         np.savez('./data/lat3-rates-ds%s-e%d.npz' % (ds, pctTot), rateData, ds)
 
 
-def getOutliers(verbose=False, usePass2=False):
+def getOutliers(verbose=False, usePass2=False, noSkip=False):
     """ Apply the "closeFence" method to enriched and natural detectors in each data set separately.
     Return a list of excluded [ds,cpd,bIdx]'s.
     https://math.stackexchange.com/questions/966331/why-john-tukey-set-1-5-iqr-to-detect-outliers-instead-of-1-or-2
@@ -180,51 +180,51 @@ def getOutliers(verbose=False, usePass2=False):
         # this is where the magic happens
 
         # 1. find cpd/bIdx outliers for all enr and nat detectors in the DS
-        tmpEnrExc, tmpEnr = closeFence(ds, enr, kList, "Enr")
-        tmpNatExc, tmpNat = closeFence(ds, nat, kList, "Nat")
+        tmpEnrExc, tmpEnr = closeFence(ds, enr, kList, "Enr", noSkip=noSkip)
+        tmpNatExc, tmpNat = closeFence(ds, nat, kList, "Nat", noSkip=noSkip)
 
         # 2. find bIdx outliers for each detector separately (try to remove thresholds noise)
         #    ugg, this didn't really work for DS0 (still see peaking)
         #    let's not use it, it just unnecessarily removes exposure.
-        if usePass2:
-            k = 1.5
-
-            chList = det.getGoodChanList(dsNum)
-            for ch in chList:
-                cpd = int(det.getChanCPD(dsNum,ch))
-                isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
-                if isEnr:
-                    idx = np.where(tmpEnr[:,4]==cpd)
-                    if len(idx[0])==0 or len(tmpEnr[idx]) < 2: continue
-                    detEnrExc,_ = closeFence(ds, tmpEnr[idx], [k], cpd, 0, iZ=True)
-
-                    # add to the exclude list and delete from the rate object
-                    if len(detEnrExc)>0:
-
-                        if len(tmpEnrExc)==0: tmpEnrExc = detEnrExc
-                        tmpEnrExc = np.append(tmpEnrExc,detEnrExc,axis=0)
-
-                        for d in detEnrExc:
-                            iR = np.where((tmpEnr[:,3]==d[2]) & (tmpEnr[:,5]==dsTmp) & (tmpEnr[:,4]==cpd))
-                            if len(iR[0])!=1:
-                                print("ERROR, found more than one index")
-                                exit(1)
-                            tmpEnr = np.delete(tmpEnr, iR[0], 0)
-                else:
-                    idx = np.where(tmpNat[:,4]==cpd)
-                    if len(idx[0])==0 or len(tmpNat[idx]) < 2: continue
-                    detNatExc,_ = closeFence(ds, tmpNat[idx], [k], cpd, 0, iZ=True)
-                    if len(detNatExc)>0:
-
-                        if len(tmpNatExc)==0: tmpNatExc = detNatExc
-                        tmpNatExc = np.append(tmpNatExc,detNatExc,axis=0)
-
-                        for d in detNatExc:
-                            iR = np.where((tmpNat[:,3]==d[2]) & (tmpNat[:,5]==dsTmp) & (tmpNat[:,4]==cpd))
-                            if len(iR[0])!=1:
-                                print("ERROR, found more than one index")
-                                exit(1)
-                            tmpNat = np.delete(tmpNat, iR[0], 0)
+        # if usePass2:
+        #     k = 1.5
+        #
+        #     chList = det.getGoodChanList(dsNum)
+        #     for ch in chList:
+        #         cpd = int(det.getChanCPD(dsNum,ch))
+        #         isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
+        #         if isEnr:
+        #             idx = np.where(tmpEnr[:,4]==cpd)
+        #             if len(idx[0])==0 or len(tmpEnr[idx]) < 2: continue
+        #             detEnrExc,_ = closeFence(ds, tmpEnr[idx], [k], cpd, 0, iZ=True)
+        #
+        #             # add to the exclude list and delete from the rate object
+        #             if len(detEnrExc)>0:
+        #
+        #                 if len(tmpEnrExc)==0: tmpEnrExc = detEnrExc
+        #                 tmpEnrExc = np.append(tmpEnrExc,detEnrExc,axis=0)
+        #
+        #                 for d in detEnrExc:
+        #                     iR = np.where((tmpEnr[:,3]==d[2]) & (tmpEnr[:,5]==dsTmp) & (tmpEnr[:,4]==cpd))
+        #                     if len(iR[0])!=1:
+        #                         print("ERROR, found more than one index")
+        #                         exit(1)
+        #                     tmpEnr = np.delete(tmpEnr, iR[0], 0)
+        #         else:
+        #             idx = np.where(tmpNat[:,4]==cpd)
+        #             if len(idx[0])==0 or len(tmpNat[idx]) < 2: continue
+        #             detNatExc,_ = closeFence(ds, tmpNat[idx], [k], cpd, 0, iZ=True)
+        #             if len(detNatExc)>0:
+        #
+        #                 if len(tmpNatExc)==0: tmpNatExc = detNatExc
+        #                 tmpNatExc = np.append(tmpNatExc,detNatExc,axis=0)
+        #
+        #                 for d in detNatExc:
+        #                     iR = np.where((tmpNat[:,3]==d[2]) & (tmpNat[:,5]==dsTmp) & (tmpNat[:,4]==cpd))
+        #                     if len(iR[0])!=1:
+        #                         print("ERROR, found more than one index")
+        #                         exit(1)
+        #                     tmpNat = np.delete(tmpNat, iR[0], 0)
 
         ae1, se1 = getMuStd(tmpEnr[:,0])
         ae2, se2 = getMuStd(tmpEnr[:,1])
@@ -258,7 +258,7 @@ def getMuStd(vals, wts=None):
     return mu, std
 
 
-def closeFence(ds, rates, kList, name="", verbose=0, iZ=True):
+def closeFence(ds, rates, kList, name="", verbose=0, iZ=True, noSkip=False):
     """ Recursively applies the IQR / Tukey fence method to reject upper outliers, for the values in kList.
     Returns a list [[ds,cpd1,bIdx1],[ds,cpd2,bIdx2],...] and the updated averages.
     """
@@ -276,6 +276,10 @@ def closeFence(ds, rates, kList, name="", verbose=0, iZ=True):
         # iE2 = outliersIQR(rates[:,1], k, "hi", ignoreZeros=True)[0]
         # iE = sorted(list(set(np.append(iE1, iE2))))
         iE = iE1
+
+        if noSkip:
+            print("Warning, no-skip mode active.")
+            iE = np.asarray([])
 
         # get the average before excluding
         avg1, std1 = getMuStd(rates[:,0], None)
@@ -338,6 +342,11 @@ def plotRates():
     rate objects: [:,0]=rate1, [:,1]=rate2, [:,2]=expo, [:,3]=bkgIdx, [:,4]=cpd, [:,5]=ds
     dumb DS5 trick: 5A==50, 5B==51, 5C==52
     """
+
+    # plotName = "./plots/lat3-rates-before-burst-withzeros-e%d.pdf" % (pctTot)
+    # enrExc, natExc, enrRates, natRates = getOutliers(False, noSkip=True)
+
+    plotName = "./plots/lat3-rates-after-burst-withzeros-e%d.pdf" % (pctTot)
     enrExc, natExc, enrRates, natRates = getOutliers(False)
 
     def jitter(vals,idx,sc):
@@ -352,6 +361,7 @@ def plotRates():
     fig = plt.figure()
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
+
     dataBox, xVals = [], []
     for i, ds in enumerate(dsList):
         dsNum = ds
@@ -369,7 +379,8 @@ def plotRates():
     # plt.boxplot(natBox, positions=np.array(range(len(natBox)))*2.0-0.4, sym='', widths=0.6)
 
     for i in range(len(dataBox)):
-        plt.plot(xVals[i], dataBox[i], ".b", ms=3)
+        # plt.semilogy(xVals[i], dataBox[i], ".b", ms=5) # before
+        plt.plot(xVals[i], dataBox[i], ".b", ms=3) # after
 
     plt.gca().set_xticklabels(dsList)
 
@@ -378,7 +389,7 @@ def plotRates():
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("./plots/lat3-rates-after-burst-withzeros-e%d.pdf" % (pctTot))
+    plt.savefig(plotName)
 
     # Brian says stop messing w/ the box plot and fit a histogram of rates in each DS to a Poisson distribution
     # he also says try a violin plot https://seaborn.pydata.org/generated/seaborn.violinplot.html
@@ -418,7 +429,6 @@ def makeCutFiles():
     outType = "frb2%d" % pctTot if pass2 else "frb%d" % pctTot
 
     for ds in [0,1,2,3,4,"5A","5B","5C"]:
-    # for ds in [0]:
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds
         nBkg = bkg.dsMap()[dsNum]
@@ -446,6 +456,7 @@ def makeCutFiles():
         skipList = np.vstack((enrExc[iE], natExc[iN]))
         print("DS-%s, skipList:" % ds)
         print(skipList)
+        continue # debug to print the skip list
 
         # load ds_livetime output
         tl = TFile("./data/ds_%s_livetime.root" % str(ds))

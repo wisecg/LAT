@@ -27,12 +27,12 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    # spec_summary()
+    spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
-    m2s238_hit_spec()
+    # m2s238_hit_spec()
     # save_slowness_data()
     # slowness_vs_energy()
     # fitSlo_stability()
@@ -198,15 +198,16 @@ def spec_summary():
 
     from ROOT import TFile, TChain, TTree
 
-    # dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
-    dsList = [1]
+    # dsList = [1]
 
     # xLo, xHi, xpb = 0, 20, 0.1
-    xLo, xHi, xpb = 0, 50, 0.2
+    # xLo, xHi, xpb = 0, 50, 0.2
+    xLo, xHi, xpb = 0, 10, 0.1
 
-    # type = "enr"
-    type = "nat"
+    type = "enr"
+    # type = "nat"
 
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
@@ -321,7 +322,6 @@ def spec_summary():
     plt.tight_layout()
     # plt.show()
     plt.savefig("./plots/lat-final%d-%s-DS%s-%d.pdf" % (pctTot, type, ''.join([str(d) for d in dsList]), xHi))
-
 
 
 def thresh_cut_cal():
@@ -855,54 +855,36 @@ def m2s238_hit_spec():
     x, hFast = wl.GetHisto(hitEFast,xLo,xHi,xpb)
 
     # load sim data
-    # fs = np.load("./data/mult4-evtTrans.npz")
-    # hits = fs['arr_0'].item()
-    # evtTotal, evtBulk, evtTrans = hits[0], hits[1], hits[2]
-    # eneTotal, eneBulk, eneTrans = hits[3], hits[4], hits[5]
-    # x, hTotal = wl.GetHisto(evtTotal, xLo, xHi, xpb)
-    # x, hBulk = wl.GetHisto(evtBulk, xLo, xHi, xpb)
-    # x, hTrans = wl.GetHisto(evtTrans, xLo, xHi, xpb)
-    # x, hETotal = wl.GetHisto(eneTotal, xLo, xHi, xpb)
-    # x, hEBulk = wl.GetHisto(eneBulk, xLo, xHi, xpb)
-    # x, hETrans = wl.GetHisto(eneTrans, xLo, xHi, xpb)
+    f3 = np.load('./data/efficiency-corr250.npz')
+    hTotSim, hSurfSim, xTotSim, simHists = f3['arr_0'], f3['arr_1'], f3['arr_2'], f3['arr_3'].item()
+    hFracSim = np.divide(hSurfSim, hTotSim, dtype=float)
+
+    idxS = np.where((xTotSim >= 1) & (xTotSim <= 238))
+    slowFrac = 100 * np.sum(hSurfSim)/np.sum(hTotSim)
 
     fig = plt.figure()
+    p1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+    p2 = plt.subplot2grid((3,1), (2,0), sharex=p1)
 
-    plt.plot(x, hEBulk/np.sum(hEBulk), ls='steps', c='g', lw=2., label='sim bulk')
-    plt.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='data fast')
-    plt.plot(x, hFast, ls='steps', c='b', label="m2s238 Hits")
-    plt.xlabel("Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts / %.1f keV" % xpb, ha='right', y=1)
-    plt.axvline(123.3, c='g', lw=4, alpha=0.7, label=r"$E_C$: 123.3 keV")
+    p1.plot(x, hFast/np.sum(hFast), ls='steps', c='b', lw=2., label='m2s238 Data')
+    p1.plot(xTotSim, hTotSim/np.sum(hTotSim), ls='steps', c='r', lw=2., alpha=0.7, label='m2s238 Sim (Prelim.)')
+    p1.plot(xTotSim, hSurfSim/np.sum(hTotSim), ls='steps', c='m', lw=2, label='Simulated Slow Hits')
+    p1.axvline(123.3, c='g', lw=4, alpha=0.7, label=r"$E_C$: 123.3 keV")
+    p1.plot(np.nan, np.nan, c='w', label="%.2f%% slow, 1-238 keV" % slowFrac)
 
+    p1.set_ylabel("Counts (norm) / %.1f keV" % xpb, ha='right', y=1)
+    p1.legend(loc=1, fontsize=12, bbox_to_anchor=(0., 0.4, 1, 0.2))
 
-    # # now plot the simulated data
-    # f3 = np.load('./data/efficiency-corr2.npz')
-    # hTot, hSurf, xTot, simHists = f3['arr_0'], f3['arr_1'], f3['arr_2'], f3['arr_3'].item()
-    # hFrac = np.divide(hSurf, hTot, dtype=float)
-    # fig1, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8,6))
-    # ax1.plot(xTot, hTot, ls='steps', c='k', label="All Events")
-    # ax1.plot(xTot, hSurf, ls='steps', c='r', label="Transition Events")
-    # ax1.axvline(1, c='b', lw=1, label="1.0 keV")
-    # ax2.plot(xTot, hFrac, ls='steps', c='r')
-    # ax2.axvline(1, c='b', lw=1, label="1.0 keV")
-    # ax1.set_xlim(xLo, xHi)
-    # ax2.set_xlim(xLo, xHi)
-    # # ax1.set_title('Module 1 - Fraction of Transition Layer Events')
-    # ax1.set_ylabel('Counts / %.1f keV' % xpb, ha='right', y=1)
-    # # ax1.set_xlabel('Energy (keV)', ha='right', x=1)
-    # ax2.set_ylabel('Slow Fraction', ha='right', y=1)
-    # ax2.set_xlabel('Energy (keV)', ha='right', x=1)
-    # ax1.legend()
-    # ax2.legend()
-    # plt.tight_layout()
-    # plt.show()
-    # return
+    p2.plot(xTotSim, 100*hFracSim, ls='steps', c='m', lw=2.)
+    p2.axvline(1.0, c='b', lw=1, label="1.0 keV")
 
+    p2.set_xlabel("Energy (keV)", ha='right', x=1)
+    p2.set_ylabel("Pct. Slow")
+    p2.legend(loc=1, fontsize=12)
 
-    plt.ylim(ymax=np.amax(hFast)*1.3)
-    plt.legend(loc=1)
     plt.tight_layout()
+    fig.subplots_adjust(hspace=0.01)
+    plt.setp(p1.get_xticklabels(), visible=False)
 
     # plt.show()
     plt.savefig("./plots/lat-238hits.pdf")
@@ -1371,6 +1353,7 @@ def fitSlo_det_efficiencies():
 
         # print latexable results
         print("%s & %-4.3f & %-4.1f & %-7.2f & %-5.2f & %-3.2f & %-4d & %-5.3f & %-5.3f \\\\" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+        continue
 
         # print ugly one with errors
         # print("%s  a %.3f (%.3f)  c %.1f (%.1f)  loc %.2f (%.2f)  sc %.2f (%.2f)  eff1 %.2f  nBin %d" % (cpd, amp, ampE, c, cE, loc, locE, sc, scE, eff1, nBin))
@@ -1425,8 +1408,8 @@ def fitSlo_tot_efficiencies():
     from scipy.optimize import curve_fit
 
     # very important parameter
-    pctTot = 90
-    # pctTot = 95
+    # pctTot = 90
+    pctTot = 95
 
     print("Using pctTot ==",pctTot)
 

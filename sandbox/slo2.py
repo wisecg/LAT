@@ -582,7 +582,7 @@ def acceptance_study():
 
     # plt.show()
     plt.savefig('../plots/lat-acceptance-study.png')
-    return
+    # return
 
 
     # ========= acceptance / efficiency plot =========
@@ -594,10 +594,10 @@ def acceptance_study():
     accSimWF = np.asarray(accSimWF)
     effM2S238 = np.asarray(effM2S238)
     effM2S238Corr = np.asarray(effM2S238Corr)
-    plt.plot(accExtPulser[:,0], accExtPulser[:,1], '-r', ls='steps', ms=10, label="Ext. Pulser Acc.")
-    plt.plot(accSimWF[:,0], accSimWF[:,1], '-g', ls='steps', ms=10, label="Sim WF Acc.")
-    plt.plot(effM2S238[:,0], effM2S238[:,1], '-c', ls='steps',ms=10, label="m2s238 Efficiency")
-    plt.plot(effM2S238Corr[:,0], effM2S238Corr[:,1], '-m', ls='steps', ms=10, label="m2s238 Efficiency, Sim-corrected")
+    # plt.plot(accExtPulser[:,0], accExtPulser[:,1], '-r', ls='steps', ms=10, label="Ext. Pulser Acc.")
+    # plt.plot(accSimWF[:,0], accSimWF[:,1], '-g', ls='steps', ms=10, label="Sim WF Acc.")
+    plt.plot(effM2S238[:,0], effM2S238[:,1], '-c', ls='steps',ms=10, label="m2s238, C1P6D3")
+    plt.plot(effM2S238Corr[:,0], effM2S238Corr[:,1], '-m', ls='steps', ms=10, label="Sim-corrected")
 
     # now you're back to the figure
     plt.xlim(xLo, xHi)
@@ -607,6 +607,7 @@ def acceptance_study():
     plt.tight_layout()
     # plt.show()
     plt.savefig("../plots/lat-acceptance-vals.pdf")
+    return
 
 
     # ===== plot the fitSlo distributions for all events with their (pctTot)% cuts =====
