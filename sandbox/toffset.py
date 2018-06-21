@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import numpy as np
-import glob
+
+import matplotlib.pyplot as plt
+plt.style.use('../pltReports.mplstyle')
+
 import dsi
 import waveLibs as wl
 
 def main():
 
     # printOffsets()
-    diffOffset()
-    loadDiff()
+    # getOffset()
+    plotOffset()
 
 
 def printOffsets():
@@ -51,7 +54,7 @@ def printOffsets():
         print("%d  %-5d  %-4d  gNWF %d" % (chan[i], iEnt[i], tOff[i], iNWF[i]), hitChans[i], tOffs[i], hitEs[i])
 
 
-def diffOffset():
+def getOffset():
     """ we're looking for the difference in the offsets between HG and LG waveforms. """
 
     from ROOT import GATDataSet, TChain
@@ -75,6 +78,7 @@ def diffOffset():
     chList = sorted(list(set(chan)))
     chList = [ch for ch in chList if ch%2==0]
     chDiff = {ch:[] for ch in chList}
+    chNoPair = {ch:[] for ch in chList}
 
     eList = sorted(list(set(iEnt))) # we do this b/c the list isn't insanely huge
     for iE in eList:
@@ -86,7 +90,9 @@ def diffOffset():
             if ch%2==1: continue
 
             iM = np.where(chTmp==ch+1)
-            if len(iM[0])==0: continue
+            if len(iM[0])==0:
+                chNoPair[ch].append(tOffTmp[i])
+                continue
 
             diff = tOffTmp[i] - tOffTmp[iM] # HG - LG
             chDiff[ch].append(tOffTmp[i] - tOffTmp[iM])
@@ -94,18 +100,79 @@ def diffOffset():
     for ch in chList:
         chDiff[ch] = np.asarray(chDiff[ch])
 
-    np.savez("../data/tOff-%d.npz" % run, chDiff)
+    np.savez("../data/tOff-%d.npz" % run, chDiff, chNoPair)
 
 
-def loadDiff():
+def plotOffset():
 
-    run = 13387
+    ds, run = 1, 13387
+
+    det = dsi.DetInfo()
+
     f = np.load("../data/tOff-%d.npz" % run)
     chDiff = f['arr_0'].item()
+    chNoPair = f['arr_1'].item()
 
-    print(len(chDiff))
-    for ch in chDiff:
-        print(ch, len(chDiff[ch]))
+    tLo, tHi, tpb = -2000, 500, 10
+
+    xTot, hTot = wl.GetHisto([], tLo, tHi, tpb)
+
+    # remember, diffs are HG - LG
+
+    # ==== 1. plot tOffset_HG - tOffset_LG ====
+    cmap = plt.cm.get_cmap('jet',len(chDiff)+1)
+    for i, ch in enumerate(chDiff):
+        # print(ch, len(chDiff[ch]))
+        x, hDiff = wl.GetHisto(chDiff[ch], tLo, tHi, tpb)
+        hTot = np.add(hTot, hDiff)
+        cpd = det.getChanCPD(ds, ch)
+        plt.semilogy(x, hDiff, ls='steps', lw=2, c=cmap(i), alpha=0.5, label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
+
+    p = 99.9
+    tmp = np.cumsum(hTot)/np.sum(hTot)*100
+    idx = np.where(tmp > p)
+    x99 = xTot[idx][0]
+    plt.plot(xTot, hTot, "k", ls='steps', label="Total, run %d" % run)
+    plt.axvline(x99, c='r', lw=5, label="99.9%% value: %d" % x99)
+    plt.legend(loc=2, ncol=3, fontsize=12)
+    plt.xlabel("HG-LG tOffset (10ns)", ha='right', x=1)
+    plt.ylabel("Counts", ha='right', y=1)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("../plots/tOffset-run%d.pdf" % run)
+
+    # ==== 2. plot tOffset_HG of any HG hits w/o a paired LG hit ====
+    plt.close()
+
+    tLo, tHi, tpb = 0, 10000, 50
+
+    xTot, hTot = wl.GetHisto([], tLo, tHi, tpb)
+
+    for i, ch in enumerate(chNoPair):
+
+        cpd = det.getChanCPD(ds, ch)
+        if cpd in ['173', '112']: continue
+        print(ch, cpd)
+
+        x, hNoPair = wl.GetHisto(chNoPair[ch], tLo, tHi, tpb)
+        hTot = np.add(hTot, hNoPair)
+
+        plt.semilogy(x, hNoPair, ls='steps', lw=2, c=cmap(i), alpha=0.7, label="C%sP%sD%s" % (cpd[0],cpd[1],cpd[2]))
+
+    pctTot = 99
+    tmp = np.cumsum(hTot)/np.sum(hTot)*100
+
+    idx = np.where(tmp > pctTot)
+    xPctVal = xTot[idx][0]
+    plt.plot(xTot, hTot, "k", ls='steps', label="Total, run %d" % run)
+    plt.axvline(xPctVal, c='r', lw=5, label="%d%% value: %d" % (pctTot, xPctVal))
+    plt.legend(loc=1, ncol=3, fontsize=10)
+    plt.xlabel("Unpaired tOffset_HG (10ns)", ha='right', x=1)
+    plt.ylabel("Counts", ha='right', y=1)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("../plots/tOffset-unpaired-run%d.pdf" % run)
+
 
 
 if __name__=="__main__":

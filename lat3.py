@@ -36,15 +36,14 @@ def main(argv):
     3. Recalculate typical rates after rejecting outliers
     4? Find runs causing the outliers
     """
-
     # these can all be run sequentially
-    # getRates()
-    # getOutliers(True,usePass2=False)
-    # plotRates()
+    getRates()
+    getOutliers(True,usePass2=False)
+    plotRates()
     makeCutFiles()
-    # plotSpecBeforeAfter()
-    # plotSpectraAfter()
-    # combineSpectra()
+    plotSpecBeforeAfter()
+    plotSpectraAfter()
+    combineSpectra()
 
 
 def getRates():
@@ -53,8 +52,6 @@ def getRates():
     gROOT.ProcessLine("gErrorIgnoreLevel = 3001;") # suppress ROOT error messages
 
     cutType = "fr"
-
-    tOffCut = "tOffset < 100"
 
     opt = ""
     # opt = "verbose"  # print results for every channel, every bIdx
@@ -116,14 +113,14 @@ def getRates():
                     # print("'Zombie' detector: DS-%s  bIdx %d  cpd %s  ch %d exposure 0, hits %d" % (ds, bIdx, cpd, ch, nEvt))
                     continue
 
-                n1 = tt.Draw("run:channel","trapENFCal >= %.1f && trapENFCal <= %.1f && %s" % (rateWin1[0], rateWin1[1], tOffCut), "goff")
+                n1 = tt.Draw("run:channel","trapENFCal >= %.1f && trapENFCal <= %.1f" % (rateWin1[0], rateWin1[1]), "goff")
                 hitC = tt.GetV2()
                 hitC = list(set([hitC[i] for i in range(n1)]))
                 if len(hitC) > 1:
                     print("ERROR: Looking for channel %d, found channels" % ch, hitC)
                     exit(1)
 
-                n2 = tt.Draw("Entry$:Iteration$","trapENFCal >= %.1f && trapENFCal <= %.1f && %s" % (rateWin2[0], rateWin2[1], tOffCut), "goff")
+                n2 = tt.Draw("Entry$:Iteration$","trapENFCal >= %.1f && trapENFCal <= %.1f" % (rateWin2[0], rateWin2[1]), "goff")
                 r1 = n1/expo/(rateWin1[1]-rateWin1[0]) # cts/kg-d-kev
                 r2 = n2/expo/(rateWin2[1]-rateWin2[0])
 
@@ -421,9 +418,6 @@ def makeCutFiles():
 
     cutType = "fr"
 
-    # additional DC cuts can go here
-    tOffCut = "tOffset < 100"
-
     # which burst cut do we want?
     pass2 = False
     outType = "frb2%d" % pctTot if pass2 else "frb%d" % pctTot
@@ -456,7 +450,6 @@ def makeCutFiles():
         skipList = np.vstack((enrExc[iE], natExc[iN]))
         print("DS-%s, skipList:" % ds)
         print(skipList)
-        continue # debug to print the skip list
 
         # load ds_livetime output
         tl = TFile("./data/ds_%s_livetime.root" % str(ds))
@@ -503,7 +496,8 @@ def makeCutFiles():
                 outName = "%s/bkg/cut/%s/%s_ds%d_%d_ch%d.root" % (dsi.dataDir, outType, outType, dsNum, bIdx, ch)
                 outFile = TFile(outName, "RECREATE")
                 outTree = TTree()
-                outTree = tt.CopyTree(tOffCut)
+                outTree = tt.CopyTree("")
+                # outTree = tt.CloneTree()
                 # print("Wrote %d entries." % outTree.GetEntries())
 
                 # if nEvt != outTree.GetEntries():

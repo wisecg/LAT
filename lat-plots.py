@@ -27,7 +27,7 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    spec_summary()
+    # spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
@@ -42,6 +42,7 @@ def main():
     # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
     # plot_ext_pulser()
+    plot_tOffset()
 
 
 def spec():
@@ -198,21 +199,21 @@ def spec_summary():
 
     from ROOT import TFile, TChain, TTree
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
-    # dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1]
 
     # xLo, xHi, xpb = 0, 20, 0.1
-    # xLo, xHi, xpb = 0, 50, 0.2
-    xLo, xHi, xpb = 0, 10, 0.1
+    xLo, xHi, xpb = 0, 50, 0.2
+    # # xLo, xHi, xpb = 0, 10, 0.1
 
-    type = "enr"
-    # type = "nat"
+    # type = "enr"
+    type = "nat"
 
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
     for ds in dsList:
-        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
+        inFile = "%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
         enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
         natExp += float(tf.Get("natExp (kg-d)").GetTitle())
@@ -283,6 +284,15 @@ def spec_summary():
     hitE = [hitE[i] for i in range(n)]
     hitCPD = [int("%d%d%d" % (hitC[i],hitP[i],hitD[i])) for i in range(n)]
 
+    # load exposure of each detector to weight histogram
+    # fE = np.load("./data/expo-totals-e%d.npz" % (pctTot))
+    # for key in fE: detExpo = fE[key].item()
+    # detExpoTot = {cpd:0 for cpd in det.allDets}
+    # for cpd in detExpoTot:
+    #     for ds in dsList:
+    #         detExpoTot[cpd] += detExpo[ds][cpd]
+    # hitW = [detExpoTot[str(cpd)] for cpd in hitCPD]
+
     # the channel map changes across datasets, so we have to plot by CPD
     cpdList = []
     for ds in dsList:
@@ -310,6 +320,7 @@ def spec_summary():
     yLo, yHi = 0, len(cpdList)
     nbx, nby = int((xHi-xLo)/xpb), len(cpdList)
 
+    # hEnr,_,_,im1 = p2.hist2d(hitE, hitCPD, weights=hitW, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet')
     hEnr,_,_,im1 = p2.hist2d(hitE, hitCPD, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet')
     p2.set_xlabel("Energy (keV)", ha='right', x=1.)
     p2.set_xticks(np.arange(xLo, xHi+1, (xHi-xLo)/10))
@@ -1826,6 +1837,59 @@ def ext_pulser_width():
     plt.ylabel("fitSlo (shifted)", ha='right', y=1)
     plt.tight_layout()
     plt.show()
+
+
+def plot_tOffset():
+    from ROOT import TChain, TFile
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+
+    tt = TChain("skimTree")
+    enrExp, natExp = 0, 0
+    for ds in dsList:
+        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
+        tf = TFile(inFile)
+        enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
+        natExp += float(tf.Get("natExp (kg-d)").GetTitle())
+        tf.Close()
+        tt.Add(inFile)
+
+    n = tt.Draw("trapENFCal:tOffset:globalTime","trapENFCal < 50","goff")
+    hitE, hitT, hitR = tt.GetV1(), tt.GetV2(), tt.GetV3()
+    hitE = [hitE[i] for i in range(n)]
+    hitT = [hitT[i] for i in range(n)]
+    hitR = [hitR[i] for i in range(n)]
+
+    # thesis plot, don't delete
+    fig, (p1, p2) = plt.subplots(2, 1, figsize=(8,6))
+    xLo, xHi, xpb = 0, 10, 0.2
+    yLo, yHi, ypb = 0, 20000, 1000
+    nbx, nby = int((xHi-xLo)/xpb), int((yHi-yLo)/ypb)
+    p1.hist2d(hitE, hitT, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet',norm=LogNorm())
+    p1.axhline(4000, c='c', label='tOffset cut: 4000')
+    p1.legend(loc=1)
+    xLo, xHi, xpb = 0, 10, 0.2
+    yLo, yHi, ypb = 0, 2000, 100
+    nbx, nby = int((xHi-xLo)/xpb), int((yHi-yLo)/ypb)
+    p2.hist2d(hitE, hitT, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet',norm=LogNorm())
+    p1.set_ylabel("tOffset", ha='right', y=1)
+    p2.set_ylabel("tOffset", ha='right', y=1)
+    p2.set_xlabel("Energy (keV)", ha='right', x=1)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat-tOffset-vsE.pdf")
+    return
+
+    plt.plot(hitR, hitT, '.', ms=3, c='b')
+    plt.xlabel("Unix Time (sec)", ha='right', x=1)
+    plt.gca().xaxis.set_label_coords(0.93, -0.075)
+
+    plt.ylabel("tOffset (ns)", ha='right', y=1)
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("./plots/lat-toffset.png")
+
 
 
 if __name__=="__main__":

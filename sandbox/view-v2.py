@@ -2,12 +2,15 @@
 import sys
 import numpy as np
 import pywt
+import dsi
 import waveLibs as wl
 from scipy.signal import butter, lfilter
 from ROOT import TFile, TChain, TTree
 
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
+
+bkg = dsi.BkgInfo()
 
 def main(argv):
 
@@ -17,10 +20,9 @@ def main(argv):
             print("Quick draw mode selected.")
             quickDraw = True
 
-    ds = "5A"
-    tt = TChain("skimTree")
+    # ds = "5A"
     # tt.Add("~/project/cal/lat/*.root")
-    tt.Add("~/project/cal/lat/latSkimDS1_run13774_0.root")
+    # tt.Add("~/project/cal/lat/latSkimDS1_run13774_0.root")
 
     # tCut = "trapENFCal > 238 && trapENFCal < 239" # 238 kev wf, thesis plot
     # tCut = "trapENFCal >= 1.0 && trapENFCal < 1.2 && channel!=598  && trapENFCal > threshKeV+3*threshSigma && fitSlo < 100" # 1 kev wf, thesis plot
@@ -34,7 +36,14 @@ def main(argv):
 
     # tCut = "trapENFCal >= 1 && trapENFCal < 4"
 
-    tCut = "trapENFCal < 1.5 && tOffset > 1000" # try to grab a retrigger waveform
+    # tCut = "trapENFCal < 1.5 && tOffset > 1000" # try to grab a retrigger waveform
+
+    # ds = 5
+    tt = TChain("skimTree")
+    tt.Add("~/project/bkg/cut/final95/final95*.root")
+
+    tCut = "tOffset > 4000" # for sure retriggers
+    # tCut = "tOffset > 200 && tOffset < 2000"
 
     n = tt.Draw("Entry$:Iteration$",tCut,"goff")
     evt, itr = tt.GetV1(), tt.GetV2()
@@ -42,6 +51,8 @@ def main(argv):
 
     nEnt = len(set([evt[i] for i in range(n)]))
     print("Found %d total entries, %d passing cut: %s" % (tt.GetEntries(), nEnt, tCut))
+
+    dsr = bkg.dsRanges()
 
     i, pEvt = -1, -1
     while(True):
@@ -63,11 +74,15 @@ def main(argv):
         pEvt = iE
 
         run = tt.run
+        ds = bkg.GetDSNum(run)
+
         chan = tt.channel.at(iH)
         hitE = tt.trapENFCal.at(iH)
+        tOff = tt.tOffset.at(iH)
 
         wf = tt.MGTWaveforms.at(iH)
         truncLo, truncHi = 0, 2
+
         if ds==6 or ds==2: truncLo = 4
         signal = wl.processWaveform(wf,truncLo,truncHi)
 
@@ -108,6 +123,7 @@ def main(argv):
         # plt.plot(waveTS, waveBLSub, 'b', alpha=0.2, label='Raw WF, %.2f keV' % (hitE))
         # plt.plot(waveTS, waveLP, 'r', alpha=0.7, label='Low-pass filter')
         plt.plot(waveTS, waveDenoised, "r", lw=2, alpha=0.5, label="Denoised WF")
+        plt.plot(np.nan, np.nan, "-w", label="tOffset: %d" % tOff)
 
 
         plt.xlabel("Time (ns)", ha='right', x=1)

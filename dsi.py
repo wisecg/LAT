@@ -38,7 +38,7 @@ class BkgInfo:
         return numSubDS
 
     def dsRanges(self):
-        """ Manual edit.  Cover all runs in BG list and also cal runs.
+        """ Manual edit.  Cover all open runs in BG list and also cal runs.
         Verified, 12 Apr 2018 CGW. (DS6 is incomplete)
         """
         return {

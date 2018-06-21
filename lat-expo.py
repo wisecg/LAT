@@ -35,11 +35,11 @@ def main(argv):
         # check DB cuts
         if opt=="-cov":
             # manual
-            getPSACutRuns(argv[i+1],argv[i+2], verbose=True) # ds, cutType
+            # getPSACutRuns(argv[i+1],argv[i+2], verbose=True) # ds, cutType
 
             # batch <-- use this one
-            # for ds in [0,1,2,3,4,"5A","5B","5C"]:
-                # getPSACutRuns(ds,"fr")
+            for ds in [0,1,2,3,4,"5A","5B","5C"]:
+                getPSACutRuns(ds,"fr")
 
         # finally, calculate exposure!
         if opt=="-xp":
@@ -121,7 +121,7 @@ def getPSACutRuns(ds, cutType, verbose=False):
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
     print("Getting PSA cut run/ch vals for DS-%s (%d) ..." % (ds, dsNum))
 
-    debugMode = True
+    debugMode = False
     if debugMode:
         print("DEBUG MODE.  Not writing output file!")
 
@@ -251,14 +251,15 @@ def getExposure():
     #     ['5A','253'], # enr, noise wall at ~5.2 keV
     # ]
 
-    grandTotEnr, grandTotNat = 0, 0
-
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
 
-    dsExpo = {} # save this to a file
+    # output
+    grandTotEnr, grandTotNat = 0, 0
+    detExpo = {ds:{cpd:0 for cpd in det.allDets} for ds in dsList}
+    dsExpo = {}
 
     for ds in dsList:
 
@@ -358,6 +359,10 @@ def getExposure():
                 # detNatExp += detTot[ch]
                 dsNatExp += expTot[ch] - psaTot[ch] - burstTot[ch]# - detTot[ch]
 
+            cpd = det.getChanCPD(dsNum,ch)
+            detExpo[ds][cpd] += expTot[ch] - psaTot[ch] - burstTot[ch]
+            print(detExpo[ds][cpd])
+
         print("DS-%s" % ds)
 
         enrDiff = dsEnrExp - rawEnrExp
@@ -380,7 +385,7 @@ def getExposure():
     print("Natural (kg-y) : %.4f" % (grandTotNat))
 
     # save output
-    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo)
+    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, detExpo)
 
 
 def makeFinalFiles():
@@ -390,15 +395,19 @@ def makeFinalFiles():
     """
     from ROOT import TChain, TFile, TTree, TNamed, MGTWaveform
 
+    # here is where you might put some last minute cuts
+    tCut = "tOffset < 4000"
+
     cutType = "frb%d" % pctTot
-    outType = "final%d" % pctTot
+    # outType = "final%d" % pctTot
+    outType = "final%dt" % pctTot
 
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
 
-    # these detectors have noise features that the PSA and burst cuts aren't able to remove.
+    # maybe some detectors have noise features that the PSA and burst cuts aren't able to remove.
     # finalDetCut = [
     #     [0,'152'],    # enr, noise wall at ~2.8 keV
     #     [0,'141'],    # nat, noise wall at ~2.1 keV
@@ -431,8 +440,6 @@ def makeFinalFiles():
 
                 dummyTree.Add(fName)
 
-        # here is where you might put a last minute cut
-        tCut = ""
 
         outFile = TFile(outName, "RECREATE")
         outTree = TTree()
@@ -474,7 +481,7 @@ def makeMovies():
         outFile = "./plots/final%d-wfs-DS%s.mp4" % (pctTot, ds)
         print("Saving WFs for DS-%s: %s" % (ds, outFile))
 
-        inFile = "%s/bkg/cut/final%d/final%d_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
+        inFile = "%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
         tt = tf.Get("skimTree")
 
@@ -604,6 +611,8 @@ def getEfficiency():
     # recalculate these, make sure they match getExposure
     enrExp = {ds:0 for ds in dsList}
     natExp = {ds:0 for ds in dsList}
+
+    detExp = {cpd:0 for cpd in det.allDets}
 
     # 1. loop over datasett
     for ds in dsList:
