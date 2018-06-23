@@ -823,10 +823,13 @@ def getEfficiency():
         finalEnrExp += enrExp[ds]/365.25
         finalNatExp += natExp[ds]/365.25
 
+    enr1 = finalEnrEff[np.where(xEff > 1.)][0]/365.25
+    enr1p5 = finalEnrEff[np.where(xEff > 1.5)][0]/365.25
+
     plt.plot(xEff, finalEnrEff/365.25, '-r', ls='steps', label="Enriched: %.2f kg-y" % finalEnrExp)
     plt.plot(xEff, finalNatEff/365.25, '-b', ls='steps', label="Natural: %.2f kg-y" % finalNatExp)
-    plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV")
-    plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV")
+    plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV enr: %.2f kg-y" % enr1 )
+    plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV enr: %.2f kg-y" % enr1p5)
 
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Exposure (kg-y)", ha='right', y=1)
@@ -834,6 +837,7 @@ def getEfficiency():
     plt.xlim(0,30)
     plt.tight_layout()
     # plt.show()
+    # return
     plt.savefig('./plots/lat-eff%d-finalEff.pdf'% pctTot)
 
     # for ds in dsList:

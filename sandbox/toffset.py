@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 
 import dsi
+det = dsi.DetInfo()
+
 import waveLibs as wl
 
 def main():
 
     # printOffsets()
+    # plotChanOrphans()
     # getOffset()
     plotOffset()
 
@@ -21,13 +24,18 @@ def printOffsets():
     ds, cIdx, run = 1, 41, 13387
 
     det = dsi.DetInfo()
-    pMons = det.getPMon(ds)
-    print(pMons)
-    return
+    # pMons = det.getPMon(ds) # this cal run isn't getting these
+    # print(pMons)
+    # return
+    cpdList = det.dets["M1"]
+    cpdPairs = {cpd:0 for cpd in cpdList}
+    cpdOrphanHG = {cpd:0 for cpd in cpdList}
+    cpdOrphanLG = {cpd:0 for cpd in cpdList}
 
     skim = TChain("skimTree")
     skim.Add("/global/homes/w/wisecg/project/cal/skim/skimDS1_run13387_low.root")
-    n = skim.Draw("iEvent:tOffset:channel","mH==1 && tOffset > 100","goff")
+    # n = skim.Draw("iEvent:tOffset:channel","mH==1 && tOffset > 100","goff")
+    n = skim.Draw("iEvent:tOffset:channel","mH==1","goff")
     iEnt, tOff, chan = skim.GetV1(), skim.GetV2(), skim.GetV3()
     iEnt = [int(iEnt[i]) for i in range(n)]
     tOff = [tOff[i] for i in range(n)]
@@ -41,17 +49,103 @@ def printOffsets():
         gat.GetEntry(iE)
         iN = gat.channel.size()
         iNWF.append(iN)
-        hitChans.append([int(gat.channel.at(j)) for j in range(iN)])
+
+        hChs = [int(gat.channel.at(j)) for j in range(iN)]
+        hitChans.append(hChs)
         tOffs.append([int(gat.tOffset.at(j)) for j in range(iN)])
 
         hits = [gat.trapENFCal.at(j) for j in range(iN)]
         hitEs.append(wl.niceList(hits))
 
+        pairs = []
+        for ch in hChs:
+            if ch+1 in hChs: pairs.extend([ch, ch+1])
+        hgOrphans = [ch for ch in hChs if ch+1 not in hChs and ch not in pairs and ch%2==0]
+        lgOrphans = [ch for ch in hChs if ch-1 not in hChs and ch not in pairs and ch%2==1]
+        # print(hChs, "pairs:", pairs, "hg orph", hgOrphans, "lg orph", lgOrphans)
 
-    nLim = 200 if n > 200 else n
+        for ch in pairs:
+            if ch%2==1: continue
+            cpd = det.getChanCPD(ds,ch)
+            cpdPairs[cpd] += 1
 
-    for i in range(nLim):
-        print("%d  %-5d  %-4d  gNWF %d" % (chan[i], iEnt[i], tOff[i], iNWF[i]), hitChans[i], tOffs[i], hitEs[i])
+        for ch in hgOrphans:
+            cpd = det.getChanCPD(ds,ch)
+            cpdOrphanHG[cpd] += 1
+
+        for ch in lgOrphans:
+            cpd = det.getChanCPD(ds,ch-1)
+            cpdOrphanLG[cpd] +=1
+
+    # nLim = 200 if n > 200 else n
+    # for i in range(nLim):
+        # print("%d  %-5d  %-4d  gNWF %d" % (chan[i], iEnt[i], tOff[i], iNWF[i]), hitChans[i], tOffs[i], hitEs[i])
+
+    np.savez("../data/toffset-orphans.npz", cpdPairs, cpdOrphanHG, cpdOrphanLG)
+
+
+def plotChanOrphans():
+
+    f = np.load("../data/toffset-orphans.npz")
+    cpdPairs, cpdOrphanHG, cpdOrphanLG = f['arr_0'].item(), f['arr_1'].item(), f['arr_2'].item()
+
+    detList = det.dets["M1"]
+    detMap = {i:detList[i] for i in range(len(detList))}
+    detIdx = np.arange(0, len(detList), 1)
+
+    detCtsP, detCtsOHG, detCtsOLG, detCtsTot = [], [], [], []
+    for cpd in detList:
+        detCtsP.append(cpdPairs[cpd])
+        detCtsOHG.append(cpdOrphanHG[cpd])
+        detCtsOLG.append(cpdOrphanLG[cpd])
+        detCtsTot.append(cpdPairs[cpd]+cpdOrphanHG[cpd]+cpdOrphanLG[cpd])
+
+    # 610/611 is C1P3D2
+    # print(det.getChanCPD(1,610))
+
+    # get bad/veto only?
+    # maybe color code by good/bad channels?
+    # goodCh = det.getGoodChanList(1)
+    # goodDet = [det.getChanCPD(1, ch) for ch in goodCh]
+
+    detCtsP, detCtsOHG, detCtsOLG, detCtsTot = np.asarray(detCtsP), np.asarray(detCtsOHG), np.asarray(detCtsOLG), np.asarray(detCtsTot)
+    detIdx = np.asarray(detIdx)
+    idx = np.where(detCtsTot > 0)
+    detIdx2 = np.arange(0, len(detIdx[idx]), 1)
+
+    nTot = [detCtsP[idx][i] +detCtsOHG[idx][i] + detCtsOLG[idx][i] for i in range(len(detIdx2))]
+    pctP = np.asarray([100*detCtsP[idx][i]/nTot[i] for i in range(len(detIdx2))])
+    pctH = np.asarray([100*detCtsOHG[idx][i]/nTot[i] for i in range(len(detIdx2))])
+    pctL = np.asarray([100*detCtsOLG[idx][i]/nTot[i] for i in range(len(detIdx2))])
+
+    width = 0.3       # the width of the bars: can also be len(x) sequence
+
+    # plt.bar(detIdx2, pctL, width, color='red', log=True, label="LG Orphan")
+    # plt.bar(detIdx2, pctH, width, color='green', log=True, bottom=pctL, label="HG Orphan")
+    # plt.bar(detIdx2, pctP, width, color='blue', log=True, bottom=pctL+pctH, label="Paired")
+
+    plt.bar(detIdx2, detCtsTot[idx], width*2, color='blue', alpha=0.5, log=True, label="Total Counts")
+    plt.bar(detIdx2-width/2, detCtsOLG[idx], width, color='red', log=True, label="LG Orphan")
+    plt.bar(detIdx2+width/2, detCtsOHG[idx], width, color='green', log=True, label="HG Orphan")
+    # plt.bar(detIdx2, detCtsP[idx], 0.8, color='blue', log=True, label="Paired")
+
+
+    plt.ylim(ymin=0.7)
+
+
+    xticks = np.arange(0, len(detIdx2))
+    plt.xticks(xticks)
+    xlabels = [detMap[i] for i in detIdx[idx]]
+    plt.gca().set_xticklabels(xlabels, fontsize=12)
+
+    plt.xlabel("CPD", ha='right', x=1)
+    plt.ylabel("Counts", ha='right', y=1)
+
+    plt.legend()
+    plt.tight_layout()
+
+    # plt.show()
+    plt.savefig("../plots/toffset-pairs-run13387.pdf")
 
 
 def getOffset():
@@ -113,7 +207,7 @@ def plotOffset():
     chDiff = f['arr_0'].item()
     chNoPair = f['arr_1'].item()
 
-    tLo, tHi, tpb = -2000, 500, 10
+    tLo, tHi, tpb = -5000, 500, 10
 
     xTot, hTot = wl.GetHisto([], tLo, tHi, tpb)
 

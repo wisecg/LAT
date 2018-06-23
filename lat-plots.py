@@ -23,11 +23,11 @@ def main():
     global pctTot
     # pctTot = 90
     pctTot = 95 # <-- use this one
-    print("Using pctTot ==",pctTot)
+    # print("Using pctTot ==",pctTot)
 
     # spec()
     # spec_vs_cpd()
-    # spec_summary()
+    spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
@@ -42,7 +42,8 @@ def main():
     # fitSlo_exposure_weighted_eff()
     # get_ext_pulser_data()
     # plot_ext_pulser()
-    plot_tOffset()
+    # plot_tOffset()
+    # plot_riseNoise()
 
 
 def spec():
@@ -199,12 +200,14 @@ def spec_summary():
 
     from ROOT import TFile, TChain, TTree
 
+    rateMode = True
+
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
     dsList = [1,2,3,4,"5A","5B","5C"]
-    # dsList = [1]
+    # dsList = ["5C"]
 
     # xLo, xHi, xpb = 0, 20, 0.1
-    xLo, xHi, xpb = 0, 50, 0.2
+    xLo, xHi, xpb = 0, 50, 1
     # # xLo, xHi, xpb = 0, 10, 0.1
 
     # type = "enr"
@@ -255,12 +258,24 @@ def spec_summary():
     hitE = tt.GetV1()
     hitE = [hitE[i] for i in range(n)]
     x, hSpec = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
     hSpec = np.divide(hSpec, detExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+    hErr = np.asarray([np.sqrt(hBin/(detExp*xpb)) for hBin in hSpec]) # statistical error in each bin
 
+    # calculate background index rate (smaller error if you use 1 keV bins)
+    idxR = np.where((x>=20) & (x<=40))
     if xHi > 40:
-        print("Rate 20-40:",np.sum( xpb * hSpec[np.where((x>=20) & (x<=40))])/20  )
+        hRate = np.sum(xpb * hSpec[idxR])/20
+        hRateUnc = np.sqrt(np.sum(np.square(hErr[idxR]))/20)
+        print("Rate 20-40: %.5f ± %.5f" % (hRate, hRateUnc) )
+        # plt.close()
+        # plt.plot(x, hSpec, 'b', ls='steps', lw=2)
+        # plt.show()
+        if rateMode:
+            return
 
-    p1.plot(x, hSpec, 'b', ls='steps', lw=2, label="%s, DS%s--%s" % (specLabel, dsList[0], dsList[-1]))
+    dsLabel = "DS%s--%s" % (dsList[0], dsList[-1]) if len(dsList) > 1 else "DS%s" % dsList[0]
+    p1.plot(x, hSpec, 'b', ls='steps', lw=2, label="%s, %s" % (specLabel, dsLabel))
 
     p1.plot(np.nan, np.nan, '--r', alpha=0.8, lw=2, label="Eff, %.2f%% at %d keV" % (effNorm*100, xHi))
     p1.axvline(1, c='g', lw=1, alpha=0.8, label="1.0 keV")
@@ -1876,8 +1891,8 @@ def plot_tOffset():
     p2.set_ylabel("tOffset", ha='right', y=1)
     p2.set_xlabel("Energy (keV)", ha='right', x=1)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig("./plots/lat-tOffset-vsE.pdf")
+    plt.show()
+    # plt.savefig("./plots/lat-tOffset-vsE.pdf")
     return
 
     plt.plot(hitR, hitT, '.', ms=3, c='b')
@@ -1890,6 +1905,67 @@ def plot_tOffset():
     # plt.show()
     plt.savefig("./plots/lat-toffset.png")
 
+
+def plot_riseNoise():
+
+    f = np.load("./data/sea-plt-2.npz")
+
+    hitE, fSlo, chans, runs = f['arr_0'], f['arr_1'], f['arr_2'], f['arr_3']
+    fsCut, thMu, thSig = f['arr_4'], f['arr_5'], f['arr_6']
+    rise, riseCut = f['arr_7'], f['arr_8']
+
+    # hitPass, rnPass, hitFail, rnFail = [], [], [], []
+    # for i in range(len(hitE)):
+    #     if chans[i] in [610, 690, 692, 600, 598, 578, 592]:
+    #         continue
+    #     # if rise[i] < riseCut[i] and fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #     # if fSlo[i] < fsCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #     # eThresh = thMu[i]+3*thSig[i]
+    #     # if hitE[i] > (eThresh):
+    #         # print("%d  e %.2f  t %.2f" % (chans[i], hitE[i],eThresh))
+    #     if rise[i] < riseCut[i]:
+    #         hitPass.append(hitE[i])
+    #         rnPass.append(rise[i])
+    #     else:
+    #         hitFail.append(hitE[i])
+    #         rnFail.append(rise[i])
+
+    # hitPass, rnPass = [], []
+    # for i in range(len(hitE)):
+    #     if chans[i] in [610, 690, 692, 600, 598, 578, 592]:
+    #         continue
+    #     if rise[i] < riseCut[i] and hitE[i] > (thMu[i]+3*thSig[i]):
+    #         rnPass.append(rise[i])
+    #         hitPass.append(hitE[i])
+
+
+    fig = plt.figure()
+    xLo, xHi, xpb = 0.5, 20, 0.1
+    # plt.semilogy(hitE,rise,".b",ms=5,label='all') # this shows the untagged pulser evts.  whew.
+
+    # for the purposes of the talk, why not just draw a line at 10?
+    n = len(hitE)
+    hitPass, rnPass, hitFail, rnFail = [], [], [], []
+    for i in range(n):
+        if rise[i] < 10:
+            hitPass.append(hitE[i])
+            rnPass.append(rise[i])
+        else:
+            hitFail.append(hitE[i])
+            rnFail.append(rise[i])
+    print("loopd")
+
+    plt.semilogy(hitPass,rnPass,".k", ms=5, label='Pass')
+    plt.semilogy(hitFail,rnFail,".r", ms=5, label='Fail')
+    plt.axhline(10,color='red')
+
+    plt.ylim(0.5, 3e2)
+    plt.xlim(0, 30)
+    plt.xlabel("Energy (keV)",ha='right',x=1.)
+    plt.ylabel("riseNoise",ha='right',y=1.)
+    plt.legend(loc=1)
+    plt.tight_layout()
+    plt.savefig("./plots/lat-rn-simpleCut.png")
 
 
 if __name__=="__main__":
