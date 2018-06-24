@@ -565,14 +565,9 @@ def runFit():
     effRooHist = ROOT.RooDataHist("eff","Efficiency", ROOT.RooArgList(fEnergy), RF.Import(effHist))
     fEnergy.setRange(eLo, eHi)
     effPdf = ROOT.RooHistPdf("effPdf","effPdf", ROOT.RooArgSet(fEnergy), effRooHist, 0)
-    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
+    modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
 
-    modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgList(model, effPdf))
-
-      # RooProdPdf  prod("gaussxy","gaussx*gaussy",RooArgList(gaussx,gaussy)) ;
-
-    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgSet(model), ROOT.RooFit.Conditional(ROOT.RooArgSet(effPdf),ROOT.RooArgSet(model)))
-
+    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgList(model, effPdf))
 
     # run fitter
     # minimizer = ROOT.RooMinimizer( model.createNLL(fData, RF.NumCPU(2,0), RF.Extended(True)) )
@@ -754,10 +749,10 @@ def plotFitRF():
     fitResult = fitWorkspace.allGenericObjects().front()
     nPars = fitResult.floatParsFinal().getSize()
     fEnergy = fitWorkspace.var("trapENFCal")
-    modelPDF = fitWorkspace.pdf("model")
+    # modelPDF = fitWorkspace.pdf("model")
     # modelPDF = fitWorkspace.pdf("modelEff")
     fitWorkspace.Print()
-    # return
+    return
 
     # get a list of pdf names
     pdfNames = []
