@@ -83,7 +83,7 @@ def niceList(lst, fmt="%.2f", dtype="f"):
 
 
 def GetHisto(npArr, xLo, xHi, xpb, nb=None, shift=True):
-    """ This returns a histogram w/ shifted bins.  For use with: plt.plot(x, y, ls='steps')"""
+    """ This returns a histogram w/ shifted bins.  For use with: plt.plot(x, y, ls='steps') """
     if nb is None: nb = int((xHi-xLo)/xpb)
     y, x = np.histogram(npArr, bins=nb, range=(xLo, xHi))
     y = np.insert(y, 0, 0, axis=0)
@@ -295,17 +295,25 @@ def Get2DBins(hist,xmin,xmax,ymin,ymax):
     return bx1, bx2, by1, by2
 
 
-def npTH1D(hist,opt=""):
+def npTH1D(hist, opt="up"):
+    """ By default, xArr is the bin centers.
+    If you have e.g. an energy histogram,
+    you want to shift up by half a bin width.
+    (ROOT does that by default).
+    """
     bins = hist.GetNbinsX()
-    xArr = np.zeros(bins)
-    yArr = np.zeros(bins)
-    for i in range(bins):
+    xArr = np.zeros(bins+1)
+    yArr = np.zeros(bins+1)
+    for i in range(bins+1):
         ctr = hist.GetXaxis().GetBinCenter(i)
         if opt=="i": xArr[i] = int(ctr)
         else: xArr[i] = ctr
         yArr[i] = hist.GetBinContent(i)
     xpb = xArr[1] - xArr[0]
-    if opt=='ctr': xArr = xArr + xpb/2.
+
+    if opt=="up":
+        xArr = xArr + xpb/2.
+
     return xArr, yArr, xpb
 
 
