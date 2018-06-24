@@ -557,7 +557,7 @@ def runFit():
 
     # === efficiency ===
     effFile = TFile("./data/lat-expo-efficiency.root")
-    effHist = effFile.Get("hDS5A_Enr")
+    effHist = effFile.Get("hDS5B_Norm_Enr")
     # x, y, xpb = wl.npTH1D(effHist)
     # plt.plot(x, y, ls='steps')
     # plt.show()
@@ -565,17 +565,18 @@ def runFit():
     effRooHist = ROOT.RooDataHist("eff","Efficiency", ROOT.RooArgList(fEnergy), RF.Import(effHist))
     fEnergy.setRange(eLo, eHi)
     effPdf = ROOT.RooHistPdf("effPdf","effPdf", ROOT.RooArgSet(fEnergy), effRooHist, 0)
-    modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
+    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
 
-    getattr(fitWorkspace,'import')(modelEff)
-    # fModelPDFEff = fitWorkspace.pdf("modelEff")
-    # fModelPDF = fitWorkspace.pdf("model")
+    modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgList(model, effPdf))
 
-    # return
+      # RooProdPdf  prod("gaussxy","gaussx*gaussy",RooArgList(gaussx,gaussy)) ;
+
+    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgSet(model), ROOT.RooFit.Conditional(ROOT.RooArgSet(effPdf),ROOT.RooArgSet(model)))
+
 
     # run fitter
     # minimizer = ROOT.RooMinimizer( model.createNLL(fData, RF.NumCPU(2,0), RF.Extended(True)) )
-    minimizer = ROOT.RooMinimizer( modelEff.createNLL(fData, RF.NumCPU(2,0), RF.Extended(True)) )
+    minimizer = ROOT.RooMinimizer( modelEff.createNLL(fData, RF.NumCPU(2,0), RF.Extended(False)) )
     minimizer.setPrintLevel(-1)
     minimizer.setStrategy(2)
     minimizer.migrad()
@@ -587,6 +588,7 @@ def runFit():
     # save workspace to a TFile
     getattr(fitWorkspace,'import')(fitResult)
     # getattr(fitWorkspace,'import')(model)
+    getattr(fitWorkspace,'import')(modelEff)
     f2 = TFile("./data/fitWorkspace.root","RECREATE")
     fitWorkspace.Write()
     f2.Close()
@@ -752,8 +754,9 @@ def plotFitRF():
     fitResult = fitWorkspace.allGenericObjects().front()
     nPars = fitResult.floatParsFinal().getSize()
     fEnergy = fitWorkspace.var("trapENFCal")
-    modelPDF = fitWorkspace.pdf("modelEff")
-    # fitWorkspace.Print()
+    modelPDF = fitWorkspace.pdf("model")
+    # modelPDF = fitWorkspace.pdf("modelEff")
+    fitWorkspace.Print()
     # return
 
     # get a list of pdf names
