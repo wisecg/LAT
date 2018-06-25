@@ -21,7 +21,7 @@ gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);"
 # ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit") # the PLC doesn't work w/ minuit2
 
 dsList = [0,1,2,3,4,"5A","5B","5C"]
-eLo, eHi, epb = 1, 50, 0.2
+eLo, eHi, epb = 2, 50, 0.2
 enr = True
 
 # must be specified here to be included in the fit
@@ -37,14 +37,6 @@ pkList = {
     "49V": 4.97,
     "68GeL":1.29,
     "65ZnL":1.10
-    # "51Cr": 5.46,
-    # "5678Co":7.11,  "56Ni": 7.71,
-    # "734As":11.10,
-    # "41Ca": 3.31,
-    # "36Cl": 2.307,
-    # "ax_Si_Ka1a2":1.739, "ax_Si_Kb1":1.836,
-    # "ax_S_Ka1a2":2.307,
-    # "ax_S_Kb1":2.464
     }
 
 
@@ -55,14 +47,14 @@ def main(argv):
     # expoDict = {} todo, make exposures accessible
 
     # === routines ===
-    # loadDataMJD()
+    loadDataMJD()
     # generatePDFs(makePlots=False)
     # axionPeaks()
     # plotPDFs()
-    runFit()
+    # runFit()
     # compareData()
     # plotFit()
-    plotFitRF()
+    # plotFitRF()
 
 
 def loadDataMJD():
@@ -72,6 +64,36 @@ def loadDataMJD():
     from array import array
     from ROOT import TChain, TFile, TTree
 
+    # load efficiency correction
+    f1 = np.load('./data/lat-expo-efficiency-all-e95.npz')
+    xEff = f1['arr_0']
+    totEnrEff, totNatEff = f1['arr_1'].item(), f1['arr_2'].item()
+    detEff = np.zeros(len(xEff))
+    for ds in dsList:
+        if enr: detEff += totEnrEff[ds]
+        else: detEff += totNatEff[ds]
+
+    # load exposure
+    f2 = np.load("./data/expo-totals-e95.npz")
+    dsExpo, detExpo = f2['arr_0'].item(), f2['arr_1'].item()
+    detExp = 0
+    for d in dsExpo:
+        if d in dsList:
+            if enr: detExp += dsExpo[d][0]
+            else:   detExp += dsExpo[d][1]
+
+    # normalize the efficiency
+    detEff = np.divide(detEff, detExp)
+    effLim, effMax = xEff[-1], detEff[-1]
+
+    # plt.axhline(np.amax(detEff), c='orange', label="%.2f" % np.amax(detEff))
+    # plt.plot(xEff, detEff)
+    # plt.legend(loc=4)
+    # plt.xlabel("Energy (keV)", ha='right', x=1)
+    # plt.tight_layout()
+    # plt.show()
+
+    # load the data
     tt = TChain("skimTree")
     for ds in dsList:
         tt.Add("%s/final95t/final95t_DS%s.root" % (dsi.cutDir, ds))
@@ -84,14 +106,14 @@ def loadDataMJD():
     iHit = array('i',[0])
     chan = array('i',[0])
     hitE = array('d',[0.])
-    # weight = array('d',[0.])
+    weight = array('d',[0.])
     isEnr = array('i',[0])
     tOut.Branch("run", run, "run/I")
     tOut.Branch("iEvent", iEvt, "iEvent/I")
     tOut.Branch("iHit", iHit, "iHit/I")
     tOut.Branch("channel", chan, "channel/I")
     tOut.Branch("trapENFCal", hitE, "trapENFCal/D")
-    # tOut.Branch("weight", weight, "weight/D")
+    tOut.Branch("weight", weight, "weight/D")
     tOut.Branch("isEnr", isEnr, "isEnr/I")
 
     for iE in range(tt.GetEntries()):
@@ -102,7 +124,16 @@ def loadDataMJD():
             iHit[0] = tt.iHit.at(iH)
             chan[0] = tt.channel.at(iH)
             hitE[0] = tt.trapENFCal.at(iH)
-            # weight[0] = 1.
+
+            # calculate weight based on 1/efficiency
+            if hitE[0] > effLim:
+                weight[0] = 1/effMax
+            else:
+                idx = (np.abs(xEff-hitE[0])).argmin()
+                weight[0] = 1/np.interp(hitE[0], xEff[idx:idx+1], detEff[idx:idx+1])
+            # if hitE[0] < effLim:
+                # print("%.2f  %.2f " % (hitE[0], weight[0]))
+
             if "P" in tt.detName.at(iH): isEnr[0] = 1
             elif "B" in tt.detName.at(iH): isEnr[0] = 0
             else:
@@ -116,7 +147,7 @@ def loadDataMJD():
     # verify
     f2 = TFile(fName)
     t2 = f2.Get("skimTree")
-    t2.Scan("run:channel:isEnr:trapENFCal")
+    t2.Scan("run:channel:isEnr:trapENFCal:weight")
 
 
 def sig_ae(E,m):
@@ -497,8 +528,8 @@ def runFit():
     pdfList = ROOT.RooArgList("shapes")
 
     # linear background function (basically flat)
-    bkgNum = ROOT.RooRealVar("bkgNum","bkgNum",1.,5000.)
-    bkgSlo = ROOT.RooRealVar("bkgSlo","bkgSlo",-1.,1.)
+    bkgNum = ROOT.RooRealVar("bkgNum","bkgNum",1., 5000.)
+    bkgSlo = ROOT.RooRealVar("bkgSlo","bkgSlo",-1.,0.1)
     bkgPol = ROOT.RooChebychev("bkgPol","bkgPol",fEnergy,ROOT.RooArgList(bkgSlo)) # more stable than roopolynomial
     bkgExt = ROOT.RooExtendPdf("bkgExt", "bkgExt", bkgPol, bkgNum)
     if "bkg" in bkgModel:
@@ -523,7 +554,7 @@ def runFit():
 
     # axion continuum
     axTH1D = f2.Get("h4")
-    axNum = ROOT.RooRealVar("amp-axion", "amp-axion", 5000., 0., 20000.)
+    axNum = ROOT.RooRealVar("amp-axion", "amp-axion", 10., 0., 2000.)
     # axNum = ROOT.RooRealVar("amp-axion","amp-axion",16.904) # hardcode the profile upper limit
     axDataHist = ROOT.RooDataHist("ax", "ax", ROOT.RooArgList(fEnergy), RF.Import(axTH1D))
     fEnergy.setRange(eLo, eHi) # have to reset after loading a histo w/ different bounds
@@ -534,7 +565,7 @@ def runFit():
 
     # tritium
     trTH1D = f2.Get("h5")
-    trNum = ROOT.RooRealVar("amp-trit", "amp-trit", 100., 0., 5000.)
+    trNum = ROOT.RooRealVar("amp-trit", "amp-trit", 10., 0., 5000.)
     trDataHist = ROOT.RooDataHist("tr", "tr", ROOT.RooArgList(fEnergy), RF.Import(trTH1D))
     fEnergy.setRange(eLo, eHi)
     trPdf = ROOT.RooHistPdf("trPdf", "trPdf", ROOT.RooArgSet(fEnergy), trDataHist, 2)
@@ -544,7 +575,7 @@ def runFit():
 
     # Pb210 continuum (w/ TDL)
     pbTH1D = f2.Get("hPb210TDL")
-    pbNum = ROOT.RooRealVar("amp-Pb210", "amp-Pb210", 100., 0., 1000.)
+    pbNum = ROOT.RooRealVar("amp-Pb210", "amp-Pb210", 10., 0., 1000.)
     pbDataHist = ROOT.RooDataHist("pb", "pb", ROOT.RooArgList(fEnergy), RF.Import(pbTH1D))
     fEnergy.setRange(eLo, eHi)
     pbPdf = ROOT.RooHistPdf("pbPdf", "pbPdf", ROOT.RooArgSet(fEnergy), pbDataHist, 2)
@@ -558,16 +589,16 @@ def runFit():
     # === efficiency ===
     effFile = TFile("./data/lat-expo-efficiency.root")
     effHist = effFile.Get("hDS5B_Norm_Enr")
-    # x, y, xpb = wl.npTH1D(effHist)
+    x, y, xpb = wl.npTH1D(effHist)
     # plt.plot(x, y, ls='steps')
     # plt.show()
-
     effRooHist = ROOT.RooDataHist("eff","Efficiency", ROOT.RooArgList(fEnergy), RF.Import(effHist))
     fEnergy.setRange(eLo, eHi)
     effPdf = ROOT.RooHistPdf("effPdf","effPdf", ROOT.RooArgSet(fEnergy), effRooHist, 0)
-    modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
 
-    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", ROOT.RooArgList(model, effPdf))
+    modelEff = ROOT.RooEffProd("modelEff","model with efficiency", model, effPdf)
+    # RooEffProd modelEff("modelEff", "model with efficiency", model, effPdf); // This looks pretty good
+    # modelEff = ROOT.RooProdPdf("modelEff","model with efficiency", model, effPdf)
 
     # run fitter
     # minimizer = ROOT.RooMinimizer( model.createNLL(fData, RF.NumCPU(2,0), RF.Extended(True)) )
@@ -582,8 +613,8 @@ def runFit():
 
     # save workspace to a TFile
     getattr(fitWorkspace,'import')(fitResult)
-    # getattr(fitWorkspace,'import')(model)
-    getattr(fitWorkspace,'import')(modelEff)
+    getattr(fitWorkspace,'import')(model)
+    # getattr(fitWorkspace,'import')(modelEff)
     f2 = TFile("./data/fitWorkspace.root","RECREATE")
     fitWorkspace.Write()
     f2.Close()
@@ -749,10 +780,10 @@ def plotFitRF():
     fitResult = fitWorkspace.allGenericObjects().front()
     nPars = fitResult.floatParsFinal().getSize()
     fEnergy = fitWorkspace.var("trapENFCal")
-    # modelPDF = fitWorkspace.pdf("model")
+    modelPDF = fitWorkspace.pdf("model")
     # modelPDF = fitWorkspace.pdf("modelEff")
     fitWorkspace.Print()
-    return
+    # return
 
     # get a list of pdf names
     pdfNames = []
