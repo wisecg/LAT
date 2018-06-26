@@ -996,12 +996,12 @@ def riseStability():
     Track problem channels in riseNoise and return a (suggested)
     list of channels to cut, along w/ a diagnostic plot. """
 
-    dsList = [0,1,2,3,4,5]
+    # dsList = [0,1,2,3,4,5]
     # dsList = [0]
-    # dsList = [5]
+    dsList = [5]
 
-    makeStabilityPlot = True
-    makeChannelPlots = False
+    makeStabilityPlot = False
+    makeChannelPlots = True
 
     calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
     pars = db.Query()
@@ -1133,6 +1133,7 @@ def riseStability():
             f = np.load("./data/lat2-rise-%s.npz" % calKey)
             riseHist = f['arr_0'].item()
 
+
             # match the 2d hists in setRiseCut
             xLo, xHi, xpb = 0, 250, 2
             yLo, yHi, ypb = -5, 10, 0.1
@@ -1149,10 +1150,13 @@ def riseStability():
             # checkList = [[0,578]]
             # checkList = [[0,598]]
 
+            if calKey != "ds5_m2": continue
+            checkList = [[6,1332]]
+
             print("Removal candidates:") # remember, it's ok to get duplicates here
             for ci, ch in checkList:
                 cpd = det.getChanCPD(ds,ch)
-                # print("ci",ci,"ch",ch,"cpd",cpd)
+                print("ci",ci,"ch",ch,"cpd",cpd)
 
                 if riseHist[ci][ch] is None:
                     print("No data found! ci, ch",ci,ch)
