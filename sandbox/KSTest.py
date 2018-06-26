@@ -21,7 +21,7 @@ def main(argv):
     channelCut = "&& (channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={})".format(*chList)
     theCut += channelCut
     nuCut = theCut + " && mHL==1 && trapENFCalC>1000 && trapENFCalC<1400 && avse>-1 && dcr99<0"
-    dcrCut = theCut + " && mHL==1 && trapENFCalC>2350 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
+    dcrCut = theCut + " && mHL==1 && trapENFCalC>1950 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     alphaCut = theCut + " && mHL==1 && trapENFCalC>4000 && trapENFCalC<8000 && avse>-1"
     pbCut = theCut + " && mHL==1 && trapENFCalC>45.5 && trapENFCalC<47.5"
     # excessCut = "C=={} && trapENFCal>2 && trapENFCal<5 || (channel!=656 && run < 6964)".format(module)
@@ -59,19 +59,20 @@ def main(argv):
             else:
                 skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
                 skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
+
             if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
 
         elif ds == 6:
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
             if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-74-g794b9f8/skimDS{}_*.root".format(ds))
+                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
 
         elif ds == 1 or ds == 2:
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
             skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
             if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
+                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
         else:
             skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
             skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
@@ -215,8 +216,8 @@ def main(argv):
     # On the same plot
     fig2, a2 = plt.subplots(figsize=(10,6))
     a2.step(nuDate, pnuSumTot, color = 'black', label=r"$2\nu\beta\beta$ (Clock)")
-    a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
-    a2.step(dcrDate, pdcrSumTot, label="DCR rejected")
+    # a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
+    a2.step(dcrDate, pdcrSumTot, label="DCR rejected (1950 - 3350 keV)")
     # a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
     # a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
     # a2.set_title('Module {} Eriched, DS1-4,5bc'.format(module))
@@ -228,6 +229,7 @@ def main(argv):
 
     labelText = ""
     for key, ksres in ksTotResult.items():
+        if key != 'DCR': continue
         labelText = labelText + "{} -- KS statistic: {:.4f} -- p-value: {:.4f} \n".format(key, ksres[0], ksres[1])
     a2.text(0.05, 0.95, labelText, transform=a2.transAxes, fontsize=12, verticalalignment='top')
     plt.tight_layout()

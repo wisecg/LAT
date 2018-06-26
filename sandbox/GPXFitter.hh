@@ -22,29 +22,31 @@ class RooAbsPdf;
 class RooMinimizer;
 class RooMCStudy;
 class RooEffProd;
+class RooFormulaVar;
 class TChain;
-
+class TH1D;
+class RooHistPdf;
 class GPXFitter {
 
 	public:
 		GPXFitter();
 
-		GPXFitter(int ds, double fitMin, double fitMax) {fDS = ds; fFitMin = fitMin; fFitMax = fitMax;}
+		GPXFitter(std::string ds, double fitMin, double fitMax, std::string mode) {fDS = ds; fFitMin = fitMin; fFitMax = fitMax; fMode = mode;}
 
 		virtual ~GPXFitter();
 
         // Constructs model PDF -- MUST be called after LoadData()!
-        virtual void ConstructPDF(double enVal = 0, bool bBDM = false);
+        virtual void ConstructPDF(bool bEff = false, bool bBDM = false);
 
         // Do the fit
         // Set minimizer type here also... there's like Minuit, Minuit2, probably more
         // Honestly Minuit2 and Minuit are the same shit, one's just potentially slightly faster
         virtual void DoFit(std::string Minimizer = "Minuit2");
-				virtual void DoFitEff(std::string Minimizer = "Minuit2");
+				// virtual void DoFitEff(std::string Minimizer = "Minuit2");
 
         // Draws and saves a plot of the fit as well as correlation matrix -- default binning is 0.2 keV
         // Binning is simply for visualization!
-        void DrawBasicShit(double binSize = 0.2, bool drawLabels = true, bool drawResid = true, bool drawMatrix = true);
+        void DrawBasic(double binSize = 0.2, bool drawLabels = true, bool drawResid = true, bool drawMatrix = true);
 
 				void DrawModels(double binSize = 0.2);
 
@@ -58,7 +60,6 @@ class GPXFitter {
 
         // Wrapper for returning fit values for variables and their errors
         std::vector<double> GetVar(std::string argN);
-				std::vector<double> GetVarEff(std::string argN);
 
         // This function uses RooMCStudy to generate toy MC and then fit the results
         void GenerateMCStudy(std::vector<std::string> argS = {"Tritium"}, int nMC = 5000);
@@ -68,7 +69,6 @@ class GPXFitter {
 
         // Get Fit Result
         RooFitResult *GetFitResult() {return fFitResult;}
-        RooFitResult *GetFitResultEff() {return fFitResultEff;}
 
 				// Get Workspace
         RooWorkspace *GetWorkspace() {return fFitWorkspace;}
@@ -87,6 +87,12 @@ class GPXFitter {
         // Saves fit results into file
         void SaveShit(std::string outfileName = "TestOutput.root");
 
+				// Manually set efficiency histogram
+        void SetEfficiency(TH1D* effSpec){fEffSpec = effSpec;}
+
+				// Set an exposure map different from default
+        void SetExposureMap(std::map<std::string, std::vector<double>> fExposure){fExposureMap = fExposure;}
+
         // Sets range for fit
         void SetFitRange(double fitMin, double fitMax);
 
@@ -102,8 +108,9 @@ class GPXFitter {
         double fChiSquare;
 
 	private:
-				// Dataset
-				int fDS;
+				// Dataset label
+				std::string fDS;
+				std::string fMode;
 
 				// Fit range -- in keV
 				double fFitMin;
@@ -112,8 +119,12 @@ class GPXFitter {
 				// String used for cuts
 				std::string fCutString;
 
+				// Exposure Map
+				std::map<std::string, std::vector<double>> fExposureMap;
+
         // Energy
         RooRealVar *fEnergy;
+				RooFormulaVar *fEnergyShift;
 
         // Real dataset (as in real data)
         RooDataSet *fRealData;
@@ -126,23 +137,19 @@ class GPXFitter {
         RooAbsPdf *fModelPDF;
 
 				// Total PDF -- with efficiencies
-				RooAbsPdf *fModelPDFEff;
-				RooAbsPdf *fModelPDFEffDraw;
 				// RooAbsPdf *fModelPDFFinal;
 				// RooEffProd *fModelPDFFinal;
+    	  TH1D *fEffSpec;
 
         // Minimizer
         RooMinimizer *fMinimizer;
-				RooMinimizer *fMinimizerEff;
 
         // NLL and ProfileNLL
         RooAbsReal *fNLL;
-				RooAbsReal *fNLLEff;
         RooAbsReal *fProfileNLL;
 
         // Saved fit result
         RooFitResult *fFitResult;
-				RooFitResult *fFitResultEff;
 
         // Fit workspace
         RooWorkspace *fFitWorkspace;

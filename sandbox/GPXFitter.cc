@@ -21,6 +21,8 @@
 #include "RooMCStudy.h"
 #include "RooHist.h"
 #include "RooEffProd.h"
+#include "RooEfficiency.h"
+#include "RooCategory.h"
 #include "RooProdPdf.h"
 
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -49,27 +51,39 @@ using namespace RooFit;
 using namespace std;
 
 GPXFitter::GPXFitter() :
-    fDS(1),
+    fDS("LowBkg"),
     fFitMin(2.),
-    fFitMax(100.),
+    fFitMax(50.),
+    fMode("Enr"),
     fEnergy(nullptr),
     fRealData(nullptr),
     fMCData(nullptr),
     fMCStudy(nullptr),
     fModelPDF(nullptr),
     fNLL(nullptr),
-    fNLLEff(nullptr),
     fProfileNLL(nullptr),
+    fEffSpec(nullptr),
     fChiSquare(0),
     fMinimizer(nullptr),
-    fMinimizerEff(nullptr),
     fFitResult(nullptr),
-    fFitResultEff(nullptr),
     fFitWorkspace(nullptr),
-    fModelPDFEff(nullptr),
-    fModelPDFEffDraw(nullptr),
     fSavePrefix("FitResult")
-{ }
+{
+  // Set default exposure as full exposure
+  std::map<std::string, std::vector<double>> expoFull;
+  expoFull["0"] = {400.9074811876048, 157.92594939476592};
+  expoFull["1"] = {631.539647097231, 29.523527363230723};
+  expoFull["2"] = {104.3238418726033, 5.177826450022776};
+  expoFull["3"] = {334.9535551781866, 48.64815212750721};
+  expoFull["4"] = {50.778998571351394, 23.149078616249657};
+  expoFull["5A"] = {798.8446523114309, 337.4631592176636};
+  expoFull["5B"] = {624.1459839987111, 226.37080226302683};
+  expoFull["5C"] = {173.0972327703449, 63.354681716529285};
+  expoFull["All"] = {3118.5913929874637, 891.613177148996};
+  expoFull["LowBkg"] = {2717.683911799859, 733.6872277542301}; // Low Bkg is DS1-5
+  fExposureMap = expoFull;
+
+}
 
 GPXFitter::~GPXFitter()
 {
@@ -82,14 +96,14 @@ GPXFitter::~GPXFitter()
 	delete fModelPDF;
 	fModelPDF = nullptr;
 
-  delete fModelPDFEff;
-	fModelPDFEff = nullptr;
-
   delete fMCData;
   fMCData = nullptr;
 
   delete fMCStudy;
   fMCStudy = nullptr;
+
+  delete fEffSpec;
+  fEffSpec = nullptr;
 
   delete fMinimizer;
   fMinimizer = nullptr;
@@ -103,43 +117,31 @@ GPXFitter::~GPXFitter()
 	delete fFitResult;
 	fFitResult = nullptr;
 
-  delete fFitResultEff;
-	fFitResultEff = nullptr;
-
   delete fFitWorkspace;
   fFitWorkspace = nullptr;
 }
 
 // Constructs model PDF, use only after LoadData or else!
-void GPXFitter::ConstructPDF(double enVal, bool bBDM)
+void GPXFitter::ConstructPDF(bool bNoEff, bool bBDM)
 {
-	if(fRealData == nullptr)
+  if (bNoEff) fSavePrefix += "NoEff";
+
+  if(fRealData == nullptr)
 	{
 		std::cout << "Error: Data not loaded! Will Segfault!" << std::endl;
 		return;
 	}
-
     // RooWorkspace is necessary for the model and parameters to be persistent
     // this is necessary because we created a bunch of objects that aren't persistent here
     fFitWorkspace = new RooWorkspace("fFitWorkspace", "Fit Workspace");
 
     // Energy shift
-    double fDeltaE = 0.00;
+    RooRealVar fDeltaE("fDeltaE", "fDeltaE", 0., -0.2, 0.2);
+    fEnergyShift = new RooFormulaVar("fEnergyShift", "@0-@1", RooArgList(*fEnergy, fDeltaE));
 
-    // std::string tritDir = "/mnt/mjdDisk1/Majorana/users/psz/CUORE/MJDAnalysis/Wenqin/Data";
     std::string tritDir = "/Users/brianzhu/macros/code/MJDAnalysis/Axion";
-    TFile *tritFileBulk = new TFile(Form("%s/TritSpec.root", tritDir.c_str()));
-    TFile *tritFile = new TFile(Form("%s/TritSpecSim.root", tritDir.c_str()));
+    TFile *tritFileBulk = new TFile(Form("%s/TritSpec_0.1keV.root", tritDir.c_str()));
     TH1D *tritSpec = dynamic_cast<TH1D*>(tritFileBulk->Get("tritHist"));
-    TH1D *tritSpecSurface = dynamic_cast<TH1D*>(tritFile->Get("tritHistSurface"));
-
-    RooDataHist tritRooHist("tritBulk", "Tritium Histogram (Bulk)", *fEnergy, Import(*tritSpec));
-    RooDataHist tritSurfaceRooHist("tritSurface", "Tritium Histogram (Transition Layer)", *fEnergy, Import(*tritSpecSurface));
-    // Because Steve's histogram sucks
-    // The range of the histogram is maxed out at 50 keV, so need to reset range after loading histogram
-    fEnergy->setRange(fFitMin, fFitMax);
-    RooHistPdf tritPdf("tritPdf", "TritiumPdf", *fEnergy, tritRooHist, 1);
-    RooHistPdf tritSurfacePdf("tritSurfacePdf", "TritiumSurfacePdf", *fEnergy, tritSurfaceRooHist, 1);
 
     TFile *axionFile = new TFile(Form("%s/axionHistos.root", tritDir.c_str()));
     TH1D *axionSpec = dynamic_cast<TH1D*>(axionFile->Get("hConv"));
@@ -147,129 +149,177 @@ void GPXFitter::ConstructPDF(double enVal, bool bBDM)
     fEnergy->setRange(fFitMin, fFitMax);
     RooHistPdf axionPdf("axionPdf", "AxionPdf", *fEnergy, axionRooHist, 1);
 
-    // std::string effDir = "/mnt/mjdDisk1/Majorana/users/psz/CUORE/MJDAnalysis/Wenqin/Data";
-    // std::string effDir = "/Users/brianzhu/macros/code/LAT/plots/spectra/PrelimSpectra";
-    std::string effDir = "/Users/brianzhu/macros/code/LAT/plots/AThresh";
-    TFile *effFile;
-    TH1D *effSpec;
-    if(fCutString.find("isNat") != std::string::npos) {
-      if(fDS == -1){
-        effFile = new TFile(Form("%s/Bkg_isNat_DS5.root", effDir.c_str()));
-        effSpec = dynamic_cast<TH1D*>(effFile->Get("DS5_isNat_EffTot"));
+    TFile *pb210File = new TFile(Form("%s/Pb210PDFs_Full.root", tritDir.c_str()));
+    TH1D *pb210Spec = dynamic_cast<TH1D*>(pb210File->Get("hPb210"));
+
+    // Copy the pb210 (to get the same binning) for the flat background
+    TH1D *bkgSpec = dynamic_cast<TH1D*>(pb210Spec->Clone("hBkg"));
+
+    std::string effDir = "/Users/brianzhu/macros/code/LAT/data";
+    TFile *effFile = new TFile(Form("%s/lat-expo-efficiency_final95.root", effDir.c_str()));
+
+    if(fDS == "All" || fDS == "LowBkg")
+    {
+      if(fMode == "All")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get("hDS1_Nat"));
+        if(fDS == "All")
+        {
+          fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS0_Nat")));
+          fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS0_Enr")));
+        }
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS2_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS3_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS4_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5A_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5B_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5C_Nat")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS1_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS2_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS3_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS4_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5A_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5B_Enr")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5C_Enr")));
+        fEffSpec->Scale(1./(fExposureMap[fDS][0] + fExposureMap[fDS][1]));
       }
-      else {
-        effFile = new TFile(Form("%s/Bkg_isNat_DS%d.root", effDir.c_str(), fDS));
-        effSpec = dynamic_cast<TH1D*>(effFile->Get(Form("DS%d_isNat_EffTot", fDS)));
+      else if(fMode == "Nat" || fMode == "Enr")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get(Form("hDS1_%s", fMode.c_str())));
+        if(fDS == "All") fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS0_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS2_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS3_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS4_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS5A_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS5B_%s", fMode.c_str()))));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get(Form("hDS5C_%s", fMode.c_str()))));
+        if(fMode == "Enr") fEffSpec->Scale(1./(fExposureMap[fDS][0]));
+        else if(fMode == "Nat") fEffSpec->Scale(1./(fExposureMap[fDS][1]));
+      }
+      else if (fMode == "M1All" || fMode == "M1LowBkg")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get("hDS1_Enr_M1"));
+        if(fMode == "M1LowBkg")fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS0_Enr_M1")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS2_Enr_M1")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS3_Enr_M1")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5A_Enr_M1")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5B_Enr_M1")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5C_Enr_M1")));
+        fEffSpec->Scale(1./(fExposureMap[fDS][0]));
+      }
+      else if (fMode == "M2All")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get("hDS4_Enr_M2"));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5A_Enr_M2")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5B_Enr_M2")));
+        fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5C_Enr_M2")));
+        fEffSpec->Scale(1./(fExposureMap[fDS][0]));
       }
     }
-    else if(fCutString.find("isEnr") != std::string::npos) {
-      if(fDS == -1){
-        effFile = new TFile(Form("%s/Bkg_isEnr_DS5.root", effDir.c_str()));
-        effSpec = dynamic_cast<TH1D*>(effFile->Get("DS5_isEnr_EffTot"));
+    // Specific Dataset
+    else
+    {
+      if (fMode == "All")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get(Form("hDS%s_Enr", fDS.c_str())));
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get(Form("hDS%s_Nat", fDS.c_str())));
+        fEffSpec->Scale(1./(fExposureMap[fDS][0] + fExposureMap[fDS][1]));
       }
-      else {
-        effFile = new TFile(Form("%s/Bkg_isEnr_DS%d.root", effDir.c_str(), fDS));
-        effSpec = dynamic_cast<TH1D*>(effFile->Get(Form("DS%d_isEnr_EffTot", fDS)));
+      else if (fMode == "Enr" || fMode == "Nat")
+      {
+        fEffSpec = dynamic_cast<TH1D*>(effFile->Get(Form("hDS%s_%s", fDS.c_str(), fMode.c_str() )));
+        if(fMode == "Enr") fEffSpec->Scale(1./(fExposureMap[fDS][0]));
+        else if(fMode == "Nat") fEffSpec->Scale(1./(fExposureMap[fDS][1]));
       }
     }
-    else {
-      effFile = new TFile(Form("%s/Bkg_isEnr_DS%d.root", effDir.c_str(), fDS));
-      effSpec = dynamic_cast<TH1D*>(effFile->Get(Form("DS%d_isEnr_EffTot", fDS)));
+
+    // Pre-scale pdfs with energy dependence with Efficiency
+    double xVal = 0;
+    double effVal = 0;
+    for(int i = 1; i < pb210Spec->GetNbinsX(); i++)
+    {
+      xVal = pb210Spec->GetBinCenter(i);
+      effVal = fEffSpec->GetBinContent(fEffSpec->FindBin(xVal));
+      // If this flag is activated, all PDFs are generated with no efficiency function!
+      if (bNoEff) effVal = 1.;
+      tritSpec->SetBinContent(i, tritSpec->GetBinContent(i)*effVal);
+      pb210Spec->SetBinContent(i, pb210Spec->GetBinContent(i)*effVal);
+      bkgSpec->SetBinContent(i, 1./((fFitMax-fFitMin)/0.1)*effVal);
     }
 
-    // Empirical total efficiency that fits DS1 natural pretty well
-    // RooFormulaVar effPdf("effPdf","0.5*(1+TMath::Erf((@fEnergy-2)/(TMath::Sqrt(2)*3) ))", *fEnergy);
-    // TF1 *fEff1 = new TF1("fEff", "0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))", fFitMin, fFitMax);
-    // fEff1->SetParameters(2, 3);
-    // effSpec = dynamic_cast<TH1D*>(fEff1->CreateHistogram());
+    RooDataHist tritRooHist("tritBulk", "Tritium Histogram (Bulk)", *fEnergy, Import(*tritSpec));
+    RooDataHist pb210RooHist("pb210", "Pb210 Histogram", *fEnergy, Import(*pb210Spec));
+    RooDataHist bkgRooHist("bkg", "Background Histogram", *fEnergy, Import(*bkgSpec));
 
-    // External pulsers from Clint
-    TF1 *fEff1 = new TF1("fEff", "0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))", fFitMin, fFitMax);
-    fEff1->SetParameters(0.36,1.26);
+    RooHistPdf tritPdf("tritPdf", "TritiumPdf", *fEnergy, tritRooHist, 1);
+    RooHistPdf pb210Pdf("pb210Pdf", "Pb210Pdf", *fEnergy, pb210RooHist, 1);
+    RooHistPdf bkgPdf("bkgPdf", "BkgPdf", *fEnergy, bkgRooHist, 1);
 
-    effSpec->Multiply(fEff1);
-    RooDataHist effRooHist("eff", "Efficiency Histogram", *fEnergy, Import(*effSpec));
-    fEnergy->setRange(fFitMin, fFitMax);
-    RooHistPdf effPdf("effPdf", "EffPdf", *fEnergy, effRooHist, 0);
-
-
-    RooRealVar DeltaE("DeltaE", "DeltaE", 0., -2.0, 2.0);
-    // Change this for polynomial background or linear
-    // RooRealVar polySlope("polySlope", "Background Slope", 0.00002, -0.2, 0.2);
-    // RooArgList polyList(polySlope);
-    // RooPolynomial BkgPoly("Background", "Linear Background function", *fEnergy, polyList);
-    RooPolynomial BkgPoly("Background", "Flat Background function", *fEnergy, RooArgList());
-
-    RooRealVar Ge68L_mean("Ge68L_mean", "Ge68L_mean", 1.3 + fDeltaE);
-    RooRealVar Ge68L_sigma("Ge68L_sigma", "Ge68L_sigma", GetSigma(1.3 + fDeltaE));
+    RooRealVar Ge68L_mean("Ge68L_mean", "Ge68L_mean", 1.3);
+    RooRealVar Ge68L_sigma("Ge68L_sigma", "Ge68L_sigma", GetSigma(1.3));
     RooGaussian Ge68L_gauss("Ge68L_gauss", "Ge68L Gaussian", *fEnergy, Ge68L_mean, Ge68L_sigma);
 
-    RooRealVar V49_mean("V49_mean", "V49_mean", 4.97 + fDeltaE);
-    RooRealVar V49_sigma("V49_sigma", "V49_sigma", GetSigma(4.97 + fDeltaE));
+    RooRealVar V49_mean("V49_mean", "V49_mean", 4.97);
+    RooRealVar V49_sigma("V49_sigma", "V49_sigma", GetSigma(4.97));
     RooGaussian V49_gauss("V49_gauss", "V49 Gaussian", *fEnergy, V49_mean, V49_sigma);
 
-    RooRealVar Cr51_mean("Cr51_mean", "Cr51_mean", 5.46 + fDeltaE);
-    RooRealVar Cr51_sigma("Cr51_sigma", "Cr51_sigma", GetSigma(5.46 + fDeltaE));
+    RooRealVar Cr51_mean("Cr51_mean", "Cr51_mean", 5.46);
+    RooRealVar Cr51_sigma("Cr51_sigma", "Cr51_sigma", GetSigma(5.46));
     RooGaussian Cr51_gauss("Cr51_gauss", "Cr51 Gaussian", *fEnergy, Cr51_mean, Cr51_sigma);
 
-    RooRealVar Mn54_mean("Mn54_mean", "Mn54_mean", 5.99 + fDeltaE);
-    RooRealVar Mn54_sigma("Mn54_sigma", "Mn54_sigma", GetSigma(5.99 + fDeltaE));
+    RooRealVar Mn54_mean("Mn54_mean", "Mn54_mean", 5.99);
+    RooRealVar Mn54_sigma("Mn54_sigma", "Mn54_sigma", GetSigma(5.99));
     RooGaussian Mn54_gauss("Mn54_gauss", "Mn54 Gaussian", *fEnergy, Mn54_mean, Mn54_sigma);
 
-    RooRealVar Fe55_mean("Fe55_mean", "Fe55_mean", 6.54 + fDeltaE);
-    RooRealVar Fe55_sigma("Fe55_sigma", "Fe55_sigma", GetSigma(6.54 + fDeltaE));
+    RooRealVar Fe55_mean("Fe55_mean", "Fe55_mean", 6.54);
+    RooRealVar Fe55_sigma("Fe55_sigma", "Fe55_sigma", GetSigma(6.54));
     RooGaussian Fe55_gauss("Fe55_gauss", "Fe55 Gaussian", *fEnergy, Fe55_mean, Fe55_sigma);
 
-    RooRealVar Co57_mean("Co57_mean", "Co57_mean", 7.11 + fDeltaE);
-    RooRealVar Co57_sigma("Co57_sigma", "Co57_sigma", GetSigma(7.11 + fDeltaE));
+    RooRealVar Co57_mean("Co57_mean", "Co57_mean", 7.11);
+    RooRealVar Co57_sigma("Co57_sigma", "Co57_sigma", GetSigma(7.11));
     RooGaussian Co57_gauss("Co57_gauss", "Co57 Gaussian", *fEnergy, Co57_mean, Co57_sigma);
 
-    RooRealVar Zn65_mean("Zn65_mean", "Zn65_mean", 8.98 + fDeltaE);
-    RooRealVar Zn65_sigma("Zn65_sigma", "Zn65_sigma", GetSigma(8.98 + fDeltaE));
+    RooRealVar Zn65_mean("Zn65_mean", "Zn65_mean", 8.98);
+    RooRealVar Zn65_sigma("Zn65_sigma", "Zn65_sigma", GetSigma(8.98));
     RooGaussian Zn65_gauss("Zn65_gauss", "Zn65 Gaussian", *fEnergy, Zn65_mean, Zn65_sigma);
 
-    RooRealVar Ga68_mean("Ga68_mean", "Ga68_mean", 9.66 + fDeltaE);
-    RooRealVar Ga68_sigma("Ga68_sigma", "Ga68_sigma", GetSigma(9.66 + fDeltaE));
+    RooRealVar Ga68_mean("Ga68_mean", "Ga68_mean", 9.66);
+    RooRealVar Ga68_sigma("Ga68_sigma", "Ga68_sigma", GetSigma(9.66));
     RooGaussian Ga68_gauss("Ga68_gauss", "Ga68 Gaussian", *fEnergy, Ga68_mean, Ga68_sigma);
 
-    RooRealVar Ge68_mean("Ge68_mean", "Ge68_mean", 10.37 + fDeltaE);
-    // RooRealVar Ge68_mean("Ge68_mean", "Ge68_mean", 10.37 + fDeltaE, 10.2, 10.45); // Floating mean
-    RooRealVar Ge68_sigma("Ge68_sigma", "Ge68_sigma", GetSigma(10.37 + fDeltaE));
+    RooRealVar Ge68_mean("Ge68_mean", "Ge68_mean", 10.37);
+    RooRealVar Ge68_sigma("Ge68_sigma", "Ge68_sigma", GetSigma(10.37));
     RooGaussian Ge68_gauss("Ge68_gauss", "Ge68 Gaussian", *fEnergy, Ge68_mean, Ge68_sigma);
 
-    RooRealVar As73_mean("As73_mean", "As73_mean", 11.3 + fDeltaE);
-    RooRealVar As73_sigma("As73_sigma", "As73_sigma", GetSigma(11.3 + fDeltaE));
+    RooRealVar As73_mean("As73_mean", "As73_mean", 11.3);
+    RooRealVar As73_sigma("As73_sigma", "As73_sigma", GetSigma(11.3));
     RooGaussian As73_gauss("As73_gauss", "As73 Gaussian", *fEnergy, As73_mean, As73_sigma);
 
-    RooRealVar Pb210_mean("Pb210_mean", "Pb210_mean", 46.54 + fDeltaE);
-    RooRealVar Pb210_sigma("Pb210_sigma", "Pb210_sigma", GetSigma(46.54 + fDeltaE));
+    RooRealVar Pb210_mean("Pb210_mean", "Pb210_mean", 46.54);
+    RooRealVar Pb210_sigma("Pb210_sigma", "Pb210_sigma", GetSigma(46.54));
     RooGaussian Pb210_gauss("Pb210_gauss", "Pb210 Gaussian", *fEnergy, Pb210_mean, Pb210_sigma);
 
     // Normalization parameters
     // Make names pretty for plots
-    RooRealVar num_trit("Tritium", "Tritium", 100.0, 0.0, 5000.);
-    RooRealVar num_tritSurface("Surface Tritium", "Surface Tritium", 0.0, 0.0, 500.);
+    RooRealVar num_trit("Tritium", "Tritium", 1000.0, 0.0, 50000.);
     RooRealVar num_axion("Axion", "Axion", 0.0, 0.0, 1000.);
-    RooRealVar num_bkg("Bkg", "Bkg", 50.0, 0.0, 5000.);
-    RooRealVar num_V49("V49", "V49", 0.0, 0.0, 500.);
-    RooRealVar num_Cr51("Cr51", "Cr51", 0.0, 0.0, 500.);
-    RooRealVar num_Mn54("Mn54", "Mn54", 0.0, 0.0, 500.);
-    RooRealVar num_Fe55("Fe55", "Fe55", 3.0, 0.0, 500.);
-    RooRealVar num_Co57("Co57", "Co57", 0.0, 0.0, 500.);
-    RooRealVar num_Zn65("Zn65", "Zn65", 0.0, 0.0, 500.);
-    RooRealVar num_Ga68("Ga68", "Ga68", 5.0, 0.0, 500.);
-    RooRealVar num_Ge68("Ge68", "Ge68", 10.0, 0.0, 500.);
-    RooRealVar num_As73("As73", "As73", 0.0, 0.0, 500.);
-    RooRealVar num_Ge68L("Ge68L", "Ge68L", 0.0, 0.0, 500.);
-    RooRealVar num_Pb210("Pb210", "Pb210", 5.0, 0.0, 500.);
-
-    // RooRealVar num_Tot("Tot", "Tot", 5.0, 0.0, 100000.);
+    RooRealVar num_bkg("Bkg", "Bkg", 1500, 0.0, 10000.);
+    RooRealVar num_V49("V49", "V49", 0.0, 0.0, 1000.);
+    RooRealVar num_Cr51("Cr51", "Cr51", 0.0, 0.0, 1000.);
+    RooRealVar num_Mn54("Mn54", "Mn54", 0.0, 0.0, 1000.);
+    RooRealVar num_Fe55("Fe55", "Fe55", 3.0, 0.0, 1000.);
+    RooRealVar num_Co57("Co57", "Co57", 0.0, 0.0, 1000.);
+    RooRealVar num_Zn65("Zn65", "Zn65", 10.0, 0.0, 1000.);
+    RooRealVar num_Ga68("Ga68", "Ga68", 1.0, 0.0, 1000.);
+    RooRealVar num_Ge68("Ge68", "Ge68", 50.0, 0.0, 1000.);
+    RooRealVar num_As73("As73", "As73", 0.0, 0.0, 1000.);
+    RooRealVar num_Ge68L("Ge68L", "Ge68L", 0.0, 0.0, 10.);
+    RooRealVar num_Pb210("Pb210", "Pb210", 300.0, 0.0, 5000.);
 
     // Extended PDF model -- use this to create an extended model
     RooExtendPdf tritPdfe("tritPdfe", "Extended Tritium", tritPdf, num_trit);
-    RooExtendPdf tritSurfacePdfe("tritSurfacePdfe", "Extended Tritium Surface", tritSurfacePdf, num_tritSurface);
     RooExtendPdf axionPdfe("axionPdfe", "Extended axion", axionPdf, num_axion);
-    RooExtendPdf BkgPolye("BkgPolye", "Extended BkgPoly", BkgPoly, num_bkg);
+    RooExtendPdf BkgPolye("BkgPolye", "Extended BkgPoly", bkgPdf, num_bkg);
     RooExtendPdf V49_gausse("V49_gausse", "Extended V49_gauss", V49_gauss, num_V49);
     RooExtendPdf Cr51_gausse("Cr51_gausse", "Extended Cr51_gauss", Cr51_gauss, num_Cr51);
     RooExtendPdf Mn54_gausse("Mn54_gausse", "Extended Mn54_gauss", Mn54_gauss, num_Mn54);
@@ -280,14 +330,15 @@ void GPXFitter::ConstructPDF(double enVal, bool bBDM)
     RooExtendPdf Ge68_gausse("Ge68_gausse", "Extended Ge68_gauss", Ge68_gauss, num_Ge68);
     RooExtendPdf As73_gausse("As73_gausse", "Extended As73_gauss", As73_gauss, num_As73);
     RooExtendPdf Ge68L_gausse("Ge68L_gausse", "Extended Ge68L_gauss", Ge68L_gauss, num_Ge68L);
+    // Using Gaussian
     RooExtendPdf Pb210_gausse("Pb210_gausse", "Extended Pb210_gauss", Pb210_gauss, num_Pb210);
+    // Using MaGe PDF
+    // RooExtendPdf Pb210_gausse("Pb210_gausse", "Extended Pb210_gauss", pb210Pdf, num_Pb210);
 
     RooArgList shapes(tritPdfe, BkgPolye, Mn54_gausse, Fe55_gausse, Zn65_gausse, Ge68_gausse);
     shapes.add(Ga68_gausse);
-    // shapes.add(tritSurfacePdfe);
-    if(fFitMin <= 1.0) shapes.add(Ge68L_gausse);
+    if(fFitMin < 1.0) shapes.add(Ge68L_gausse);
     if(fFitMax > 48) shapes.add(Pb210_gausse);
-
     // Additional PDFs we don't use, but we can use
     // shapes.add(V49_gausse);
     // shapes.add(Cr51_gausse);
@@ -295,27 +346,17 @@ void GPXFitter::ConstructPDF(double enVal, bool bBDM)
 
     RooAddPdf model("model", "total pdf", shapes);
 
-    // Combine with efficiency -- Several methods here
-    // RooProdPdf modelEff("modelEff", "model with efficiency", RooArgSet(model, effPdf)); // Can do with product also?
-    // RooProdPdf modelEff("modelEff", "model with efficiency", model, effPdf);
-    RooEffProd modelEff("modelEff", "model with efficiency", model, effPdf); // This looks pretty good
-    // fModelPDFFinal = new RooEffProd("modelEffFinal", "model with efficiency 2", model, effPdf);
-    // RooExtendPdf modelEffe("modelEffe", "Extended model with efficiency", modelEff, num_Tot);
-
     // Add model to workspace -- also adds all of the normalization constants
     // If this step isn't done, a lot of the later functions won`'t work!
-    fFitWorkspace->import(RooArgSet(modelEff));
-    fModelPDFEff = fFitWorkspace->pdf("modelEff");
+    fFitWorkspace->import(RooArgSet(model));
     fModelPDF = fFitWorkspace->pdf("model");
-    // fModelPDFEffFit = dynamic_cast<RooAbsPdf*>(modelEff2);
-    // fModelPDFEffDraw = fFitWorkspace->pdf("modelEff");
+    std::cout << "Generated PDFs" << std::endl;
 }
 
 void GPXFitter::DoFit(std::string Minimizer)
 {
     // Create NLL (This is not a profile! When you draw it to one axis, it's just a projection!)
     fNLL = fFitWorkspace->pdf("model")->createNLL(*fRealData, Extended(), NumCPU(2));
-    // fNLL = fModelPDF->createNLL(*fRealData, Extended(), NumCPU(4));
 
     // Create minimizer, fit model to data and save result
     fMinimizer = new RooMinimizer(*fNLL);
@@ -324,7 +365,6 @@ void GPXFitter::DoFit(std::string Minimizer)
     fMinimizer->setStrategy(2);
     fMinimizer->migrad();
     fMinimizer->hesse();
-    // Use all these, fk if I know they're any good
     fMinimizer->improve();
     fMinimizer->minos();
 
@@ -332,47 +372,29 @@ void GPXFitter::DoFit(std::string Minimizer)
     fFitWorkspace->import(*fFitResult);
 }
 
-void GPXFitter::DoFitEff(std::string Minimizer)
+void GPXFitter::DrawBasic(double binSize, bool drawLabels, bool drawResid, bool drawMatrix)
 {
-    // Create NLL (This is not a profile! When you draw it to one axis, it's just a projection!)
-    // fNLLEff = fModelPDFEff->createNLL(*fRealData, Extended(), NumCPU(4));
-    fNLLEff = fModelPDFEff->createNLL(*fRealData, NumCPU(2));
-
-    // Create minimizer, fit model to data and save result
-    fMinimizerEff = new RooMinimizer(*fNLLEff);
-    fMinimizerEff->setMinimizerType(Form("%s", Minimizer.c_str()));
-    fMinimizerEff->setPrintLevel(-1);
-    fMinimizerEff->setStrategy(2);
-    fMinimizerEff->migrad();
-    fMinimizerEff->hesse();
-    // Use all these, fk if I know they're any good
-    fMinimizerEff->improve();
-    fMinimizerEff->minos();
-
-    fFitResultEff = fMinimizerEff->save();
-    fFitWorkspace->import(*fFitResultEff);
-}
-
-void GPXFitter::DrawBasicShit(double binSize, bool drawLabels, bool drawResid, bool drawMatrix)
-{
-
-    // RooEffProd modelEffDraw("modelEffDraw", "model with efficiency", *fFitWorkspace->pdf("model"), *fFitWorkspace->pdf("effPdf"));
 
     TCanvas *cSpec = new TCanvas("cSpec", "cSpec", 1100, 800);
+    // cSpec->SetLogy();
     RooPlot* frameFit = fEnergy->frame(Range(fFitMin, fFitMax), Bins((fFitMax - fFitMin)*1.0/binSize + 0.5));
     fRealData->plotOn(frameFit);
-    // fModelPDF->plotOn(frameFit, Components("axionPdfe"), LineColor(kBlue), LineStyle(kDashed));
     fModelPDF->plotOn(frameFit, LineColor(kBlue));
-    // modelEffDraw.plotOn(frameFit, LineColor(kRed));
-    fModelPDFEff->plotOn(frameFit, LineColor(kRed));
+    fModelPDF->plotOn(frameFit, Components("tritPdfe"), LineColor(kRed), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("BkgPolye"), LineColor(kGreen), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Ge68_gausse"), LineColor(kMagenta), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Mn54_gausse"), LineColor(kMagenta), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Fe55_gausse"), LineColor(kMagenta), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Zn65_gausse"), LineColor(kMagenta), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Pb210_gausse"), LineColor(kBlack), LineStyle(kDashed));
     frameFit->SetTitle("");
 
     // Get parameter values from first fit... these methods suck
-    // std::string tritDir = "/mnt/mjdDisk1/Majorana/users/psz/CUORE/MJDAnalysis/Wenqin/Data";
     std::string tritDir = "/Users/brianzhu/macros/code/MJDAnalysis/Axion";
 
-    TFile *tritFile = new TFile(Form("%s/TritSpec.root", tritDir.c_str()));
+    TFile *tritFile = new TFile(Form("%s/TritSpec_0.1keV.root", tritDir.c_str()));
     TH1D *tritSpec = dynamic_cast<TH1D*>(tritFile->Get("tritHist"));
+    tritSpec->Scale(1./tritSpec->Integral());
 
     double tritVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Tritium") )->getValV();
     double tritErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Tritium") )->getError();
@@ -380,26 +402,16 @@ void GPXFitter::DrawBasicShit(double binSize, bool drawLabels, bool drawResid, b
     double tritErrCorr = tritErr/(tritSpec->Integral(tritSpec->FindBin(fFitMin), tritSpec->FindBin(fFitMax)));
     double geVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ge68"))->getValV();
     double geErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ge68"))->getError();
+    double gaVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ga68"))->getValV();
+    double gaErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ga68"))->getError();
     double znVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Zn65"))->getValV();
     double znErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Zn65"))->getError();
     double feVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Fe55"))->getValV();
     double feErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Fe55"))->getError();
+    double mnVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Mn54"))->getValV();
+    double mnErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Mn54"))->getError();
     double bkgVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Bkg"))->getValV();
     double bkgErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Bkg"))->getError();
-    // double gelVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ge68L"))->getValV();
-    // double gelErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Ge68L"))->getError();
-
-    // double tritVal = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Tritium") )->getValV();
-    // double tritErr = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Tritium") )->getError();
-    // double tritValCorr = tritVal/(tritSpec->Integral(tritSpec->FindBin(fFitMin), tritSpec->FindBin(fFitMax)));
-    // double tritErrCorr = tritErr/(tritSpec->Integral(tritSpec->FindBin(fFitMin), tritSpec->FindBin(fFitMax)));
-    // double geVal = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Ge68"))->getValV();
-    // double geErr = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Ge68"))->getError();
-    // double feVal = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Fe55"))->getValV();
-    // double feErr = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Fe55"))->getError();
-    // double bkgVal = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Bkg"))->getValV();
-    // double bkgErr = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find("Bkg"))->getError();
-
 
     // Add chi-square to the plot - it's fairly meaningless as it's an unbinned fit but people will want it
     fChiSquare = frameFit->chiSquare(8);
@@ -411,20 +423,20 @@ void GPXFitter::DrawBasicShit(double binSize, bool drawLabels, bool drawResid, b
       leg->SetBorderSize(0);
       leg->SetTextSize(22);
       leg->AddText(Form("#chi^{2}/NDF = %.3f" ,fChiSquare ) );
-      leg->AddText("Model without Efficiency function");
+      leg->AddText("Total Model");
       dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kBlue);
-      // leg->AddText("Model with Efficiency function");
-      // dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kRed);
       leg->AddText(Form("Tritium (Uncorrected): %.3f #pm %.3f", tritVal, tritErr));
       leg->AddText(Form("Tritium (Corrected): %.3f #pm %.3f", tritValCorr, tritErrCorr));
-      leg->AddText(Form("Tritium (2-4 keV): %.3f #pm %.3f", tritValCorr*0.224487, tritErrCorr*0.224487));
-      leg->AddText(Form("Ge68K: %.3f #pm %.3f", geVal, geErr));
-      // leg->AddText(Form("Ge68L: %.3f #pm %.3f", gelVal, gelErr));
+      // leg->AddText(Form("Tritium (2-4 keV): %.3f #pm %.3f", tritValCorr*0.224487, tritErrCorr*0.224487));
+      leg->AddText(Form("Ge68: %.3f #pm %.3f", geVal, geErr));
+      leg->AddText(Form("Ga68: %.3f #pm %.3f", gaVal, gaErr));
       leg->AddText(Form("Zn65: %.3f #pm %.3f", znVal, znErr));
       leg->AddText(Form("Fe55: %.3f #pm %.3f", feVal, feErr));
+      leg->AddText(Form("Mn54: %.3f #pm %.3f", mnVal, mnErr));
       leg->AddText(Form("Bkg: %.3f #pm %.3f", bkgVal, bkgErr));
       frameFit->addObject(leg);
     }
+
     frameFit->Draw();
     cSpec->SaveAs(Form("./LATv2Result/%s_Spec.pdf", fSavePrefix.c_str()) );
     fFitWorkspace->import(*frameFit);
@@ -451,13 +463,12 @@ void GPXFitter::DrawBasicShit(double binSize, bool drawLabels, bool drawResid, b
     }
 }
 
-
 void GPXFitter::DrawModels(double binSize)
 {
   TCanvas *cModels = new TCanvas("cModels", "cModels", 1100, 800);
   RooPlot* frameFit = fEnergy->frame(Range(fFitMin, fFitMax), Bins((fFitMax - fFitMin)*1.0/binSize + 0.5));
   fFitWorkspace->pdf("model")->plotOn(frameFit, LineColor(kRed), LineStyle(kDashed));
-  fModelPDFEff->plotOn(frameFit, LineColor(kBlue));
+  fModelPDF->plotOn(frameFit, LineColor(kBlue));
   frameFit->SetTitle("");
   frameFit->Draw();
   cModels->SaveAs(Form("./LATv2Result/%s_Models.pdf", fSavePrefix.c_str()) );
@@ -560,65 +571,6 @@ void GPXFitter::GenerateMCStudy(std::vector<std::string> argS, int nMC)
         // fFitWorkspace->import(*fMCStudy);
         cMCStudy->SaveAs(Form("./LATv2Result/%s_%s_MCStudy.pdf", fSavePrefix.c_str(), argN.c_str()) );
     }
-
-
-    // Study done for Jason to convince him I know what I'm doing
-    // double parVal0 = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find(Form("%s", argN.c_str())))->getValV();
-    // double parErrHi0 = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find(Form("%s", argN.c_str())))->getErrorHi();
-    // double parErrLo0 = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find(Form("%s", argN.c_str())))->getErrorLo();
-
-    // TH1D *hMean = new TH1D("hMean", "Tritium Mean", 200, parVal0+2.5*parErrLo0, parVal0+2.5*parErrHi0);
-    // TH1D *hErrLo = new TH1D("hErrLo", "Tritium Error Low", 200, parErrLo0+parErrLo0/4, parErrLo0+parErrHi0/4);
-    // TH1D *hErrHi = new TH1D("hErrHi", "Tritium Error High", 200, parErrHi0+parErrLo0/4, parErrHi0+parErrHi0/4);
-
-    // for(int i = 0; i < nMC; i++)
-    // {
-    //     const RooFitResult *fFitMCResult = fMCStudy->fitResult(i);
-    //     double parVal2 = dynamic_cast<RooRealVar*>(fFitMCResult->floatParsFinal().find(Form("%s", argN.c_str())))->getValV();
-    //     double parErrHi2 = dynamic_cast<RooRealVar*>(fFitMCResult->floatParsFinal().find(Form("%s", argN.c_str())))->getErrorHi();
-    //     double parErrLo2 = dynamic_cast<RooRealVar*>(fFitMCResult->floatParsFinal().find(Form("%s", argN.c_str())))->getErrorLo();
-
-    //     hMean->Fill(parVal2);
-    //     hErrLo->Fill(parErrLo2);
-    //     hErrHi->Fill(parErrHi2);
-    // }
-
-    // TCanvas *cM = new TCanvas("cM", "cM", 800, 600);
-    // hMean->Draw();
-    // l1.DrawLine(parVal0, 0, parVal0, hMean->GetBinContent(hMean->GetMaximumBin()) );
-    // cM->SaveAs("./LATv2Result/MeanTest.pdf");
-
-    // TCanvas *cLo = new TCanvas("cLo", "cLo", 800, 600);
-    // hErrLo->Draw();
-    // l1.DrawLine(parErrLo0, 0, parErrLo0, hErrLo->GetBinContent(hErrLo->GetMaximumBin()));
-    // cLo->SaveAs("./LATv2Result/MeanTest_Low.pdf");
-
-    // TCanvas *cHi = new TCanvas("cHi", "cHi", 800, 600);
-    // hErrHi->Draw();
-    // l1.DrawLine(parErrHi0, 0, parErrHi0, hErrHi->GetBinContent(hErrHi->GetMaximumBin()));
-    // cHi->SaveAs("./LATv2Result/MeanTest_High.pdf");
-
-    // double NLLmean = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("NLL"))->getValV();
-    // double NLLmean = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("NLL"))->getError();
-
-/*
-    // Extract nLL variables from MCStudy -- maybe useful later
-    RooDataSet MCFitData = fMCStudy->fitParDataSet();
-    // RooDataSet *NLL = static_cast<RooDataSet*>(MCFitData.reduce(RooArgSet()));
-    MCFitData.Print("v");
-    const RooArgSet* row = MCFitData.get();
-    row->Print("v");
-    std::shared_ptr<TCanvas> cMCNLL( std::make_shared<TCanvas>("cMCNLL", "cMCNLL", 1100, 800) );
-    RooRealVar *NLL = static_cast<RooRealVar*>(row->find("NLL"));
-    RooFormulaVar sNLL("sNLL", "Shifted NLL", Form("NLL - %f", fFitResult->minNll()), *NLL);
-    RooRealVar *SNLL = static_cast<RooRealVar*>(MCFitData.addColumn(sNLL));
-
-    RooPlot* frameMC = SNLL->frame(Range((0.2*fFitResult->minNll()), -(0.2*fFitResult->minNll()) ));
-    MCFitData.plotOn(frameMC);
-    frameMC->Draw();
-    cMCNLL->SaveAs("Test.pdf");
-*/
-
 }
 
 // Use after constructing the model and minimization!
@@ -647,32 +599,20 @@ std::vector<double> GPXFitter::GetVar(std::string argN)
     return VarResult;
 }
 
-// Returns best fit value as a vector with asymmetric errors {Value, ErrorHi, ErrorLo}
-std::vector<double> GPXFitter::GetVarEff(std::string argN)
-{
-    double Val = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find( Form("%s", argN.c_str()) ))->getValV();
-    double ErrHi = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find( Form("%s", argN.c_str()) ))->getErrorHi();
-    double ErrLo = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find( Form("%s", argN.c_str()) ))->getErrorLo();
-
-	std::vector<double> VarResult = {Val, ErrHi, ErrLo};
-    return VarResult;
-}
-
-
 // Gets resolution, function and parameters from BDM PRL paper
 // https://arxiv.org/abs/1612.00886
 // In the future it should just be a convolution with all the other PDFs?
 double GPXFitter::GetSigma(double energy)
 {
     double p0, p1, p2;
-    if(fDS==0) {p0 = 0.147; p1=0.0173; p2=0.0003;}
-    else if(fDS==1) {p0 = 0.136; p1=0.0174; p2=0.00028;}
-    else if(fDS==2) {p0 = 0.143; p1=0.0172; p2=0.000284;}
-    else if(fDS==3) {p0 = 0.162; p1=0.0172; p2=0.000297;}
-    else if(fDS==4) {p0 = 0.218; p1=0.015; p2=0.00035;}
+    if(fDS=="0") {p0 = 0.147; p1=0.0173; p2=0.0003;}
+    else if(fDS=="1") {p0 = 0.136; p1=0.0174; p2=0.00028;}
+    else if(fDS=="2") {p0 = 0.143; p1=0.0172; p2=0.000284;}
+    else if(fDS=="3") {p0 = 0.162; p1=0.0172; p2=0.000297;}
+    else if(fDS=="4") {p0 = 0.218; p1=0.015; p2=0.00035;}
     // else if(fDS==5) {p0 = 0.2121; p1=0.01838; p2=0.00031137;}
     // else if(fDS==5) {p0 = 0.2592; p1=0.2057; p2=0.00030863;} // DS5b
-    else if(fDS==5) {p0 = 0.18148; p1=0.01690; p2=0.00031873;} // DS5b
+    else if(fDS=="5") {p0 = 0.18148; p1=0.01690; p2=0.00031873;} // DS5b
     else {p0 = 0.2121; p1=0.01838; p2=0.00031137;} // Use DS5 numbers for any other DS
     double sig = std::sqrt(p0*p0 + p1*p1*energy + p2*p2*energy*energy );
 	return sig;
@@ -683,6 +623,7 @@ double GPXFitter::GetSigma(double energy)
 void GPXFitter::LoadChainData(TChain *skimTree, std::string theCut)
 {
     fCutString = theCut;
+    std::cout << Form("Found %lld entries before cuts", skimTree->GetEntries()) << std::endl;
     // First get TEntryList with TCut
     skimTree->Draw(">> elist", Form("%s", theCut.c_str() ), "entrylist goff");
     TEntryList *elist = dynamic_cast<TEntryList*>(gDirectory->Get("elist"));
@@ -731,14 +672,14 @@ std::map<std::string, std::vector<double>> GPXFitter::ProfileNLL(std::vector<std
     std::map<std::string, std::vector<double>> LimitMap;
     for(auto &argN : argS)
     {
+        cout << "Profiling " << argN << endl;
         // Draw Profile NLL and save as PDF
         TCanvas *cNLL = new TCanvas("cNLL", "cNLL", 900, 600);
 
         // Best fit value -- just using this to set range
-        double parVal = dynamic_cast<RooRealVar*>(fFitResultEff->floatParsFinal().find(Form("%s", argN.c_str())))->getValV();
+        double parVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find(Form("%s", argN.c_str())))->getValV();
 
-        // RooStats::ProfileLikelihoodCalculator plc(*fRealData, *fModelPDF, RooArgSet(*fFitWorkspace->var(Form("%s", argN.c_str()))) );
-        RooStats::ProfileLikelihoodCalculator plc(*fRealData, *fModelPDFEff, RooArgSet(*fFitWorkspace->var(Form("%s", argN.c_str()))) );
+        RooStats::ProfileLikelihoodCalculator plc(*fRealData, *fModelPDF, RooArgSet(*fFitWorkspace->var(Form("%s", argN.c_str()))) );
         // Set 1 sigma interval
         plc.SetConfidenceLevel(CL);
 
@@ -749,7 +690,7 @@ std::map<std::string, std::vector<double>> GPXFitter::ProfileNLL(std::vector<std
         RooStats::LikelihoodIntervalPlot plot(interval);
         plot.SetRange(parVal - 1.5*(parVal - lowerLimit), parVal + 1.5*(upperLimit-parVal) );
         plot.Draw();
-        cNLL->SaveAs(Form("./LATv2Result/%s_%sNLL.pdf", fSavePrefix.c_str(), argN.c_str()) );
+        cNLL->SaveAs(Form("./LATv2Result/%s_%sNLL.C", fSavePrefix.c_str(), argN.c_str()) );
         std::vector<double> Limits = {lowerLimit, upperLimit};
         LimitMap[argN.c_str()] = Limits;
     }

@@ -12,7 +12,7 @@ import theano.tensor as tt
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import pandas as pd
-sns.set(style='darkgrid')
+sns.set(style='darkgrid', context='poster')
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
@@ -88,10 +88,10 @@ def main():
     AxionArr = np.delete(AxionArr, removeMask, axis=1)
     print('Generated all PDFs')
     # Draw PDFs
-    # drawPDFs(pdfArrDict)
     print("Data Shape", pdfArrDict['Data'].shape)
     print("Axion Shape", pdfArrDict['Axion'].shape)
-    # return
+    drawPDFs(pdfArrDict)
+    return
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
@@ -231,7 +231,8 @@ def convertaxionPDF(startTime, endTime):
     fAxion  = ROOT.TFile('{}/Axion_averaged_MJD_reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
 
     hday = fAxion.Get('hday')
-    hday.RebinX(5) # 5 minute bins
+    # hday.RebinX(5) # 5 minute bins
+    hday.RebinX(120) # 2 hour bins
     # Find bins to cut off PDF at
     startBin = hday.GetXaxis().FindBin(startTime)
     endBin = hday.GetXaxis().FindBin(endTime)
@@ -442,8 +443,23 @@ def drawPDFs(pdfArrDict):
     ax1[1,2].set_xticklabels(timeLabels, rotation=50)
 
     plt.tight_layout()
-    plt.show()
+
     # fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+
+    fig2, ax2 = plt.subplots(figsize=(10,7))
+    sns.heatmap(pdfArrDict['Axion'], ax=ax2)
+    ax2.set_title('Axion PDF')
+    ax2.set_xlabel('Time')
+    ax2.set_ylabel('Energy (keV)')
+    ax2.invert_yaxis()
+    ax2.locator_params(axis='y', nbins=len(energyBins[::50]))
+    ax2.locator_params(axis='x', nbins=5)
+    ax2.set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
+    ax2.set_xticklabels(timeLabels, rotation=30)
+    plt.tight_layout()
+    fig2.savefig('{}/BraggAxion.png'.format(os.environ['LATDIR']+'/plots/Axion'))
+    plt.show()
+
 
 
 def generateLivetimeMask(timeBinLowEdge, AxionShape):
