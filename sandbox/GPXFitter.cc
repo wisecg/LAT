@@ -122,7 +122,7 @@ GPXFitter::~GPXFitter()
 }
 
 // Constructs model PDF, use only after LoadData or else!
-void GPXFitter::ConstructPDF(bool bNoEff, bool bBDM)
+void GPXFitter::ConstructPDF(bool bNoEff)
 {
   if (bNoEff) fSavePrefix += "NoEff";
 
@@ -148,6 +148,19 @@ void GPXFitter::ConstructPDF(bool bNoEff, bool bBDM)
     RooDataHist axionRooHist("axion", "Axion Histogram", *fEnergy, Import(*axionSpec));
     fEnergy->setRange(fFitMin, fFitMax);
     RooHistPdf axionPdf("axionPdf", "AxionPdf", *fEnergy, axionRooHist, 1);
+
+    TFile *gausFile = new TFile(Form("%s/GausCosmoPDFs.root", tritDir.c_str()));
+    TH1D *Ge68LSpec = dynamic_cast<TH1D*>(gausFile->Get("hGe68L"));
+    TH1D *V49Spec = dynamic_cast<TH1D*>(gausFile->Get("hV49"));
+    TH1D *Cr51Spec = dynamic_cast<TH1D*>(gausFile->Get("hCr51"));
+    TH1D *Mn54Spec = dynamic_cast<TH1D*>(gausFile->Get("hMn54"));
+    TH1D *Fe55Spec = dynamic_cast<TH1D*>(gausFile->Get("hFe55"));
+    TH1D *Co57Spec = dynamic_cast<TH1D*>(gausFile->Get("hCo57"));
+    TH1D *Zn65Spec = dynamic_cast<TH1D*>(gausFile->Get("hZn65"));
+    TH1D *Ga68Spec = dynamic_cast<TH1D*>(gausFile->Get("hGa68"));
+    TH1D *Ge68Spec = dynamic_cast<TH1D*>(gausFile->Get("hGe68"));
+    TH1D *As73Spec = dynamic_cast<TH1D*>(gausFile->Get("hAs73"));
+    TH1D *Pb210Spec = dynamic_cast<TH1D*>(gausFile->Get("hPb210"));
 
     TFile *pb210File = new TFile(Form("%s/Pb210PDFs_Full.root", tritDir.c_str()));
     TH1D *pb210Spec = dynamic_cast<TH1D*>(pb210File->Get("hPb210"));
@@ -207,7 +220,7 @@ void GPXFitter::ConstructPDF(bool bNoEff, bool bBDM)
         fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5C_Enr_M1")));
         fEffSpec->Scale(1./(fExposureMap[fDS][0]));
       }
-      else if (fMode == "M2All")
+      else if (fMode == "M2LowBkg")
       {
         fEffSpec = dynamic_cast<TH1D*>(effFile->Get("hDS4_Enr_M2"));
         fEffSpec->Add(dynamic_cast<TH1D*>(effFile->Get("hDS5A_Enr_M2")));
@@ -240,64 +253,58 @@ void GPXFitter::ConstructPDF(bool bNoEff, bool bBDM)
     {
       xVal = pb210Spec->GetBinCenter(i);
       effVal = fEffSpec->GetBinContent(fEffSpec->FindBin(xVal));
+
       // If this flag is activated, all PDFs are generated with no efficiency function!
       if (bNoEff) effVal = 1.;
+
       tritSpec->SetBinContent(i, tritSpec->GetBinContent(i)*effVal);
       pb210Spec->SetBinContent(i, pb210Spec->GetBinContent(i)*effVal);
       bkgSpec->SetBinContent(i, 1./((fFitMax-fFitMin)/0.1)*effVal);
+
+      Ge68LSpec->SetBinContent(i, Ge68LSpec->GetBinContent(i)*effVal);
+      V49Spec->SetBinContent(i, V49Spec->GetBinContent(i)*effVal);
+      Cr51Spec->SetBinContent(i, Cr51Spec->GetBinContent(i)*effVal);
+      Mn54Spec->SetBinContent(i, Mn54Spec->GetBinContent(i)*effVal);
+      Fe55Spec->SetBinContent(i, Fe55Spec->GetBinContent(i)*effVal);
+      Co57Spec->SetBinContent(i, Co57Spec->GetBinContent(i)*effVal);
+      Zn65Spec->SetBinContent(i, Zn65Spec->GetBinContent(i)*effVal);
+      Ga68Spec->SetBinContent(i, Ga68Spec->GetBinContent(i)*effVal);
+      Ge68Spec->SetBinContent(i, Ge68Spec->GetBinContent(i)*effVal);
+      As73Spec->SetBinContent(i, As73Spec->GetBinContent(i)*effVal);
+      Pb210Spec->SetBinContent(i, Pb210Spec->GetBinContent(i)*effVal);
     }
 
     RooDataHist tritRooHist("tritBulk", "Tritium Histogram (Bulk)", *fEnergy, Import(*tritSpec));
     RooDataHist pb210RooHist("pb210", "Pb210 Histogram", *fEnergy, Import(*pb210Spec));
     RooDataHist bkgRooHist("bkg", "Background Histogram", *fEnergy, Import(*bkgSpec));
 
+    RooDataHist Ge68LRooHist("Ge68L", "Ge68L Histogram", *fEnergy, Import(*Ge68LSpec));
+    RooDataHist V49RooHist("V49", "V49 Histogram", *fEnergy, Import(*V49Spec));
+    RooDataHist Cr51RooHist("Cr51", "Cr51 Histogram", *fEnergy, Import(*Cr51Spec));
+    RooDataHist Mn54RooHist("Mn54", "Mn54 Histogram", *fEnergy, Import(*Mn54Spec));
+    RooDataHist Fe55RooHist("Fe55", "Fe55 Histogram", *fEnergy, Import(*Fe55Spec));
+    RooDataHist Co57RooHist("Co57", "Co57 Histogram", *fEnergy, Import(*Co57Spec));
+    RooDataHist Zn65RooHist("Zn65", "Zn65 Histogram", *fEnergy, Import(*Zn65Spec));
+    RooDataHist Ga68RooHist("Ga68", "Ga68 Histogram", *fEnergy, Import(*Ga68Spec));
+    RooDataHist Ge68RooHist("Ge68", "Ge68 Histogram", *fEnergy, Import(*Ge68Spec));
+    RooDataHist As73RooHist("As73", "As73 Histogram", *fEnergy, Import(*As73Spec));
+    RooDataHist Pb210RooHist("Pb210", "Pb210 Histogram", *fEnergy, Import(*Pb210Spec));
+
     RooHistPdf tritPdf("tritPdf", "TritiumPdf", *fEnergy, tritRooHist, 1);
     RooHistPdf pb210Pdf("pb210Pdf", "Pb210Pdf", *fEnergy, pb210RooHist, 1);
     RooHistPdf bkgPdf("bkgPdf", "BkgPdf", *fEnergy, bkgRooHist, 1);
 
-    RooRealVar Ge68L_mean("Ge68L_mean", "Ge68L_mean", 1.3);
-    RooRealVar Ge68L_sigma("Ge68L_sigma", "Ge68L_sigma", GetSigma(1.3));
-    RooGaussian Ge68L_gauss("Ge68L_gauss", "Ge68L Gaussian", *fEnergy, Ge68L_mean, Ge68L_sigma);
-
-    RooRealVar V49_mean("V49_mean", "V49_mean", 4.97);
-    RooRealVar V49_sigma("V49_sigma", "V49_sigma", GetSigma(4.97));
-    RooGaussian V49_gauss("V49_gauss", "V49 Gaussian", *fEnergy, V49_mean, V49_sigma);
-
-    RooRealVar Cr51_mean("Cr51_mean", "Cr51_mean", 5.46);
-    RooRealVar Cr51_sigma("Cr51_sigma", "Cr51_sigma", GetSigma(5.46));
-    RooGaussian Cr51_gauss("Cr51_gauss", "Cr51 Gaussian", *fEnergy, Cr51_mean, Cr51_sigma);
-
-    RooRealVar Mn54_mean("Mn54_mean", "Mn54_mean", 5.99);
-    RooRealVar Mn54_sigma("Mn54_sigma", "Mn54_sigma", GetSigma(5.99));
-    RooGaussian Mn54_gauss("Mn54_gauss", "Mn54 Gaussian", *fEnergy, Mn54_mean, Mn54_sigma);
-
-    RooRealVar Fe55_mean("Fe55_mean", "Fe55_mean", 6.54);
-    RooRealVar Fe55_sigma("Fe55_sigma", "Fe55_sigma", GetSigma(6.54));
-    RooGaussian Fe55_gauss("Fe55_gauss", "Fe55 Gaussian", *fEnergy, Fe55_mean, Fe55_sigma);
-
-    RooRealVar Co57_mean("Co57_mean", "Co57_mean", 7.11);
-    RooRealVar Co57_sigma("Co57_sigma", "Co57_sigma", GetSigma(7.11));
-    RooGaussian Co57_gauss("Co57_gauss", "Co57 Gaussian", *fEnergy, Co57_mean, Co57_sigma);
-
-    RooRealVar Zn65_mean("Zn65_mean", "Zn65_mean", 8.98);
-    RooRealVar Zn65_sigma("Zn65_sigma", "Zn65_sigma", GetSigma(8.98));
-    RooGaussian Zn65_gauss("Zn65_gauss", "Zn65 Gaussian", *fEnergy, Zn65_mean, Zn65_sigma);
-
-    RooRealVar Ga68_mean("Ga68_mean", "Ga68_mean", 9.66);
-    RooRealVar Ga68_sigma("Ga68_sigma", "Ga68_sigma", GetSigma(9.66));
-    RooGaussian Ga68_gauss("Ga68_gauss", "Ga68 Gaussian", *fEnergy, Ga68_mean, Ga68_sigma);
-
-    RooRealVar Ge68_mean("Ge68_mean", "Ge68_mean", 10.37);
-    RooRealVar Ge68_sigma("Ge68_sigma", "Ge68_sigma", GetSigma(10.37));
-    RooGaussian Ge68_gauss("Ge68_gauss", "Ge68 Gaussian", *fEnergy, Ge68_mean, Ge68_sigma);
-
-    RooRealVar As73_mean("As73_mean", "As73_mean", 11.3);
-    RooRealVar As73_sigma("As73_sigma", "As73_sigma", GetSigma(11.3));
-    RooGaussian As73_gauss("As73_gauss", "As73 Gaussian", *fEnergy, As73_mean, As73_sigma);
-
-    RooRealVar Pb210_mean("Pb210_mean", "Pb210_mean", 46.54);
-    RooRealVar Pb210_sigma("Pb210_sigma", "Pb210_sigma", GetSigma(46.54));
-    RooGaussian Pb210_gauss("Pb210_gauss", "Pb210 Gaussian", *fEnergy, Pb210_mean, Pb210_sigma);
+    RooHistPdf Ge68L_gauss("Ge68L_gauss", "Ge68L_gauss", *fEnergy, Ge68LRooHist, 1);
+    RooHistPdf V49_gauss("V49_gauss", "V49_gauss", *fEnergy, V49RooHist, 1);
+    RooHistPdf Cr51_gauss("Cr51_gauss", "Cr51_gauss", *fEnergy, Cr51RooHist, 1);
+    RooHistPdf Mn54_gauss("Mn54_gauss", "Mn54_gauss", *fEnergy, Mn54RooHist, 1);
+    RooHistPdf Fe55_gauss("Fe55_gauss", "Fe55_gauss", *fEnergy, Fe55RooHist, 1);
+    RooHistPdf Co57_gauss("Co57_gauss", "Co57_gauss", *fEnergy, Co57RooHist, 1);
+    RooHistPdf Zn65_gauss("Zn65_gauss", "Zn65_gauss", *fEnergy, Zn65RooHist, 1);
+    RooHistPdf Ga68_gauss("Ga68_gauss", "Ga68_gauss", *fEnergy, Ga68RooHist, 1);
+    RooHistPdf Ge68_gauss("Ge68_gauss", "Ge68_gauss", *fEnergy, Ge68RooHist, 1);
+    RooHistPdf As73_gauss("As73_gauss", "As73_gauss", *fEnergy, As73RooHist, 1);
+    RooHistPdf Pb210_gauss("Pb210_gauss", "Pb210_gauss", *fEnergy, Pb210RooHist, 1);
 
     // Normalization parameters
     // Make names pretty for plots
@@ -381,11 +388,11 @@ void GPXFitter::DrawBasic(double binSize, bool drawLabels, bool drawResid, bool 
     fRealData->plotOn(frameFit);
     fModelPDF->plotOn(frameFit, LineColor(kBlue));
     fModelPDF->plotOn(frameFit, Components("tritPdfe"), LineColor(kRed), LineStyle(kDashed));
-    fModelPDF->plotOn(frameFit, Components("BkgPolye"), LineColor(kGreen), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("BkgPolye"), LineColor(kGreen+1), LineStyle(kDashed));
     fModelPDF->plotOn(frameFit, Components("Ge68_gausse"), LineColor(kMagenta), LineStyle(kDashed));
-    fModelPDF->plotOn(frameFit, Components("Mn54_gausse"), LineColor(kMagenta), LineStyle(kDashed));
-    fModelPDF->plotOn(frameFit, Components("Fe55_gausse"), LineColor(kMagenta), LineStyle(kDashed));
-    fModelPDF->plotOn(frameFit, Components("Zn65_gausse"), LineColor(kMagenta), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Mn54_gausse"), LineColor(kMagenta+1), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Fe55_gausse"), LineColor(kYellow+1), LineStyle(kDashed));
+    fModelPDF->plotOn(frameFit, Components("Zn65_gausse"), LineColor(kMagenta-1), LineStyle(kDashed));
     fModelPDF->plotOn(frameFit, Components("Pb210_gausse"), LineColor(kBlack), LineStyle(kDashed));
     frameFit->SetTitle("");
 
@@ -410,6 +417,8 @@ void GPXFitter::DrawBasic(double binSize, bool drawLabels, bool drawResid, bool 
     double feErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Fe55"))->getError();
     double mnVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Mn54"))->getValV();
     double mnErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Mn54"))->getError();
+    double pbVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Pb210"))->getValV();
+    double pbErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Pb210"))->getError();
     double bkgVal = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Bkg"))->getValV();
     double bkgErr = dynamic_cast<RooRealVar*>(fFitResult->floatParsFinal().find("Bkg"))->getError();
 
@@ -426,14 +435,24 @@ void GPXFitter::DrawBasic(double binSize, bool drawLabels, bool drawResid, bool 
       leg->AddText("Total Model");
       dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kBlue);
       leg->AddText(Form("Tritium (Uncorrected): %.3f #pm %.3f", tritVal, tritErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kRed);
       leg->AddText(Form("Tritium (Corrected): %.3f #pm %.3f", tritValCorr, tritErrCorr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kRed);
       // leg->AddText(Form("Tritium (2-4 keV): %.3f #pm %.3f", tritValCorr*0.224487, tritErrCorr*0.224487));
       leg->AddText(Form("Ge68: %.3f #pm %.3f", geVal, geErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kMagenta);
       leg->AddText(Form("Ga68: %.3f #pm %.3f", gaVal, gaErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kBlue+1);
       leg->AddText(Form("Zn65: %.3f #pm %.3f", znVal, znErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kMagenta-1);
       leg->AddText(Form("Fe55: %.3f #pm %.3f", feVal, feErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kYellow+1);
       leg->AddText(Form("Mn54: %.3f #pm %.3f", mnVal, mnErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kMagenta+1);
+      leg->AddText(Form("Pb210: %.3f #pm %.3f", pbVal, pbErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kBlack);
       leg->AddText(Form("Bkg: %.3f #pm %.3f", bkgVal, bkgErr));
+      dynamic_cast<TText*>(leg->GetListOfLines()->Last())->SetTextColor(kGreen+1);
       frameFit->addObject(leg);
     }
 

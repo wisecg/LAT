@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	}
 
 	vector<string> dsList = {"0", "1", "2", "3", "4", "5A", "5B", "5C", "All", "LowBkg"};
-	vector<string> modeList = {"All", "Nat", "Enr", "M1LowBkg", "M1All", "M2All"};
+	vector<string> modeList = {"All", "Nat", "Enr", "M1LowBkg", "M1All", "M2LowBkg"};
 
 	string fDS = argv[1];
 	float fitMin = atof(argv[2]);
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	if(bMode == 0)
 	{
 		cout << fMode << " is not an available mode option!" << endl;
-		cout << "Options are: All, Nat, Enr, M1LowBkg, M1All, M2All" << endl;
+		cout << "Options are: All, Nat, Enr, M1LowBkg, M1All, M2LowBkg" << endl;
 		return 0;
 	}
 
@@ -108,23 +108,23 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
 
 		string inDir = "/Users/brianzhu/project/LATv2/bkg/cut/final95";
 		string theCut = "";
-    int bNat = 0;
     theCut += Form("trapENFCal>=%.2f&&trapENFCal<=%.2f", fitMin, fitMax); // Energy cut for fit range
 
 		// Set cut mode: Enr, Nat, All, or specific detector combo
 		if(fMode == "Nat")
 		{
       theCut += "&&isNat"; // Set Enriched or Natural
-      bNat = 1;
-    }
+			fitter->SetExposureMap(expoFull);
+		}
     else if(fMode == "Enr")
 		{
       theCut += "&&isEnr";
-      bNat = 0;
-    }
+			fitter->SetExposureMap(expoFull);
+		}
 		else if(fMode == "All")
 		{
 			theCut += "";
+			fitter->SetExposureMap(expoFull);
 		}
 		else if(fMode == "M1LowBkg")
 		{
@@ -136,7 +136,7 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
 			theCut += "&&(C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==3)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3)";
 			fitter->SetExposureMap(expoM1);
 		}
-		else if(fMode == "M2All")
+		else if(fMode == "M2LowBkg")
 		{
 			theCut += "&&(C==2&&P==1&&D==4)||(C==2&&P==3&&D==1)||(C==2&&P==3&&D==2)||(C==2&&P==6&&D==2)||(C==2&&P==7&&D==3)";
 			fitter->SetExposureMap(expoM2);
@@ -175,7 +175,9 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
     fitter->LoadChainData(skimTree, theCut);
 
     // Construct PDF and do fit
-    fitter->ConstructPDF(true);
+		bool bNoEff = false; // Turns on-off efficiency
+
+		fitter->ConstructPDF(bNoEff);
 		fitter->DoFit("Minuit");
 		fitter->GetFitResult()->Print("v");
 		fitter->DrawBasic(0.3, true, false, false);

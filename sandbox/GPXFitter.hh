@@ -36,7 +36,7 @@ class GPXFitter {
 		virtual ~GPXFitter();
 
         // Constructs model PDF -- MUST be called after LoadData()!
-        virtual void ConstructPDF(bool bEff = false, bool bBDM = false);
+        virtual void ConstructPDF(bool bNoEff = false);
 
         // Do the fit
         // Set minimizer type here also... there's like Minuit, Minuit2, probably more
