@@ -10,18 +10,19 @@ sys.argv.append("-b")
 import ROOT
 from ROOT import RooFit as RF
 
-dsList = [0,1,2,3,4,"5A","5B","5C"]
-# dsList = [1,2,3,4,"5A","5B","5C"]
+# dsList = [0,1,2,3,4,"5A","5B","5C"]
+dsList = [1,2,3,4,"5A","5B","5C"]
 # dsList = [1,2,3,4,"5B","5C"]
 enr = True
 eff = True
-eLo, eHi, epb = 1.5, 20, 0.4
+eLo, eHi, epb = 1.5, 30, 0.2
 pLo, pHi, ppb = 0, 30, 0.05
 
 nB = int((eHi-eLo)/epb)
 nBP = int((pHi-pLo)/ppb)
 
-bkgModel = ["trit","flat","55Fe","68Ge","68Ga","65Zn","54Mn","49V","210Pb_46","axion"]
+bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V"]
+bkgModelPeaks = []
 
 bkgVals = {
     # key,      [muE, init guess amp, ampLo, ampHi]
@@ -34,7 +35,7 @@ bkgVals = {
     "49V":      [4.97, 0, 0, 1000],
     "51Cr":     [5.46, 0, 0, 1000], # not in cdms
     "54Mn":     [5.99, 0, 0, 1000],
-    "55Fe":     [6.54, 3, 0, 1000],
+    "55Fe":     [6.54, 50, 0, 1000],
     "57Co":     [7.11, 0, 0, 1000],
     "65Zn":     [8.98, 9, 0, 1000],
     "65Zn_L":   [1.10, 0, 0, 1000],
@@ -42,7 +43,7 @@ bkgVals = {
     "68Ge":     [10.37, 50, 0, 1000],
     "68Ge_L":   [1.29, 1, 0, 1000],
     "73As":     [11.10, 0, 0, 1000], # not in cdms
-    "210Pb_46": [46.54, 10, 0, 1000],
+    "210Pb_46": [46.54, 50, 0, 1000],
     "210Pb_10": [10.8, 1, 0, 1000],
     "axSi_a":   [1.86, 0, 0, 1000], # k_a1,a2 (lab 1.739, diff 0.12)
     "axSi_b":   [2.00, 0, 0, 1000], # k_b     (lab 1.836, diff 0.16)
@@ -50,26 +51,31 @@ bkgVals = {
     "axS_b":    [2.62, 0, 0, 1000], # k_b     (lab 2.464, diff 0.16)
     "axFe_a":   [6.68, 0, 0, 1000], # k_a   (combination 6.668, 6.701, heliumlike (k_a))
     "axFe_b":   [6.96, 0, 0, 1000], # k_b   (combination 6.952, 6.973, hydrogenlike (k_b))
+    "axFe_M1":  [14.4, 0, 0, 1000]
     }
 
 from ROOT import gROOT
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
-gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
+# gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
 
 def main(argv):
 
     initialize()
-    loadDataMJD()
+    # loadDataMJD()
     # getUnscaledPDFs(makePlots=True)
-    fitModel(makePlots=False)
-    plotFit(plotRate=True)
-    getProfile()
-    plotProfile()
+    # testFunc()
+    # fitModel(makePlots=False)
+    # fitFixedModel()
+    plotFit(plotRate=False, plotFixed=True)
+    # getProfile()
+    # plotProfile()
 
 
 def initialize():
-    """ For this dsList, load the efficiency curves and exposure into globals """
-    global effLim, effMax, xEff, detEff, dsExpo, detExp
+    """ For this dsList, load the efficiency curves and exposure into globals.
+    Also tweak the bkgModelPeaks list to only include peaks in the energy range.
+    """
+    global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
 
     # load efficiency correction
     f1 = np.load('%s/data/lat-expo-efficiency-all-e95.npz' % dsi.latSWDir)
@@ -101,6 +107,16 @@ def initialize():
     # plt.tight_layout()
     # plt.show()
     # exit()
+
+    # fix the bkg peaks list
+    bkgPeaksInRange = []
+    for pk in bkgModelPeaks:
+        opt = "enr" if enr else "nat"
+        mu, sig = bkgVals[pk][0], getSigma(bkgVals[pk][0],opt)
+        if mu+5*sig <= eLo or mu-5*sig >= eHi: continue
+        bkgPeaksInRange.append(pk)
+    bkgModelPeaks = bkgPeaksInRange
+    print("Floating peaks in %.1f -- %.1f keV range:" % (eLo, eHi), bkgModelPeaks)
 
 
 def loadDataMJD():
@@ -326,6 +342,7 @@ def getBkgPDF(eff=False):
     bkg = TH1D("bkg","flat BG",nBP,eLo,eHi)
     for iB in range(nBP+1):
         bkg.SetBinContent(iB, 1) # the initial amplitude doesn't matter b/c we normalize to 1 (no width option)
+    bkg.SetBinContent(nBP+1, 1)
     bkg.Scale(1 / bkg.Integral(bkg.FindBin(eLo), bkg.FindBin(eHi)))
 
     if eff:
@@ -341,9 +358,6 @@ def peakPDF(pkE, sig, name, eff=False):
     """
     from ROOT import TH1D
 
-    def gaus(x, a, x0, sigma):
-        return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
-
     xLo = pkE-5*sig
     xHi = pkE+5*sig
     if xHi < eLo or xLo > eHi:
@@ -351,7 +365,7 @@ def peakPDF(pkE, sig, name, eff=False):
 
     # make a simple gaussian
     x = np.arange(eLo, eHi, ppb)
-    hP = gaus(x, 1, pkE, sig)
+    hP = wl.gauss_function(x, 1, pkE, sig)
 
     # make the TH1D
     nB2 = int((eHi-eLo)/ppb)
@@ -370,7 +384,7 @@ def peakPDF(pkE, sig, name, eff=False):
 def normPDF(x, y, xLo, xHi):
     """ Normalize a numpy pdf to 1 in the global
     energy range (not the range the pdf was generated) """
-    idx = np.where((x>=xLo)&(x<=xHi))
+    idx = np.where((x >= xLo)&(x <= xHi + epb/2))
     return x[idx], np.divide(y, np.sum(y[idx]))[idx]
 
 
@@ -480,12 +494,21 @@ def getSigma(E, opt=""):
 
 
 def getHistList(hName=None):
-    """ Loads TH1D's for every component of the background model. """
+    """ Loads TH1D's for the background model. """
     from ROOT import TFile, TH1D
 
-    hList = []
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
-    for name in [n for n in bkgVals if n in bkgModel]:
+
+    if hName is not None:
+        if hName == "axion":
+            hB = tf2.Get("h4")
+            if eff: hB = getEffCorrTH1D(hB, pLo, pHi, nBP)
+            hB.SetDirectory(0)
+            return hB
+
+    hList = []
+    for name in [n for n in bkgVals if n in bkgModelHists]:
+
         pars = bkgVals[name]
         if name=="flat":
             hB = getBkgPDF(eff)
@@ -507,12 +530,50 @@ def getHistList(hName=None):
 
         hB.SetDirectory(0) # detach "hB" from the "tf2" file
 
-        if hName == name:
-            return hB
-
         hList.append([hB, name])
 
     return hList
+
+
+def testFunc():
+    """ Low-priority to-do: it would be neat to be able to efficiency correct the RooGaussian
+    for the peaks.  I was looking at RooGenericPdf but got sidetracked. """
+
+    from ROOT import TFile, TCanvas
+
+    tf = TFile("%s/data/latDS%s.root" % (dsi.latSWDir,''.join([str(d) for d in dsList])))
+    tt = tf.Get("skimTree")
+    tCut = "isEnr==1" if enr is True else "isEnr==0"
+    hitE = ROOT.RooRealVar("trapENFCal", "Energy", eLo, eHi, "keV")
+    hEnr = ROOT.RooRealVar("isEnr", "isEnr", 0, 1, "")
+    fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr), tCut)
+
+    name = "68Ge"
+    opt = "enr" if eff else "nat"
+    mu, sig, amp = bkgVals[name][0], getSigma(bkgVals[name][0], opt), bkgVals[name][1]
+    pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp)
+    pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu)
+    pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig)
+    pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
+    pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
+
+    fSpec = hitE.frame(RF.Range(eLo,eHi), RF.Bins(nB))
+    fData.plotOn(fSpec)
+
+    pE.plotOn(fSpec, RF.Normalization(amp, ROOT.RooAbsReal.Raw))
+
+    c = TCanvas("c","c", 1400, 1000)
+    fSpec.SetTitle("")
+    fSpec.Draw()
+    c.Print("%s/plots/pk-before.pdf" % dsi.latSWDir)
+    c.Clear()
+
+    xP = np.arange(eLo, eHi, ppb)
+    hP = wl.gauss_function(xP, 20, mu, sig)
+    hP /= np.sum(hP)
+    print(np.sum(hP)*amp)
+    plt.plot(xP, hP * amp / ppb, c='b', lw=2, label="name %d" % amp)
+    plt.show()
 
 
 def fitModel(makePlots=False):
@@ -528,18 +589,17 @@ def fitModel(makePlots=False):
     # hitW = ROOT.RooRealVar("weight", "weight", 1, 1000, "")
     fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr), tCut)
     # fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr, hitW), "", "weight")
-    fitWorkspace = ROOT.RooWorkspace("fitWorkspace","Fit Workspace")
-    getattr(fitWorkspace,'import')(hitE)
-    getattr(fitWorkspace,'import')(fData)
-    # getattr(fitWorkspace,'import')(fWeight)
+    fitWS = ROOT.RooWorkspace("fitWS","Fit Workspace")
+    getattr(fitWS,'import')(hitE)
+    getattr(fitWS,'import')(fData)
+    # getattr(fitWS,'import')(hitW)
 
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     pdfList = ROOT.RooArgList("shapes")
 
     # === background model ===
-    hList = getHistList()
-    bkgList = []
-    for h in hList:
+    histModel = []
+    for h in getHistList():
         hB, name = h[0], h[1]
         pars = bkgVals[name]
         bkN = ROOT.RooRealVar("amp-"+name, "amp-"+name, pars[1], pars[2], pars[3])
@@ -547,10 +607,23 @@ def fitModel(makePlots=False):
         bkPDF = ROOT.RooHistPdf("pdf-"+name, "pdf-"+name, ROOT.RooArgSet(hitE), bkDH, 2)
         bkExt = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, bkPDF, bkN)
         hitE.setRange(eLo, eHi)
-        bkgList.append([bkExt, name, bkN, bkDH, bkPDF])
+        histModel.append([bkExt, name, bkN, bkDH, bkPDF, hB])
+
+    peakModel = []
+    for name in bkgModelPeaks:
+        opt = "enr" if eff else "nat"
+        mu, sig, amp = bkgVals[name][0], getSigma(bkgVals[name][0], opt), bkgVals[name][1]
+        pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, bkgVals[name][2], bkgVals[name][3])
+        pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu, mu - epb, mu + epb)
+        pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sig - 0.05, sig + 0.05)
+        pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
+        pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
+        peakModel.append([pE, name, mu, sig, amp, pN, pM, pS, pG])
+
+    bkgModel = histModel + peakModel
 
     # this is separate b/c all the RooVars have to remain in memory
-    for bkg in bkgList:
+    for bkg in bkgModel:
         pdfList.add(bkg[0])
 
     model = ROOT.RooAddPdf("model", "total PDF", pdfList)
@@ -574,9 +647,10 @@ def fitModel(makePlots=False):
         nData = fData.numEntries()
 
         nTot = 0
-        for i, ext in enumerate(bkgList):
+        bkgModel = histModel + peakModel
+        for i, ext in enumerate(bkgModel):
             extPDF, name = ext[0], ext[1]
-            col = gStyle.GetColorPalette(int(nCol/len(bkgList) * i))
+            col = gStyle.GetColorPalette(int(nCol/len(bkgModel) * i))
             extPDF.plotOn(fSpec, RF.LineColor(col), RF.Normalization(bkgVals[name][1], ROOT.RooAbsReal.Raw), RF.Name(name))
             leg.AddEntry(fSpec.findObject(name), name, "l")
             nTot += bkgVals[name][1]
@@ -602,18 +676,24 @@ def fitModel(makePlots=False):
         hErr = np.asarray([np.sqrt(h) for h in hData])
         plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1) # pretty convincing rooplot fake
 
-        cmap = plt.cm.get_cmap('jet',len(hList)+2)
+        cmap = plt.cm.get_cmap('jet',len(bkgModel))
         pdfs = []
-        for i, h in enumerate(hList):
-            name = h[1]
-            x, y, xpb = wl.npTH1D(h[0])
-            x, y = normPDF(x, y, eLo, eHi)
-            nCts = bkgVals[h[1]][1] # the initial guess
-            if abs(nCts - np.sum(y*nCts)) > 2:
-                print("norm error, %s  nCts %d  y*nCts %d" % (name, nCts, np.sum(y*nCts)))
-            # plt.step(x, y * nCts / xpb, c=cmap(i), lw=2, label="%s init cts: %d" % (name, nCts)) # plot the histo
+        for i, bkg in enumerate(bkgModel):
+            name = bkg[1]
 
-            xS = np.arange(eLo, eHi, 0.001) # plot a smoothed version
+            if name in bkgModelHists:
+                x, y, xpb = wl.npTH1D(bkg[5])
+                x, y = normPDF(x, y, eLo, eHi)
+                nCts = bkgVals[bkg[1]][1]
+
+            elif name in bkgModelPeaks:
+                mu, sig, nCts = bkg[2], bkg[3], bkg[4]
+                x = np.arange(eLo, eHi, ppb)
+                xpb = ppb
+                y = wl.gauss_function(x, 20, mu, sig)
+                y /= np.sum(y)
+
+            xS = np.arange(eLo, eHi, 0.001)
             yS = spline(x - xpb/2, y, xS)
             plt.plot(xS, yS * nCts / xpb, c=cmap(i), lw=2, label="%s init cts: %d" % (name, nCts))
 
@@ -625,6 +705,7 @@ def fitModel(makePlots=False):
         plt.xlabel("Energy (keV)", ha='right', x=1)
         plt.ylabel("Counts / %.1f keV" % epb, ha='right', y=1)
         plt.legend(loc=1, fontsize=12)
+        plt.minorticks_on()
         plt.xlim(eLo, eHi)
         plt.ylim(ymin=0)
         plt.tight_layout()
@@ -636,49 +717,179 @@ def fitModel(makePlots=False):
     minimizer.setPrintLevel(-1)
     minimizer.setStrategy(2)
     minimizer.migrad()
-    fitResult = minimizer.save()
+    fitRes = minimizer.save()
 
     # according to the internet, covQual==3 is a good indicator that it converged
-    print("Fitter is done. Fit Cov Qual:", fitResult.covQual())
+    print("Fitter is done. Fit Cov Qual:", fitRes.covQual())
 
     # save workspace to a TFile
-    getattr(fitWorkspace,'import')(fitResult)
-    getattr(fitWorkspace,'import')(model)
-    tf3 = TFile("%s/data/fitWorkspace.root" % dsi.latSWDir,"RECREATE")
-    fitWorkspace.Write()
+    getattr(fitWS,'import')(fitRes)
+    getattr(fitWS,'import')(model)
+    tf3 = TFile("%s/data/fitWS.root" % dsi.latSWDir,"RECREATE")
+    fitWS.Write()
     tf3.Close()
 
-    # could also return fit results directly here (in case we need to repeat the fit a buncha times ...)
+    fitVals = {}
+    nPars = fitRes.floatParsFinal().getSize()
+    for i in range(nPars):
+        fp = fitRes.floatParsFinal()
+        name = fp.at(i).GetName()
+        fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
+        fitVals[name] = [fitVal, fitErr]
+    np.savez("%s/data/sf6-results.npz" % dsi.latSWDir, fitVals)
 
 
-def plotFit(plotRate=False):
+def fitFixedModel():
+
+    from ROOT import TFile
+
+    newPDF = ["axion"]
+
+    f = np.load("%s/data/sf6-results.npz" % dsi.latSWDir)
+    fitVals = f['arr_0'].item()
+
+    # === load data into workspace ===
+
+    tf = TFile("%s/data/latDS%s.root" % (dsi.latSWDir,''.join([str(d) for d in dsList])))
+    tt = tf.Get("skimTree")
+    tCut = "isEnr==1" if enr is True else "isEnr==0"
+    hitE = ROOT.RooRealVar("trapENFCal", "Energy", eLo, eHi, "keV")
+    hEnr = ROOT.RooRealVar("isEnr", "isEnr", 0, 1, "")
+    fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr), tCut)
+
+    fitWS2 = ROOT.RooWorkspace("fitWS2","Fit Workspace (fixed)")
+    getattr(fitWS2,'import')(hitE)
+    getattr(fitWS2,'import')(fData)
+
+    hList = getHistList()
+    for n in newPDF:
+        hList.append([getHistList(n),n])
+
+    # === re-declare background model with fixed fit results ===
+    histModel = []
+    for h in hList:
+        hB, name = h[0], h[1]
+        if name in newPDF:
+            pars = bkgVals[name]
+            bkN = ROOT.RooRealVar("amp-"+name, "amp-"+name, pars[1], pars[2], pars[3])
+            bkDH = ROOT.RooDataHist("dh-"+name, "dh-"+name, ROOT.RooArgList(hitE), RF.Import(hB))
+            bkPDF = ROOT.RooHistPdf("pdf-"+name, "pdf-"+name, ROOT.RooArgSet(hitE), bkDH, 2)
+            bkExt = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, bkPDF, bkN)
+        else:
+            bkN = ROOT.RooRealVar("amp-"+name, "amp-"+name, fitVals["amp-"+name][0])
+            bkDH = ROOT.RooDataHist("dh-"+name, "dh-"+name, ROOT.RooArgList(hitE), RF.Import(hB))
+            bkPDF = ROOT.RooHistPdf("pdf-"+name, "pdf-"+name, ROOT.RooArgSet(hitE), bkDH, 2)
+            bkExt = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, bkPDF, bkN)
+        hitE.setRange(eLo, eHi)
+        histModel.append([bkExt, name, bkN, bkDH, bkPDF, hB])
+
+    peakModel = []
+    for name in bkgModelPeaks:
+        opt = "enr" if eff else "nat"
+        mu, sig, amp = bkgVals[name][0], getSigma(bkgVals[name][0], opt), bkgVals[name][1]
+        pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, bkgVals[name][2], bkgVals[name][3])
+        pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu, mu - epb, mu + epb)
+        pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sig - 0.05, sig + 0.05)
+        pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
+        pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
+        peakModel.append([pE, name, mu, sig, amp, pN, pM, pS, pG])
+
+    bkgModel = histModel + peakModel
+
+    pdfList = ROOT.RooArgList("shapes")
+    for bkg in bkgModel: pdfList.add(bkg[0])
+    model2 = ROOT.RooAddPdf("model2", "total PDF", pdfList)
+
+    # === alright, now run the fit and output to the workspace
+    minimizer = ROOT.RooMinimizer( model2.createNLL(fData, RF.NumCPU(2,0), RF.Extended(True)) )
+    minimizer.setPrintLevel(-1)
+    minimizer.setStrategy(2)
+    minimizer.migrad()
+    fitRes2 = minimizer.save()
+    print("Fitter is done. Fit Cov Qual:", fitRes2.covQual())
+
+    # save workspace to a TFile
+    getattr(fitWS2,'import')(fitRes2)
+    getattr(fitWS2,'import')(model2)
+    tf3 = TFile("%s/data/fitWS2.root" % dsi.latSWDir,"RECREATE")
+    fitWS2.Write()
+    tf3.Close()
+
+
+
+def plotFit(plotRate=False, plotFixed=False):
 
     from ROOT import TFile, TCanvas, TH1D, TLegend, gStyle
 
-    f = TFile("%s/data/fitWorkspace.root" % dsi.latSWDir)
-    fitWorkspace = f.Get("fitWorkspace")
-    fData = fitWorkspace.allData().front()
-    fitResult = fitWorkspace.allGenericObjects().front()
-    nPars = fitResult.floatParsFinal().getSize()
-    hitE = fitWorkspace.var("trapENFCal")
-    model = fitWorkspace.pdf("model")
+    f = TFile("%s/data/fitWS.root" % dsi.latSWDir)
+    fitWS = f.Get("fitWS")
+    fData = fitWS.allData().front()
+    fitRes = fitWS.allGenericObjects().front()
+    nPars = fitRes.floatParsFinal().getSize()
+    hitE = fitWS.var("trapENFCal")
+    model = fitWS.pdf("model")
     nData = fData.numEntries()
-    fCov = fitResult.covQual()
-    # fitWorkspace.Print()
+    fCov = fitRes.covQual()
+    # fitWS.Print()
+
+    if plotFixed:
+        print("hi i here")
+        f1 = TFile("%s/data/fitWS2.root" % dsi.latSWDir)
+        fitWS2 = f1.Get("fitWS")
+        fitWS2.Print()
+        fitRes2 = fitWS.allGenericObjects().front()
+
+        nPars = fitRes2.floatParsFinal().getSize()
+        fitVals_f = {}
+        for i in range(nPars):
+            fp = fitRes2.floatParsFinal()
+            name = fp.at(i).GetName()
+            fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
+            fitVals_f[name] = [fitVal, fitErr]
+            print("fitVals:",name, fitVals_f[name])
+
+        exit()
+
+    exit()
 
     # === get fit results: {name : [nCts, err]} ===
     fitVals = {}
     for i in range(nPars):
-        fp = fitResult.floatParsFinal()
+        fp = fitRes.floatParsFinal()
         name = fp.at(i).GetName()
         fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
-        if "amp" in name:
-            fitVals[name.split('-')[1]] = [fitVal, fitErr]
+        fitVals[name] = [fitVal, fitErr]
+        print("fitVals:",name, fitVals[name])
 
-    # for f in fitVals:
-        # print(f, fitVals[f])
+    if plotFixed:
+        fitVals_f = {}
+        nPars_f = fitRes2.floatParsFinal().GetSize()
+        for i in range(nPars_f):
+            fp = fitRes2.floatParsFinal()
+            name = fp.at(i).GetName()
+            fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
+            fitVals_f[name] = [fitVal, fitErr]
+            print("fitVals_f:",name, fitVals[name])
+
+    exit()
+
+    # compare the diffs
+    bkgModelPeaksInRange = []
+    for name in bkgModelPeaks:
+        mu, sig, amp = fitVals["mu-"+name], fitVals["sig-"+name], fitVals["amp-"+name]
+        litE = bkgVals[name][0]
+        dMu = litE - mu[0]
+        opt = "enr" if enr else "nat"
+        dSig = getSigma(litE,opt) - sig[0]
+        bkgModelPeaksInRange.append(name)
+
+        print(name)
+        print("E   --  lit %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (litE, mu[0], dMu, 100*dMu/litE))
+        print("Sig -- func %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (getSigma(litE, opt), sig[0], dSig, 100*dSig/sig[0]))
 
     # === make a rooplot of the fit ===
+
+    bkgModel = bkgModelHists + bkgModelPeaksInRange
 
     leg = TLegend(0.83,0.5,0.97,0.9)
     gStyle.SetPalette(ROOT.kRainBow)
@@ -725,27 +936,38 @@ def plotFit(plotRate=False):
         hErr = np.asarray([np.sqrt(h) for h in hData]) # statistical error
         plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1)
 
-    # get the list of histograms and plot the components
-    hList = getHistList()
-    cmap = plt.cm.get_cmap('jet',len(hList)+2)
-    pdfs, pdfsCorr, nTot, nTotC = [], [], 0, 0
-    for i, h in enumerate(hList):
-        name = h[1]
-        x, y, xpb = wl.npTH1D(h[0])
-        x, y = normPDF(x, y, eLo, eHi)
-        nCts, nErr = fitVals[name] # final result
-        yc = nCts * getEffCorr(x, y, inv=True)
-        if abs(nCts - np.sum(y*nCts)) > 2:
-            print("norm error, %s  nCts %d  y*nCts %d" % (name, nCts, np.sum(y*nCts)))
-        # plt.step(x, y * nCts * (epb/xpb), c=cmap(i), lw=2, label="%s cts: %.2f±%.2f" % (name, nCts, nErr)) # plot the histo
 
-        xS = np.arange(eLo, eHi, 0.001) # plot a smoothed version
+    # plot the bkg components
+    cmap = plt.cm.get_cmap('jet',len(bkgModel))
+    pdfs, pdfsCorr = [], []
+    nTot, nTotC = 0, 0
+
+    for i, name in enumerate(bkgModel):
+
+        if name in bkgModelHists:
+            for h in getHistList():
+                if h[1]==name: hB = h[0]
+            x, y, xpb = wl.npTH1D(hB)
+            x, y = normPDF(x, y, eLo, eHi)
+            nCts, nErr = fitVals["amp-"+name][0], fitVals["amp-"+name][1]
+
+        elif name in bkgModelPeaks:
+            mu, sig, nCts = fitVals["mu-"+name][0], fitVals["sig-"+name][0], fitVals["amp-"+name][0]
+            x = np.arange(eLo, eHi, ppb)
+            xpb = ppb
+            y = wl.gauss_function(x, 20, mu, sig)
+            y /= np.sum(y)
+
+        # plot a smoothed version, like roofit does
+        xS = np.arange(eLo, eHi, 0.001)
         yS = spline(x - xpb/2, y, xS)
-        if plotRate:
-            plt.plot(xS, yS * nCts * (epb/xpb) / detExp, "--", c=cmap(i), lw=2, label="%s %.2f ± %.2f" % (name, nCts/detExp, nErr/detExp))
-        else:
-            plt.plot(xS, yS * nCts * (epb/xpb), c=cmap(i), lw=2, label="%s cts: %d" % (name, nCts))
 
+        if plotRate:
+            plt.plot(xS, yS * nCts * (epb/xpb) / detExp, c=cmap(i), lw=2, label="%s %.3f ± %.3f" % (name, nCts/detExp, nErr/detExp))
+        else:
+            plt.plot(xS, yS * nCts * (epb/xpb), c=cmap(i), lw=2, label="%s init cts: %d" % (name, nCts))
+
+        yc = nCts * getEffCorr(x, y, inv=True)
         pdfs.append([x, y, xpb, nCts])
         pdfsCorr.append([x, yc, xpb, nCts])
         nTot += nCts
@@ -766,7 +988,7 @@ def plotFit(plotRate=False):
 
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.legend(loc=1, fontsize=12)
-    plt.xticks(np.arange(int(eLo)-1, eHi+1, 5))
+    plt.minorticks_on()
     plt.xlim(eLo, eHi)
     plt.ylim(ymin=0)
     plt.tight_layout()
@@ -778,19 +1000,19 @@ def getProfile(idx=None, update=False):
     from ROOT import TFile, TCanvas
     from ROOT import RooStats as RS
 
-    f = TFile("%s/data/fitWorkspace.root" % dsi.latSWDir)
-    fitWorkspace = f.Get("fitWorkspace")
-    fData = fitWorkspace.allData().front()
-    hitE = fitWorkspace.var("trapENFCal")
-    model = fitWorkspace.pdf("model")
-    fitResult = fitWorkspace.allGenericObjects().front()
-    fPars = fitResult.floatParsFinal()
+    f = TFile("%s/data/fitWS.root" % dsi.latSWDir)
+    fitWS = f.Get("fitWS")
+    fData = fitWS.allData().front()
+    hitE = fitWS.var("trapENFCal")
+    model = fitWS.pdf("model")
+    fitRes = fitWS.allGenericObjects().front()
+    fPars = fitRes.floatParsFinal()
     nPars = fPars.getSize()
 
     # === get fit results: {name : [nCts, err]} ===
     fitVals = {}
     for i in range(nPars):
-        fp = fitResult.floatParsFinal()
+        fp = fitRes.floatParsFinal()
         name = fp.at(i).GetName()
         fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
         if "amp" in name:
@@ -802,6 +1024,9 @@ def getProfile(idx=None, update=False):
 
     # === get "true" counts (reverse efficiency correction based on fit value) ===
     hAx = getHistList("axion")
+
+    print(type(hAx))
+    exit()
     x, y, xpb = wl.npTH1D(hAx)
     x, y = normPDF(x, y, eLo, eHi)
     nCts, nErr, _ = fitVals["amp-axion"] # fit result
@@ -826,7 +1051,7 @@ def getProfile(idx=None, update=False):
 
     name = "amp-axion"
     fitVal = fitVals[name][0]
-    thisVar = fitWorkspace.var(name)
+    thisVar = fitWS.var(name)
 
     pCL = 0.9
     plc = RS.ProfileLikelihoodCalculator(fData, model, ROOT.RooArgSet(thisVar))
