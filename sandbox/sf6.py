@@ -23,6 +23,7 @@ nBP = int((pHi-pLo)/ppb)
 
 bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V"]
 bkgModelPeaks = []
+sigModel = ["axion"]
 
 bkgVals = {
     # key,      [muE, init guess amp, ampLo, ampHi]
@@ -743,8 +744,6 @@ def fitFixedModel():
 
     from ROOT import TFile
 
-    newPDF = ["axion"]
-
     f = np.load("%s/data/sf6-results.npz" % dsi.latSWDir)
     fitVals = f['arr_0'].item()
 
@@ -762,14 +761,14 @@ def fitFixedModel():
     getattr(fitWS2,'import')(fData)
 
     hList = getHistList()
-    for n in newPDF:
+    for n in sigModel:
         hList.append([getHistList(n),n])
 
     # === re-declare background model with fixed fit results ===
     histModel = []
     for h in hList:
         hB, name = h[0], h[1]
-        if name in newPDF:
+        if name in sigModel:
             pars = bkgVals[name]
             bkN = ROOT.RooRealVar("amp-"+name, "amp-"+name, pars[1], pars[2], pars[3])
             bkDH = ROOT.RooDataHist("dh-"+name, "dh-"+name, ROOT.RooArgList(hitE), RF.Import(hB))
@@ -816,7 +815,6 @@ def fitFixedModel():
     tf3.Close()
 
 
-
 def plotFit(plotRate=False, plotFixed=False):
 
     from ROOT import TFile, TCanvas, TH1D, TLegend, gStyle
@@ -828,29 +826,22 @@ def plotFit(plotRate=False, plotFixed=False):
     nPars = fitRes.floatParsFinal().getSize()
     hitE = fitWS.var("trapENFCal")
     model = fitWS.pdf("model")
-    nData = fData.numEntries()
-    fCov = fitRes.covQual()
     # fitWS.Print()
 
     if plotFixed:
-        print("hi i here")
         f1 = TFile("%s/data/fitWS2.root" % dsi.latSWDir)
-        fitWS2 = f1.Get("fitWS")
-        fitWS2.Print()
-        fitRes2 = fitWS.allGenericObjects().front()
+        fitWS2 = f1.Get("fitWS2")
+        fitRes2 = fitWS2.allGenericObjects().front()
+        nPars2 = fitRes2.floatParsFinal().getSize()
+        model2 = fitWS2.pdf("model2")
 
-        nPars = fitRes2.floatParsFinal().getSize()
-        fitVals_f = {}
-        for i in range(nPars):
+        fitVals2 = {}
+        for i in range(nPars2):
             fp = fitRes2.floatParsFinal()
             name = fp.at(i).GetName()
             fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
-            fitVals_f[name] = [fitVal, fitErr]
-            print("fitVals:",name, fitVals_f[name])
-
-        exit()
-
-    exit()
+            fitVals2[name] = [fitVal, fitErr]
+            print("fitVals2:",name, fitVals2[name])
 
     # === get fit results: {name : [nCts, err]} ===
     fitVals = {}
@@ -861,35 +852,22 @@ def plotFit(plotRate=False, plotFixed=False):
         fitVals[name] = [fitVal, fitErr]
         print("fitVals:",name, fitVals[name])
 
-    if plotFixed:
-        fitVals_f = {}
-        nPars_f = fitRes2.floatParsFinal().GetSize()
-        for i in range(nPars_f):
-            fp = fitRes2.floatParsFinal()
-            name = fp.at(i).GetName()
-            fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
-            fitVals_f[name] = [fitVal, fitErr]
-            print("fitVals_f:",name, fitVals[name])
-
-    exit()
-
+    # keep, don't delete -- this is for the floating peak study
     # compare the diffs
-    bkgModelPeaksInRange = []
-    for name in bkgModelPeaks:
-        mu, sig, amp = fitVals["mu-"+name], fitVals["sig-"+name], fitVals["amp-"+name]
-        litE = bkgVals[name][0]
-        dMu = litE - mu[0]
-        opt = "enr" if enr else "nat"
-        dSig = getSigma(litE,opt) - sig[0]
-        bkgModelPeaksInRange.append(name)
-
-        print(name)
-        print("E   --  lit %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (litE, mu[0], dMu, 100*dMu/litE))
-        print("Sig -- func %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (getSigma(litE, opt), sig[0], dSig, 100*dSig/sig[0]))
+    # for name in bkgModelPeaks:
+    #     mu, sig, amp = fitVals["mu-"+name], fitVals["sig-"+name], fitVals["amp-"+name]
+    #     litE = bkgVals[name][0]
+    #     dMu = litE - mu[0]
+    #     opt = "enr" if enr else "nat"
+    #     dSig = getSigma(litE,opt) - sig[0]
+    #
+    #     print(name)
+    #     print("E   --  lit %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (litE, mu[0], dMu, 100*dMu/litE))
+    #     print("Sig -- func %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (getSigma(litE, opt), sig[0], dSig, 100*dSig/sig[0]))
 
     # === make a rooplot of the fit ===
 
-    bkgModel = bkgModelHists + bkgModelPeaksInRange
+    bkgModel = bkgModelHists + bkgModelPeaks
 
     leg = TLegend(0.83,0.5,0.97,0.9)
     gStyle.SetPalette(ROOT.kRainBow)
@@ -905,6 +883,11 @@ def plotFit(plotRate=False, plotFixed=False):
         model.plotOn(fSpec, RF.Components(pdfName), RF.LineColor(col), RF.LineStyle(ROOT.kDashed), RF.Name(name))
         leg.AddEntry(fSpec.findObject(name), name, "l")
 
+    for i, name in enumerate(sigModel):
+        pdfName = "ext-"+name
+        model2.plotOn(fSpec, RF.Components(pdfName), RF.LineColor(ROOT.kBlack), RF.Name(name))
+        leg.AddEntry(fSpec.findObject(name),name,"l")
+
     chiSquare = fSpec.chiSquare(nPars)
     model.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("fmodel"))
     leg.AddEntry(fSpec.findObject("fmodel"),"Full Model, #chi^{2}/NDF = %.3f" % chiSquare, "l")
@@ -915,6 +898,8 @@ def plotFit(plotRate=False, plotFixed=False):
     leg.Draw("same")
     c.Print("%s/plots/sf-after.pdf" % dsi.latSWDir)
     c.Clear()
+
+    exit()
 
     # === duplicate the rooplot in matplotlib ===
     plt.close()
