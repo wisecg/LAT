@@ -21,8 +21,11 @@ ytick.labelsize : 14
 
 xtick.major.size     : 6      # major tick size in points
 xtick.minor.size     : 4      # minor tick size in points
-ytick.major.size     : 6      # major tick size in points
-ytick.minor.size     : 4      # minor tick size in points
+ytick.major.size     : 6
+ytick.minor.size     : 4
+
+xtick.minor.visible  : True   # turn minor ticks on by default
+ytick.minor.visible  : True
 
 # has to be a .ttf file in /Library/Fonts
 # font.family      : sans-serif

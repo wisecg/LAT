@@ -17,6 +17,13 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 
+def sig_ae(E,m):
+    """ Axioelectric cross section.
+    E, m are in units of keV.  must multiply this result by sig_pe. """
+    beta = (1 - m**2./E**2.)**(1./2)
+    return (1 - (1./3.)*beta**(2./3.)) * (3. * E**2.) / (16. * np.pi * (1./137.) * 511.**2. * beta)
+
+
 def logistic(x,mu,sig,amp,skew):
     from scipy.stats import genlogistic
     return amp * genlogistic.cdf(x, skew, mu, sig)
