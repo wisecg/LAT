@@ -90,13 +90,8 @@ def main(argv):
 
 def loadRuns(dsIn=None,subIn=None,modIn=None):
 
-    skipDS6Cal = True # ignore DS6 cal runs until they're processed
-
     # loop over datasets, skipping DS6 cal runs till they're processed
     for ds in [0,1,2,3,4,5,6]:
-        if skipDS6Cal is True and ds==6:
-            continue
-
         if dsIn is not None and ds!=dsIn:
             continue
 
