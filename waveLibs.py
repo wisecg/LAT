@@ -17,6 +17,29 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 
+def expFunc(x, a, tau, b):
+    return a * np.exp(x/tau) + b
+
+
+def twoExp(x, mu1, tau1, mu2, tau2, b):
+    return np.exp((x-mu1)/tau1) + np.exp((x-mu2)/tau2) + b
+
+
+def gaus(x, mu, sig, amp):
+    """ Normalize this to 1 so that amp = nCts. """
+    return amp * np.exp(-(x - mu)**2 / (2 * sig**2)) / (sig * np.sqrt(2*np.pi))
+
+
+def nGaus(x, *par):
+    y = np.zeros_like(x)
+    for i in range(0, len(par), 3):
+        mu = par[i]
+        sig = par[i+1]
+        amp = par[i+2]
+        y = y + gaus(x, mu, sig, amp)
+    return y
+
+
 def sig_ae(E,m):
     """ Axioelectric cross section.
     E, m are in units of keV.  must multiply this result by sig_pe. """
