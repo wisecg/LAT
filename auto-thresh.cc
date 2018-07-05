@@ -44,6 +44,7 @@ int main(int argc, char** argv)
          << "   [-s [runLo] [runHi] : run limit mode (used to match TF boundaries)]\n"
          << "   [-d : use doubles in channel branches]\n"
          << "   [-o : specify output directory]\n";
+         << "   [-v : verbose and debug mode, print out extra information and save histograms into 'plots' directory]\n";
     return 1;
   }
   int dsNum = stoi(argv[1]);
@@ -51,7 +52,7 @@ int main(int argc, char** argv)
   int runLo=-1, runHi=-1;
   bool useDoubles=0;
   string outDir = ".";
-
+  bool bDebug = false;
   vector<string> opt(argv + 1, argv + argc);
   for (size_t i = 0; i < opt.size(); i++) {
     if (opt[i]=="-s") {
@@ -61,13 +62,14 @@ int main(int argc, char** argv)
     }
     if (opt[i] == "-d") { useDoubles=1;    cout << "Using doubles in channel branches ...\n"; }
     if (opt[i] == "-o") { outDir=opt[i+1]; cout << "Writing to output directory: " << outDir << endl; }
+    if (opt[i] == "-v") { bDebug = true; cout << "Verbose mode activated" << endl;}
   }
 
   // main routine
-  FindThresholds(dsNum, subNum, runLo, runHi, useDoubles, outDir);
+  FindThresholds(dsNum, subNum, runLo, runHi, useDoubles, outDir, bDebug);
 }
 
-void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir)
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir, bool bDebug)
 {
   string outputFile = "";
 
@@ -82,7 +84,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
     for (size_t i = 0; i < tmp.GetNRuns(); i++) {
       int run = tmp.GetRunNumber(i);
       if (run >= runLo && run <= runHi) {
-        // cout << "Adding run " << run << endl;
+        if(bDebug){cout << "Adding run " << run << endl;}
         ds.AddRunNumber(run);
       }
     }
@@ -167,6 +169,8 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   map<int,int> channelMap;
   vector<TH1D*> hTrigger;
   vector<TH1D*> hNoise;
+  vector<TCanvas*> cDebug;
+  vector<TCanvas*> cDebug2;
   int nChannel = en.size();
   int nTrigger[nChannel];
   int nNoise[nChannel];
@@ -176,6 +180,12 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
     hNoise.push_back(new TH1D(Form("hNoise-%d", en[i]), Form("hNoise-%d", en[i]), 500, -30, 30));
     nTrigger[i] = 0;
     nNoise[i] = 0;
+    if(bDebug)
+    {
+      // Only look at first
+      cDebug.push_back(new TCanvas(Form("cDebug_ch%d", en[i]),"",800,600));
+      cDebug2.push_back(new TCanvas(Form("cDebug2_ch%d", en[i]),"",800,600));
+    }
   }
 
   // Loop over entries
@@ -234,20 +244,36 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       channel = wfChan[iWF];
       trapENF = wfENF[iWF];
 
+
+
       // Low energy = flat signal => rough representation of threshold
       // Increased to 10 for DS4, higher noise? Early on pulsers weren't on
       if(trapENF > 0 && trapENF < 10)  {
         hTrigger[ channelMap[channel] ]->Fill(TriggerSample);
         nTrigger[ channelMap[channel] ]++;
+        if(nTrigger[channelMap[channel]] < 50)
+        {
+          shared_ptr<TH1D> waveTrigger(clone->GimmeHist());
+          cDebug[channelMap[i]]->cd();
+          waveTrigger->SetLineAlpha(0.2);
+          waveTrigger->Draw("SAME");
+        }
       }
 
       // High energy = sharp rise => 1st sample good representation of noise
       if(trapENF > 50) {
         hNoise[ channelMap[channel] ]->Fill(NoiseSample);
         nNoise[ channelMap[channel] ]++;
+        if(nNoise[channelMap[channel]] < 50)
+        {
+          shared_ptr<TH1D> waveNoise(clone->GimmeHist());
+          cDebug[channelMap[i]]->cd();
+          waveNoise->SetLineAlpha(0.2);
+          waveNoise->Draw("SAME");
+        }
       }
     }
-    // if (i % 10000 == 0) cout << i << " entries saved so far.\n";
+    if(bDebug){ if (i % 10000 == 0) cout << i << " entries scanned so far.\n";}
   }
 
   // Set maximum run as run from the last entry
@@ -256,8 +282,6 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
     runMax = **static_cast<TTreeReaderValue<int>*>(runIn);
   else
     runMax = (int)**static_cast<TTreeReaderValue<double>*>(runIn);
-
-
 
   // Query database to get calibration parameters for enabled channels.
   // (The DB is only accessed for the first channel, then saves the run info in a buffer.)
@@ -315,6 +339,20 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       threshCal.push_back( gaus1->GetParameter(1)*dScale + dOffset);
       sigmaCal.push_back( gaus2->GetParameter(2)*dScale + dOffset);
     }
+
+
+    if(bDebug)
+    {
+      for(int i = 0; i < nChannel; i++)
+      {
+        cDebug2[channelMap[i]]->cd();
+        hNoise[channelMap[i]]->SetLineColor(kBlue);
+        hTrigger[channelMap[i]]->SetLineColor(kRed);
+        hNoise[channelMap[i]]->Draw();
+        hTrigger[channelMap[i]]->Draw("SAME");
+        cDebug2[channelMap[i]]->Print(Form("%s/plots/hTrigger_ch%d.pdf",outDir.c_str(), channelMap[i])) ;
+      }
+    }
   }
 
   // If either fit failed, put the threshold at 99999 keV
@@ -329,25 +367,6 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   }
   fThreshTree->Fill();
   fThreshTree->Write("",TObject::kOverwrite);
-
-  // TF1 *fEff1 = new TF1("fEff", "0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))", gaus1->GetParameter(1), gaus2->GetParameter(2));
-  // TF1 *fEff1 = new TF1("fEff", "0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))",1.3436,0.244441);
-  // cout << "fits: " << gaus1->GetParameter(1) << "  " << gaus2->GetParameter(2) << endl;
-  // fEff1->Draw();
-  // for(auto i : en)
-  // {
-  //   gaus1->SetParameters(0,0,0);
-  //   gaus2->SetParameters(0,0,0);
-  //   hTrigger[ channelMap[i] ]->Fit("gaus1", "qNR", "", 0.1, 10.0);
-  //   hNoise[ channelMap[i] ]->Fit("gaus2", "qNR+");
-  // }
-
-  // TCanvas *c1 = new TCanvas("c1","Bob Ross's Canvas",800,600);
-  // TF1 *fEff1 = new TF1("fEff", "0.5*(1+TMath::Erf((x-[0])/(TMath::Sqrt(2)*[1]) ))",0,3);
-  // fEff1->SetParameters(1.3436,0.244441);
-  // fEff1->Draw();
-  //
-  // c1->Print("./plots/htrigger.pdf");
 
   fOutput->Close();
   cout << "Thresholds found.\n";
