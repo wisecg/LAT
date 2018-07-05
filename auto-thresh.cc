@@ -359,7 +359,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       cDebug2[i.second]->cd();
       hNoise[i.second]->SetLineColor(kBlue);
       hTrigger[i.second]->SetLineColor(kRed);
-      hNoise[i.second]->SetRangeUser(-2, 7);
+      hNoise[i.second]->GetXaxis()->SetRange(-2, 7);
       hNoise[i.second]->DrawNormalized();
       hTrigger[i.second]->DrawNormalized("SAME");
       if(i.first%2 == 0)
