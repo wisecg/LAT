@@ -172,6 +172,8 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   vector<TH1D*> hNoise;
   vector<TCanvas*> cDebug;
   vector<TCanvas*> cDebug2;
+  TH1D *waveTrigger;
+  TH1D *waveNoise;
   int nChannel = en.size();
   int nTrigger[nChannel];
   int nNoise[nChannel];
@@ -207,7 +209,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
 
   for(int i = 0; i < nEntries; i++)
   {
-    if(bDebug && i >= 1000000) break;
+    if(bDebug && i >= 500000) break;
     bReader.SetEntry(i);
     gReader.SetEntry(i);
     int nWF = (*wfBranch).GetEntriesFast();
@@ -247,7 +249,6 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       trapENF = wfENF[iWF];
 
 
-
       // Low energy = flat signal => rough representation of threshold
       // Increased to 10 for DS4, higher noise? Early on pulsers weren't on
       if(trapENF > 0 && trapENF < 10)  {
@@ -255,8 +256,12 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         nTrigger[ channelMap[channel] ]++;
         if(nTrigger[channelMap[channel]] < 50)
         {
-          shared_ptr<TH1D> waveTrigger(clone->GimmeHist());
-          cDebug[channelMap[i]]->cd();
+          waveTrigger = new TH1D(Form("wtrig_ch%d_%d", channel, nTrigger[channelMap[channel]] ),"", 50, 0, 50);
+          for(int bin = 1; bin < waveTrigger->GetNbinsX(); bin++)
+          {
+            waveTrigger->SetBinContent(bin, TrapFilter[bin+2]);
+          }
+          cDebug[channelMap[channel]]->cd();
           waveTrigger->SetLineColorAlpha(kBlue, 0.2);
           waveTrigger->Draw("SAME");
         }
@@ -268,8 +273,12 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         nNoise[ channelMap[channel] ]++;
         if(nNoise[channelMap[channel]] < 50)
         {
-          shared_ptr<TH1D> waveNoise(clone->GimmeHist());
-          cDebug[channelMap[i]]->cd();
+          waveNoise = new TH1D(Form("wnoise_ch%d_%d", channel, nNoise[channelMap[channel]] ),"", 50, 0, 50);
+          for(int bin = 1; bin < waveNoise->GetNbinsX(); bin++)
+          {
+            waveNoise->SetBinContent(bin, TrapFilter[bin+2]);
+          }
+          cDebug[channelMap[channel]]->cd();
           waveNoise->SetLineColorAlpha(kRed, 0.2);
           waveNoise->Draw("SAME");
         }
@@ -341,23 +350,25 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       threshCal.push_back( gaus1->GetParameter(1)*dScale + dOffset);
       sigmaCal.push_back( gaus2->GetParameter(2)*dScale + dOffset);
     }
+  }
 
-
-    if(bDebug)
+  if(bDebug)
+  {
+    for(auto i: channelMap)
     {
-      for(int i = 0; i < nChannel; i++)
+      cDebug2[i.second]->cd();
+      hNoise[i.second]->SetLineColor(kBlue);
+      hTrigger[i.second]->SetLineColor(kRed);
+      hNoise[i.second]->SetRangeUser(-2, 7);
+      hNoise[i.second]->DrawNormalized();
+      hTrigger[i.second]->DrawNormalized("SAME");
+      if(i.first%2 == 0)
       {
-        cDebug2[channelMap[i]]->cd();
-        hNoise[channelMap[i]]->SetLineColor(kBlue);
-        hTrigger[channelMap[i]]->SetLineColor(kRed);
-        hNoise[channelMap[i]]->Draw();
-        hTrigger[channelMap[i]]->Draw("SAME");
-        cDebug2[channelMap[i]]->Print(Form("%s/plots/hTrigger_ch%d.pdf",outDir.c_str(), channelMap[i])) ;
-        cDebug[channelMap[i]]->Print(Form("%s/plots/hWaves_ch%d.pdf",outDir.c_str(), channelMap[i]) ) ;
+        cDebug2[i.second]->SaveAs(Form("%s/plots/hTrigger_ch%d.pdf",outDir.c_str(), i.first));
+        cDebug[i.second]->SaveAs(Form("%s/plots/hWaves_ch%d.pdf",outDir.c_str(), i.first));
       }
     }
   }
-
   // If either fit failed, put the threshold at 99999 keV
   for (size_t i = 0; i < threshADC.size(); i++) {
     if (threshFitStatus[i] != 0 || sigmaFitStatus[i] != 0) {
