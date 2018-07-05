@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "TStyle.h"
 #include "TTree.h"
 #include "TFile.h"
 #include "TH1D.h"
@@ -34,7 +35,7 @@
 using namespace std;
 using namespace MJDB;
 
-void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir);
+void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles, string outDir, bool bDebug);
 vector<double> ThreshTrapezoidalFilter( const vector<double>& anInput, double RampTime, double FlatTime, double DecayTime );
 
 int main(int argc, char** argv)
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
     cout << "Usage: ./auto-thresh [ds] [sub]\n"
          << "   [-s [runLo] [runHi] : run limit mode (used to match TF boundaries)]\n"
          << "   [-d : use doubles in channel branches]\n"
-         << "   [-o : specify output directory]\n";
+         << "   [-o : specify output directory]\n"
          << "   [-v : verbose and debug mode, print out extra information and save histograms into 'plots' directory]\n";
     return 1;
   }
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
     }
     if (opt[i] == "-d") { useDoubles=1;    cout << "Using doubles in channel branches ...\n"; }
     if (opt[i] == "-o") { outDir=opt[i+1]; cout << "Writing to output directory: " << outDir << endl; }
-    if (opt[i] == "-v") { bDebug = true; cout << "Verbose mode activated" << endl;}
+    if (opt[i] == "-v") { bDebug = true; gStyle->SetOptStat(0); cout << "Verbose mode activated" << endl;}
   }
 
   // main routine
@@ -206,6 +207,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
 
   for(int i = 0; i < nEntries; i++)
   {
+    if(bDebug && i >= 1000000) break;
     bReader.SetEntry(i);
     gReader.SetEntry(i);
     int nWF = (*wfBranch).GetEntriesFast();
@@ -255,7 +257,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         {
           shared_ptr<TH1D> waveTrigger(clone->GimmeHist());
           cDebug[channelMap[i]]->cd();
-          waveTrigger->SetLineAlpha(0.2);
+          waveTrigger->SetLineColorAlpha(kBlue, 0.2);
           waveTrigger->Draw("SAME");
         }
       }
@@ -268,12 +270,12 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         {
           shared_ptr<TH1D> waveNoise(clone->GimmeHist());
           cDebug[channelMap[i]]->cd();
-          waveNoise->SetLineAlpha(0.2);
+          waveNoise->SetLineColorAlpha(kRed, 0.2);
           waveNoise->Draw("SAME");
         }
       }
     }
-    if(bDebug){ if (i % 10000 == 0) cout << i << " entries scanned so far.\n";}
+    if(bDebug){ if (i % 50000 == 0) cout << i << " entries scanned so far.\n";}
   }
 
   // Set maximum run as run from the last entry
@@ -351,6 +353,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
         hNoise[channelMap[i]]->Draw();
         hTrigger[channelMap[i]]->Draw("SAME");
         cDebug2[channelMap[i]]->Print(Form("%s/plots/hTrigger_ch%d.pdf",outDir.c_str(), channelMap[i])) ;
+        cDebug[channelMap[i]]->Print(Form("%s/plots/hWaves_ch%d.pdf",outDir.c_str(), channelMap[i]) ) ;
       }
     }
   }
