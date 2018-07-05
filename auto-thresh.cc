@@ -209,7 +209,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
 
   for(int i = 0; i < nEntries; i++)
   {
-    if(bDebug && i >= 500000) break;
+    if(bDebug && i >= 5000000) break;
     bReader.SetEntry(i);
     gReader.SetEntry(i);
     int nWF = (*wfBranch).GetEntriesFast();
@@ -254,15 +254,15 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       if(trapENF > 0 && trapENF < 10)  {
         hTrigger[ channelMap[channel] ]->Fill(TriggerSample);
         nTrigger[ channelMap[channel] ]++;
-        if(nTrigger[channelMap[channel]] < 50)
+        if(nTrigger[channelMap[channel]] < 100)
         {
-          waveTrigger = new TH1D(Form("wtrig_ch%d_%d", channel, nTrigger[channelMap[channel]] ),"", 50, 0, 50);
+          waveTrigger = new TH1D(Form("wtrig_ch%d_%d", channel, nTrigger[channelMap[channel]] ),"", 30, 0, 30);
           for(int bin = 1; bin < waveTrigger->GetNbinsX(); bin++)
           {
-            waveTrigger->SetBinContent(bin, TrapFilter[bin+2]);
+            waveTrigger->SetBinContent(bin, TrapFilter[bin+1]);
           }
           cDebug[channelMap[channel]]->cd();
-          waveTrigger->SetLineColorAlpha(kBlue, 0.2);
+          waveTrigger->SetLineColorAlpha(kBlue, 0.5);
           waveTrigger->Draw("SAME");
         }
       }
@@ -271,20 +271,20 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       if(trapENF > 50) {
         hNoise[ channelMap[channel] ]->Fill(NoiseSample);
         nNoise[ channelMap[channel] ]++;
-        if(nNoise[channelMap[channel]] < 50)
+        if(nNoise[channelMap[channel]] < 100)
         {
-          waveNoise = new TH1D(Form("wnoise_ch%d_%d", channel, nNoise[channelMap[channel]] ),"", 50, 0, 50);
+          waveNoise = new TH1D(Form("wnoise_ch%d_%d", channel, nNoise[channelMap[channel]] ),"", 30, 0, 30);
           for(int bin = 1; bin < waveNoise->GetNbinsX(); bin++)
           {
-            waveNoise->SetBinContent(bin, TrapFilter[bin+2]);
+            waveNoise->SetBinContent(bin, TrapFilter[bin+1]);
           }
           cDebug[channelMap[channel]]->cd();
-          waveNoise->SetLineColorAlpha(kRed, 0.2);
+          waveNoise->SetLineColorAlpha(kRed, 0.5);
           waveNoise->Draw("SAME");
         }
       }
     }
-    if(bDebug){ if (i % 50000 == 0) cout << i << " entries scanned so far.\n";}
+    if(bDebug){ if (i % 100000 == 0) cout << i << " entries scanned so far.\n";}
   }
 
   // Set maximum run as run from the last entry
@@ -356,14 +356,14 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
   {
     for(auto i: channelMap)
     {
-      cDebug2[i.second]->cd();
-      hNoise[i.second]->SetLineColor(kBlue);
-      hTrigger[i.second]->SetLineColor(kRed);
-      hNoise[i.second]->GetXaxis()->SetRange(-2, 7);
-      hNoise[i.second]->DrawNormalized();
-      hTrigger[i.second]->DrawNormalized("SAME");
       if(i.first%2 == 0)
       {
+        cDebug2[i.second]->cd();
+        hNoise[i.second]->SetLineColor(kBlue);
+        hTrigger[i.second]->SetLineColor(kRed);
+        hNoise[i.second]->GetXaxis()->SetRangeUser(-5*sigmaADC[i.second], threshADC[i.second] + 5*sigmaADC[i.second]);
+        hNoise[i.second]->DrawNormalized();
+        hTrigger[i.second]->DrawNormalized("SAME");
         cDebug2[i.second]->SaveAs(Form("%s/plots/hTrigger_ch%d.pdf",outDir.c_str(), i.first));
         cDebug[i.second]->SaveAs(Form("%s/plots/hWaves_ch%d.pdf",outDir.c_str(), i.first));
       }
