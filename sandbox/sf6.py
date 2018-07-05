@@ -5,68 +5,10 @@ from scipy.interpolate import spline
 import waveLibs as wl
 import dsi
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
 sys.argv.append("-b")
 import ROOT
 from ROOT import RooFit as RF
-
-# dsList = [0,1,2,3,4,"5A","5B","5C"]
-dsList = [1,2,3,4,"5A","5B","5C"]
-# dsList = [1,2,3,4,"5B","5C"]
-# dsList = [0]
-enr = True
-eff = True
-simEffCorr = False
-eLo, eHi, epb = 1.5, 20, 0.2
-pLo, pHi, ppb = 0, 30, 0.05
-
-nB = int((eHi-eLo)/epb)
-nBP = int((pHi-pLo)/ppb)
-
-# 1.5 - 20 kev
-# bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V","axion"]
-# bkgModelPeaks = []
-
-# 14.4 keV axion (5-20 kev or 13-17 keV)
-# bkgModelHists = ["trit","flat","55Fe","68Ge","65Zn"] # 5-20 kev
-# bkgModelHists = ["trit","flat"] # 13-17 keV
-# bkgModelPeaks = ["axFe_M1"]
-
-# axion peaks under 5 keV (1.5, 20)
-bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V"]
-bkgModelPeaks = ["axS_a","axS_b","axSi_a","axSi_b"]
-profileVars = ["axS_a","axS_b","axSi_a","axSi_b"]
-
-bkgVals = {
-    # key,      [muE, init guess amp, ampLo, ampHi]
-    "flat":     [-1, 1000, 0, 10000],
-    "trit":     [-1, 1000, 0, 50000],
-    "trit_s":   [-1, 1, 0, 1000],
-    "210Pb_c":  [-1, 50, 0, 10000],
-    "axion":    [-1, 1, 0, 10000],
-    # CDMS paper, Table 3. https://arxiv.org/pdf/1806.07043.pdf
-    "49V":      [4.97, 0, 0, 1000],
-    "51Cr":     [5.46, 0, 0, 1000], # not in cdms
-    "54Mn":     [5.99, 0, 0, 1000],
-    "55Fe":     [6.54, 50, 0, 1000],
-    "57Co":     [7.11, 0, 0, 1000],
-    "65Zn":     [8.98, 9, 0, 1000],
-    "65Zn_L":   [1.10, 0, 0, 1000],
-    "68Ga":     [9.66, 1, 0, 1000],
-    "68Ge":     [10.37, 50, 0, 1000],
-    "68Ge_L":   [1.29, 1, 0, 1000],
-    "73As":     [11.10, 0, 0, 1000], # not in cdms
-    "210Pb_46": [46.54, 50, 0, 1000],
-    "210Pb_10": [10.8, 1, 0, 1000],
-    "axSi_a":   [1.86, 0, 0, 1000], # k_a1,a2 (lab 1.739, diff 0.12)
-    "axSi_b":   [2.00, 0, 0, 1000], # k_b     (lab 1.836, diff 0.16)
-    "axS_a":    [2.45, 0, 0, 1000], # k_a1,a2 (lab 2.307, diff 0.14)
-    "axS_b":    [2.62, 0, 0, 1000], # k_b     (lab 2.464, diff 0.16)
-    "axFe_a":   [6.68, 0, 0, 1000], # k_a   (combination 6.668, 6.701, heliumlike (k_a))
-    "axFe_b":   [6.96, 0, 0, 1000], # k_b   (combination 6.952, 6.973, hydrogenlike (k_b))
-    "axFe_M1":  [14.4, 1, 0, 1000]
-    }
-
 from ROOT import gROOT
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
 gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
@@ -76,10 +18,10 @@ def main(argv):
     initialize(makePlots=False)
     # loadDataMJD()
     # getUnscaledPDFs(makePlots=True)
-    # plotPDFs()
+    plotPDFs()
     # testFunc()
     # fitModel(makePlots=True)
-    plotFit(plotRate=False, plotProfileResults=True)
+    # plotFit(plotRate=False, plotProfileResults=True)
     # getProfile()
     # plotProfile(makePlots=True)
     # plotUpLim()
@@ -90,6 +32,67 @@ def initialize(makePlots=False):
     """ For this dsList, load the efficiency curves and exposure into globals.
     Also tweak the bkgModelPeaks list to only include peaks in the energy range.
     """
+    global dsList, enr, eff, simEffCorr, eLo, eHi, epb, pLo, pHi, ppb, nB, nBP
+    global bkgModelHists, bkgModelPeaks, profileVars, bkgVals
+
+    # dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [1,2,3,4,"5A","5B","5C"]
+    # dsList = [1,2,3,4,"5B","5C"]
+    # dsList = [0]
+    enr = True
+    eff = True
+    simEffCorr = False
+    eLo, eHi, epb = 1.5, 20, 0.2
+    pLo, pHi, ppb = 0, 30, 0.05
+
+    nB = int((eHi-eLo)/epb)
+    nBP = int((pHi-pLo)/ppb)
+
+    # 1.5 - 20 kev
+    # bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V","axion"]
+    # bkgModelPeaks = []
+
+    # 14.4 keV axion (5-20 kev or 13-17 keV)
+    # bkgModelHists = ["trit","flat","55Fe","68Ge","65Zn"] # 5-20 kev
+    # bkgModelHists = ["trit","flat"] # 13-17 keV
+    # bkgModelPeaks = ["axFe_M1"]
+
+    # axion peaks under 5 keV (1.5, 20)
+    bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V"]
+    bkgModelPeaks = ["axS_a","axS_b","axSi_a","axSi_b"]
+    profileVars = ["axS_a","axS_b","axSi_a","axSi_b"]
+
+    bkgVals = {
+        # key,      [muE, init guess amp, ampLo, ampHi]
+        "flat":     [-1, 1000, 0, 10000],
+        "trit":     [-1, 1000, 0, 50000],
+        "trit_s":   [-1, 1, 0, 1000],
+        "210Pb_c":  [-1, 50, 0, 10000],
+        "axion":    [-1, 1, 0, 10000],
+        # CDMS paper, Table 3. https://arxiv.org/pdf/1806.07043.pdf
+        "49V":      [4.97, 0, 0, 1000],
+        "51Cr":     [5.46, 0, 0, 1000], # not in cdms
+        "54Mn":     [5.99, 0, 0, 1000],
+        "55Fe":     [6.54, 50, 0, 1000],
+        "57Co":     [7.11, 0, 0, 1000],
+        "65Zn":     [8.98, 9, 0, 1000],
+        "65Zn_L":   [1.10, 0, 0, 1000],
+        "68Ga":     [9.66, 1, 0, 1000],
+        "68Ge":     [10.37, 50, 0, 1000],
+        "68Ge_L":   [1.29, 1, 0, 1000],
+        "73As":     [11.10, 0, 0, 1000], # not in cdms
+        "210Pb_46": [46.54, 50, 0, 1000],
+        "210Pb_10": [10.8, 1, 0, 1000],
+        "axSi_a":   [1.86, 0, 0, 1000], # k_a1,a2 (lab 1.739, diff 0.12)
+        "axSi_b":   [2.00, 0, 0, 1000], # k_b     (lab 1.836, diff 0.16)
+        "axS_a":    [2.45, 0, 0, 1000], # k_a1,a2 (lab 2.307, diff 0.14)
+        "axS_b":    [2.62, 0, 0, 1000], # k_b     (lab 2.464, diff 0.16)
+        "axFe_a":   [6.68, 0, 0, 1000], # k_a   (combination 6.668, 6.701, heliumlike (k_a))
+        "axFe_b":   [6.96, 0, 0, 1000], # k_b   (combination 6.952, 6.973, hydrogenlike (k_b))
+        "axFe_M1":  [14.4, 1, 0, 1000]
+        }
+
+
     global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
 
     # load efficiency correction
@@ -435,7 +438,7 @@ def plotPDFs():
     plt.xlim(0,12)
     plt.legend()
     plt.tight_layout()
-    # plt.show()
+    plt.show()
     plt.savefig("%s/plots/sf-axFlux.pdf" % dsi.latSWDir)
     # exit()
 
