@@ -17,12 +17,25 @@ bgDir = homePath + "/project/bg-lat"
 calDir = homePath + "/project/cal-lat"
 
 
+def nPol(x, *par):
+    y = 0
+    for i, p in enumerate(par):
+        y += p*x**i
+    return y
+
+
 def expFunc(x, a, tau, b):
     return a * np.exp(x/tau) + b
 
 
-def twoExp(x, mu1, tau1, mu2, tau2, b):
-    return np.exp((x-mu1)/tau1) + np.exp((x-mu2)/tau2) + b
+def oneExp(x, a, c):
+    # in the style of roofit, which only has one parameter per exp
+    return a * np.exp(x*c)
+
+
+def twoExp(x, a, c1, c2):
+    # in the style of roofit, which only has one parameter per exp
+    return a * (np.exp(x*c1) + np.exp(x*c2))
 
 
 def gaus(x, mu, sig, amp):
@@ -112,10 +125,10 @@ def niceList(lst, fmt="%.2f", dtype="f"):
     return tmp
 
 
-def GetHisto(npArr, xLo, xHi, xpb, nb=None, shift=True):
+def GetHisto(npArr, xLo, xHi, xpb, nb=None, shift=True, wts=None):
     """ This returns a histogram w/ shifted bins.  For use with: plt.plot(x, y, ls='steps') """
     if nb is None: nb = int((xHi-xLo)/xpb)
-    y, x = np.histogram(npArr, bins=nb, range=(xLo, xHi))
+    y, x = np.histogram(npArr, bins=nb, range=(xLo, xHi), weights=wts)
     y = np.insert(y, 0, 0, axis=0)
     if shift: x = x-xpb/2.
     return x, y

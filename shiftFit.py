@@ -1,88 +1,86 @@
 #!/usr/bin/env python3
-import sys, warnings, time
+import sys, warnings, time, dsi
 import numpy as np
+from scipy.optimize import curve_fit
 from scipy.interpolate import spline
-import waveLibs as wl
-import dsi
+import matplotlib
 import matplotlib.pyplot as plt
 plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
 sys.argv.append("-b")
+import waveLibs as wl
 import ROOT
 from ROOT import RooFit as RF
 from ROOT import gROOT
 gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
-# gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
+gROOT.ProcessLine("RooMsgService::instance().setGlobalKillBelow(RooFit::ERROR);")
 ROOT.Math.MinimizerOptions.SetDefaultMinimizer("Minuit") # the PLC doesn't work w/ minuit2
 
 def main():
+    initialize(makePlots=False)
 
-    initialize()
-    # getUnscaledPDFs(makePlots=False)
+    # getUnscaledPDFs(makePlots=True)
     # plotPDF()
     # fitPeaks()
     # getPeakFluxRF() # do this 2 ways, since the roofit model has to be super constrained to look ok
-    # getPeakFluxPY(makePlots=True) # does a sideband analysis and gaussian peak fitting.  this gives the final result
-    # loadShiftedData()
+    # getPeakFluxPY(makePlots=True) # does a sideband analysis and gaussian peak fitting.  this gives the final flux results
+    # loadShiftedData() # this leaves something wierd in memory that causes other functions to segfault
     # plotShiftedData()
-    # fitShiftModel()
-    # plotShiftModel()
-    # getShiftProfile()
-    plotShiftProfile(makePlots=True)
+
+    # combineProfiles()
+    # exit()
+
+    # lower than 2.0 introduces big outliers, higher than 3.5 introduces a peak
+    # mjd 3 sigma peak width at 2.6 keV:  sig 0.19, lo 2.04, hi 3.20
+    eLo, eHi, epb = 2.0, 3.5, 0.05
+    global nPks, pkModel, axPeaks
+    for i in range(1,5):
+        nPks=i
+        pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
+        axPeaks = [sigVals[name][0] for name in pkModel]
+        pk0 = 4-nPks
+        axPeaks = axPeaks[pk0:]
+
+        fitShiftModel(eLo, eHi, epb, makePlots=False)
+        plotShiftModel(eLo, eHi, epb)
+        getShiftProfile(eLo, eHi, epb)
+        plotShiftProfile(eLo, eHi, epb, makePlots=True)
 
 
 def initialize(makePlots=False):
-
-    global eLo, eHi, epb, pLo, pHi, ppb, dslist, enr, opt, useWeight, nB, nBP
-    global pkModel, bkModel, sigModel, dMu, sigVals, sigLabels
-
-    eLo, eHi, epb = 1.5, 3.0, 0.05 # this is for the flux fit
-
-
-
-    pLo, pHi, ppb = 0, 30, 0.03 # fitPeaks doesn't work for ppb!=0.03, the fit parameters are optimized for it
+    global dsList, enr, opt, useWeight
+    global pkModel, dMu, sigVals, simEffCorr, nPks, dsList, axPeaks
+    global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
 
     dsList = [1,2,3,4,"5A","5B","5C"]
     enr = True
-    opt = "enr"
     useWeight = True
+    simEffCorr = False
 
-    nB = int((eHi-eLo)/epb)
-    nBP = int((pHi-pLo)/ppb)
+    nPks = 4 # keep only this many of the axion peaks (from 1 to 4)
 
-    pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
-    # bkModel = ["bkg1","bkg2"]
-    bkModel = ["bkg1"] # used for data fit
-    sigModel = pkModel + bkModel
-
-    dMu = 0.05
-
+    dMu = 0.05 # how much we let the peak energies float
     sigVals = {
-        # expo bkg:      amp, lo, hi,     tau, lo, hi
-        # "bkg1":     [-1, 1, 0, 1000,   -0.8, -5, 0], # used for the PDF fit
-        # "bkg2":     [-1, 1, 0, 1000,   -0.9, -5, 0],
-        "bkg1":     [-1, 1, -0.1, 100000,   -1, -10, 0], # used for the fit to data
-        "bkg2":     [-1, 1, -0.1, 10000,   -1, -10, 0],
+        # expo bkg:  amp, lo, hi,    tau, lo, hi
+        "exp1":     [1000, 0, 100000,   -0.8, -2, 0.1],
+        "exp2":     [100, 0, 2000,   -2, -3, 0],
+
+        # flat bkg:  amp, lo, hi
+        "pol":      [200, 1, 10000],
 
         # peaks:       mu,  amp,  lo,   hi     sig,   lo,  hi      # peak values are confirmed by the fit to redondo's data
         "axSi_a":   [1.86,  0.1,   0, 1.,     0.03, 0.02,  0.05],  # tight-ish constraints, forcing the curve to match
         "axSi_b":   [2.00,  0.004, 0, 0.08,   0.01, 0.005, 0.02],  # the _b peaks just always go the maximum allowed
-        "axS_a":    [2.45,  0.1,   0, 1.,     0.03, 0.02, 0.05],
+        "axS_a":    [2.45,  0.1,   0, 1.,     0.03, 0.02, 0.05],   # which is why we go with the python sideband analysis.
         "axS_b":    [2.62,  0.004, 0, 0.08,   0.01, 0.005, 0.02],
 
         # shifted peak
-        "sPk":      [2.62,  10,  -0.1, 10000.]
+        "sPk":      [2.62,  100,  -0.1, 300.]
         }
 
-    sigLabels = {
-        "axSi_a": r"Si ($\mathregular{K_{\alpha 1,\alpha 2}}$)",
-        "axSi_b": r"Si ($\mathregular{K_{\beta}}$)",
-        "axS_a": r"S ($\mathregular{K_{\alpha 1,\alpha 2}}$)",
-        "axS_b": r"S ($\mathregular{K_{\beta}}$)"
-        }
-
-
-
-    global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
+    pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
+    axPeaks = [sigVals[name][0] for name in pkModel]
+    pk0 = 4-nPks
+    axPeaks = axPeaks[pk0:]
 
     # load efficiency correction
     f1 = np.load('%s/data/lat-expo-efficiency-all-e95.npz' % dsi.latSWDir)
@@ -106,13 +104,63 @@ def initialize(makePlots=False):
     detEff = np.divide(detEff, detExp)
     effLim, effMax = xEff[-1], detEff[-1]
 
+    # special -- load slowness fraction
+    fS = np.load('%s/data/efficiency-corr250.npz' % dsi.latSWDir)
+    hTotSim, hSurfSim, xTotSim = fS['arr_0'], fS['arr_1'], fS['arr_2']
 
-def getUnscaledPDFs(ma=0, makePlots=False):
+    # suppress a dumb divide by 0 warning for a bin I don't care about
+    # print(np.geterr())
+    np.seterr(divide='ignore', invalid='ignore')
+    hFracSim = np.divide(hSurfSim, hTotSim, dtype=float)
+    np.seterr(divide='warn', invalid='warn') # default
+
+    idx = np.where((xTotSim >0) & (xTotSim <= 50.01))
+    x, h = xTotSim[idx], hFracSim[idx]
+
+    xS = np.arange(0, 50, 0.01)
+    hS = spline(x, h, xS)
+    idx = np.where((hS>0) & (detEff>0))
+    effCorr = detEff[idx] / (1 - hS[idx])
+
+    if makePlots:
+
+        fig, p1 = plt.subplots(1, 1)
+
+        p1.plot(xEff[idx], detEff[idx], c='b', label="Measured Efficiency")
+        p1.plot(xEff[idx], effCorr, c='r', label="Sim-Corrected Efficiency")
+        p1.axvline(1.5, c='g', lw=1, label="1.5 keV")
+        p1.plot(np.nan, np.nan, '-m', label="Sim. Slow Pulse Fraction")
+
+        p1a = p1.twinx()
+        p1a.plot(xS[idx], hS[idx], 'm', lw=3)
+        p1a.set_ylabel('Slow Fraction', color='m', ha='right', y=1)
+        p1a.set_yticks(np.arange(0, 1.1, 0.2))
+        p1a.tick_params('y', colors='m')
+
+        p1.set_xlabel("Energy (keV)", ha='right', x=1)
+        p1.set_ylabel("Efficiency", ha='right', y=1)
+        p1.set_ylim(0, 1)
+        p1.legend(loc=1, bbox_to_anchor=(0., 0.7, 0.97, 0.2))
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("%s/plots/sf-sim-eff-corr.pdf" % dsi.latSWDir)
+        plt.close()
+
+    # *** replaces the measured efficiency w/ the simulated slow-pulse-corrected efficiency ***
+    if simEffCorr:
+        print("WARNING: using sim-corrected efficiency")
+        detEff = effCorr
+        xEff = xEff[idx]
+
+
+def getUnscaledPDFs(makePlots=False):
     """ Generate a set of TH1D's to be turned into RooDataHist objects.
     Be careful they have the same axis limits and binning as the RooDataSet.
-    Takes axion mass (in keV) as a parameter.
     """
     from ROOT import TFile, TH1D, gROOT
+
+    pLo, pHi, ppb = 0, 30, 0.03 # requires ppb=0.03, the fit parameters are optimized for it
+    nB = int((pHi-pLo)/ppb)
 
     # output file
     rOut = "%s/data/specPDFs-sf7.root" % dsi.latSWDir
@@ -163,20 +211,21 @@ def getUnscaledPDFs(ma=0, makePlots=False):
     # NOTE: check sandbox/th1.py for examples of manually filling TH1D's and verifying wl.GetHisto and wl.npTH1D.
 
     # ROOT output
-    h1 = TH1D("h1","photoelectric",nBP,pLo,pHi)         # [cm^2 / kg]
-    h2 = TH1D("h2","axioelectric",nBP,pLo,pHi)          # [cm^2 / kg]
-    h3 = TH1D("h3","axion flux, gae=1",nBP,pLo,pHi)     # [cts / (keV cm^2 d)]
-    h4 = TH1D("h4","convolved flux",nBP,pLo,pHi)        # [cts / (keV d kg)]
-    h5 = TH1D("h5","tritium",nBP,pLo,pHi)               # [cts] (normalized to 1)
+    h1 = TH1D("h1","photoelectric",nB,pLo,pHi)         # [cm^2 / kg]
+    h2 = TH1D("h2","axioelectric",nB,pLo,pHi)          # [cm^2 / kg]
+    h3 = TH1D("h3","axion flux, gae=1",nB,pLo,pHi)     # [cts / (keV cm^2 d)]
+    h4 = TH1D("h4","convolved flux",nB,pLo,pHi)        # [cts / (keV d kg)]
+    h5 = TH1D("h5","tritium",nB,pLo,pHi)               # [cts] (normalized to 1)
 
     # manually fill ROOT histos (don't normalize yet)
-    for iB in range(nBP+1):
+    for iB in range(nB+1):
         ctr = (iB + 0.5)*ppb + pLo
         bLo, bHi = ctr - ppb/2, ctr + ppb/2
         with warnings.catch_warnings():
             warnings.simplefilter("ignore",category=RuntimeWarning)
 
             # if ma>0, we ignore entries with E <= m.
+            ma=0 # this used to be a parameter but it's deprecated.
 
             # photoelectric x-section [cm^2 / kg]
             idx = np.where((phoData[:,0] >= bLo) & (phoData[:,0] < bHi))
@@ -265,21 +314,16 @@ def plotPDF():
 
     aLo, aHi = 6.4, 6.8
     nexp = hA.Integral(hA.FindBin(aLo), hA.FindBin(aHi), "width")
-
     # nexpy = np.sum(hR[ np.where((xR >= aLo) & (xR < aHi+xpb/2)) ]) * xpb # have to be careful about bin endpoints
-
     nexpy = np.sum(hR[ np.where((xR > aLo) & (xR <= aHi+xpb/2)) ]) * xpb
-
     print("%.1f-%.1f  %.2e [cts / cm^2 d], py: %.2e" % (aLo, aHi, nexp, nexpy))
-
     plt.xlim(aLo, aHi)
     plt.show()
 
-
     # === axion PDF ===
     plt.close()
-    xR1, hR1, _ = wl.npTH1D(tf.Get("h4"))
-    plt.plot(xR1, hR1, ls='steps', c='b', lw=3, label=r"$\Phi_a$, %.2f keV/bin, $\mathregular{g_{ae}=1}$" % ppb)
+    xR1, hR1, xpb = wl.npTH1D(tf.Get("h4"))
+    plt.plot(xR1, hR1, ls='steps', c='b', lw=3, label=r"$\Phi_a$, %.2f keV/bin, $\mathregular{g_{ae}=1}$" % xpb)
 
     plt.axvline(1.85, c='g', lw=2, alpha=0.5, label=r"1.85 keV, Si ($\mathregular{K_{\alpha 1,\alpha 2}}$)")
     plt.axvline(2.00, c='m', lw=2, alpha=0.5, label=r"2.00 keV, Si ($\mathregular{K_{\beta}}$)")
@@ -298,6 +342,11 @@ def plotPDF():
 
 def fitPeaks():
     from ROOT import TFile, TH1D, TCanvas, TLegend, gStyle
+
+    bkModel = ["exp1","exp2"]
+    sigModel = pkModel + bkModel
+    eLo, eHi, epb = 1.5, 3.0, 0.05
+    nB = int((eHi-eLo)/epb)
 
     # treat the axion PDF as data
     tf = TFile("%s/data/specPDFs-sf7.root" % dsi.latSWDir)
@@ -321,8 +370,8 @@ def fitPeaks():
 
     bkVars = []
     for name in bkModel:
-        bkN = ROOT.RooRealVar("amp-"+name,"amp-"+name, sigVals[name][1], sigVals[name][2], sigVals[name][3])
-        bkT = ROOT.RooRealVar("tau-"+name,"tau-"+name, sigVals[name][4], sigVals[name][5], sigVals[name][6])
+        bkN = ROOT.RooRealVar("amp-"+name,"amp-"+name, sigVals[name][0], sigVals[name][1], sigVals[name][2])
+        bkT = ROOT.RooRealVar("tau-"+name,"tau-"+name, sigVals[name][3], sigVals[name][4], sigVals[name][5])
         bkE = ROOT.RooExponential("expo-"+name,"expo-"+name, hitE, bkT)
         bkP = ROOT.RooExtendPdf("ext-"+name,"ext-"+name, bkE, bkN)
         bkVars.append([bkP,name,bkN,bkT,bkE])
@@ -343,7 +392,7 @@ def fitPeaks():
     gStyle.SetPalette(ROOT.kRainBow)
     nCol = float(gStyle.GetNumberOfColors())
 
-    fSpec = hitE.frame(RF.Range(eLo, eHi)) #, RF.Bins(nB))
+    fSpec = hitE.frame(RF.Range(eLo, eHi), RF.Bins(nB))
     ROOT.RooAbsData.plotOn( hAxDH, fSpec ) # can't just use plotOn with a RooDataHist b/c roofit sucks
 
     nTot = 0
@@ -384,6 +433,11 @@ def fitPeaks():
 def getPeakFluxRF():
 
     from ROOT import TFile, TCanvas, TH1D, TLegend, gStyle
+
+    bkModel = ["exp1","exp2"]
+    sigModel = pkModel + bkModel
+    eLo, eHi, epb = 1.5, 3.0, 0.05
+    nB = int((eHi-eLo)/epb)
 
     f = TFile("%s/data/fitWS-axPks.root" % dsi.latSWDir)
     fitWS = f.Get("fitWS")
@@ -462,17 +516,17 @@ def getPeakFluxPY(makePlots=False):
     Integral 1.5-3.0  1.84e+42 [cts / cm^2 d], py: 1.84e+42
     Pct in peaks: 16.463%
     """
-
     from ROOT import TFile
-    from scipy.optimize import curve_fit
 
-    global eLo, eHi, epb
-    eLo, eHi, epb = 1.5, 3, 0.05
+    eLo, eHi, epb = 1.5, 3.0, 0.05
+    nB = int((eHi-eLo)/epb)
 
     tf = TFile("%s/data/specPDFs-sf7.root" % dsi.latSWDir)
 
-    rHist, scale = tf.Get("h3"), 1e39  # axion flux
+    # ---- two options for this plot ----
+    rHist, scale = tf.Get("h3"), 1e39  # axion flux (reproduce frank's numbers)
     # rHist, scale = tf.Get("h4"), 1e42  # axion PDF
+    # -----------------------------------
 
     x0, h0, xpb = wl.npTH1D(rHist, opt="")
     idx = np.where((x0>=eLo) & (x0<=eHi))
@@ -549,6 +603,10 @@ def getPeakFluxPY(makePlots=False):
     print("bkg-b    %.3f ± %.3f" % (poptBk[2], perrBk[2]))
     print("Total peak flux: %.2e" % (nTot))
 
+    # save flux output for g_ae calculation
+    axFluxes = {"%.2f"%po[0]:nCts1, "%.2f"%po[3]:nCts2, "%.2f"%po[6]:nCts3, "%.2f"%po[9]:nCts4}
+    np.savez("%s/data/sf7-pkFluxes.npz" % dsi.latSWDir, axFluxes)
+
     # check results are consistent w/ axion flux
     nexp = rHist.Integral(rHist.FindBin(eLo), rHist.FindBin(eHi), "width")
     nexpy = np.sum(h0[ np.where((x0 > eLo) & (x0 <= eHi+xpb/2)) ]) * xpb # have to include the last bin
@@ -567,6 +625,13 @@ def getPeakFluxPY(makePlots=False):
         i3 = np.where(yP3>0.01)
         i4 = np.where(yP4>0.01)
 
+        sigLabels = {
+            "axSi_a": r"Si ($\mathregular{K_{\alpha 1,\alpha 2}}$)",
+            "axSi_b": r"Si ($\mathregular{K_{\beta}}$)",
+            "axS_a": r"S ($\mathregular{K_{\alpha 1,\alpha 2}}$)",
+            "axS_b": r"S ($\mathregular{K_{\beta}}$)"
+            }
+
         plt.plot(xF[i1], yP1[i1], c='g', lw=3, label=r"%.2f keV, $\phi$ = %.2e, %s" % (po[0], nCts1, sigLabels["axSi_a"]))
         plt.plot(xF[i2], yP2[i2], c='orange', lw=3, label=r"%.2f keV, $\phi$ = %.2e, %s" % (po[3], nCts2, sigLabels["axSi_b"]))
         plt.plot(xF[i3], yP3[i3], c='m', lw=3, label=r"%.2f keV, $\phi$ = %.2e, %s" % (po[6], nCts3, sigLabels["axS_a"]))
@@ -579,6 +644,7 @@ def getPeakFluxPY(makePlots=False):
             plt.ylabel(r"Flux / %.0e (keV $\mathregular{cm^2}$ d)" % scale, ha='right', y=1)
             plt.ylim(-0.1, 7)
             plt.legend(loc=1, fontsize=12, bbox_to_anchor=(0.5, 0.75))
+            plt.tight_layout()
             plt.savefig("%s/plots/sf7-axPeakFluxFit.pdf" % (dsi.latSWDir))
 
         elif rHist.GetName()=="h4":
@@ -592,6 +658,8 @@ def getPeakFluxPY(makePlots=False):
 def loadShiftedData():
     from ROOT import TFile, TTree, TList
     from array import array
+
+    print("Getting shifted data for %d peaks:" % nPks, axPeaks)
 
     fName = "%s/data/latDS%s.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]))
     tf1 = TFile(fName)
@@ -608,17 +676,16 @@ def loadShiftedData():
     treeIn.SetBranchAddress("isEnr",isEnr)
     treeIn.SetBranchAddress("weight",weight)
 
-    # get the axion peak list
-    axPeaks = [sigVals[name][0] for name in sigVals if "ax" in name]
-
     # create ths shifted tree
-    tfName = "%s/data/latDS%s_shifted.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]))
+    tfName = "%s/data/latDS%s_shifted_%dpks.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]), nPks)
     tf2 = TFile(tfName, "RECREATE")
     tList = TList()
-    tVec = [0.,0.,0.,0.]
+    tVec = [0,0,0,0]
 
+    # get the axion peak list from globals
     for i in range(len(axPeaks)):
         shift = axPeaks[-1] - axPeaks[i] # line up everything with the last peak
+
         tTitle = "pkE: %.2f keV, shift %.2f keV" % (axPeaks[i], shift)
         tVec[i] = TTree("t%d" % i, tTitle)
         ene, wt = array('d',[0.]), array('d',[0.])
@@ -628,20 +695,16 @@ def loadShiftedData():
         tVec[i].Branch("isEnr",enr1,"isEnr/I")
         for j in range(treeIn.GetEntries()):
             treeIn.GetEntry(j)
-            ene[0], wt[0], enr1[0] = hitE[0], weight[0], isEnr[0]
+            ene[0], enr1[0] = hitE[0], isEnr[0]
 
-            # hitE[0] = tt.trapENFCal.at(iH)
-
-            # TODO: put this in
             # calculate weight based on 1/efficiency
-            if hitE[0] > effLim:
-                weight[0] = 1/effMax
+            if ene[0] > effLim:
+                wt[0] = 1 / effMax
             else:
                 idx = (np.abs(xEff-hitE[0])).argmin()
-                weight[0] = 1/np.interp(hitE[0], xEff[idx:idx+1], detEff[idx:idx+1])
+                wt[0] = 1/np.interp(hitE[0], xEff[idx:idx+1], detEff[idx:idx+1])
             # if hitE[0] < effLim:
-                # print("%.2f  %.2f " % (hitE[0], weight[0]))
-
+                # print("%.2f  %.2f " % (hitE[0], wt[0]))
 
             ene[0] += shift
             tVec[i].Fill()
@@ -657,61 +720,100 @@ def loadShiftedData():
     print("Writing file:", tfName)
     tShift.Write()
     tf2.Close()
+    tf1.Close()
 
 
 def plotShiftedData():
 
-    from ROOT import TFile, TTree
+    from ROOT import TFile, TTree, TList
 
-    tfName = "%s/data/latDS%s_shifted.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]))
+    xLo, xHi, xpb = 1.8, 15, 0.05
+
+    tfName = "%s/data/latDS%s_shifted_%dpks.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]), nPks)
     tf = TFile(tfName)
-    tCut = "isEnr==1" if enr is True else "isEnr==0"
-    tt0 = tf.Get("t0")
-    tt1 = tf.Get("t1")
-    tt2 = tf.Get("t2")
-    tt3 = tf.Get("t3")
+    tCut = "isEnr" if enr is True else "!isEnr"
+    # print("Plotting shifted data for %d peaks" % nPks, axPeaks)
+
+    # merged tree
     ttM = tf.Get("mergeTree")
+    n = ttM.Draw("trapENFCal:weight",tCut,"goff")
+    hE, hW = ttM.GetV1(), ttM.GetV2()
+    hE = [hE[i] for i in range(n)]
+    hW = [hW[i] for i in range(n)] if useWeight else None
+    xM, yM = wl.GetHisto(hE, xLo, xHi, xpb, wts=hW)
 
-    # create diagnostic shifted & merged spectrum
-    xLo, xHi, xpb = 1, 15, 0.1
-    nBX = int((xHi-xLo)/xpb)
+    # create shifted & merged spectrum
+    lab = "Spectrum, Merged & Weighted" if useWeight else "Merged Spectrum"
+    plt.step(xM, yM, c='k', lw=2, label=lab)
 
-    tCut += "&& trapENFCal > 1"
+    # loop over individual trees (the last one will be unshifted)
+    tKeys = [key.GetName() for key in tf.GetListOfKeys() if key.GetName() != "mergeTree"]
+    cmap = plt.cm.get_cmap('jet',len(tKeys))
+    for i, tKey in enumerate(tKeys):
+        tt = tf.Get(tKey)
+        n = tt.Draw("trapENFCal:weight",tCut,"goff")
+        hE, hW = tt.GetV1(), tt.GetV2()
+        hE = [hE[i] for i in range(n)]
+        hW = [hW[i] for i in range(n)] if useWeight else None
+        x, y = wl.GetHisto(hE, xLo, xHi, xpb, wts=hW)
+        plt.step(x, y, lw=2, c=cmap(i), label=tt.GetTitle())
 
-    h0 = wl.H1D(tt0, nBX, xLo, xHi, "trapENFCal",tCut)
-    h1 = wl.H1D(tt1, nBX, xLo, xHi, "trapENFCal",tCut)
-    h2 = wl.H1D(tt2, nBX, xLo, xHi, "trapENFCal",tCut)
-    h3 = wl.H1D(tt3, nBX, xLo, xHi, "trapENFCal",tCut) # this tree is unshifted
-    hM = wl.H1D(ttM, nBX, xLo, xHi, "trapENFCal",tCut) # merged tree
-
-    x0, y0, xpb = wl.npTH1D(h0)
-    plt.step(x0, y0, c='b', lw=2, label=tt0.GetTitle())
-
-    x1, y1, xpb = wl.npTH1D(h1)
-    plt.step(x1, y1, c='g', lw=2, label=tt1.GetTitle())
-
-    x2, y2, xpb = wl.npTH1D(h2)
-    plt.step(x2, y2, c='m', lw=2, label=tt2.GetTitle())
-
-    x3, y3, xpb = wl.npTH1D(h3)
-    plt.step(x3, y3, c='r', lw=2, label=tt3.GetTitle())
-
-    xM, yM, xpb = wl.npTH1D(hM)
-    plt.step(xM, yM, c='k', lw=2, label="Merged Spectrum")
-
-    # get the axion peak list
-    axPeaks = [sigVals[name][0] for name in sigVals if "ax" in name]
-
-    plt.axvline(axPeaks[3], c='r', lw=4, alpha=0.7, label="Shift Peak: %.2f keV" % axPeaks[-1])
-
+    plt.axvline(axPeaks[-1], c='r', lw=4, alpha=0.7, label="Shift Peak: %.2f keV" % axPeaks[-1])
     plt.legend(fontsize=12)
-
     plt.xlabel("Shifted Energy (keV)", ha='right', x=1)
-    plt.ylabel("Counts", ha='right', y=1)
+    plt.ylabel("Counts / %.2f keV" % xpb, ha='right', y=1)
+    plt.xlim(xLo, xHi)
+    plt.ylim(ymin=0)
     plt.tight_layout()
-
     # plt.show()
-    plt.savefig("%s/plots/sf7-shiftSpec.pdf" % dsi.latSWDir)
+    # plt.savefig("%s/plots/sf7-shiftSpec-%dpks.pdf" % (dsi.latSWDir, nPks))
+
+
+    # === try fitting the data to some different backgrounds ===
+    # since the axion fit is suuper sensitive to choice of bkg and energy range
+    plt.close()
+
+    xLo, xHi = 1.9, 3.5 # lower than 1.9 introduces big outliers, higher than 3.5 introduces a peak
+
+    xP = np.arange(xLo, xHi, xpb) + xpb/2
+    idx = np.where((yM>0) & (xM>=xLo) & (xM<=xHi))
+    xM, yM = xM[idx], yM[idx]
+    yE = np.asarray([np.sqrt(y) for y in yM]) # statistical error
+
+    # one expo - wenqin says this is much too strong an assumption
+    # it gives the best result on g_ae, but probably b/c there aren't enough free parameters
+    # to fit the background properly
+    # p0 = (100, -0.5)
+    # popt,_ = curve_fit(wl.oneExp, xM, yM, p0=p0)
+    # yP = wl.oneExp(xP, *popt)
+    # chi2R = np.sum(((wl.oneExp(xM, *popt)-yM)/yE)**2) / (len(xM)-len(popt)) # chi2/ndf
+    # print("%d pks  oneExp  %.1f-%.1f kev chi2/ndf %.4f" % (nPks, xLo, xHi, chi2R), wl.niceList(list(popt)))
+    # plt.plot(xP, yP, 'r', label=r"one exp, $\chi^2$/ndf = %.2f" % (chi2R))
+
+    # two expos - lower chi2 than pol3 for this energy range and 4 peaks
+    p0 = (100, -0.5, -0.8)
+    popt,_ = curve_fit(wl.twoExp, xM, yM, p0=p0)
+    yP = wl.twoExp(xP, *popt)
+    chi2R = np.sum(((wl.twoExp(xM, *popt)-yM)/yE)**2) / (len(xM)-len(popt)) # chi2/ndf
+    print("%d pks  twoExp  %.1f-%.1f kev chi2/ndf %.4f" % (nPks, xLo, xHi, chi2R), wl.niceList(list(popt)))
+    plt.plot(xP, yP, 'g', label=r"two exp, $\chi^2$/ndf = %.2f" % (chi2R))
+
+    # pol3 - lowest chi2R for this energy range and 4 peaks
+    p0 = (200, -100, 8, 1)
+    popt,_ = curve_fit(wl.nPol, xM, yM, p0=p0)
+    yP = wl.nPol(xP, *popt)
+    chi2R = np.sum(((wl.nPol(xM, *popt)-yM)/yE)**2) / (len(xM)-len(popt)) # chi2/ndf
+    print("%d pks  pol%d  %.1f-%.1f kev chi2/ndf %.4f" % (nPks, len(p0)-1, xLo, xHi, chi2R), wl.niceList(list(popt)))
+    plt.plot(xP, yP, 'b', label=r"pol3, $\chi^2$/ndf = %.2f" % (chi2R))
+
+    plt.errorbar(xM, yM, yerr=yE, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1)
+    plt.xlim(xLo, xHi)
+    plt.legend()
+    plt.xlabel("Shifted Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts / %.2f keV" % xpb, ha='right', y=1)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf7-polDataFit-%dpks.pdf" % (dsi.latSWDir, nPks))
 
 
 def getSigma(E, opt=""):
@@ -749,29 +851,28 @@ def getSigma(E, opt=""):
         return sig
 
 
-def fitShiftModel():
+def fitShiftModel(eLo, eHi, epb, makePlots=True):
 
     from ROOT import TFile, TH1D, TCanvas, TLegend, gStyle
 
-    global sigModel
+    bkModel = ["exp1", "pol"]
     sigModel = ["sPk"] + bkModel
-
-    global eLo, eHi, epb
-    eLo, eHi, epb = 1.8, 3.5, 0.05 # this is for the shifted peak fit
-    # e-region: sig 0.19  lo 2.04  mean 2.62  hi 3.20
+    nB = int((eHi-eLo)/epb)
 
     # === load data into workspace ===
 
-    tfName = "%s/data/latDS%s_shifted.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]))
+    tfName = "%s/data/latDS%s_shifted_%dpks.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]), nPks)
+    print("Fitting shifted data for %d peaks" % nPks, axPeaks)
+
     tf = TFile(tfName)
     tt = tf.Get("mergeTree")
-    tCut = "isEnr==1" if enr is True else "isEnr==0"
+    tCut = "isEnr" if enr is True else "!isEnr"
     hitE = ROOT.RooRealVar("trapENFCal", "Energy", eLo, eHi, "keV")
     hEnr = ROOT.RooRealVar("isEnr", "isEnr", 0, 1, "")
-    hitW = ROOT.RooRealVar("weight", "weight", 1, 1000, "")
+    hitW = ROOT.RooRealVar("weight", "weight", 0, 10000, "")
 
     if useWeight:
-        fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr, hitW), "", "weight")
+        fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr, hitW), tCut, "weight")
     else:
         fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr), tCut)
 
@@ -784,9 +885,9 @@ def fitShiftModel():
 
     name = "sPk"
     pkVars = []
+    opt = "enr" if enr else "nat"
     mu, sig, amp = sigVals[name][0], getSigma(sigVals[name][0], opt), sigVals[name][1]
     # print("e-region: sigma: %.2f  lo %.2f  mean %.2f  hi %.2f" % (sig, mu-3*sig, mu, mu+3*sig))
-
     pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, sigVals[name][2], sigVals[name][3])
     pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu)
     pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig)
@@ -796,11 +897,22 @@ def fitShiftModel():
 
     bkVars = []
     for name in bkModel:
-        bkN = ROOT.RooRealVar("amp-"+name,"amp-"+name, sigVals[name][1], sigVals[name][2], sigVals[name][3])
-        bkT = ROOT.RooRealVar("tau-"+name,"tau-"+name, sigVals[name][4], sigVals[name][5], sigVals[name][6])
-        bkE = ROOT.RooExponential("expo-"+name,"expo-"+name, hitE, bkT)
-        bkP = ROOT.RooExtendPdf("ext-"+name,"ext-"+name, bkE, bkN)
-        bkVars.append([bkP,name,bkN,bkT,bkE])
+        if "exp" in name:
+            bkN = ROOT.RooRealVar("amp-"+name,"amp-"+name, sigVals[name][0], sigVals[name][1], sigVals[name][2])
+            bkT = ROOT.RooRealVar("tau-"+name,"tau-"+name, sigVals[name][3], sigVals[name][4], sigVals[name][5])
+            bkE = ROOT.RooExponential("expo-"+name,"expo-"+name, hitE, bkT)
+            bkP = ROOT.RooExtendPdf("ext-"+name,"ext-"+name, bkE, bkN)
+            bkVars.append([bkP,name,bkN,bkT,bkE])
+        if "pol" in name:
+            # this sucks, it keeps giving me negative values
+            name="pol"
+            bkN = ROOT.RooRealVar("amp-"+name,"amp-"+name, sigVals[name][0], sigVals[name][1], sigVals[name][2])
+            # bkC1 = ROOT.RooRealVar("c1","c1", -1, -1000, 1000)
+            # bkC2 = ROOT.RooRealVar("c2","c2", -10)
+            # bkC3 = ROOT.RooRealVar("c3","c3", 0)
+            bkPo = ROOT.RooPolynomial("pol-"+name,"pol-"+name, hitE, ROOT.RooArgList()) # y=1+c1x+c2x^2+c3x^3
+            bkEP = ROOT.RooExtendPdf("ext-"+name,"ext-"+name,bkPo, bkN)
+            bkVars.append([bkEP,name,bkPo,bkN])
 
     sigVars = bkVars + pkVars
 
@@ -810,30 +922,32 @@ def fitShiftModel():
         pdfList.add(bkg[0])
     model = ROOT.RooAddPdf("model", "total PDF", pdfList)
 
-    # === make a rooplot of the initial guess ===
+    if makePlots:
 
-    c = TCanvas("c","c",800,600)
-    leg = TLegend(0.83,0.5,0.97,0.9)
-    gStyle.SetPalette(ROOT.kRainBow)
-    nCol = float(gStyle.GetNumberOfColors())
+        # === make a rooplot of the initial guess ===
 
-    fSpec = hitE.frame(RF.Range(eLo, eHi), RF.Bins(nB))
-    fData.plotOn(fSpec)
+        c = TCanvas("c","c",800,600)
+        leg = TLegend(0.83,0.5,0.97,0.9)
+        gStyle.SetPalette(ROOT.kRainBow)
+        nCol = float(gStyle.GetNumberOfColors())
 
-    nTot = 0
-    for i, ext in enumerate(sigVars):
-        extPDF, name = ext[0], ext[1]
-        col = gStyle.GetColorPalette(int(nCol/len(sigModel) * i))
-        extPDF.plotOn(fSpec, RF.LineColor(col), RF.Normalization(sigVals[name][1], ROOT.RooAbsReal.Raw), RF.Name(name))
-        leg.AddEntry(fSpec.findObject(name), name, "l")
-        nTot += sigVals[name][1]
+        fSpec = hitE.frame(RF.Range(eLo, eHi), RF.Bins(nB))
+        fData.plotOn(fSpec)
 
-    model.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("fmodel"), RF.Normalization(nTot, ROOT.RooAbsReal.Raw))
+        nTot = 0
+        for i, ext in enumerate(sigVars):
+            extPDF, name = ext[0], ext[1]
+            col = gStyle.GetColorPalette(int(nCol/len(sigModel) * i))
+            extPDF.plotOn(fSpec, RF.LineColor(col), RF.Normalization(sigVals[name][1], ROOT.RooAbsReal.Raw), RF.Name(name))
+            leg.AddEntry(fSpec.findObject(name), name, "l")
+            nTot += sigVals[name][1]
 
-    fSpec.SetTitle("")
-    fSpec.Draw()
-    leg.Draw("same")
-    c.Print("%s/plots/sf7-shift-before.pdf" % dsi.latSWDir)
+        model.plotOn(fSpec, RF.LineColor(ROOT.kRed), RF.Name("fmodel"), RF.Normalization(nTot, ROOT.RooAbsReal.Raw))
+
+        fSpec.SetTitle("")
+        fSpec.Draw()
+        leg.Draw("same")
+        c.Print("%s/plots/sf7-shift-before-%dpks.pdf" % (dsi.latSWDir, nPks))
 
     # ==== ok, now run the fit ===
 
@@ -853,22 +967,21 @@ def fitShiftModel():
     getattr(fitWS,'import')(hitW)
     getattr(fitWS,'import')(fitRes)
     getattr(fitWS,'import')(model)
-    tf3 = TFile("%s/data/fitWS-axShift.root" % dsi.latSWDir,"RECREATE")
+    tf3 = TFile("%s/data/fitWS-axShift-%dpks.root" % (dsi.latSWDir, nPks),"RECREATE")
     fitWS.Write()
     tf3.Close()
 
 
-def plotShiftModel(plotProfileResults=True):
+def plotShiftModel(eLo, eHi, epb, plotProfileResults=True):
     from ROOT import TFile, TCanvas, TH1D, TLegend, gStyle
 
-    global sigModel
+    print("Plotting shifted fit for %d peaks" % nPks, axPeaks)
+
+    bkModel = ["exp1","pol"]
     sigModel = ["sPk"] + bkModel
+    nB = int((eHi-eLo)/epb)
 
-    global eLo, eHi, epb
-    eLo, eHi, epb = 1.8, 3.5, 0.05 # this is for the shifted peak fit
-    # e-region: sig 0.19  lo 2.04  mean 2.62  hi 3.20
-
-    f = TFile("%s/data/fitWS-axShift.root" % dsi.latSWDir)
+    f = TFile("%s/data/fitWS-axShift-%dpks.root" % (dsi.latSWDir, nPks))
     fitWS = f.Get("fitWS")
     fData = fitWS.allData().front()
     fitRes = fitWS.allGenericObjects().front()
@@ -884,7 +997,7 @@ def plotShiftModel(plotProfileResults=True):
         name = fp.at(i).GetName()
         fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
         fitVals[name] = [fitVal, fitErr]
-        print("%-10s" % name, wl.niceList(fitVals[name], "%.3f"))
+        # print("%-10s" % name, wl.niceList(fitVals[name], "%.3f"))
 
     profileVars = ["sPk"]
     if plotProfileResults:
@@ -899,13 +1012,13 @@ def plotShiftModel(plotProfileResults=True):
             interval = plc.GetInterval()
             lower = interval.LowerLimit(thisVar)
             upper = interval.UpperLimit(thisVar)
-            print("upper limit, %s: %.2f" % (fitVar, upper))
+            print("%.0f%% CL Upper Limit, %s: %.2f" % (100*pCL, fitVar, upper))
             fitVals[fitVar][0] = upper
             thisVar.setVal(upper)
 
     for name in fitVals:
-        if "amp-" in name:
-            print("%-10s  %.3f ± %-5.3f" % (name, fitVals[name][0], fitVals[name][1]))
+        # if "amp-" in name:
+        print("%-10s  %.3f ± %-5.3f" % (name, fitVals[name][0], fitVals[name][1]))
 
     # === make a rooplot of the fit ===
 
@@ -932,16 +1045,104 @@ def plotShiftModel(plotProfileResults=True):
     fSpec.SetTitle("")
     fSpec.Draw()
     leg.Draw("same")
-    c.Print("%s/plots/sf7-shift-after.pdf" % dsi.latSWDir)
+    c.Print("%s/plots/sf7-shift-after-%dpks.pdf" % (dsi.latSWDir, nPks))
     c.Clear()
 
+    # === make a pyplot of the fit.  be careful, the data might be weighted ===
 
-def getShiftProfile():
+    plt.close()
+
+    tfName = "%s/data/latDS%s_shifted_%dpks.root" % (dsi.latSWDir, ''.join([str(d) for d in dsList]), nPks)
+    tf = TFile(tfName)
+    tt = tf.Get("mergeTree")
+    print("mergeTree has",tt.GetEntries())
+    tCut = "isEnr" if enr else "!isEnr"
+    # tCut += " && trapENFCal >= %.1f && trapENFCal <= %.1f" % (eLo, eHi)
+    tCut = "trapENFCal > 1 && trapENFCal < 15 && isEnr"
+    n = tt.Draw("trapENFCal:weight", tCut, "goff")
+    trapE, weight = tt.GetV1(), tt.GetV2()
+    trapE = [trapE[i] for i in range(n)]
+    weight = [weight[i] for i in range(n)]
+
+    # plot data
+    x, hData = wl.GetHisto(trapE, eLo, eHi, epb, wts=weight)
+    hErr = np.asarray([np.sqrt(h) for h in hData]) # statistical error
+    print("Avg. error: ± %.2f cts" % (np.mean(hErr)*2))
+
+    plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1)
+
+    lab = "Shifted & Weighted Data" if useWeight else "Shifted Data"
+    lab += ", DS%s-%s, %.3f kg-y" % (str(dsList[0]), str(dsList[-1]), detExp/365.25)
+    plt.plot(np.nan, np.nan, ".k", ms=5, label=lab)
+
+    # plot the fit components
+    pdfs, pdfsCorr = [], []
+    nTot = 0
+
+    xpbF = 0.005
+    xF = np.arange(eLo, eHi, xpbF)
+    yF = np.zeros(len(xF))
+
+    # sum peak
+    opt = "enr" if enr else "nat"
+    mu, sig = sigVals["sPk"][0], getSigma(sigVals["sPk"][0], opt)
+    pCts = fitVals["amp-sPk"][0]
+    yP = wl.gaus(xF, mu, sig, pCts) # note: to match pCts, do np.sum(yP * xpbF)
+    # plt.plot(xF, yP * epb, c='b', lw=3, label="%.2f keV sum peak, %.2f cts (%.0f%% CL)" % (axPeaks[-1], pCts, 100*pCL))
+    nTot += pCts
+    yF = np.add(yF, yP * epb)
+
+    # two exponential bkg's, added together
+    # bTot, bTotCts = np.zeros(len(xF)), 0
+    # for i, name in enumerate(bkModel):
+    #     nCts, c = fitVals["amp-"+name][0], fitVals["tau-"+name][0]
+    #     yB = wl.oneExp(xF, nCts, c)
+    #     yB /= np.sum(yB)
+    #     bTot = np.add(bTot, yB * nCts * (epb/xpbF))
+    #     bTotCts += nCts
+    #     nTot += nCts
+
+    # one expo and one flat bkg
+    bTot, bTotCts = np.zeros(len(xF)), 0
+
+    nCts, c = fitVals["amp-exp1"][0], fitVals["tau-exp1"][0]
+    yB = wl.oneExp(xF, nCts, c)
+    yB /= np.sum(yB)
+    bTot = np.add(bTot, yB * nCts * (epb/xpbF))
+    bTotCts += nCts
+    nTot += nCts
+
+    nCts = fitVals["amp-pol"][0]
+    yB = np.ones(len(xF))
+    yB /= np.sum(yB)
+    bTot = np.add(bTot, yB * nCts * (epb/xpbF))
+    bTotCts += nCts
+    nTot += nCts
+
+    plt.plot(xF, bTot, c='m', lw=3, label="Expo Bkg, %.2f cts" % bTotCts)
+    yF = np.add(yF, bTot)
+    print("Total bkg cts:",bTotCts)
+
+    # total model
+    plt.plot(xF, yF, c='r', lw=3, label="Total Model. Peak Cts: %.2f (90%% CL)" % pCts)
+
+    plt.xlabel("Energy (keV)", ha='right', x=1)
+    plt.ylabel("Counts / %.2f keV" % epb, ha='right', y=1)
+    plt.legend(loc=4, fontsize=12)
+    plt.minorticks_on()
+    plt.xlim(eLo, eHi)
+    # plt.ylim(ymin=0)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf7-after-mpl-%dpks.pdf" % (dsi.latSWDir, nPks))
+
+
+def getShiftProfile(eLo, eHi, epb):
 
     from ROOT import TFile, TCanvas
     from ROOT import RooStats as RS
 
-    f = TFile("%s/data/fitWS-axShift.root" % dsi.latSWDir)
+    f = TFile("%s/data/fitWS-axShift-%dpks.root" % (dsi.latSWDir, nPks))
     fitWS = f.Get("fitWS")
     fData = fitWS.allData().front()
     hitE = fitWS.var("trapENFCal")
@@ -958,11 +1159,10 @@ def getShiftProfile():
         fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
         if "amp" in name:
             fitVals[name] = [fitVal, fitErr, name.split('-')[1]]
+    # for f in fitVals:
+        # print(f, fitVals[f])
 
-    for f in fitVals:
-        print(f, fitVals[f])
-
-    tOut = TFile("%s/data/rs-plc-shift.root" % dsi.latSWDir, "RECREATE")
+    tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
 
     start = time.clock()
 
@@ -978,11 +1178,12 @@ def getShiftProfile():
     upper = interval.UpperLimit(thisVar)
     plot = RS.LikelihoodIntervalPlot(interval)
     plot.SetNPoints(100)
-
-    from ROOT import TCanvas
-    c = TCanvas("c","c",800,600)
     plot.Draw("tf1")
-    c.Print("%s/plots/profile-sPk-test.pdf" % dsi.latSWDir)
+
+    # from ROOT import TCanvas
+    # c = TCanvas("c","c",800,600)
+    # plot.Draw("tf1")
+    # c.Print("%s/plots/profile-sPk-test.pdf" % dsi.latSWDir)
 
     pName = "hP"
     hProfile = plot.GetPlottedObject()
@@ -996,31 +1197,16 @@ def getShiftProfile():
     # print("elapsed:",time.clock()-start)
 
 
-def plotShiftProfile(makePlots=False):
+def plotShiftProfile(eLo, eHi, epb, makePlots=False):
     from ROOT import TFile
 
-    global sigModel
-    sigModel = ["sPk"] + bkModel
+    # use the results from GetPeakFluxPY
+    f = np.load("%s/data/sf7-pkFluxes.npz" % dsi.latSWDir)
+    axFluxes = f['arr_0'].item()
+    nFlux = np.sum([axFluxes[str("%.2f"%pk)] for pk in axPeaks])
+    Nexp_P = detExp * nFlux
 
-    global eLo, eHi, epb
-    eLo, eHi, epb = 1.8, 3.5, 0.05 # this is for the shifted peak fit
-    # e-region: sig 0.19  lo 2.04  mean 2.62  hi 3.20
-
-    # getPeakFluxPY results for h4 (axion PDF): [cts/ (keV kg d)]
-    # 1.86  1.438e+41
-    # 2.00  3.244e+40
-    # 2.45  1.061e+41
-    # 2.62  2.104e+40
-
-    Nexp_P = detExp * (1.438 + 0.3244 + 1.061 + 0.2104) * 1e41 # 8.38e44
-
-    tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
-    hA = tf2.Get("h4")
-    Nexp_C = hA.Integral(hA.FindBin(eLo), hA.FindBin(eHi), "width") * detExp
-
-    print("Flux in peaks: %.2e  Flux in continuum %.1f-%.1f keV: %.2e [/(keV kg-d)], pct in peaks: %.2f%%" % (Nexp_P, eLo, eHi, Nexp_C, 100*Nexp_P/Nexp_C))
-
-    tf = TFile("%s/data/rs-plc-shift.root" % dsi.latSWDir) # still need eff. correction
+    tf = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo))
     hP = tf.Get("hP")
     hT = hP.GetTitle().split()
     pars = []
@@ -1028,31 +1214,32 @@ def plotShiftProfile(makePlots=False):
         try: pars.append(float(v))
         except: pass
     pcl, intLo, bestFit, intHi = pars
-    print(pars)
 
-    Nobs = intHi
-    gae = np.power(Nobs/Nexp_P, 1/4)
-    print("Expo (kg-d) %.2f  Nobs: %.2f  Nexp_P %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp_P, eLo, eHi, gae))
+    xP, yP, xpb = wl.npTH1D(hP)
+    xP, yP = xP[1:] - xpb/2, yP[1:]
 
     # sanity check 2 - get the maximum of the confint, same as in RooStats:
     # Double_t Yat_Xmax = 0.5*ROOT::Math::chisquared_quantile(fInterval->ConfidenceLevel(),1);
     from scipy.stats import chi2
-    df = 1
+    df = 1 # this is an assumption
     cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
     cy = chi2.cdf(cx, df)
     chi2max = cx[np.where(cy>=0.9)][0] * 0.5
-    print(chi2max)
+    pyCts = xP[np.where(yP>chi2max)][0]
+
+    # Nobs = intHi
+    Nobs = pyCts
+    gae = np.power(Nobs/Nexp_P, 1/4)
+    print("Expo (kg-d) %.2f  Nobs: %.2f  Nexp_P %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp_P, eLo, eHi, gae))
 
     if makePlots:
         plt.close()
         plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
 
-        xP, yP, xpb = wl.npTH1D(hP)
-        xP, yP = xP[1:] - xpb/2, yP[1:]
-
-        plt.plot(xP, yP, '-b', lw=4, label=r"w/ Measured Eff. $\mathregular{g_{ae}}$ = %.2e" % gae)
-        plt.plot([intHi,intHi],[0,chi2max], '-b', lw=2, alpha=0.5)
+        plt.plot(xP, yP, '-b', lw=4, label=r"w/ Measured Eff. $\mathregular{g_{ae} \leq}$ %.2e" % gae)
+        # plt.plot([intHi,intHi],[0,chi2max], '-b', lw=2, alpha=0.5) # this isn't always at the 90% value
         plt.plot([intLo,intLo],[0,chi2max], '-b', lw=2, alpha=0.5)
+        plt.plot([pyCts,pyCts],[0,chi2max], '-b', lw=2, alpha=0.5)
 
         plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
         plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
@@ -1061,7 +1248,125 @@ def plotShiftProfile(makePlots=False):
         # plt.xlim(500, 1000)
         plt.tight_layout()
         # plt.show()
-        plt.savefig("%s/plots/sf-axion-profile-shift.pdf" % dsi.latSWDir)
+        plt.savefig("%s/plots/sf-axion-profile-shift-%dpks.pdf" % (dsi.latSWDir, nPks))
+
+
+def combineProfiles():
+
+    from ROOT import TFile
+    from scipy.stats import chi2
+
+    # expected axion counts, gae=1
+    f = np.load("%s/data/sf7-pkFluxes.npz" % dsi.latSWDir)
+    axFluxes = f['arr_0'].item()
+
+    # 1. profiles for each number of peaks, with g_ae in legend, and 2.0 eLo
+
+    # === 1. profiles for each number of peaks, with g_ae in legend, and 2.0 eLo ===
+
+    eLo = 2.0
+    cols = ['k','g','b','r']
+    for i in range(1,5):
+
+        tf = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, i, eLo))
+        hP = tf.Get("hP")
+        hT = hP.GetTitle().split()
+        pars = []
+        for v in hT:
+            try: pars.append(float(v))
+            except: pass
+        pcl, intLo, bestFit, intHi = pars
+        print(i,"---",pars)
+
+        xP, yP, xpb = wl.npTH1D(hP)
+        xP, yP = xP[1:] - xpb/2, yP[1:]
+        tf.Close()
+
+        # observed counts
+        df = 1
+        cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
+        cy = chi2.cdf(cx, df)
+        chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+        pyCts = xP[np.where(yP>chi2max)][0]-xpb/2 # sometimes the interval reported by the PLC isn't the true 90% value in the curve??
+        # Nobs = intHi
+        Nobs = pyCts
+
+        # expected counts
+        pk0 = 4-i
+        axPeaks = [sigVals[name][0] for name in pkModel]
+        axPeaks = axPeaks[pk0:]
+        nFlux = np.sum([axFluxes[str("%.2f"%pk)] for pk in axPeaks])
+        Nexp_P = detExp * nFlux
+
+        gae = np.power(Nobs/Nexp_P, 1/4)
+        # print("Expo (kg-d) %.2f  Nobs: %.2f  Nexp_P %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp_P, eLo, eHi, gae))
+
+        plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
+
+        plt.plot(xP, yP, '-', c=cols[i-1], lw=2, label=r"nPks=%d: $\mathregular{g_{ae} \leq}$ %.2e" % (i,gae))
+        plt.plot([pyCts,pyCts],[0,chi2max], '-', c=cols[i-1], lw=2, alpha=0.5)
+
+    plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
+    plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
+    plt.legend(loc=1, fontsize=14)
+    plt.ylim(0, chi2max*3)
+    # plt.xlim(500, 1000)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf-axion-profile-shift-allPks.pdf" % dsi.latSWDir)
+
+
+    # === 2. profile for the nPks=3 curve, with a 1.9 and 2.0 eLo ===
+    plt.close()
+
+    df = 1
+    cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
+    cy = chi2.cdf(cx, df)
+    chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+    plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
+
+    nPks = 3
+    pk0 = 4-nPks
+    axPeaks = [sigVals[name][0] for name in pkModel]
+    axPeaks = axPeaks[pk0:]
+    nFlux = np.sum([axFluxes[str("%.2f"%pk)] for pk in axPeaks])
+    Nexp_P = detExp * nFlux
+
+    eLo = 2.0
+    tf1 = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo))
+    hP1 = tf1.Get("hP")
+    hT1 = hP1.GetTitle().split()
+    xP1, yP1, xpb1 = wl.npTH1D(hP1)
+    xP1, yP1 = xP1[1:] - xpb1/2, yP1[1:]
+    pyCts1 = xP1[np.where(yP1>chi2max)][0]-xpb1/2
+    gae = np.power(pyCts1/Nexp_P, 1/4)
+    tf1.Close()
+    plt.plot(xP1, yP1, '-b', lw=2, label=r"nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts1,gae))
+    plt.plot([pyCts1,pyCts1],[0,chi2max], '-b', lw=2, alpha=0.5)
+
+    eLo = 1.9
+    tf2 = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo))
+    hP2 = tf2.Get("hP")
+    hT12 = hP2.GetTitle().split()
+    xP2, yP2, xpb2 = wl.npTH1D(hP2)
+    xP2, yP2 = xP2[1:] - xpb2/2, yP2[1:]
+    pyCts2 = xP2[np.where(yP2>chi2max)][0]-xpb2/2
+    gae = np.power(pyCts2/Nexp_P, 1/4)
+    tf2.Close()
+    plt.plot(xP2, yP2, '-r', lw=2, label=r"nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts2,gae))
+    plt.plot([pyCts2,pyCts2],[0,chi2max], '-r', lw=2, alpha=0.5)
+
+    plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
+    plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
+    plt.legend(loc=1, fontsize=14)
+    plt.ylim(0, chi2max*3)
+    # plt.xlim(500, 1000)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf-axion-profile-shift-eneSystematic.pdf" % dsi.latSWDir)
+
+
+    # 3? profile for the n=4 curve, with the sim efficiency correction?
 
 
 

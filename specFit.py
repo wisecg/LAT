@@ -18,7 +18,7 @@ def main(argv):
     initialize(makePlots=False)
     # loadDataMJD()
     # getUnscaledPDFs(makePlots=True)
-    plotPDFs()
+    # plotPDFs()
     # testFunc()
     # fitModel(makePlots=True)
     # plotFit(plotRate=False, plotProfileResults=True)
