@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 import random
 import numpy as np
+import dsi
 import matplotlib.pyplot as plt
+plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
 from ROOT import TFile, TTree, TH1D, TCanvas, gStyle, gROOT
-
-import matplotlib.pylab as pylab
-params = {'legend.fontsize': 'large',
-         'axes.labelsize': 'large',
-         'axes.titlesize':'large',
-         'xtick.labelsize':'large',
-         'ytick.labelsize':'large'}
-pylab.rcParams.update(params)
 
 gae_mb = 2.6e-11
 ex_mb = 89.5 / 365.
@@ -49,7 +43,7 @@ def main():
     B = tritBkgIndex(eLo,eHi,0.03)
     B_mb = malbekBkgIndex(eLo,eHi)
     A = axFluxConst(eLo,eHi)
-    print "B_mjd: %.2f  B_mb: %.2f  [cts/(kev-kg-d)]  A: %.2e [cts/kg-d]" % (B*365.25*(eHi-eLo), B_mb, A)
+    print("B_mjd: %.2f  B_mb: %.2f  [cts/(kev-kg-d)]  A: %.2e [cts/kg-d]" % (B*365.25*(eHi-eLo), B_mb, A))
     # B = 0.03
 
     fig = plt.figure(figsize=(8,7),facecolor='w')
@@ -72,7 +66,9 @@ def main():
     dsExpos = {"DS 1":1.81, "DS 1+5b":3.66, "DS 1-4+5b":5.24, "DS 1-4+5b+6o":7.42, "DS 1-4+5b+6":11.82}
     ctr = 0
     cmap = plt.cm.get_cmap('hsv',len(dsExpos)+1)
-    for key, val in sorted(dsExpos.iteritems(), key=lambda (k,v): (v,k)): # trick to sort by value
+
+    for key in sorted(dsExpos, key=dsExpos.get, reverse=False):
+        print(key, dsExpos[key])
         val = dsExpos[key]
         plt.plot(val,directMethod(val,B,eLo,eHi),'o',c=cmap(ctr),label="%s : %.2f kg-y" % (key,val))
         ctr += 1
@@ -83,11 +79,12 @@ def main():
     ax.yaxis.set_label_coords(0.,1.04)
 
     plt.legend(loc='best')
-    plt.savefig("../plots/gae-proj.pdf")
+    plt.show()
+    # plt.savefig("../plots/gae-proj.pdf")
 
-    print "100 kg-y g_ae,  ratio method:", ratioMethod(expos[-1],B,eLo,eHi)
-    print "               direct method:", directMethod(expos[-1],B,eLo,eHi)
-    # print "              brian's method:", brian_gae[-1]
+    print("100 kg-y g_ae,  ratio method:", ratioMethod(expos[-1],B,eLo,eHi))
+    print("               direct method:", directMethod(expos[-1],B,eLo,eHi))
+    # print("              brian's method:", brian_gae[-1])
 
 
 def directMethod(ex,B,eLo,eHi):
@@ -103,7 +100,7 @@ def ratioMethod(ex,B,eLo,eHi):
 
 def axFluxConst(eLo, eHi):
     """ A : [cts / kg-y] from the convolved axion flux spectrum. """
-    f = TFile("../data/inputHists.root")
+    f = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     hConv = f.Get("h4")
     ax = hConv.GetXaxis()
     cts = hConv.Integral(ax.FindBin(eLo), ax.FindBin(eHi), "width") * 365.25 # [cts / kg-y]
@@ -135,11 +132,11 @@ def tritBkgIndex(eLo, eHi, B):
     """ B [cts / (keV-kg-d)].  Proportional to the 3H activation rate.
     B = 0.03 from Marino's thesis is an average from 0-18 keV for 15 d of surface exposure.
     """
-    f = TFile("../data/inputHists.root")
+    f = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     hTrit = f.Get("h5")
     ax = hTrit.GetXaxis()
     # normCts = hTrit.Integral("width")
-    # print normCts # check that it's normalized to 1.
+    # print(normCts # check that it's normalized to 1.)
 
     # Scale the full histo s/t the average counts match 'B'.
     avg = 0.
