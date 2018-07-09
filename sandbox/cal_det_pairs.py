@@ -184,8 +184,7 @@ def getSpecPandas():
         Save detailed info for events with hits < 2630 keV.
     """
     from ROOT import TFile, TTree
-    # inDir, outDir = '/mnt/mjdDisk1/Majorana/data/sandbox/special/lat/cal','/mnt/mjdDisk1/Majorana/users/psz/LAT/data'
-    inDir = '/projecta/projectdirs/majorana/users/wisecg/special/lat'
+    inDir, outDir = '/mnt/mjdDisk1/Majorana/data/sandbox/special/lat/cal','/mnt/mjdDisk1/Majorana/users/psz/LAT/data'
     inPath = pathlib.Path(inDir)
     calInfo = ds.CalInfo()
     runList = calInfo.GetSpecialRuns("longCal",dsNum) # 54 total
@@ -212,8 +211,9 @@ def getSpecPandas():
                 if lTree.channel.at(i) in chList
                 and lTree.channel.at(i) != 598
                 and lTree.channel.at(i) in thD
-                and lTree.trapENFCal.at(i) > thD[lTree.channel.at(i)][0] + 3*thD[lTree.channel.at(i)][1]
-                and 0.7 < lTree.trapENFCal.at(i) < 9999
+                # and lTree.trapENFCal.at(i) > thD[lTree.channel.at(i)][0] + 3*thD[lTree.channel.at(i)][1] # Use DB value
+                and lTree.trapENFCal.at(i) > lTree.threshKeV.at(i) + 3*lTree.threshSigma.at(i)  # Use threshold from current run
+                and 0.7 < lTree.trapENFCal.at(i) < 3000
                 ]
             if len(idxList) is not 2: continue
             hitE = [lTree.trapENFCal.at(i) for i in idxList]
@@ -240,7 +240,7 @@ def getSpecPandas():
                 dataMap['CPD2'] = int(100*lTree.C.at(idxList[1])+10*lTree.P.at(idxList[1])+lTree.D.at(idxList[1]))
                 dataMap['UnixTime'] = lTree.globalTime.GetSec()
                 dataList.append(dataMap)
-
+        tf.Close()
     df = pd.DataFrame.from_dict(dataList)
     print(len(df))
     print(df.head(10))
