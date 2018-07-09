@@ -16,7 +16,7 @@ cal = dsi.CalInfo()
 det = dsi.DetInfo()
 import waveLibs as wl
 
-def main():
+def main(argv):
 
     ds, cIdx, mod = None, None, None
     writeDB = False
@@ -257,10 +257,10 @@ def getSettings(ds, key, mod, cIdx, writeDB=False):
     print("Elapsed: %.4f sec, %.4f sec/run" % (timeElapsed, timeElapsed/len(runList)))
 
     # debug: print the values
-    # print(dbKeyTH)
-    # for val in sorted(detTH):
-    #     if len(detTH[val])>0:
-    #         print(val, detTH[val])
+    print(dbKeyTH)
+    for val in sorted(detTH):
+        if len(detTH[val])>0:
+            print(val, detTH[val])
 
     # fill the DB
     if writeDB:

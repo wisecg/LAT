@@ -254,7 +254,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       if(trapENF > 0 && trapENF < 10)  {
         hTrigger[ channelMap[channel] ]->Fill(TriggerSample);
         nTrigger[ channelMap[channel] ]++;
-        if(nTrigger[channelMap[channel]] < 100)
+        if(bDebug && nTrigger[channelMap[channel]] < 100)
         {
           waveTrigger = new TH1D(Form("wtrig_ch%d_%d", channel, nTrigger[channelMap[channel]] ),"", 30, 0, 30);
           for(int bin = 1; bin < waveTrigger->GetNbinsX(); bin++)
@@ -271,7 +271,7 @@ void FindThresholds(int dsNum, int subNum, int runLo, int runHi, bool useDoubles
       if(trapENF > 50) {
         hNoise[ channelMap[channel] ]->Fill(NoiseSample);
         nNoise[ channelMap[channel] ]++;
-        if(nNoise[channelMap[channel]] < 100)
+        if(bDebug && nNoise[channelMap[channel]] < 150)
         {
           waveNoise = new TH1D(Form("wnoise_ch%d_%d", channel, nNoise[channelMap[channel]] ),"", 30, 0, 30);
           for(int bin = 1; bin < waveNoise->GetNbinsX(); bin++)
