@@ -492,8 +492,8 @@ def getSubRanges():
     hvRanges = [] # these will be inputs to PSA cut tuning (calibration)
 
     # loop over datasets
-    # for ds in [0,1,2,3,4,"5A","5B","5C",6]:
-    for ds in [4]:
+    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+    #for ds in [6]:
         if ds in ["5A","5B","5C"]:
             dsNum = 5
         else:
@@ -636,7 +636,8 @@ def fillThreshDB():
     bkg = dsi.BkgInfo()
 
     # loop over datasets and bkgIdx
-    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+#    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+    for ds in [6]:
         dsNum = ds if isinstance(ds, int) else 5
         goodChans = det.getGoodChanList(dsNum)
 
