@@ -58,7 +58,7 @@ def getRates():
     # opt = "zombie" # hits from a detector declared dead by livetime calc
     # opt = "dead"   # detectors w/ no hits at all
 
-    for ds in [0,1,2,3,4,"5A","5B","5C"]:
+    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
     # for ds in [0]:
         print("Getting DS-%s rates ..." % str(ds))
 
@@ -150,7 +150,7 @@ def getOutliers(verbose=False, usePass2=False, noSkip=False):
     # 'rates' objects: [:,0]=rate1, [:,1]=rate2, [:,2]=expo, [:,3]=bkgIdx, [:,4]=cpd, [:,5]=ds, [:,6]=n1
     enrRates, natRates = [], []
 
-    for ds in [0,1,2,3,4,"5A","5B","5C"]:
+    for ds in [1,1,2,3,4,"5A","5B","5C",6]:
     # for ds in ["5A"]:
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds # this is used for getGoodChanList
@@ -357,7 +357,7 @@ def plotRates():
 
     fig = plt.figure()
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
 
     dataBox, xVals = [], []
     for i, ds in enumerate(dsList):
@@ -422,7 +422,7 @@ def makeCutFiles():
     pass2 = False
     outType = "frb2%d" % pctTot if pass2 else "frb%d" % pctTot
 
-    for ds in [0,1,2,3,4,"5A","5B","5C"]:
+    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds
         nBkg = bkg.dsMap()[dsNum]
@@ -513,7 +513,7 @@ def plotSpecBeforeAfter():
 
     from ROOT import TChain
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = ["5C"]
 
     plotName = "./plots/lat3-comp-allDS-e%d.pdf" % pctTot
@@ -597,7 +597,7 @@ def plotSpectraAfter():
     from ROOT import TChain, TFile, TTree
     from matplotlib import colors
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = ["5A","5B","5C"]
 
     # cType = "fr"             # before burst cut
@@ -847,12 +847,12 @@ def combineSpectra():
 
     # this makes a combined enr/nat spectrum for all these combinations and energy ranges
     specList = [
-        [[0,1,2,3,4,"5A","5B","5C"],[0,20,0.1]],
-        [[0,1,2,3,4,"5A","5B","5C"],[0,50,0.1]],
-        [[1,2,3,4,"5A","5B","5C"],[0,20,0.1]],
-        [[1,2,3,4,"5A","5B","5C"],[0,50,0.1]],
-        [[1,2,3,4,"5B","5C"],[0,20,0.1]],
-        [[1,2,3,4,"5B","5C"],[0,50,0.1]]
+        [[0,1,2,3,4,"5A","5B","5C",6],[0,20,0.1]],
+        [[0,1,2,3,4,"5A","5B","5C",6],[0,50,0.1]],
+        [[1,2,3,4,"5A","5B","5C",6],[0,20,0.1]],
+        [[1,2,3,4,"5A","5B","5C",6],[0,50,0.1]],
+        [[1,2,3,4,"5B","5C",6],[0,20,0.1]],
+        [[1,2,3,4,"5B","5C",6],[0,50,0.1]]
     ]
 
     for spec in specList:
