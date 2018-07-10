@@ -23,14 +23,14 @@ def main(argv):
     # plotPDFs()
     # testFunc()
 
-    # fitModel(makePlots=True)
-    # plotFit(plotRate=False, plotProfileResults=True)
-    # getProfile()
-    # plotProfile(makePlots=True)
+    fitModel(makePlots=True)
+    plotFit(plotRate=False, plotProfileResults=True)
+    getProfile()
+    plotProfile(makePlots=True)
     # getProfileM1()
     # plotProfileM1()
     # hadronicCurve()
-    gaeProj()
+    # gaeProj()
 
 
 def initialize(makePlots=False):
@@ -47,21 +47,30 @@ def initialize(makePlots=False):
     eff = True
     simEffCorr = False
 
+    print(dsList)
+    print("Enriched" if enr else "Natural")
+
     # full spectrum axion fit
     eLo, eHi, epb = 1.5, 20, 0.2
-    bkgModelHists = ["trit","flat","55Fe","68Ge","68Ga","65Zn","49V","axion"]
+    bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
     bkgModelPeaks = []
     profileVars = ["axion"]
 
-    # enr/nat resolution study
+    # reference fit
+    # eLo, eHi, epb = 1.5, 20, 0.2
+    # bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"]
+    # bkgModelPeaks = []
+    # profileVars = []
+
+    # # enr/nat resolution study
     # eLo, eHi, epb = 5, 20, 0.2
     # bkgModelHists = ["trit","flat"]
-    # bkgModelPeaks = ["55Fe","68Ge","65Zn","68Ga"]
+    # bkgModelPeaks = ["54Mn","55Fe","57Co","65Zn","68Ga","68Ge"]
     # profileVars = []
 
     # 14.4 keV axion
     # eLo, eHi, epb = 5, 20, 0.2
-    # bkgModelHists = ["trit","flat","55Fe","68Ge","65Zn","axFe_M1"]
+    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"]
     # bkgModelPeaks = []
     # profileVars = ["axFe_M1"]
 
@@ -78,14 +87,14 @@ def initialize(makePlots=False):
         "210Pb_c":  [-1, 50, 0, 10000],
         "axion":    [-1, 1, 0, 10000],
         # CDMS paper, Table 3. https://arxiv.org/pdf/1806.07043.pdf
-        "49V":      [4.97, 0, 0, 1000],
+        "49V":      [4.97, 3, 0, 1000],
         "51Cr":     [5.46, 0, 0, 1000], # not in cdms
-        "54Mn":     [5.99, 0, 0, 1000],
+        "54Mn":     [5.99, 3, 0, 1000],
         "55Fe":     [6.54, 50, 0, 1000],
-        "57Co":     [7.11, 0, 0, 1000],
-        "65Zn":     [8.98, 9, 0, 1000],
+        "57Co":     [7.11, 3, 0, 1000],
+        "65Zn":     [8.98, 10, 0, 1000],
         "65Zn_L":   [1.10, 0, 0, 1000],
-        "68Ga":     [9.66, 1, 0, 1000],
+        "68Ga":     [9.66, 3, 0, 1000],
         "68Ge":     [10.37, 50, 0, 1000],
         "68Ge_L":   [1.29, 1, 0, 1000],
         "73As":     [11.10, 0, 0, 1000], # not in cdms
@@ -456,9 +465,8 @@ def plotPDFs():
     plt.xlim(0,12)
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    # plt.show()
     plt.savefig("%s/plots/sf-axFlux.pdf" % dsi.latSWDir)
-    # exit()
 
     # === 4. solar axion PDF, gae=1 -- this is what we integrate to get N_exp
     plt.close()
@@ -477,15 +485,15 @@ def plotPDFs():
     hT = tf.Get("h5")
 
     xT, yT, xpb = wl.npTH1D(hT)
-    xT, yT = normPDF(xT, yT, eLo, eHi)
+    xT, yT = normPDF(xT, yT, 0.1, 20)
 
-    hC = getEffCorrTH1D(hT, eLo, eHi, nBP)
+    hC = getEffCorrTH1D(hT, pLo, pHi, nBP)
     xC, yC, xpb = wl.npTH1D(hC)
-    xC, yC = normPDF(xC, yC, eLo, eHi)
+    xC, yC = normPDF(xC, yC, 0.1, 20)
 
     plt.plot(xT, yT, "-", c='b', label="Raw")
     opt = "Enr" if enr else "Nat"
-    plt.plot(xC, yC, "-", c='r', label="Eff. Corrected, DS%d-%s, %s" % (dsList[0], dsList[-1], opt))
+    plt.plot(xC, yC, "-", c='r', label="Eff.Corr, DS%d-%s, %s, Norm'd" % (dsList[0], dsList[-1], opt))
     plt.axvline(1, c='g', lw=1, label="1.0 keV")
 
     plt.xlabel("Energy (keV)", ha='right', x=1)
@@ -814,6 +822,7 @@ def fitModel(makePlots=False):
         nCol = float(gStyle.GetNumberOfColors())
 
         fSpec = hitE.frame(RF.Range(eLo,eHi), RF.Bins(nB))
+
         fData.plotOn(fSpec)
 
         # wouter's note: DON'T DELETE
@@ -851,6 +860,8 @@ def fitModel(makePlots=False):
         trapE = [trapE[i] for i in range(n)]
         x, hData = wl.GetHisto(trapE, eLo, eHi, epb)
         hErr = np.asarray([np.sqrt(h) for h in hData])
+
+        # comment this out to show just the bkg model
         # plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1) # pretty convincing rooplot fake
 
         cmap = plt.cm.get_cmap('jet',len(bkgModel))
@@ -877,11 +888,11 @@ def fitModel(makePlots=False):
             pdfs.append([x, y, xpb, nCts])
 
         xT, yT = getTotalModel(pdfs, eLo, eHi, epb, smooth=True)
-        plt.step(xT, yT / epb, c='r', lw=2, label="Raw (no eff. corr): %d cts" % nTot)
+        plt.step(xT, yT / epb, c='r', lw=2, label="Total Model")
 
         plt.xlabel("Energy (keV)", ha='right', x=1)
         plt.ylabel("Counts / %.1f keV" % epb, ha='right', y=1)
-        plt.legend(loc=1, fontsize=12)
+        plt.legend(loc=1, fontsize=11)
         # plt.minorticks_on()
         plt.xlim(eLo, eHi)
         plt.ylim(ymin=0)
@@ -1014,7 +1025,9 @@ def plotFit(plotRate=False, plotProfileResults=False):
     else:
         hErr = np.asarray([np.sqrt(h) for h in hData]) # statistical error
         dCts = np.sum( hData[np.where((x>=eLo)&(x<=eHi))] )
-        plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1, label="DS%s-%s, %.2f kg-y, %d cts" % (str(dsList[0]), str(dsList[-1]), detExp, dCts))
+        lab = "DS%s-%s, %.2f kg-y, %d cts" % (str(dsList[0]), str(dsList[-1]), detExp/365.25, dCts)
+        # lab = "DS1-4,5B,5C, %.2f kg-y, %d cts" % (detExp/365.25, dCts)
+        plt.errorbar(x, hData, yerr=hErr, c='k', ms=5, linewidth=0.5, fmt='.', capsize=1, zorder=1, label=lab)
 
     # plot the bkg components
     cmap = plt.cm.get_cmap('jet',len(bkgModel))
@@ -1029,9 +1042,15 @@ def plotFit(plotRate=False, plotProfileResults=False):
             x, y, xpb = wl.npTH1D(hB)
             x, y = normPDF(x, y, eLo, eHi)
             nCts, nErr = fitVals["amp-"+name][0], fitVals["amp-"+name][1]
-            lab = "%s: %.1f ± %.1f cts" % (name, nCts, nErr)
+
+            yc = nCts * getEffCorr(x, y, inv=True)
+            ec = np.sum(yc)/nCts
+            print(name,"eff corr: %.2f ± %.2f (factor %.2f)" %(np.sum(yc),nErr*ec,ec))
+
+            # print the efficiency-corrected counts
+            lab = "%s: %.1f ± %.1f cts" % (name, np.sum(yc), nErr*ec)
             if name in profileVars:
-                lab = "%s %.1f cts (90%%CL)" % (sigLabels[name], nCts)
+                lab = "%s %.1f cts (90%%CL)" % (sigLabels[name], np.sum(yc))
 
         elif name in bkgModelPeaks:
             mu, sig, nCts = fitVals["mu-"+name][0], fitVals["sig-"+name][0], fitVals["amp-"+name][0]
@@ -1050,7 +1069,6 @@ def plotFit(plotRate=False, plotProfileResults=False):
         else:
             plt.plot(xS, yS * nCts * (epb/xpb), c=cmap(i), lw=2, label=lab)
 
-        yc = nCts * getEffCorr(x, y, inv=True)
         pdfs.append([x, y, xpb, nCts])
         pdfsCorr.append([x, yc, xpb, nCts])
         nTot += nCts
@@ -1064,10 +1082,12 @@ def plotFit(plotRate=False, plotProfileResults=False):
         plt.plot(xT, yT / detExp, 'r', lw=2, alpha=0.7, label="Rate: %.2f c/kev/kg-d" % (nTot/((eHi-eLo)*detExp)) )
         plt.plot(xTc, yTc / detExp, c='m', lw=3, alpha=0.7, label="Eff.Corr: %.2f " % (nTotC/((eHi-eLo)*detExp))  )
         plt.ylabel("Counts / keV / kg-d", ha='right', y=1)
+
     else:
         plt.plot(xT, yT, 'r', lw=2, alpha=0.7, label="Model w/o Eff.: %d cts" % nTot)
         plt.plot(xTc, yTc, c='m', lw=3, alpha=0.7, label="Model w/ Eff: %d cts" % nTotC)
         plt.ylabel("Counts / %.1f keV" % epb, ha='right', y=1)
+
 
 
     # get an efficiency-corrected number of counts for this energy region
@@ -1080,6 +1100,9 @@ def plotFit(plotRate=False, plotProfileResults=False):
 
     nReg = np.sum(hData)
     nWtd = np.sum(hDataW)
+
+    print("Data counts, %.2f-%.2f: %d, eff-corrected: %.2f, expo: %.3f kg-y" % (eLo, eHi, nReg, nWtd, detExp/365.25))
+
     print("Efficiency corrected rate, %.1f-%.1f keV:  %.3f c/(kev-kg-d)" % (eLo, eHi, nWtd/detExp/(eHi-eLo)))
 
     idx = np.where((x>=1.5) & (x<=8))
@@ -1137,14 +1160,14 @@ def getProfile(idx=None, update=False):
 
     # thesis plot, don't delete
     plt.close()
-    plt.step(x, y * nCts * (epb/xpb), c='r', lw=2, label="Eff-weighted: %.1f" % (nCts))
-    plt.step(x, yc * (epb/xpb), c='b', lw=2, label="True counts: %.1f" % (nCorr))
+    plt.step(x, y * nCts * (epb/xpb), c='r', lw=2, label="PDF w/ Efficiency: %.1f" % (nCts))
+    plt.step(x, yc * (epb/xpb), c='b', lw=2, label="True counts, DS%s-%s: %.1f" % (dsList[0], dsList[-1], nCorr))
+    plt.axvline(eLo, c='g', lw=1, label="%.2f keV" % eLo)
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Counts / keV", ha='right', y=1)
     plt.legend(loc=1)
     plt.tight_layout()
     # plt.show()
-    plt.axvline(eLo, c='g', lw=1, label="%.1f keV" % eLo)
     plt.xlim(xmax=10)
     plt.savefig("%s/plots/lat-axionPDFCorr.pdf" % dsi.latSWDir)
 
@@ -1187,6 +1210,8 @@ def getProfile(idx=None, update=False):
 
 def plotProfile(makePlots=False):
 
+    getSimEff = False
+
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     hA = tf2.Get("h4")
     Nexp = hA.Integral(hA.FindBin(eLo), hA.FindBin(eHi), "width") * detExp
@@ -1201,22 +1226,23 @@ def plotProfile(makePlots=False):
     pcl0, intLo0, bestFit0, intHi0, effCorr0 = pars
     print(pars)
 
+    # apply the efficiency correction
     Nobs = intHi0 * effCorr0
     gae0 = np.power(Nobs/Nexp, 1/4)
     print("No-corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae0))
 
-    tf1 = TFile("%s/data/rs-plc-1.root" % dsi.latSWDir) # sim eff correction
-    hP1 = tf1.Get("hP_1")
-    hT1 = hP1.GetTitle().split()
-    pars = []
-    for v in hT1:
-        try: pars.append(float(v))
-        except: pass
-    pcl1, intLo1, bestFit1, intHi1, effCorr1 = pars
-
-    Nobs = intHi1 * effCorr1
-    gae1 = np.power(Nobs/Nexp, 1/4)
-    print("With corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae1))
+    if getSimEff:
+        tf1 = TFile("%s/data/rs-plc-1.root" % dsi.latSWDir) # sim eff correction
+        hP1 = tf1.Get("hP_1")
+        hT1 = hP1.GetTitle().split()
+        pars = []
+        for v in hT1:
+            try: pars.append(float(v))
+            except: pass
+        pcl1, intLo1, bestFit1, intHi1, effCorr1 = pars
+        Nobs = intHi1 * effCorr1
+        gae1 = np.power(Nobs/Nexp, 1/4)
+        print("With corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae1))
 
     # sanity check - graham's number
     # malbExp  = 89.5 # kg-d
@@ -1228,11 +1254,13 @@ def plotProfile(makePlots=False):
 
     # sanity check 2 - get the maximum of the confint, same as in RooStats:
     # Double_t Yat_Xmax = 0.5*ROOT::Math::chisquared_quantile(fInterval->ConfidenceLevel(),1);
-    from scipy.stats import chi2
-    df = 1
-    cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
-    cy = chi2.cdf(cx, df)
-    chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+    # from scipy.stats import chi2
+    # df = 1 # num pars of interest, =1 if this is the only one
+    # cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
+    # cy = chi2.cdf(cx, df)
+    # chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+    chi2max = 1.355
+    print(chi2max)
 
     if makePlots:
         plt.close()
@@ -1247,20 +1275,20 @@ def plotProfile(makePlots=False):
         plt.plot([cHi0,cHi0],[0,chi2max], '-b', lw=2, alpha=0.5)
         plt.plot([cLo0,cLo0],[0,chi2max], '-b', lw=2, alpha=0.5)
 
-        xP1, yP1, xpb = wl.npTH1D(hP1)
-        xP1, yP1 = xP1[1:] * effCorr1 - xpb/2, yP1[1:]
-
-        plt.plot(xP1, yP1, '-r', lw=4, label=r"w/ Sim-corrected Eff. $\mathregular{g_{ae} \leq}$ %.2e" % gae1)
-        cHi1 = int(intHi1 * effCorr1)
-        cLo1 = int(intLo1 * effCorr1)
-        plt.plot([cHi1,cHi1],[0,chi2max], '-r', lw=2, alpha=0.5)
-        plt.plot([cLo1,cLo1],[0,chi2max], '-r', lw=2, alpha=0.5)
+        if getSimEff:
+            xP1, yP1, xpb = wl.npTH1D(hP1)
+            xP1, yP1 = xP1[1:] * effCorr1 - xpb/2, yP1[1:]
+            plt.plot(xP1, yP1, '-r', lw=4, label=r"w/ Sim-corrected Eff. $\mathregular{g_{ae} \leq}$ %.2e" % gae1)
+            cHi1 = int(intHi1 * effCorr1)
+            cLo1 = int(intLo1 * effCorr1)
+            plt.plot([cHi1,cHi1],[0,chi2max], '-r', lw=2, alpha=0.5)
+            plt.plot([cLo1,cLo1],[0,chi2max], '-r', lw=2, alpha=0.5)
 
         plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
         plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
         plt.legend(loc=2, fontsize=14)
         plt.ylim(0, chi2max*3)
-        plt.xlim(500, 1100)
+        plt.xlim(500, 1100) # DS1--5C limit w/ sim correction too
         plt.tight_layout()
         # plt.show()
         plt.savefig("%s/plots/sf-axion-profile-corr.pdf" % dsi.latSWDir)

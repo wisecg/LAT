@@ -202,16 +202,23 @@ def spec_summary():
 
     rateMode = True
 
+    # dsList = [0]
+    # dsList = [1]
+    # dsList = [2]
+    # dsList = [3]
+    # dsList = [4]
+    # dsList = ["5A"]
+    # dsList = ["5B"]
+    # dsList = ["5C"]
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
     dsList = [1,2,3,4,"5A","5B","5C"]
-    # dsList = ["5C"]
 
     # xLo, xHi, xpb = 0, 20, 0.1
     xLo, xHi, xpb = 0, 50, 1
     # # xLo, xHi, xpb = 0, 10, 0.1
 
-    # type = "enr"
-    type = "nat"
+    type = "enr"
+    # type = "nat"
 
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
@@ -267,10 +274,19 @@ def spec_summary():
     if xHi > 40:
         hRate = np.sum(xpb * hSpec[idxR])/20
         hRateUnc = np.sqrt(np.sum(np.square(hErr[idxR]))/20)
-        print("Rate 20-40: %.5f ± %.5f" % (hRate, hRateUnc) )
+        # print("Rate 20-40: %.5f ± %.5f" % (hRate, hRateUnc) )
         # plt.close()
         # plt.plot(x, hSpec, 'b', ls='steps', lw=2)
         # plt.show()
+
+        # calculate the efficiency corrected rate
+        effpb = xEff[1] - xEff[0]
+        idxE2 = np.where((xEff>=20) & (xEff <= 40))
+        effCorr = 1 - 1 / (effpb * np.sum(detEff[idxE2]))
+        hRateEff = hRate / effCorr
+        hRateEffUnc = hRateUnc / effCorr
+        print("EC Rate 20-40: %.5f ± %.5f" % (hRateEff, hRateEffUnc) )
+
         if rateMode:
             return
 
