@@ -20,5 +20,8 @@ Written to perform a complete analysis of Majorana Demonstrator DS0-5 low-energy
 
 There are a lot of half-baked ideas, some useful, in `LAT/sandbox`.
 
+
 ### Authors
 Clint Wiseman and Brian Zhu, with input from the Majorana Collaboration.
+
+700 commits strong!
