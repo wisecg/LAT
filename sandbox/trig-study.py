@@ -53,17 +53,17 @@ import waveLibs as wl
 def main():
 
     # getTrap()
-    # plotTrap()
-    plotTrigEff()
+    plotTrap()
+    # plotTrigEff()
 
 
 def getTrap():
 
-    # ds, run, chan = 1, 11085, 580 # C1P1D3
+    ds, run, chan = 1, 11085, 580 # C1P1D3
     # trigger eff vals from old study: mu = 1.448, sig = 0.305
 
     # 2016-9-15-P3LQG_Run60001538 C2P1D3 P42748B
-    ds, run, chan = 4, 60001538, 1110
+    # ds, run, chan = 4, 60001538, 1110
 
     from ROOT import GATDataSet
     gds = GATDataSet(run)
@@ -106,13 +106,14 @@ def getTrap():
         # print(i, iE, iH, hitE)
         trapOutput.append(eTrap)
 
-    np.savez("../data/trapOutput.npz",trapOutput,eTrapTS)
+    # np.savez("../data/trapOutput.npz",trapOutput,eTrapTS) # original ds4 run
+    np.savez("../data/trapOutput-2.npz",trapOutput,eTrapTS) # new ds1 run
 
 
 def plotTrap():
     """ Make 2 plots, one w/ full trap output on top and one zoomed in. """
 
-    f = np.load("../data/trapOutput.npz")
+    f = np.load("../data/trapOutput-2.npz")
     trapOutput, eTrapTS = f['arr_0'], f['arr_1']
 
     eMax = 0
@@ -130,10 +131,10 @@ def plotTrap():
         # col = np.amax(eTrap)/eMax
         p1.plot(eTrapTS, eTrap, ls='steps', lw=2, c=cmap(col))
         p2.plot(eTrapTS, eTrap, ls='steps', lw=2, c=cmap(col))
-        if i > 500: break
+        if i > 50: break
 
     p1.set_xlim(9750, 20000)
-    p1.set_ylim(ymin=-100)
+    p1.set_ylim(ymin=-20)
     # p1.set_xlabel("Time (ns)", ha='right', x=1)
     p1.set_ylabel("Trap Output (ADC)", ha='right', y=1)
 
@@ -142,6 +143,7 @@ def plotTrap():
     p2.set_xlabel("Time (ns)", ha='right', x=1)
     # p2.set_ylabel("Trap Output (ADC)", ha='right', y=1)
 
+    plt.tight_layout()
     # plt.show()
     plt.savefig("../plots/trap-crossing-2.pdf")
 

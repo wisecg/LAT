@@ -22,18 +22,19 @@ def main():
     # plotPDF()
     # fitPeaks()
     # getPeakFluxRF() # do this 2 ways, since the roofit model has to be super constrained to look ok
-    # getPeakFluxPY(makePlots=True) # does a sideband analysis and gaussian peak fitting.  this gives the final flux results
+    getPeakFluxPY(makePlots=False) # does a sideband analysis and gaussian peak fitting.  this gives the final flux results
     # loadShiftedData() # this leaves something wierd in memory that causes other functions to segfault
     # plotShiftedData()
 
     # combineProfiles()
-    # exit()
+    exit()
 
     # lower than 2.0 introduces big outliers, higher than 3.5 introduces a peak
     # mjd 3 sigma peak width at 2.6 keV:  sig 0.19, lo 2.04, hi 3.20
     eLo, eHi, epb = 2.0, 3.5, 0.05
     global nPks, pkModel, axPeaks
-    for i in range(1,5):
+    # for i in range(1,5):
+    for i in range(3,4):
         nPks=i
         pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
         axPeaks = [sigVals[name][0] for name in pkModel]
@@ -43,7 +44,7 @@ def main():
         fitShiftModel(eLo, eHi, epb, makePlots=False)
         plotShiftModel(eLo, eHi, epb)
         getShiftProfile(eLo, eHi, epb)
-        plotShiftProfile(eLo, eHi, epb, makePlots=True)
+        # plotShiftProfile(eLo, eHi, epb, makePlots=True)
 
 
 def initialize(makePlots=False):
@@ -493,10 +494,10 @@ def getPeakFluxRF():
 def getPeakFluxPY(makePlots=False):
     """
     Flux results (h3), eLo, eHi, epb = 1.5, 3, 0.05
-    1.86  5.534e+38
-    2.00  1.340e+38
-    2.45  4.671e+38
-    2.62  8.858e+37
+    1.86  5.534e+38 ± 2.243e+37
+    2.00  1.340e+38 ± 1.803e+37
+    2.45  4.671e+38 ± 1.990e+37
+    2.62  8.858e+37 ± 1.828e+37
     bkg-mu   17.170 ± 0.901
     bkg-tau  -4.603 ± 0.464
     bkg-b    -5.776 ± 1.064
@@ -570,7 +571,7 @@ def getPeakFluxPY(makePlots=False):
     pe = np.sqrt(np.diag(pcov))
 
     fitVals = {}
-    fitVals["axSi_a"] = [po[0],pe[0], po[1],pe[1], po[2],pe[2]]
+    fitVals["axSi_a"] = [po[0],pe[0], po[1],pe[1], po[2],pe[2]]  # mu, muE, sig, sigE, amp, ampE
     fitVals["axSi_b"] = [po[3],pe[3], po[4],pe[4], po[5],pe[5]]
     fitVals["axS_a"]  = [po[6],pe[6], po[7],pe[7], po[8],pe[8]]
     fitVals["axS_b"]  = [po[9],pe[9], po[10],pe[10], po[11],pe[11]]
@@ -580,6 +581,14 @@ def getPeakFluxPY(makePlots=False):
     yP2 = wl.gaus(xF, po[3], po[4], po[5])
     yP3 = wl.gaus(xF, po[6], po[7], po[8])
     yP4 = wl.gaus(xF, po[9], po[10], po[11])
+
+    # figure out the error
+    yS1 = wl.gaus(xF, po[0], po[1]-pe[1], po[2]-pe[2]) # mu doesn't make a difference.  max error is - -.
+    # print(np.sum(yS1), np.sum(yP1), np.sum(yP1) / (1 - pe[2]/po[2]))
+    yE1 = pe[2]/po[2] # take the error to be dominated by the amplitude
+    yE2 = pe[5]/po[5]
+    yE3 = pe[8]/po[8]
+    yE4 = pe[11]/po[11]
 
     # print results
 
@@ -594,10 +603,15 @@ def getPeakFluxPY(makePlots=False):
     nCts4 = np.sum(yP4) * xpb * scale
     nTot = nCts1 + nCts2 + nCts3 + nCts4
 
-    print("%.2f  %.3e" % (po[0], nCts1) )
-    print("%.2f  %.3e" % (po[3], nCts2) )
-    print("%.2f  %.3e" % (po[6], nCts3) )
-    print("%.2f  %.3e" % (po[9], nCts4) )
+    nE1 = nCts1 * yE1
+    nE2 = nCts2 * yE2
+    nE3 = nCts3 * yE3
+    nE4 = nCts4 * yE4
+
+    print("%.2f  %.3e ± %.3e" % (po[0], nCts1, nE1) )
+    print("%.2f  %.3e ± %.3e" % (po[3], nCts2, nE2) )
+    print("%.2f  %.3e ± %.3e" % (po[6], nCts3, nE3) )
+    print("%.2f  %.3e ± %.3e" % (po[9], nCts4, nE4) )
     print("bkg-mu   %.3f ± %.3f" % (poptBk[0], perrBk[0]))
     print("bkg-tau  %.3f ± %.3f" % (poptBk[1], perrBk[1]))
     print("bkg-b    %.3f ± %.3f" % (poptBk[2], perrBk[2]))
@@ -890,7 +904,12 @@ def fitShiftModel(eLo, eHi, epb, makePlots=True):
     # print("e-region: sigma: %.2f  lo %.2f  mean %.2f  hi %.2f" % (sig, mu-3*sig, mu, mu+3*sig))
     pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, sigVals[name][2], sigVals[name][3])
     pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu)
-    pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig)
+
+    # pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig) # << fixed value, used in main fit
+
+    pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sig - 0.3*sig, sig + 0.3*sig) # << systematic check, floating width
+    print("Warning, using floating width. sig %.3f, 0.3*sig: %.3f" % (sig, 0.3*sig))
+
     pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
     pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
     pkVars.append([pE, name, mu, sig, amp, pN, pM, pS, pG])
@@ -1162,7 +1181,10 @@ def getShiftProfile(eLo, eHi, epb):
     # for f in fitVals:
         # print(f, fitVals[f])
 
-    tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
+    # tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
+
+    tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f-float.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
+    print("Warning, saving the profile for a floating signal width")
 
     start = time.clock()
 
@@ -1317,12 +1339,15 @@ def combineProfiles():
 
 
     # === 2. profile for the nPks=3 curve, with a 1.9 and 2.0 eLo ===
+    # ===    AND, profile for the n=3 curve, with a fixed and floating signal peak width
+
     plt.close()
 
-    df = 1
-    cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
-    cy = chi2.cdf(cx, df)
-    chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+    # df = 1
+    # cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
+    # cy = chi2.cdf(cx, df)
+    # chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+    chi2max = 1.355
     plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
 
     nPks = 3
@@ -1356,17 +1381,45 @@ def combineProfiles():
     plt.plot(xP2, yP2, '-r', lw=2, label=r"nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts2,gae))
     plt.plot([pyCts2,pyCts2],[0,chi2max], '-r', lw=2, alpha=0.5)
 
+    eLo = 2.0
+    tf3 = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f-float.root" % (dsi.latSWDir, nPks, eLo))
+    hP3 = tf3.Get("hP")
+    hT3 = hP3.GetTitle().split()
+    xP3, yP3, xpb3 = wl.npTH1D(hP3)
+    xP3, yP3 = xP3[1:] - xpb3/2, yP3[1:]
+    pyCts3 = xP3[np.where(yP3>chi2max)][0]-xpb3/2
+    gae = np.power(pyCts3/Nexp_P, 1/4)
+    tf1.Close()
+    plt.plot(xP3, yP3, '-g', lw=2, label=r"Floating $\sigma$, nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts3,gae))
+    plt.plot([pyCts3,pyCts3],[0,chi2max], '-g', lw=2, alpha=0.5)
+    plt.plot([0,0],[0,chi2max], '-g', lw=2, alpha=0.5)
+
     plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
     plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
-    plt.legend(loc=1, fontsize=14)
+    plt.legend(loc=1, fontsize=13)
     plt.ylim(0, chi2max*3)
     # plt.xlim(500, 1000)
     plt.tight_layout()
     # plt.show()
-    plt.savefig("%s/plots/sf-axion-profile-shift-eneSystematic.pdf" % dsi.latSWDir)
+    plt.savefig("%s/plots/sf-axion-profile-shift-systematics.pdf" % dsi.latSWDir)
 
 
-    # 3? profile for the n=4 curve, with the sim efficiency correction?
+
+    # plt.close()
+    # plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
+    #
+    #
+    #
+    # plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
+    # plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
+    # plt.legend(loc=1, fontsize=14)
+    # plt.ylim(0, chi2max*3)
+    # # plt.xlim(500, 1000)
+    # plt.tight_layout()
+    #
+    # # plt.show()
+    # plt.savefig("%s/plots/sf-axion-profile-shift-widthSystematic.pdf" % dsi.latSWDir)
+
 
 
 
