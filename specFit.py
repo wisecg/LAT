@@ -23,10 +23,11 @@ def main(argv):
     # plotPDFs()
     # testFunc()
 
-    # fitModel(makePlots=True)
+    # fitModel(makePlots=False)
     # plotFit(plotRate=False, plotProfileResults=True)
     # getProfile()
     # plotProfile(makePlots=True)
+    combineProfileLoHi()
 
     # getProfileM1()
     # plotProfileM1()
@@ -34,7 +35,7 @@ def main(argv):
 
     # hadronicCurve()
 
-    gaeProj()
+    # gaeProj()
 
 
 def initialize(makePlots=False):
@@ -42,6 +43,7 @@ def initialize(makePlots=False):
     global dsList, enr, eff, simEffCorr, use90, eLo, eHi, epb, pLo, pHi, ppb, nB, nBP
     global bkgModelHists, bkgModelPeaks, profileVars, bkgVals, sigLabels
     global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
+    global useLoEff, useHiEff
 
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
     dsList = [1,2,3,4,"5A","5B","5C"]
@@ -49,17 +51,21 @@ def initialize(makePlots=False):
     # dsList = [0]
     enr = True
     eff = True
+
+    # special switches
     simEffCorr = False
     use90 = False
+    useLoEff = True # this is the one that really makes us eat shit
+    useHiEff = False
 
     print(dsList)
     print("Enriched" if enr else "Natural")
 
     # full spectrum axion fit
-    # eLo, eHi, epb = 1.5, 20, 0.2
-    # bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
-    # bkgModelPeaks = []
-    # profileVars = ["axion"]
+    eLo, eHi, epb = 1.5, 20, 0.2
+    bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
+    bkgModelPeaks = []
+    profileVars = ["axion"]
 
     # reference fit
     # eLo, eHi, epb = 1.5, 20, 0.2
@@ -73,13 +79,13 @@ def initialize(makePlots=False):
     # bkgModelPeaks = ["54Mn","55Fe","57Co","65Zn","68Ga","68Ge"]
     # profileVars = []
 
-    # 14.4 keV axion
-    eLo, eHi, epb = 5, 30, 0.2
-    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
-    # bkgModelPeaks = []
-    bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
-    bkgModelPeaks = ["axFe_M1"]
-    profileVars = ["axFe_M1"]
+    # # 14.4 keV axion
+    # eLo, eHi, epb = 5, 30, 0.2
+    # # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
+    # # bkgModelPeaks = []
+    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
+    # bkgModelPeaks = ["axFe_M1"]
+    # profileVars = ["axFe_M1"]
 
     # binning of continuum histograms
     pLo, pHi, ppb = 0, 30, 0.05
@@ -125,7 +131,7 @@ def initialize(makePlots=False):
         "axion": "Axion Cont."
         }
 
-    # load efficiency correction
+    # load efficiency correction(s)
     if use90:
         f1 = np.load("%s/data/lat-expo-efficiency-all.npz" % dsi.latSWDir) # << just for debugging
         print("Warning, I'm using the 90\% value")
@@ -134,10 +140,21 @@ def initialize(makePlots=False):
 
     xEff = f1['arr_0']
     totEnrEff, totNatEff = f1['arr_1'].item(), f1['arr_2'].item()
+    totEnrEffLo, totEnrEffHi = f1['arr_9'].item(), f1['arr_10'].item()
+    totNatEffLo, totNatEffHi = f1['arr_11'].item(), f1['arr_12'].item()
+
     detEff = np.zeros(len(xEff))
+    detEffLo = np.zeros(len(xEff))
+    detEffHi = np.zeros(len(xEff))
     for ds in dsList:
-        if enr: detEff += totEnrEff[ds]
-        else: detEff += totNatEff[ds]
+        if enr:
+            detEff += totEnrEff[ds]
+            detEffLo += totEnrEffLo[ds]
+            detEffHi += totEnrEffHi[ds]
+        else:
+            detEff += totNatEff[ds]
+            detEffLo += totNatEffLo[ds]
+            detEffHi += totNatEffHi[ds]
 
     # load exposure
     if use90:
@@ -146,17 +163,25 @@ def initialize(makePlots=False):
     else:
         f2 = np.load("%s/data/expo-totals-e95.npz"  % dsi.latSWDir) # << use this one
 
-    # dsExpo, detExpo = f2['arr_0'].item(), f2['arr_1'].item()
-    dsExpo = f2['arr_0'].item()
+    dsExpo, dsUnc = f2['arr_0'].item(), f2['arr_1'].item()
     detExp = 0
+    detUncVals = []
     for d in dsExpo:
         if d in dsList:
-            if enr: detExp += dsExpo[d][0]
-            else:   detExp += dsExpo[d][1]
+            if enr:
+                detExp += dsExpo[d][0]
+                detUncVals.append(dsUnc[d][0])
+            else:
+                detExp += dsExpo[d][1]
+                detUncVals.append(dsUnc[d][1])
+    detUnc = np.sqrt(np.sum(detUncVals))
 
     # normalize the efficiency
     detEff = np.divide(detEff, detExp)
-    effLim, effMax = xEff[-1], detEff[-1]
+    detEffLo = np.divide(detEffLo, detExp)
+    detEffHi = np.divide(detEffHi, detExp)
+
+    effLim, effMax = xEff[-1], detEff[-1] # used in interpolating for weighted data
 
     # special -- load slowness fraction
     fS = np.load('%s/data/efficiency-corr250.npz' % dsi.latSWDir)
@@ -179,6 +204,21 @@ def initialize(makePlots=False):
 
     if makePlots:
 
+        # === 1. low, bestfit, and high efficiencies
+        plt.close()
+
+        plt.plot(xEff[idx], detEff[idx], c='b', label="Measured Efficiency (%.2f%% at %d keV)" % (100*detEff[-1], xEff[-1]))
+        plt.plot(xEff[idx], detEffLo[idx], c='g', label="Lower Limit (%.2f%% at %d keV)" % (100*detEffLo[-1], xEff[-1]))
+        plt.plot(xEff[idx], detEffHi[idx], c='r', label="Upper Limit (%.2f%% at %d keV)" % (100*detEffHi[-1], xEff[-1]))
+        plt.legend(loc=4)
+        plt.xlabel("Energy (keV)", ha='right', x=1)
+        plt.ylabel("Efficiency", ha='right', y=1)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig("%s/plots/sf-effBounds.pdf" % dsi.latSWDir)
+
+        # === 2. sim-corrected efficiency plot
+        plt.close()
         fig, p1 = plt.subplots(1, 1)
 
         p1.plot(xEff[idx], detEff[idx], c='b', label="Measured Efficiency")
@@ -206,6 +246,15 @@ def initialize(makePlots=False):
         print("WARNING: using sim-corrected efficiency")
         detEff = effCorr
         xEff = xEff[idx]
+
+    # *** uses the lower or upper limit of the efficiency ***
+    if useLoEff:
+        print("WARNING: using lower-limit efficiency")
+        detEff = detEffLo
+
+    if useHiEff:
+        print("WARNING: using upper-limit efficiency")
+        detEff = detEffHi
 
     # fix the bkg peaks list
     bkgPeaksInRange = []
@@ -1177,8 +1226,6 @@ def plotFit(plotRate=False, plotProfileResults=False):
     # plt.show()
     plt.savefig("%s/plots/sf-after-mpl.pdf" % dsi.latSWDir)
 
-    print("i made it here")
-
 
 def getProfile(idx=None, update=False):
     from ROOT import TCanvas
@@ -1232,11 +1279,16 @@ def getProfile(idx=None, update=False):
     tMode = "UPDATE" if update else "RECREATE"
 
     if use90:
-        tOut = TFile("%s/data/rs-plc-%d-fs90.root" % (dsi.latSWDir, idx), tMode) # this is for debugging
-        print("Warning, saving the profile curve for eff=90 in the file: rs-plc-%d-fs90.root")
-
+        tOut = TFile("%s/data/rs-plc-%d-fs90.root" % (dsi.latSWDir, idx), tMode)
+        print("Warning, saving the profile curve for eff=90...")
+    elif useLoEff:
+        tOut = TFile("%s/data/rs-plc-%d-effLo.root" % (dsi.latSWDir, idx), tMode)
+        print("Warning, saving the profile curve for eff=lower limit...")
+    elif useHiEff:
+        tOut = TFile("%s/data/rs-plc-%d-effHi.root" % (dsi.latSWDir, idx), tMode)
+        print("Warning, saving the profile curve for eff=upper limit...")
     else:
-        tOut = TFile("%s/data/rs-plc-%d.root" % (dsi.latSWDir, idx), tMode) # << use this one
+        tOut = TFile("%s/data/rs-plc-%d.root" % (dsi.latSWDir, idx), tMode) # << use this one by default
 
     name = "amp-axion"
     fitVal = fitVals[name][0]
@@ -1252,10 +1304,10 @@ def getProfile(idx=None, update=False):
     plot.SetNPoints(100)
     plot.Draw("tf1")
 
-    # from ROOT import TCanvas
-    # c = TCanvas("c","c",800,600)
-    # plot.Draw("tf1")
-    # c.Print("%s/plots/profile-axion-test.pdf" % dsi.latSWDir)
+    from ROOT import TCanvas
+    c = TCanvas("c","c",800,600)
+    plot.Draw("tf1")
+    c.Print("%s/plots/profile-axion-test.pdf" % dsi.latSWDir)
 
     pName = "hP_%d" % idx if idx is not None else "hP"
     hProfile = plot.GetPlottedObject()
@@ -1375,6 +1427,92 @@ def plotProfile(makePlots=False):
         plt.tight_layout()
         # plt.show()
         plt.savefig("%s/plots/sf-axion-profile-corr.pdf" % dsi.latSWDir)
+
+
+def combineProfileLoHi():
+    # plot the profiles of the lower, best fit, and upper efficiency
+    # to get an idea of the systematic.  I bet it's awful
+
+    chi2max = 1.355
+
+    tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
+    hA = tf2.Get("h4")
+    Nexp = hA.Integral(hA.FindBin(eLo), hA.FindBin(eHi), "width") * detExp
+
+    # best
+    tf0 = TFile("%s/data/rs-plc-0.root" % dsi.latSWDir)
+    hP0 = tf0.Get("hP_0")
+    hT0 = hP0.GetTitle().split()
+    pars = []
+    for v in hT0:
+        try: pars.append(float(v))
+        except: pass
+    pcl0, intLo0, bestFit0, intHi0, effCorr0 = pars
+    xP0, yP0, xpb0 = wl.npTH1D(hP0)
+    xP0, yP0 = effCorr0 * (xP0[1:] - xpb0/2), yP0[1:]
+    intHi0 *= effCorr0
+    pyCts0 = xP0[np.where(yP0>=chi2max)][0]-xpb0/2
+    Nobs = intHi0
+    gae0 = np.power(Nobs/Nexp, 1/4)
+    print("Best: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae0))
+
+    # hi
+    tf1 = TFile("%s/data/rs-plc-0-effHi.root" % dsi.latSWDir)
+    hP1 = tf1.Get("hP_0")
+    hT1 = hP1.GetTitle().split()
+    pars = []
+    for v in hT1:
+        try: pars.append(float(v))
+        except: pass
+    pCL1, intLo1, bestFit1, intHi1, effCorr1 = pars
+    xP1, yP1, xpb1 = wl.npTH1D(hP1)
+    xP1, yP1 = effCorr1 * (xP1[1:] - xpb1/2), yP1[1:]
+    intHi1 *= effCorr1
+    pyCts1 = xP1[np.where(yP1>=chi2max)][0]-xpb1/2
+    Nobs = intHi1
+    gae1 = np.power(Nobs/Nexp, 1/4)
+    print("Hi-lim: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae1))
+
+    # lo
+    tf2 = TFile("%s/data/rs-plc-0-effLo.root" % dsi.latSWDir)
+    hP2 = tf2.Get("hP_0")
+    hT2 = hP2.GetTitle().split()
+    pars = []
+    for v in hT2:
+        try: pars.append(float(v))
+        except: pass
+    pCL2, intLo2, bestFit2, intHi2, effCorr2 = pars
+    xP2, yP2, xpb2 = wl.npTH1D(hP2)
+    xP2, yP2 = effCorr2 * (xP2[1:] - xpb2/2), yP2[1:]
+    intHi2 *= effCorr2
+    pyCts2 = xP2[np.where(yP2>=chi2max)][0]-xpb2/2
+    Nobs = intHi2
+    gae2 = np.power(Nobs/Nexp, 1/4)
+    print("Lo-lim: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae2))
+
+    print("Best gae: %.4e (+%.4e) (-%.4e)" % (gae0, gae0-gae1, gae2-gae0))
+
+    plt.close()
+
+    plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
+
+    plt.plot(xP0, yP0, "-b", lw=2, label=r"Best-Fit Eff, $\mathregular{g_{ae} \leq}$ %.2e" % gae0)
+    plt.plot([intHi0,intHi0],[0,chi2max], '-b', lw=2, alpha=0.5)
+
+    plt.plot(xP1, yP1, "-g", lw=2, label=r"Upper Eff, $\mathregular{g_{ae} \leq}$ %.2e" % gae1)
+    plt.plot([intHi1,intHi1],[0,chi2max], '-g', lw=2, alpha=0.5)
+
+    plt.plot(xP2, yP2, "-r", lw=2, label=r"Lower Eff, $\mathregular{g_{ae} \leq}$ %.2e" % gae2)
+    plt.plot([intHi2,intHi2],[0,chi2max], '-r', lw=2, alpha=0.5)
+
+    plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
+    plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
+    plt.legend(loc=1, fontsize=13)
+    plt.ylim(0, chi2max*3)
+    plt.xlim(700, 1500)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf-spec-effSystematic.pdf" % dsi.latSWDir)
 
 
 def getProfileM1():

@@ -250,10 +250,8 @@ def getExposure():
     # dsList = [0]
 
     # output
-    grandTotEnr, grandTotNat = 0, 0
-    detExpo = {ds:{cpd:0 for cpd in det.allDets} for ds in dsList}
-
-    dsExpo = {} # {ds: [dsEnrExp, dsNatExp]} # simple original output
+    dsExpo = {} # {ds: [dsEnrExp, dsNatExp]}
+    dsUnc = {} # {ds: [dsEnrUnc, dsNatUnc]}
 
     # store all vals so we can add the uncertainties in quadrature
     rawTot, psaTot, burstTot, expTot = {}, {}, {}, {}
@@ -386,9 +384,9 @@ def getExposure():
         grandTotEnrVals.append([expEnrExp, expEnrUnc])
         grandTotNatVals.append([expNatExp, expNatUnc])
 
-    # # compute grand totals
-    # # keep this object: dsExpo[ds] = [dsEnrExp, dsNatExp]
-    # # maybe add this :  dsUnc[ds] = [dsEnrUnc, dsNatUnc]
+        dsExpo[ds] = [expEnrExp, expNatExp]
+        dsUnc[ds] = [expEnrUnc, expNatUnc]
+
 
     grandTotEnr = np.sum([v[0] for v in grandTotEnrVals]) / 365.25
     grandTotEnrUnc = np.sqrt(np.sum([v[1]**2 for v in grandTotEnrVals])) / 365.25
@@ -400,16 +398,8 @@ def getExposure():
     print("Enriched (kg-y): %.3f ± %.3f" % (grandTotEnr, grandTotEnrUnc))
     print("Natural  (kg-y): %.3f ± %.3f" % (grandTotNat, grandTotNatUnc))
 
-
-    # # grand totals
-    # grandTotEnr /= 365.25
-    # grandTotNat /= 365.25
-    # print("\nTotals for DS:",dsList)
-    # print("Enriched (kg-y): %.4f" % (grandTotEnr))
-    # print("Natural (kg-y) : %.4f" % (grandTotNat))
-    #
-    # # save output (I didn't end up using detExpo for anything ...)
-    # np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, detExpo)
+    # save output
+    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, dsUnc)
 
 
 def makeFinalFiles():
@@ -929,9 +919,7 @@ def getEfficiency():
     plt.xlim(0,30)
     plt.tight_layout()
     # plt.show()
-    # exit()
     plt.savefig('./plots/lat-eff%d-finalEff.pdf'% pctTot)
-    exit()
 
     # for ds in dsList:
     #     plt.cla()
