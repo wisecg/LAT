@@ -27,7 +27,7 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    spec_summary()
+    # spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
@@ -44,6 +44,7 @@ def main():
     # plot_ext_pulser()
     # plot_tOffset()
     # plot_riseNoise()
+    fitSlo_efficiency_uncertainty()
 
 
 def spec():
@@ -1982,6 +1983,206 @@ def plot_riseNoise():
     plt.legend(loc=1)
     plt.tight_layout()
     plt.savefig("./plots/lat-rn-simpleCut.png")
+
+
+def fitSlo_efficiency_uncertainty():
+    """
+    NOTE: this function actually writes to the calDB
+    and saves the weibull parameters for the upper and lower fit efficiency curves.
+    Maybe this should be moved to lat2 someday.
+    Keys: fitSlo_cpd_effLo95 = {cpd : [-1, -1, ampLo, cLo, locLo, scLo, ampELo, cELo, locELo, scELo]}
+          fitSlo_cpd_effHi95 = {cpd : [-1, -1, ampHi, cHi, locHi, scHi, ampEHi, cEHi, locEHi, scEHi]}
+    """
+    makePlots = False
+    writeDB = True
+
+    from statsmodels.stats import proportion
+    from scipy.optimize import curve_fit
+    from scipy.stats import chisquare
+    pctTot = 95
+    xPassLo, xPassHi, xpbPass = 0, 50, 1      # "low energy" region
+
+    # weibull fit constraints: energy, (c, loc, scale, amp)
+    eFitHi = 30
+    # fitBnd = ((0,-15,0,0),(np.inf,np.inf,np.inf,1.)) # this is the original
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99)) # eFitHi=30 and these works! << -- main fit
+
+    # load efficiency data
+    f = np.load('%s/data/lat2-eff-data-%d.npz' % (dsi.latSWDir, pctTot))
+    effData = f['arr_0'].item()
+
+    # ******
+    effLimitLo = {}  # store the (pctTot)% vals of the lower efficiency uncertainty
+    effLimitHi = {}  # store the (pctTot)% vals of the upper efficiency uncertainty
+    # ******
+
+    # print("CPD   amp     c       loc      scale   e1keV  nBin   maxR    chi2")
+    detList = det.allDets
+    for i, cpd in enumerate(detList):
+    # for i, cpd in enumerate(['122', '114', '273', '133']): # these have convergence issues
+    # for i, cpd in enumerate(['133']):
+    # for i, cpd in enumerate(['163']):
+
+        if cpd not in effData.keys():
+            continue
+
+        xEff, sloEff, ci_low, ci_upp = effData[cpd][0], effData[cpd][1], effData[cpd][2], effData[cpd][3]
+        hPass, hFail, hTot, xELow = effData[cpd][4], effData[cpd][5], effData[cpd][6], effData[cpd][7]
+
+        # get the average number of counts per bin under 10 kev, both passing and failing
+        nBin = np.sum(hPass[np.where(xELow < 10)])/(10/xpbPass)
+
+        # efficiency for low-E region (xPassLo, xPassHi)
+
+        # start by only looking at points where we have >0 hits passing
+        idxP = np.where(hPass > 0)
+        sloEff = hPass[idxP] / hTot[idxP]
+        xEff = xELow[idxP]
+
+        # calculate confidence intervals for each point (error bars)
+        ci_low, ci_upp = proportion.proportion_confint(hPass[idxP], hTot[idxP], alpha=0.1, method='beta')
+
+        # limit the energy range
+        idxE = np.where((xEff < xPassHi) & (xEff > 1))
+        xEff, sloEff, ci_low, ci_upp = xEff[idxE], sloEff[idxE], ci_low[idxE], ci_upp[idxE]
+
+        # get the set of upper and lower points, removing nan's
+        sloEffHi = np.asarray([sloEff[i] + (ci_upp[i] - sloEff[i]) for i in range(len(sloEff))]) # upper
+        sloEffLo = np.asarray([sloEff[i] - (sloEff[i] - ci_low[i]) for i in range(len(sloEff))]) # lower
+        idxHi = np.where(np.isfinite(sloEffHi))
+        idxLo = np.where(np.isfinite(sloEffLo))
+        xEffHi, sloEffHi = xEff[idxHi], sloEffHi[idxHi]
+        xEffLo, sloEffLo = xEff[idxLo], sloEffLo[idxLo]
+
+
+        # ** this is essential, otherwise the blue dots show up on the right side of
+        # where the bin center would be, and throw off the fit by half a bin width
+        xEff -= xpbPass/2.
+
+        # limit the fit energy range
+        idxF = np.where(xEff <= eFitHi)
+        idxFU = np.where(xEffHi <= eFitHi)
+        idxFL = np.where(xEffLo <= eFitHi)
+
+        # run the fits
+        popt, pcov = curve_fit(wl.weibull, xEff[idxF], sloEff[idxF], bounds=fitBnd) # best
+        poptHi, pcovHi = curve_fit(wl.weibull, xEffHi[idxFU], sloEffHi[idxFU], bounds=fitBnd) # upper
+        poptLo, pcovLo = curve_fit(wl.weibull, xEffLo[idxFL], sloEffLo[idxFL], bounds=fitBnd) # lower
+
+        # save pars and errors
+        perr = np.sqrt(np.diag(pcov))
+        c, loc, sc, amp = popt
+        cE, locE, scE, ampE = perr
+        eff1 = wl.weibull(1.,*popt)
+
+        cLo, locLo, scLo, ampLo = poptLo
+        perrLo = np.sqrt(np.diag(pcovLo))
+        cELo, locELo, scELo, ampELo = perrLo
+
+        cHi, locHi, scHi, ampHi = poptHi
+        perrHi = np.sqrt(np.diag(pcovHi))
+        cEHi, locEHi, scEHi, ampEHi = perrHi
+
+        # fill output dict's
+        effLimitLo[cpd] = [-1, -1, ampLo, cLo, locLo, scLo, ampELo, cELo, locELo, scELo]
+        effLimitHi[cpd] = [-1, -1, ampHi, cHi, locHi, scHi, ampEHi, cEHi, locEHi, scEHi]
+
+        # get residual
+        hResidSig = []
+        n = len(sloEff)
+        for i in range(n):
+            diff = wl.weibull(xEff[i], *popt) - sloEff[i]
+            sig = ci_upp[i] if diff > 0 else ci_low[i]
+            if sig==0:
+                # print("zero at",xEff[i],"kev")
+                hResidSig.append(0)
+                continue
+            hResidSig.append(diff/sig)
+        hResidSig = np.asarray(hResidSig)
+
+        # find abs. max of residual
+        maxR = np.max(np.fabs(hResidSig))
+
+        # "This test is invalid when the observed or expected frequencies in each category are too small. A typical rule is that all of the observed and expected frequencies should be at least 5."
+        # wenqin: the bin errors are binomial.  see https://root.cern.ch/doc/master/classTEfficiency.html
+        chi2, p = chisquare(sloEff, wl.weibull(xEff,*popt))
+
+        # print results
+        print("%s  %-4.3f  %-4.1f  %-7.2f  %-5.2f  %-3.2f  %d  %.3f  %.3f" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+
+        # print latexable results
+        # print("%s & %-4.3f & %-4.1f & %-7.2f & %-5.2f & %-3.2f & %-4d & %-5.3f & %-5.3f \\\\" % (cpd, amp, c, loc, sc, eff1, nBin, maxR, chi2))
+
+        if makePlots:
+
+            # === make the efficiency plot, with sigma residual ===
+            plt.close()
+            fig = plt.figure(3) # efficiency plot
+            p1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
+            p2 = plt.subplot2grid((3,1), (2,0), sharex=p1)
+
+            # plot efficiency
+            p1.cla()
+            p1.plot(xEff, sloEff, '.b', ms=10., label='C%sP%sD%s, nBin %.1f' % (cpd[0],cpd[1],cpd[2],nBin))
+            p1.errorbar(xEff, sloEff, yerr=[sloEff - ci_low, ci_upp - sloEff], color='k', linewidth=0.8, fmt='none')
+
+            xFunc = np.arange(xPassLo, xPassHi, 0.1)
+            p1.plot(xFunc, wl.weibull(xFunc, *popt), 'g-', lw=1, label=r'Weibull CDF')
+            p1.axvline(1.,color='b', lw=1., label='1.0 keV efficiency: %.2f' % wl.weibull(1.,*popt))
+
+            # p1.plot(xEff, sloEffLo, '.r', ms=10., label='lower, data')
+            p1.plot(xFunc, wl.weibull(xFunc, *poptLo), 'r-', lw=1, label="Lower")
+            p1.plot(xFunc, wl.weibull(xFunc, *poptHi), 'r-', lw=1, label="Upper")
+
+
+            p1.set_xlim(xPassLo, xPassHi)
+            p1.set_ylim(0,1)
+            # p1.set_xlabel("hitE (keV)", ha='right', x=1)
+            p1.set_ylabel("Efficiency", ha='right', y=1)
+            p1.yaxis.set_label_coords(-0.095, 1.)
+            p1.legend(loc=4)
+
+            # plot residual
+            p2.cla()
+            p2.plot(xEff, hResidSig, ".g")
+            p2.annotate('Residual, Fit - Data', xy=(470, 80), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75, edgecolor='gray'))
+            p2.axvline(1.,color='b', lw=1.)
+
+            p2.set_xlim(xPassLo, xPassHi)
+            yLo = -0.4 if np.min(hResidSig) > -0.4 else np.min(hResidSig) * 1.1
+            yHi = 0.4 if np.max(hResidSig) < 0.4 else np.max(hResidSig) * 1.1
+            p2.set_ylim(yLo, yHi)
+
+            p2.set_ylabel("Residual (Sigma)")
+            p2.set_xlabel("Energy (keV)", ha='right', x=1)
+            p2.set_xticks(np.arange(0,51,5))
+
+            plt.tight_layout()
+            fig.subplots_adjust(hspace=0.01)
+            plt.setp(p1.get_xticklabels(), visible=False)
+
+            # plt.show()
+            plt.savefig("%s/plots/effStudy%d-%s-env.pdf" % (dsi.latSWDir, pctTot,cpd))
+
+
+    # Finally, write the fit function parameters as a separate DB entry for each cpd (all DS's)
+    if writeDB:
+        dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
+        print("Writing results to DB :",dbFile)
+        calDB = db.TinyDB(dbFile)
+        pars = db.Query()
+
+        # write the lower value
+        dbKey = "fitSlo_cpd_effLo%s" % pctTot
+        dbVals = effLimitLo
+        dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+        print("DB filled:",dbKey)
+
+        # write the upper value
+        dbKey = "fitSlo_cpd_effHi%s" % pctTot
+        dbVals = effLimitHi
+        dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+        print("DB filled:",dbKey)
 
 
 if __name__=="__main__":

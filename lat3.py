@@ -150,7 +150,11 @@ def getOutliers(verbose=False, usePass2=False, noSkip=False):
     # 'rates' objects: [:,0]=rate1, [:,1]=rate2, [:,2]=expo, [:,3]=bkgIdx, [:,4]=cpd, [:,5]=ds, [:,6]=n1
     enrRates, natRates = [], []
 
-    for ds in [1,1,2,3,4,"5A","5B","5C",6]:
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    # dsList = [0,1,2,3,4,"5A","5B","5C", 6]
+
+    for ds in dsList:
     # for ds in ["5A"]:
 
         dsNum = int(ds[0]) if isinstance(ds,str) else ds # this is used for getGoodChanList

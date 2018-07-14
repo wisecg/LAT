@@ -244,13 +244,6 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
-    # # these detectors have noise features that the PSA and burst cuts aren't able to remove.
-    # finalDetCut = [
-    #     [0,'152'],    # enr, noise wall at ~2.8 keV
-    #     [0,'141'],    # nat, noise wall at ~2.1 keV
-    #     ['5A','253'], # enr, noise wall at ~5.2 keV
-    # ]
-
     dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
@@ -259,7 +252,12 @@ def getExposure():
     # output
     grandTotEnr, grandTotNat = 0, 0
     detExpo = {ds:{cpd:0 for cpd in det.allDets} for ds in dsList}
-    dsExpo = {}
+
+    dsExpo = {} # {ds: [dsEnrExp, dsNatExp]} # simple original output
+
+    # store all vals so we can add the uncertainties in quadrature
+    rawTot, psaTot, burstTot, expTot = {}, {}, {}, {}
+    grandTotEnrVals, grandTotNatVals = [], []
 
     for ds in dsList:
 
@@ -283,17 +281,16 @@ def getExposure():
         iE = np.where(enrExc[:,0]==dsTmp)
         iN = np.where(natExc[:,0]==dsTmp)
         skipList = np.vstack((enrExc[iE], natExc[iN]))
-        # print(skipList)
 
         # load ds_livetime output
         tl = TFile("./data/ds_%s_livetime.root" % str(ds))
         lt = tl.Get("dsTree")
 
         # totals for this DS
-        expTot = {ch:0 for ch in chList}
-        psaTot = {ch:0 for ch in chList}
-        burstTot = {ch:0 for ch in chList}
-        # detTot = {ch:0 for ch in chList}
+        rawTot[ds] = {ch:[] for ch in chList}
+        psaTot[ds] = {ch:[] for ch in chList}
+        burstTot[ds] = {ch:[] for ch in chList}
+        expTot[ds] = {ch:[] for ch in chList} # after cuts
 
         # loop over bIdx's
         for bIdx in range(bLo, bHi+1):
@@ -313,7 +310,6 @@ def getExposure():
                 if len(iSkip[0]) > 0:
                     burstCutRuns[ch] = True
 
-
             n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (rLo, rHi), 'goff')
             ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
             for i in range(n):
@@ -323,69 +319,97 @@ def getExposure():
                 aMass = det.allActiveMasses[detID]
                 expo = ltLive[i]*aMass/86400/1000
 
-                expTot[ch] += expo
+                aMassUnc = det.allActiveMassesUnc[detID]
+                expoUnc = ltLive[i]*aMassUnc/86400/1000 # take the uncertainty in livetime to be zero, see the unidoc.
+
+                rawTot[ds][ch].append([expo, expoUnc])
 
                 if ltRun[i] in psaCutRuns[ch]:
-                    psaTot[ch] += expo
+                    psaTot[ds][ch].append([expo, expoUnc])
                     continue
 
                 if burstCutRuns[ltChan[i]] is True:
-                    burstTot[ch] += expo
+                    burstTot[ds][ch].append([expo, expoUnc])
                     continue
 
-                # if [ds,cpd] in finalDetCut:
-                #     detTot[ch] += expo
-                #     continue
+                expTot[ds][ch].append([expo, expoUnc])
 
-        # sum channels for this DS
-        rawEnrExp, rawNatExp = 0, 0
-        psaEnrExp, psaNatExp = 0, 0
-        burstEnrExp, burstNatExp = 0, 0
-        # detEnrExp, detNatExp = 0, 0
-        dsEnrExp, dsNatExp = 0, 0   # results
+        # get results for this DS
 
+        rawEnrVals, rawNatVals = [], []
+        psaEnrVals, psaNatVals = [], []
+        burstEnrVals, burstNatVals = [], []
+        expEnrVals, expNatVals = [], []
         for ch in chList:
             isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
             if isEnr:
-                rawEnrExp += expTot[ch]
-                psaEnrExp += psaTot[ch]
-                burstEnrExp += burstTot[ch]
-                # detEnrExp += detTot[ch]
-                dsEnrExp += expTot[ch] - psaTot[ch] - burstTot[ch]# - detTot[ch]
+                rawEnrVals.extend(rawTot[ds][ch])
+                psaEnrVals.extend(psaTot[ds][ch])
+                burstEnrVals.extend(burstTot[ds][ch])
+                expEnrVals.extend(expTot[ds][ch])
             else:
-                rawNatExp += expTot[ch]
-                psaNatExp += psaTot[ch]
-                burstNatExp += burstTot[ch]
-                # detNatExp += detTot[ch]
-                dsNatExp += expTot[ch] - psaTot[ch] - burstTot[ch]# - detTot[ch]
+                rawNatVals.extend(rawTot[ds][ch])
+                psaNatVals.extend(psaTot[ds][ch])
+                burstNatVals.extend(burstTot[ds][ch])
+                expNatVals.extend(expTot[ds][ch])
 
-            cpd = det.getChanCPD(dsNum,ch)
-            detExpo[ds][cpd] += expTot[ch] - psaTot[ch] - burstTot[ch]
-            print(detExpo[ds][cpd])
+        rawEnrExp = np.sum([v[0] for v in rawEnrVals])
+        rawEnrUnc = np.sqrt(np.sum([v[1]**2 for v in rawEnrVals]))
+        psaEnrExp = np.sum([v[0] for v in psaEnrVals])
+        psaEnrUnc = np.sqrt(np.sum([v[1]**2 for v in psaEnrVals]))
+        burstEnrExp = np.sum([v[0] for v in burstEnrVals])
+        burstEnrUnc = np.sqrt(np.sum([v[1]**2 for v in burstEnrVals]))
+        expEnrExp = np.sum([v[0] for v in expEnrVals])
+        expEnrUnc = np.sqrt(np.sum([v[1]**2 for v in expEnrVals]))
+
+        rawNatExp = np.sum([v[0] for v in rawNatVals])
+        rawNatUnc = np.sqrt(np.sum([v[1]**2 for v in rawNatVals]))
+        psaNatExp = np.sum([v[0] for v in psaNatVals])
+        psaNatUnc = np.sqrt(np.sum([v[1]**2 for v in psaNatVals]))
+        burstNatExp = np.sum([v[0] for v in burstNatVals])
+        burstNatUnc = np.sqrt(np.sum([v[1]**2 for v in burstNatVals]))
+        expNatExp = np.sum([v[0] for v in expNatVals])
+        expNatUnc = np.sqrt(np.sum([v[1]**2 for v in expNatVals]))
 
         print("DS-%s" % ds)
+        print("Enriched (kg-d)")
+        print("Raw: %.3f ± %.3f" % (rawEnrExp, rawEnrUnc))
+        print("PSA: %.3f ± %.3f" % (psaEnrExp, psaEnrUnc))
+        print("Burst: %.3f ± %.3f" % (burstEnrExp, burstEnrUnc))
+        print("Final: %.3f ± %.3f" % (expEnrExp, expEnrUnc))
+        print("Natural (kg-d)")
+        print("Raw: %.3f ± %.3f" % (rawNatExp, rawNatUnc))
+        print("PSA: %.3f ± %.3f" % (psaNatExp, psaNatUnc))
+        print("Burst: %.3f ± %.3f" % (burstNatExp, burstNatUnc))
+        print("Final: %.3f ± %.3f" % (expNatExp, expNatUnc))
 
-        enrDiff = dsEnrExp - rawEnrExp
-        natDiff = dsNatExp - rawNatExp
+        grandTotEnrVals.append([expEnrExp, expEnrUnc])
+        grandTotNatVals.append([expNatExp, expNatUnc])
 
-        print("Enriched (kg-d): %-8.4f   No cuts %-8.3f - PSA%d  %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsEnrExp,rawEnrExp,pctTot,psaEnrExp,burstEnrExp,enrDiff))
+    # # compute grand totals
+    # # keep this object: dsExpo[ds] = [dsEnrExp, dsNatExp]
+    # # maybe add this :  dsUnc[ds] = [dsEnrUnc, dsNatUnc]
 
-        print("Natural (kg-d) : %-8.4f   No cuts %-8.3f - PSA%d %-8.4f - Burst %-8.4f  (Tot: %.4f)" % (dsNatExp,rawNatExp,pctTot,psaNatExp,burstNatExp,natDiff))
+    grandTotEnr = np.sum([v[0] for v in grandTotEnrVals]) / 365.25
+    grandTotEnrUnc = np.sqrt(np.sum([v[1]**2 for v in grandTotEnrVals])) / 365.25
 
-        grandTotEnr += dsEnrExp
-        grandTotNat += dsNatExp
+    grandTotNat = np.sum([v[0] for v in grandTotNatVals]) / 365.25
+    grandTotNatUnc = np.sqrt(np.sum([v[1]**2 for v in grandTotNatVals])) / 365.25
 
-        dsExpo[ds] = [dsEnrExp, dsNatExp]
-
-    # grand totals
-    grandTotEnr /= 365.25
-    grandTotNat /= 365.25
     print("\nTotals for DS:",dsList)
-    print("Enriched (kg-y): %.4f" % (grandTotEnr))
-    print("Natural (kg-y) : %.4f" % (grandTotNat))
+    print("Enriched (kg-y): %.3f ± %.3f" % (grandTotEnr, grandTotEnrUnc))
+    print("Natural  (kg-y): %.3f ± %.3f" % (grandTotNat, grandTotNatUnc))
 
-    # save output
-    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, detExpo)
+
+    # # grand totals
+    # grandTotEnr /= 365.25
+    # grandTotNat /= 365.25
+    # print("\nTotals for DS:",dsList)
+    # print("Enriched (kg-y): %.4f" % (grandTotEnr))
+    # print("Natural (kg-y) : %.4f" % (grandTotNat))
+    #
+    # # save output (I didn't end up using detExpo for anything ...)
+    # np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, detExpo)
 
 
 def makeFinalFiles():
@@ -601,12 +625,18 @@ def getEfficiency():
     xLo, xHi = 0, 50
     xEff = np.arange(xLo, xHi, 0.01)
     totEnrEff = {ds:np.zeros(len(xEff)) for ds in dsList}
+    totEnrEffLo = {ds:np.zeros(len(xEff)) for ds in dsList}
+    totEnrEffHi = {ds:np.zeros(len(xEff)) for ds in dsList}
     totNatEff = {ds:np.zeros(len(xEff)) for ds in dsList}
+    totNatEffLo = {ds:np.zeros(len(xEff)) for ds in dsList}
+    totNatEffHi = {ds:np.zeros(len(xEff)) for ds in dsList}
     detEff = {ds:{} for ds in dsList}
+    detEffLo = {ds:{} for ds in dsList}
+    detEffHi = {ds:{} for ds in dsList}
     for ds in dsList:
         detEff[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
-    finalEnrEff = np.zeros(len(xEff))
-    finalNatEff = np.zeros(len(xEff))
+        detEffLo[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
+        detEffHi[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
 
     # recalculate these, make sure they match getExposure
     enrExp = {ds:0 for ds in dsList}
@@ -614,7 +644,7 @@ def getEfficiency():
 
     detExp = {cpd:0 for cpd in det.allDets}
 
-    # 1. loop over datasett
+    # 1. loop over dataset
     for ds in dsList:
 
         # set DS stuff
@@ -630,6 +660,9 @@ def getEfficiency():
         f = np.load('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot,ds))
         psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
         fsD = dsi.getDBRecord("fitSlo_cpd_eff%d" % pctTot, False, calDB, pars)
+
+        fsU = dsi.getDBRecord("fitSlo_cpd_effHi%d" % pctTot, False, calDB, pars) # upper
+        fsL = dsi.getDBRecord("fitSlo_cpd_effLo%d" % pctTot, False, calDB, pars) # lower
 
         # get burst cut
         dsTmp = ds
@@ -663,6 +696,8 @@ def getEfficiency():
 
             # save total efficiency for each channel in this DS
             totEff = {ch:np.zeros(len(xEff)) for ch in chList}
+            totEffLo = {ch:np.zeros(len(xEff)) for ch in chList}
+            totEffHi = {ch:np.zeros(len(xEff)) for ch in chList}
             trigEff = {ch:np.zeros(len(xEff)) for ch in chList}
             fSloEff = {ch:np.zeros(len(xEff)) for ch in chList}
 
@@ -713,6 +748,8 @@ def getEfficiency():
 
                         # calculate exposure for this sub-sub-bIdx
                         subExpo = {ch:0 for ch in chList}
+                        subExpoLo = {ch:0 for ch in chList} # save upper and lower limits due to AM uncertainty
+                        subExpoHi = {ch:0 for ch in chList}
                         n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (covLo, covHi), 'goff')
                         ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
                         for j in range(n):
@@ -721,10 +758,16 @@ def getEfficiency():
                             aMass = det.allActiveMasses[detID]
                             expo = ltLive[j]*aMass/86400/1000
 
+                            aMassUnc = det.allActiveMassesUnc[detID]
+                            expoUnc = ltLive[j]*aMassUnc/86400/1000
+                            expoLo = expo - expoUnc
+                            expoHi = expo + expoUnc
+
+                            # print("chan %d  expo %.3f  expoUnc %.3f  (%.3f pct)" % (ch, expo, expoUnc, 100*expoUnc/expo))
+
                             # since we're splitting by module, ignore channels in the other module
                             # print(ds, mod, int(cpd[0]))
                             # exit()
-
                             if ch < 1000 and mod!=1: continue
                             if ch > 1000 and mod!=2: continue
 
@@ -732,7 +775,10 @@ def getEfficiency():
                                 continue
                             if burstCutRuns[ltChan[j]] is True:
                                 continue
+
                             subExpo[ch] += expo
+                            subExpoLo[ch] += expoLo
+                            subExpoHi[ch] += expoHi
 
                             if detID > 100000:
                                 enrExp[ds] += expo
@@ -760,7 +806,11 @@ def getEfficiency():
                             nPad = len(xEff) - len(xEff[idx])
                             tEff = wl.erFunc(xEff[idx],mu,sig,1)
                             tEff = np.pad(tEff, (nPad,0), 'constant')
+                            tEffLo, tEffHi = tEff, tEff
+
                             tEff = np.multiply(tEff, subExpo[ch])
+                            tEffLo = np.multiply(tEffLo, subExpoLo[ch])
+                            tEffHi = np.multiply(tEffHi, subExpoHi[ch])
 
                             trigEff[ch] += tEff
 
@@ -768,6 +818,10 @@ def getEfficiency():
                             cpd = int(det.getChanCPD(dsNum,ch))
                             c, loc, scale, amp = fsD[cpd][3], fsD[cpd][4], fsD[cpd][5], fsD[cpd][2]
                             fEff = wl.weibull(xEff,c,loc,scale,amp)
+
+                            # lower and upper bounds for fitSlo efficiency, multiplied by riseNoise efficiency
+                            fEffHi = wl.weibull(xEff,fsU[cpd][3], fsU[cpd][4], fsU[cpd][5], fsU[cpd][2]) * 0.995
+                            fEffLo = wl.weibull(xEff,fsL[cpd][3], fsL[cpd][4], fsL[cpd][5], fsL[cpd][2]) * 0.995
 
                             riseEff = 0.995 # riseNoise is defined to be 99.5% efficient, no energy dependence
                             fEff = np.multiply(fEff, riseEff)
@@ -779,17 +833,30 @@ def getEfficiency():
                                 totEff[ch] += tEff
                             elif mode == "slo":
                                 totEff[ch] += fEff
+                                totEffHi[ch] += fEffHi
+                                totEffLo[ch] += fEffLo
                             elif mode == "all":
                                 totEff[ch] += np.multiply(tEff, fEff) # this is what we want
+
+                                # these curves are just the fitSlo uncertainty
+                                # totEffHi[ch] += np.multiply(tEff, fEffHi)
+                                # totEffLo[ch] += np.multiply(tEff, fEffLo)
+
+                                # these curves are the outer limits of fitSlo + active mass uncertainty << use these
+                                totEffHi[ch] += np.multiply(tEffHi, fEffHi)
+                                totEffLo[ch] += np.multiply(tEffLo, fEffLo)
                             else:
                                 print("Unknown mode! exiting ...")
                                 exit()
 
             if debugMode:
-                for ch in chList:
+                for ch in chList[1:2]:
                     # plt.plot(xEff, trigEff[ch], '-')
-                    plt.plot(xEff, fSloEff[ch], '-')
-                    # plt.plot(xEff, totEff[ch], '-')
+                    # plt.plot(xEff, fSloEff[ch], '-')
+                    plt.plot(xEff, totEff[ch], '-r',label='Best, %s' % det.getChanCPD(ds,ch))
+                    plt.plot(xEff, totEffLo[ch], '-g',label="Lo")
+                    plt.plot(xEff, totEffHi[ch], '-b',label='Hi')
+                plt.legend()
                 plt.xlim(0,10)
                 plt.show()
                 exit()
@@ -797,6 +864,8 @@ def getEfficiency():
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
                 detEff[ds][cpd] = totEff[ch]
+                detEffLo[ds][cpd] = totEffLo[ch]
+                detEffHi[ds][cpd] = totEffHi[ch]
                 # print(ch, cpd, detEff[ds][cpd][500:520], totEff[ch][500:520])
 
             # plt.plot(xEff,detEff[ds]['164'])
@@ -810,24 +879,47 @@ def getEfficiency():
 
             if det.isEnr(cpd):
                 totEnrEff[ds] += detEff[ds][cpd]
+                totEnrEffLo[ds] += detEffLo[ds][cpd]
+                totEnrEffHi[ds] += detEffHi[ds][cpd]
             else:
                 totNatEff[ds] += detEff[ds][cpd]
+                totNatEffLo[ds] += detEffLo[ds][cpd]
+                totNatEffHi[ds] += detEffHi[ds][cpd]
 
     # done w/ loop over datasets.
+    finalEnrEff = np.zeros(len(xEff))
+    finalEnrEffLo = np.zeros(len(xEff))
+    finalEnrEffHi = np.zeros(len(xEff))
+    finalNatEff = np.zeros(len(xEff))
+    finalNatEffLo = np.zeros(len(xEff))
+    finalNatEffHi = np.zeros(len(xEff))
 
     # plot overall enriched/natural efficiency
     finalEnrExp, finalNatExp = 0, 0
+    finalEnrEffLo
     for ds in dsList:
         finalEnrEff += totEnrEff[ds]
+        finalEnrEffLo += totEnrEffLo[ds]
+        finalEnrEffHi += totEnrEffHi[ds]
+
         finalNatEff += totNatEff[ds]
+        finalNatEffHi += totNatEffHi[ds]
+        finalNatEffLo += totNatEffLo[ds]
+
         finalEnrExp += enrExp[ds]/365.25
         finalNatExp += natExp[ds]/365.25
 
     enr1 = finalEnrEff[np.where(xEff > 1.)][0]/365.25
     enr1p5 = finalEnrEff[np.where(xEff > 1.5)][0]/365.25
 
-    plt.plot(xEff, finalEnrEff/365.25, '-r', ls='steps', label="Enriched: %.2f kg-y" % finalEnrExp)
-    plt.plot(xEff, finalNatEff/365.25, '-b', ls='steps', label="Natural: %.2f kg-y" % finalNatExp)
+    plt.plot(xEff, finalEnrEff/365.25, '-r', lw=2, ls='steps', label="Enriched: %.2f kg-y" % finalEnrExp)
+    plt.plot(xEff, finalEnrEffLo/365.25, '-r', lw=1, ls='steps')
+    plt.plot(xEff, finalEnrEffHi/365.25, '-r', lw=1, ls='steps')
+
+    plt.plot(xEff, finalNatEff/365.25, '-b', lw=2, ls='steps', label="Natural: %.2f kg-y" % finalNatExp)
+    plt.plot(xEff, finalNatEffLo/365.25, '-b', lw=1, ls='steps')
+    plt.plot(xEff, finalNatEffHi/365.25, '-b', lw=1, ls='steps')
+
     plt.axvline(1.0, c='g', alpha=0.5, label="1.0 keV enr: %.2f kg-y" % enr1 )
     plt.axvline(1.5, c='m', alpha=0.5, label="1.5 keV enr: %.2f kg-y" % enr1p5)
 
@@ -837,8 +929,9 @@ def getEfficiency():
     plt.xlim(0,30)
     plt.tight_layout()
     # plt.show()
-    # return
+    # exit()
     plt.savefig('./plots/lat-eff%d-finalEff.pdf'% pctTot)
+    exit()
 
     # for ds in dsList:
     #     plt.cla()
@@ -859,7 +952,7 @@ def getEfficiency():
     if debugMode:
         print("I'm not saving output, I'm in debug mode, dsList:",dsList)
     if not debugMode:
-        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp)
+        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp, totEnrEffLo, totEnrEffHi, totNatEffLo, totNatEffHi)
 
 
 def getEfficiencyROOT():

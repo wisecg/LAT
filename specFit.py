@@ -32,9 +32,9 @@ def main(argv):
     # plotProfileM1()
     # combineProfile()
 
-    hadronicCurve()
+    # hadronicCurve()
 
-    # gaeProj()
+    gaeProj()
 
 
 def initialize(makePlots=False):
@@ -533,9 +533,15 @@ def plotPDFs():
 
     # === 6. Pb210-TDL PDF
     plt.close()
-    hT = tf.Get("h6")
+    # hT = tf.Get("h6")
+
+    # Pb210 (from separate file)
+    tf2 = TFile("%s/data/Pb210PDFs.root" % dsi.latSWDir)
+    hT = tf2.Get("hPb210TDL") # with TDL
+    # h7 = tf2.Get("hPb210") # without TDL
+
     xT, yT, xpb = wl.npTH1D(hT)
-    xT, yT = normPDF(xT, yT, eLo, eHi)
+    xT, yT = normPDF(xT, yT, 1, 50)
 
     plt.step(xT, yT, c='b', lw=2, label=r"$\mathregular{{}^{210}Pb}$, prelim. simulation")
     plt.axvline(1.0, c='g', lw=1, label="1.0 keV")
@@ -1616,8 +1622,8 @@ def hadronicCurve():
             print("lowest mass:",coupV2[i])
 
     plt.semilogy(massEW, coupEW, c='orange', label="EDELWEISS (2013)")
-    plt.semilogy(massV, coupV, c='r', lw=3, label="MJD (2017): 11.2 cts (90%%CL), 478 kg-d")
-    plt.semilogy(massV, coupV2, c='b', lw=3, label="MJD (2018): %.2f cts (90%%CL), %.0f kg-d" % (nObs,detExp))
+    plt.semilogy(massV, coupV, c='r', lw=3, label="MJD (2017): 11.2 cts (90% CL), 478 kg-d")
+    plt.semilogy(massV, coupV2, c='b', lw=3, label="MJD (2018): %.2f cts (90%% CL), %.0f kg-d" % (nObs,detExp))
 
     plt.xlim(0, 15)
     plt.ylim(1e-17, 1e-15)
@@ -1701,6 +1707,38 @@ def gaeProj():
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/gae-proj.pdf" % dsi.latSWDir)
+
+
+    # === 3. insane LEGEND 10 ton-yr projection
+    plt.close()
+
+    B = 0.119
+
+    xE = np.arange(1, 10000, 1) # 10 ton-y LEGEND exposure if it was magically a 1 kev detector
+
+    # A key assumption here is that we are not seeing a significant number of counts in the axion pdf.
+    # (we *are* in the current analysis, which is why the observed value is such an apparent outlier.)
+
+    # plt.axhline(2.6e-11, c='g', label="MALBEK (2015)")
+
+    plt.axhline(1.92e-11, c='g', label="MJD DS1--5C (Nonzero Axion Amp.), %.2f kg-y" % (detExp/365.25))
+
+    plt.loglog(xE, gaeBkg(xE, tritB, eLo, eHi), c='b', label=r'LEGEND, Tritium-dominated (proj.), B=%.2f cts/(kev kg-d)' % tritB)
+
+    plt.loglog(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'LEGEND, Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
+
+    plt.axhline(4.35e-12, c='m', label="PandaX (2017)")
+
+    plt.xlabel("Exposure (kg-y)", ha='right', x=1)
+
+    plt.ylabel(r"$\mathregular{g_{ae}}$ Projected UL", ha='right', y=1)
+
+    # plt.ylim(3e-12, 1e-10)
+
+    plt.legend(loc=1, fontsize=13, bbox_to_anchor=(0., 0.73, 1, 0.2))
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/gae-proj-legend.pdf" % dsi.latSWDir)
 
 
 

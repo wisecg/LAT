@@ -320,9 +320,9 @@ class DetInfo:
         self.allDetIDs.update(self.detIDs["M1"])
         self.allDetIDs.update(self.detIDs["M2"])
 
+        # source: DataSetInfo.cc
         self.detActiveMass = {}
         # if this is really annoying to have it by detector ID, come back and change it to CPD
-        # note: DataSetInfo.hh also has the active mass uncertainties if we need those too.
         self.detActiveMass["M1"] = {
             1426981: 510, 1425750: 979, 1426612: 811, 1425380: 968,
             28474: 560, 1426640: 723, 1426650: 659, 1426622: 689,
@@ -344,6 +344,31 @@ class DetInfo:
         self.allActiveMasses = {}
         self.allActiveMasses.update(self.detActiveMass["M1"])
         self.allActiveMasses.update(self.detActiveMass["M2"])
+
+        # active mass uncertainties (g) (source: DataSetInfo.cc)
+        self.detActiveMassUnc = {}
+        self.detActiveMassUnc["M1"] = {
+            1426981: 10, 1425750: 13, 1426612: 12, 1425380: 13,
+            28474: 13, 1426640: 11, 1426650: 11, 1426622: 10,
+            28480: 13, 1426980: 12, 1425381: 13, 1425730: 14,
+            28455: 13, 28470: 13, 28463: 13, 28465: 12, 28469: 13,
+            28477: 13, 1425751: 11, 1426610: 11, 1425731: 13,
+            1425742: 11, 1426611: 12, 1425740: 11, 1426620: 9.4,
+            28482: 13, 1425741: 11, 1426621: 9, 1425370: 13
+        }
+        self.detActiveMassUnc["M2"] = {
+            28459: 13, 1426641: 9, 1427481: 12, 1427480: 12,
+            28481: 13, 28576: 13, 28594: 13, 28595: 13, 28461: 13,
+            1427490: 12, 1427491: 11, 1428530: 12,
+            28607: 13, 28456: 13, 28621: 13, 28466: 13, 28473: 13,
+            28487: 13, 1426651: 10, 1428531: 13, 1427120: 11,
+            1235170: 8.4, 1429091: 12, 1429092: 11, 1426652: 11,
+            28619: 13, 1427121: 12, 1429090: 10, 28717: 13
+        }
+        self.allActiveMassesUnc = {}
+        self.allActiveMassesUnc.update(self.detActiveMassUnc["M1"])
+        self.allActiveMassesUnc.update(self.detActiveMassUnc["M2"])
+
 
         # -- Load outputs from LAT/lat-settings.py --
         # Generated with LAT/lat-settings.py::fillDetInfo
