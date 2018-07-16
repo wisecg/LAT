@@ -581,8 +581,8 @@ def acceptance_study():
     plt.setp(p2.get_xticklabels(), visible=False)
 
     # plt.show()
-    plt.savefig('../plots/lat-acceptance-study.png')
-    # return
+    plt.savefig('../plots/lat-acceptance-study.png', dpi=300)
+    return
 
 
     # ========= acceptance / efficiency plot =========

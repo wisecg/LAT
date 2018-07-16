@@ -314,79 +314,89 @@ def getExposure():
                 ch = ltChan[i]
                 cpd = det.getChanCPD(dsNum,ch)
                 detID = det.getDetIDChan(dsNum,ch)
+
                 aMass = det.allActiveMasses[detID]
+                aMassUnc = det.allActiveMassesUnc[detID]
+
                 expo = ltLive[i]*aMass/86400/1000
 
-                aMassUnc = det.allActiveMassesUnc[detID]
-                expoUnc = ltLive[i]*aMassUnc/86400/1000 # take the uncertainty in livetime to be zero, see the unidoc.
-
-                rawTot[ds][ch].append([expo, expoUnc])
+                rawTot[ds][ch].append(expo)
 
                 if ltRun[i] in psaCutRuns[ch]:
-                    psaTot[ds][ch].append([expo, expoUnc])
+                    psaTot[ds][ch].append(expo)
                     continue
 
                 if burstCutRuns[ltChan[i]] is True:
-                    burstTot[ds][ch].append([expo, expoUnc])
+                    burstTot[ds][ch].append(expo)
                     continue
 
-                expTot[ds][ch].append([expo, expoUnc])
+                expTot[ds][ch].append(expo)
 
-        # get results for this DS
+        # get values for this DS
 
-        rawEnrVals, rawNatVals = [], []
-        psaEnrVals, psaNatVals = [], []
-        burstEnrVals, burstNatVals = [], []
-        expEnrVals, expNatVals = [], []
+        rawEnrExp, rawEnrUnc = 0, 0
+        psaEnrExp, psaEnrUnc = 0, 0
+        burstEnrExp, burstEnrUnc = 0, 0
+        finalEnrExp, finalEnrUnc = 0, 0
+        rawNatExp, rawNatUnc = 0, 0
+        psaNatExp, psaNatUnc = 0, 0
+        burstNatExp, burstNatUnc = 0, 0
+        finalNatExp, finalNatUnc = 0, 0
+
         for ch in chList:
             isEnr = True if det.getDetIDChan(dsNum,ch) > 100000 else False
+            detID = det.getDetIDChan(dsNum,ch)
+            aMass = det.allActiveMasses[detID]
+            aMassUnc = det.allActiveMassesUnc[detID]
+            re = np.sum(rawTot[ds][ch])
+            pe = np.sum(psaTot[ds][ch])
+            be = np.sum(burstTot[ds][ch])
+            ee = np.sum(expTot[ds][ch])
             if isEnr:
-                rawEnrVals.extend(rawTot[ds][ch])
-                psaEnrVals.extend(psaTot[ds][ch])
-                burstEnrVals.extend(burstTot[ds][ch])
-                expEnrVals.extend(expTot[ds][ch])
+                rawEnrExp += re
+                rawEnrUnc += re * (aMassUnc/aMass)
+                psaEnrExp += pe
+                psaEnrUnc += pe * (aMassUnc/aMass)
+                burstEnrExp += be
+                burstEnrUnc += be * (aMassUnc/aMass)
+                finalEnrExp += ee
+                finalEnrUnc += ee * (aMassUnc/aMass)
+
             else:
-                rawNatVals.extend(rawTot[ds][ch])
-                psaNatVals.extend(psaTot[ds][ch])
-                burstNatVals.extend(burstTot[ds][ch])
-                expNatVals.extend(expTot[ds][ch])
-
-        rawEnrExp = np.sum([v[0] for v in rawEnrVals])
-        rawEnrUnc = np.sqrt(np.sum([v[1]**2 for v in rawEnrVals]))
-        psaEnrExp = np.sum([v[0] for v in psaEnrVals])
-        psaEnrUnc = np.sqrt(np.sum([v[1]**2 for v in psaEnrVals]))
-        burstEnrExp = np.sum([v[0] for v in burstEnrVals])
-        burstEnrUnc = np.sqrt(np.sum([v[1]**2 for v in burstEnrVals]))
-        expEnrExp = np.sum([v[0] for v in expEnrVals])
-        expEnrUnc = np.sqrt(np.sum([v[1]**2 for v in expEnrVals]))
-
-        rawNatExp = np.sum([v[0] for v in rawNatVals])
-        rawNatUnc = np.sqrt(np.sum([v[1]**2 for v in rawNatVals]))
-        psaNatExp = np.sum([v[0] for v in psaNatVals])
-        psaNatUnc = np.sqrt(np.sum([v[1]**2 for v in psaNatVals]))
-        burstNatExp = np.sum([v[0] for v in burstNatVals])
-        burstNatUnc = np.sqrt(np.sum([v[1]**2 for v in burstNatVals]))
-        expNatExp = np.sum([v[0] for v in expNatVals])
-        expNatUnc = np.sqrt(np.sum([v[1]**2 for v in expNatVals]))
+                rawNatExp += re
+                rawNatUnc += re * (aMassUnc/aMass)
+                psaNatExp += pe
+                psaNatUnc += pe * (aMassUnc/aMass)
+                burstNatExp += be
+                burstNatUnc += be * (aMassUnc/aMass)
+                finalNatExp += ee
+                finalNatUnc += ee * (aMassUnc/aMass)
 
         print("DS-%s" % ds)
         print("Enriched (kg-d)")
-        print("Raw: %.3f ± %.3f" % (rawEnrExp, rawEnrUnc))
-        print("PSA: %.3f ± %.3f" % (psaEnrExp, psaEnrUnc))
-        print("Burst: %.3f ± %.3f" % (burstEnrExp, burstEnrUnc))
-        print("Final: %.3f ± %.3f" % (expEnrExp, expEnrUnc))
+
+        # ugly latex version
+        print("DS%s & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f \\\\" % (str(ds), rawEnrExp,rawEnrUnc, psaEnrExp,psaEnrUnc, burstEnrExp,burstEnrUnc, finalEnrExp,finalEnrUnc))
+
         print("Natural (kg-d)")
-        print("Raw: %.3f ± %.3f" % (rawNatExp, rawNatUnc))
-        print("PSA: %.3f ± %.3f" % (psaNatExp, psaNatUnc))
-        print("Burst: %.3f ± %.3f" % (burstNatExp, burstNatUnc))
-        print("Final: %.3f ± %.3f" % (expNatExp, expNatUnc))
+        print("DS%s & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f & %.2f $\pm$ %.2f \\\\" % (str(ds), rawNatExp,rawNatUnc, psaNatExp,psaNatUnc, burstNatExp,burstNatUnc, finalNatExp,finalNatUnc))
 
-        grandTotEnrVals.append([expEnrExp, expEnrUnc])
-        grandTotNatVals.append([expNatExp, expNatUnc])
+        # pretty terminal version
+        # print("Raw: %.3f ± %.3f" % (rawEnrExp, rawEnrUnc))
+        # print("PSA: %.3f ± %.3f" % (psaEnrExp, psaEnrUnc))
+        # print("Burst: %.3f ± %.3f" % (burstEnrExp, burstEnrUnc))
+        # print("Final: %.3f ± %.3f" % (finalEnrExp, finalEnrUnc))
+        # print("Natural (kg-d)")
+        # print("Raw: %.3f ± %.3f" % (rawNatExp, rawNatUnc))
+        # print("PSA: %.3f ± %.3f" % (psaNatExp, psaNatUnc))
+        # print("Burst: %.3f ± %.3f" % (burstNatExp, burstNatUnc))
+        # print("Final: %.3f ± %.3f" % (finalNatExp, finalNatUnc))
 
-        dsExpo[ds] = [expEnrExp, expNatExp]
-        dsUnc[ds] = [expEnrUnc, expNatUnc]
+        grandTotEnrVals.append([finalEnrExp, finalEnrUnc])
+        grandTotNatVals.append([finalNatExp, finalNatUnc])
 
+        dsExpo[ds] = [finalEnrExp, finalNatExp]
+        dsUnc[ds] = [finalEnrUnc, finalNatUnc]
 
     grandTotEnr = np.sum([v[0] for v in grandTotEnrVals]) / 365.25
     grandTotEnrUnc = np.sqrt(np.sum([v[1]**2 for v in grandTotEnrVals])) / 365.25

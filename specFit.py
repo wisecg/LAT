@@ -27,15 +27,15 @@ def main(argv):
     # plotFit(plotRate=False, plotProfileResults=True)
     # getProfile()
     # plotProfile(makePlots=True)
-    combineProfileLoHi()
+    # combineProfileLoHi()
 
     # getProfileM1()
     # plotProfileM1()
-    # combineProfile()
+    # combineProfileM1()
 
     # hadronicCurve()
 
-    # gaeProj()
+    gaeProj()
 
 
 def initialize(makePlots=False):
@@ -55,17 +55,17 @@ def initialize(makePlots=False):
     # special switches
     simEffCorr = False
     use90 = False
-    useLoEff = True # this is the one that really makes us eat shit
+    useLoEff = False # this is the one that really makes us eat shit
     useHiEff = False
 
     print(dsList)
     print("Enriched" if enr else "Natural")
 
-    # full spectrum axion fit
-    eLo, eHi, epb = 1.5, 20, 0.2
-    bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
-    bkgModelPeaks = []
-    profileVars = ["axion"]
+    # # full spectrum axion fit
+    # eLo, eHi, epb = 1.5, 20, 0.2
+    # bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
+    # bkgModelPeaks = []
+    # profileVars = ["axion"]
 
     # reference fit
     # eLo, eHi, epb = 1.5, 20, 0.2
@@ -79,13 +79,13 @@ def initialize(makePlots=False):
     # bkgModelPeaks = ["54Mn","55Fe","57Co","65Zn","68Ga","68Ge"]
     # profileVars = []
 
-    # # 14.4 keV axion
-    # eLo, eHi, epb = 5, 30, 0.2
-    # # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
-    # # bkgModelPeaks = []
-    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
-    # bkgModelPeaks = ["axFe_M1"]
-    # profileVars = ["axFe_M1"]
+    # 14.4 keV axion
+    eLo, eHi, epb = 5, 30, 0.2
+    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
+    # bkgModelPeaks = []
+    bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
+    bkgModelPeaks = ["axFe_M1"]
+    profileVars = ["axFe_M1"]
 
     # binning of continuum histograms
     pLo, pHi, ppb = 0, 30, 0.05
@@ -1577,9 +1577,18 @@ def getProfileM1():
     idx = 1 if simEffCorr else 0
 
     # tOut = TFile("%s/data/rs-plc-%d-%s.root" % (dsi.latSWDir, idx, name), "RECREATE")
+    # tOut = TFile("%s/data/rs-plc-%d-%s-float.root" % (dsi.latSWDir, idx, name), "RECREATE")
 
-    tOut = TFile("%s/data/rs-plc-%d-%s-float.root" % (dsi.latSWDir, idx, name), "RECREATE")
-    print("Warning, saving to the floaty file instead of default")
+    if useLoEff:
+        tOut = TFile("%s/data/rs-plc-%d-effLoM1.root" % (dsi.latSWDir, idx), "RECREATE")
+        print("Warning, saving the profile curve for eff=lower limit...")
+    elif useHiEff:
+        tOut = TFile("%s/data/rs-plc-%d-effHiM1.root" % (dsi.latSWDir, idx), "RECREATE")
+        print("Warning, saving the profile curve for eff=upper limit...")
+    else:
+        tOut = TFile("%s/data/rs-plc-%d-floatM1.root" % (dsi.latSWDir, idx), "RECREATE") # << use this one by default
+        print("Warning, saving to the floaty file instead of default")
+
 
     start = time.clock()
 
@@ -1649,9 +1658,11 @@ def plotProfileM1():
     plt.savefig("%s/plots/sf-fe57-profile.pdf" % dsi.latSWDir)
 
 
-def combineProfile():
+def combineProfileM1():
 
     chi2max = 1.355
+
+    # === 1. show effect of fixed vs floating width peak ===
 
     tf1 = TFile("%s/data/rs-plc-0-axFe_M1.root" % dsi.latSWDir)
     hP1 = tf1.Get("hP_0")
@@ -1698,6 +1709,72 @@ def combineProfile():
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/sf-fe57-systematic.pdf" % dsi.latSWDir)
+
+
+    # === 2. show effect of upper and lower efficiency correction.
+    tf3 = TFile("%s/data/rs-plc-0-floatM1.root" % dsi.latSWDir)
+    hP3 = tf3.Get("hP_0")
+    hT3 = hP3.GetTitle().split()
+    pars = []
+    for v in hT3:
+        try: pars.append(float(v))
+        except: pass
+    pCL3, intLo3, bestFit3, intHi3, effCorr3 = pars
+    xP3, yP3, xpb3 = wl.npTH1D(hP3)
+    xP3, yP3 = effCorr3 * (xP3[1:] - xpb3/2), yP3[1:]
+    intHi3 *= effCorr3
+    pyCts3 = xP3[np.where(yP3>=chi2max)][0]-xpb3/2
+    print("regular float: True 90CL (effcorr), %.3f" % pyCts3)
+
+    tf4 = TFile("%s/data/rs-plc-0-effLoM1.root" % dsi.latSWDir)
+    hP4 = tf4.Get("hP_0")
+    hT4 = hP4.GetTitle().split()
+    pars = []
+    for v in hT4:
+        try: pars.append(float(v))
+        except: pass
+    pCL4, intLo4, bestFit4, intHi4, effCorr4 = pars
+    xP4, yP4, xpb4 = wl.npTH1D(hP4)
+    xP4, yP4 = effCorr4 * (xP4[1:] - xpb4/2), yP4[1:]
+    intHi4 *= effCorr4
+    pyCts4 = xP4[np.where(yP4>=chi2max)][0]-xpb4/2
+    print("lower float: True 90CL (effcorr), %.3f" % pyCts4)
+
+    tf5 = TFile("%s/data/rs-plc-0-effHiM1.root" % dsi.latSWDir)
+    hP5 = tf5.Get("hP_0")
+    hT5 = hP5.GetTitle().split()
+    pars = []
+    for v in hT5:
+        try: pars.append(float(v))
+        except: pass
+    pCL5, intLo5, bestFit5, intHi5, effCorr5 = pars
+    xP5, yP5, xpb5 = wl.npTH1D(hP5)
+    xP5, yP5 = effCorr5 * (xP5[1:] - xpb5/2), yP5[1:]
+    intHi5 *= effCorr5
+    pyCts5 = xP5[np.where(yP5>=chi2max)][0]-xpb5/2
+    print("upper float: True 90CL (effcorr), %.3f" % pyCts5)
+
+    plt.close()
+
+    plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
+
+    plt.plot(xP3, yP3, "-b", lw=2, label="Best-fit Eff, Fe-57 (M1): %.2f cts (90%% CL, eff.corr.)" % (pyCts3))
+    plt.plot([pyCts3,pyCts3],[0,chi2max], '-b', lw=2, alpha=0.5)
+
+    plt.plot(xP4, yP4, "-g", lw=2, label="Upper Eff, Fe-57 (M1): %.2f cts (90%% CL, eff.corr.)" % (pyCts4))
+    plt.plot([pyCts4,pyCts4],[0,chi2max], '-g', lw=2, alpha=0.5)
+
+    plt.plot(xP5, yP5, "-r", lw=2, label="Lower Eff, Fe-57 (M1): %.2f cts (90%% CL, eff.corr.)" % (pyCts5))
+    plt.plot([pyCts5,pyCts5],[0,chi2max], '-r', lw=2, alpha=0.5)
+
+    plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
+    plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
+    plt.legend(loc=1, fontsize=13)
+    plt.ylim(0, chi2max*3)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/sf-fe57-systematicEff.pdf" % dsi.latSWDir)
+
 
 
 
@@ -1747,7 +1824,9 @@ def hadronicCurve():
         # print(coupV[i])
 
     # nObs = 15.48 # fixed width
-    nObs = 17.17 # floating width
+    nObs = 17.17 # floating width, best fit << use this one
+    # nObs = 17.95 # floating width, lower efficiency bound (bad)
+    # nObs = 16.57 # floating width, upper efficiency bound (good)
 
     # check 3 - make a new curve
     photo144 = h1.GetBinContent(h1.FindBin(E))
@@ -1829,19 +1908,20 @@ def gaeProj():
 
     plt.axhline(1.92e-11, c='y', label="MJD DS1--5C (Nonzero Axion Amp.), %.2f kg-y" % (detExp/365.25))
 
-    plt.semilogy(xE, gaeBkg(xE, tritB, eLo, eHi), c='b', label=r'Tritium-dominated (proj.), B=%.2f cts/(kev kg-d)' % tritB)
+    plt.plot(xE, gaeBkg(xE, tritB, eLo, eHi), c='b', label=r'Tritium-dominated (proj.), B=%.2f cts/(kev kg-d)' % tritB)
 
-    plt.semilogy(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
+    plt.plot(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
 
     plt.axhline(4.35e-12, c='m', label="PandaX (2017)")
+    plt.axhline(3.5e-12, c='k', label="LUX (2017)")
 
     plt.xlabel("Exposure (kg-y)", ha='right', x=1)
 
     plt.ylabel(r"$\mathregular{g_{ae}}$ Projected UL", ha='right', y=1)
 
-    plt.ylim(3e-12, 1e-10)
+    plt.ylim(1e-12, 3e-11)
 
-    plt.legend(loc=1, fontsize=12)
+    plt.legend(loc=1, fontsize=14)
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/gae-proj.pdf" % dsi.latSWDir)
@@ -1866,6 +1946,7 @@ def gaeProj():
     plt.loglog(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'LEGEND, Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
 
     plt.axhline(4.35e-12, c='m', label="PandaX (2017)")
+    plt.axhline(3.5e-12, c='k', label="LUX (2017)")
 
     plt.xlabel("Exposure (kg-y)", ha='right', x=1)
 
