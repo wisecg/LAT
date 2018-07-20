@@ -28,7 +28,7 @@ def main():
     # spec()
     # spec_vs_cpd()
     # spec_summary()
-    # thresh_cut_cal()
+    thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
@@ -44,7 +44,7 @@ def main():
     # plot_ext_pulser()
     # plot_tOffset()
     # plot_riseNoise()
-    fitSlo_efficiency_uncertainty()
+    # fitSlo_efficiency_uncertainty()
 
 
 def spec():
@@ -265,9 +265,9 @@ def spec_summary():
     n = tt.Draw("trapENFCal",tCut,"goff")
     hitE = tt.GetV1()
     hitE = [hitE[i] for i in range(n)]
-    x, hSpec = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+    x, hCts = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
 
-    hSpec = np.divide(hSpec, detExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+    hSpec = np.divide(hCts, detExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
     hErr = np.asarray([np.sqrt(hBin/(detExp*xpb)) for hBin in hSpec]) # statistical error in each bin
 
     # calculate background index rate (smaller error if you use 1 keV bins)
@@ -285,6 +285,7 @@ def spec_summary():
         idxE2 = np.where((xEff>=20) & (xEff <= 40))
         effCorr = 1 - 1 / (effpb * np.sum(detEff[idxE2]))
         hRateEff = hRate / effCorr
+        hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR])) / effCorr
         hRateEffUnc = hRateUnc / effCorr
         print("EC Rate 20-40: %.5f ± %.5f" % (hRateEff, hRateEffUnc) )
 
@@ -399,7 +400,8 @@ def thresh_cut_cal():
 
     # make the figure
 
-    f = plt.figure(figsize=(10,6))
+    # f = plt.figure(figsize=(10,6)) # thesis
+    f = plt.figure(figsize=(15,5)) # defense
     p1 = plt.subplot(121)
     p2 = plt.subplot(122)
 
@@ -429,16 +431,20 @@ def thresh_cut_cal():
 
     im1 = p1.imshow(h1,cmap='jet',vmin=hMin,vmax=hMax, aspect='auto')#,norm=LogNorm())
 
-    xticklabels = ["%.1f" % x for x in np.arange(-0.5, 5.5, 1.)]
+    xticklabels = ["%.1f" % x for x in np.arange(0, 5.5, 0.5)]
 
     yticks = np.arange(0, len(cpdList))
+
+    p1.tick_params(axis='y',which='minor',left='off')
+    p2.tick_params(axis='y',which='minor',left='off')
+
 
     p1.set_xlabel("Energy (keV)", ha='right', x=1.)
     # p1.set_xticks(xticks)
     p1.set_xticklabels(xticklabels)
     p1.set_ylabel("CPD", ha='right', y=1.)
     p1.set_yticks(yticks)
-    p1.set_yticklabels(cpdList, fontsize=12)
+    p1.set_yticklabels(cpdList, fontsize=10)
     cb1 = f.colorbar(im1, ax=p1)#, fraction=0.037, pad=0.04)
     # cb1.set_label('Counts', ha='right', rotation=270, labelpad=20)
 
@@ -448,7 +454,7 @@ def thresh_cut_cal():
     p2.set_xticklabels(xticklabels)
     p2.set_ylabel("CPD", ha='right', y=1.)
     p2.set_yticks(yticks)
-    p2.set_yticklabels(cpdList, fontsize=12)
+    p2.set_yticklabels(cpdList, fontsize=10)
     cb2 = f.colorbar(im2, ax=p2)#, fraction=0.037, pad=0.04)
     # cb2.set_label('Counts', ha='right', rotation=270, labelpad=20)
 

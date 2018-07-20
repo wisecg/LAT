@@ -22,33 +22,32 @@ def main():
     # plotPDF()
     # fitPeaks()
     # getPeakFluxRF() # do this 2 ways, since the roofit model has to be super constrained to look ok
-    getPeakFluxPY(makePlots=False) # does a sideband analysis and gaussian peak fitting.  this gives the final flux results
+    # getPeakFluxPY(makePlots=False) # does a sideband analysis and gaussian peak fitting.  this gives the final flux results
     # loadShiftedData() # this leaves something wierd in memory that causes other functions to segfault
     # plotShiftedData()
 
-    # combineProfiles()
+    # getNLLOffset()
+    combineProfiles()
     exit()
 
     # lower than 2.0 introduces big outliers, higher than 3.5 introduces a peak
-    # mjd 3 sigma peak width at 2.6 keV:  sig 0.19, lo 2.04, hi 3.20
     eLo, eHi, epb = 2.0, 3.5, 0.05
     global nPks, pkModel, axPeaks
-    # for i in range(1,5):
-    for i in range(3,4):
-        nPks=i
-        pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
-        axPeaks = [sigVals[name][0] for name in pkModel]
-        pk0 = 4-nPks
-        axPeaks = axPeaks[pk0:]
 
-        fitShiftModel(eLo, eHi, epb, makePlots=False)
-        plotShiftModel(eLo, eHi, epb)
-        getShiftProfile(eLo, eHi, epb)
-        # plotShiftProfile(eLo, eHi, epb, makePlots=True)
+    nPks = 4
+    pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
+    axPeaks = [sigVals[name][0] for name in pkModel]
+    pk0 = 4-nPks
+    axPeaks = axPeaks[pk0:]
+
+    fitShiftModel(eLo, eHi, epb, makePlots=False)
+    plotShiftModel(eLo, eHi, epb)
+    getShiftProfile(eLo, eHi, epb)
+    plotShiftProfile(eLo, eHi, epb, makePlots=True)
 
 
 def initialize(makePlots=False):
-    global dsList, enr, opt, useWeight
+    global dsList, enr, opt, useWeight, floatWidth, zeroPk
     global pkModel, dMu, sigVals, simEffCorr, nPks, dsList, axPeaks
     global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
 
@@ -56,6 +55,11 @@ def initialize(makePlots=False):
     enr = True
     useWeight = True
     simEffCorr = False
+    floatWidth = True # only set true for systematic uncertainty cross check
+
+    zeroPk = False # if true, fix the amplitude of the peak to 0
+    if zeroPk:
+        print("Warning, fixing amplitude to 0")
 
     nPks = 4 # keep only this many of the axion peaks (from 1 to 4)
 
@@ -75,7 +79,7 @@ def initialize(makePlots=False):
         "axS_b":    [2.62,  0.004, 0, 0.08,   0.01, 0.005, 0.02],
 
         # shifted peak
-        "sPk":      [2.62,  100,  -0.1, 300.]
+        "sPk":      [2.62,  10,  -0.1, 100.] # was 100, -0.1, 300
         }
 
     pkModel = ["axSi_a","axSi_b","axS_a","axS_b"]
@@ -831,12 +835,11 @@ def plotShiftedData():
 
 
 def getSigma(E, opt=""):
-    """ Get the MJ energy resolution.
+    """ Get the MJ energy resolution, IN SIGMA (source tables are in terms of FWHM)
     If multiple DS are selected, weight the curve by DS exposure.
     Uses the global variable 'dsList'.
     """
-
-    # HG resolutions, from the energy unidoc.
+    # HG resolutions IN FWHM, from the energy unidoc.
     eRes = {
         0 :    {"nat": [1.260e-1, 1.790e-2, 2.370e-4], "enr": [1.500e-1, 1.750e-2, 2.820e-4], "both": [1.470e-1, 1.730e-2, 3.000e-4]},
         1 :    {"nat": [1.470e-1, 1.770e-2, 2.010e-4], "enr": [1.340e-1, 1.750e-2, 2.820e-4], "both": [1.360e-1, 1.740e-2, 2.800e-4]},
@@ -850,7 +853,7 @@ def getSigma(E, opt=""):
 
     if len(dsList)==1:
         p = eRes[dsList[0]][opt]
-        return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)
+        return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)/2.355
     else:
         # weight the curve by exposure
         sig, expTot = 0, 0
@@ -862,7 +865,7 @@ def getSigma(E, opt=""):
             sig += np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2) * exp
             expTot += exp
         sig /= expTot
-        return sig
+        return sig/2.355
 
 
 def fitShiftModel(eLo, eHi, epb, makePlots=True):
@@ -902,13 +905,21 @@ def fitShiftModel(eLo, eHi, epb, makePlots=True):
     opt = "enr" if enr else "nat"
     mu, sig, amp = sigVals[name][0], getSigma(sigVals[name][0], opt), sigVals[name][1]
     # print("e-region: sigma: %.2f  lo %.2f  mean %.2f  hi %.2f" % (sig, mu-3*sig, mu, mu+3*sig))
-    pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, sigVals[name][2], sigVals[name][3])
+
+    if zeroPk:
+        pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, 0)
+    else:
+        pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp, sigVals[name][2], sigVals[name][3])
+
     pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu)
 
-    # pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig) # << fixed value, used in main fit
+    if floatWidth:
+        pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sig - 0.3*sig, sig + 0.3*sig) # << systematic check, floating width
+        print("Warning, using floating width. sig %.3f, 0.3*sig: %.3f" % (sig, 0.3*sig))
 
-    pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, sig - 0.3*sig, sig + 0.3*sig) # << systematic check, floating width
-    print("Warning, using floating width. sig %.3f, 0.3*sig: %.3f" % (sig, 0.3*sig))
+    else:
+        pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig) # << fixed value, used in main fit
+        print("Fixed mean and sigma:",mu, sig)
 
     pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
     pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
@@ -1007,6 +1018,11 @@ def plotShiftModel(eLo, eHi, epb, plotProfileResults=True):
     nPars = fitRes.floatParsFinal().getSize()
     hitE = fitWS.var("trapENFCal")
     model = fitWS.pdf("model")
+    minNLL = fitRes.minNll()
+    print("minNLL:",minNLL)
+
+    # if zeroPk:
+    # exit()
 
     # === get fit results: {name : [nCts, err]} ===
     fitVals = {}
@@ -1019,7 +1035,7 @@ def plotShiftModel(eLo, eHi, epb, plotProfileResults=True):
         # print("%-10s" % name, wl.niceList(fitVals[name], "%.3f"))
 
     profileVars = ["sPk"]
-    if plotProfileResults:
+    if plotProfileResults and not zeroPk:
         from ROOT import RooStats as RS
         for pName in profileVars:
             fitVar = "amp-"+pName
@@ -1105,7 +1121,11 @@ def plotShiftModel(eLo, eHi, epb, plotProfileResults=True):
     # sum peak
     opt = "enr" if enr else "nat"
     mu, sig = sigVals["sPk"][0], getSigma(sigVals["sPk"][0], opt)
-    pCts = fitVals["amp-sPk"][0]
+
+    if zeroPk:
+        pCts = 0
+    else:
+        pCts = fitVals["amp-sPk"][0]
     yP = wl.gaus(xF, mu, sig, pCts) # note: to match pCts, do np.sum(yP * xpbF)
     # plt.plot(xF, yP * epb, c='b', lw=3, label="%.2f keV sum peak, %.2f cts (%.0f%% CL)" % (axPeaks[-1], pCts, 100*pCL))
     nTot += pCts
@@ -1169,6 +1189,7 @@ def getShiftProfile(eLo, eHi, epb):
     fitRes = fitWS.allGenericObjects().front()
     fPars = fitRes.floatParsFinal()
     nPars = fPars.getSize()
+    minNLL = fitRes.minNll()
 
     # === get fit results: {name : [nCts, err]} ===
     fitVals = {}
@@ -1178,13 +1199,16 @@ def getShiftProfile(eLo, eHi, epb):
         fitVal, fitErr = fp.at(i).getValV(), fp.at(i).getError()
         if "amp" in name:
             fitVals[name] = [fitVal, fitErr, name.split('-')[1]]
-    # for f in fitVals:
-        # print(f, fitVals[f])
+    for f in fitVals:
+        print(f, fitVals[f])
 
-    # tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
 
-    tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f-float.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
-    print("Warning, saving the profile for a floating signal width")
+    if floatWidth:
+        tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f-float.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
+        print("Warning, saving the profile for a floating signal width")
+    else:
+        tOut = TFile("%s/data/rs-plc-shift-%dpks-eLo%.1f.root" % (dsi.latSWDir, nPks, eLo), "RECREATE")
+
 
     start = time.clock()
 
@@ -1259,7 +1283,7 @@ def plotShiftProfile(eLo, eHi, epb, makePlots=False):
         plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
 
         plt.plot(xP, yP, '-b', lw=4, label=r"w/ Measured Eff. $\mathregular{g_{ae} \leq}$ %.2e" % gae)
-        # plt.plot([intHi,intHi],[0,chi2max], '-b', lw=2, alpha=0.5) # this isn't always at the 90% value
+        # plt.plot([intHi,intHi],[0,chi2max], '-b', lw=2, alpha=0.5) # this isn't always at the 90% value, the PLC sucks
         plt.plot([intLo,intLo],[0,chi2max], '-b', lw=2, alpha=0.5)
         plt.plot([pyCts,pyCts],[0,chi2max], '-b', lw=2, alpha=0.5)
 
@@ -1273,10 +1297,24 @@ def plotShiftProfile(eLo, eHi, epb, makePlots=False):
         plt.savefig("%s/plots/sf-axion-profile-shift-%dpks.pdf" % (dsi.latSWDir, nPks))
 
 
+def getNLLOffset():
+
+    n1 = 2 * np.log(-3539.630380/-3539.4261122)
+    n2 = 2 * np.log(-8437.22376865 / -8437.2228011)
+    n3 = 2 * np.log(-15069.657386 / -15069.6567999)
+    n4 = 2 * np.log(-22784.546954 / -22784.5460849)
+
+    print("n1:",n1)
+    print("n2:",n2)
+    print("n3:",n3)
+    print("n4:",n4)
+
 def combineProfiles():
 
     from ROOT import TFile
     from scipy.stats import chi2
+
+    print("i;m here")
 
     # expected axion counts, gae=1
     f = np.load("%s/data/sf7-pkFluxes.npz" % dsi.latSWDir)
@@ -1335,11 +1373,12 @@ def combineProfiles():
     # plt.xlim(500, 1000)
     plt.tight_layout()
     # plt.show()
+    print("i saved")
     plt.savefig("%s/plots/sf-axion-profile-shift-allPks.pdf" % dsi.latSWDir)
 
 
-    # === 2. profile for the nPks=3 curve, with a 1.9 and 2.0 eLo ===
-    # ===    AND, profile for the n=3 curve, with a fixed and floating signal peak width
+    # === 2. profile for the nPks=4 curve, with a 1.9 and 2.0 eLo ===
+    # ===    AND, profile for the n=4 curve, with a fixed and floating signal peak width
 
     plt.close()
 
@@ -1350,7 +1389,7 @@ def combineProfiles():
     chi2max = 1.355
     plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
 
-    nPks = 3
+    nPks = 4
     pk0 = 4-nPks
     axPeaks = [sigVals[name][0] for name in pkModel]
     axPeaks = axPeaks[pk0:]
@@ -1404,11 +1443,8 @@ def combineProfiles():
     plt.savefig("%s/plots/sf-axion-profile-shift-systematics.pdf" % dsi.latSWDir)
 
 
-
     # plt.close()
     # plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
-    #
-    #
     #
     # plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
     # plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)

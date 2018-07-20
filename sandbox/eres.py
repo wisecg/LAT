@@ -32,8 +32,8 @@ def getSigma(E, ds=None):
 
 
 def getSigma_v2(E, ds=None, opt=""):
-
-    # HG resolutions, from the energy unidoc.
+    """ HG resolutions, from the energy unidoc. They are given in terms of FWHM, but I want a single Gaussian width (sigma).
+    """
     eRes = {
         "0" :  {"nat": [1.260e-1, 1.790e-2, 2.370e-4], "enr": [1.500e-1, 1.750e-2, 2.820e-4], "both": [1.470e-1, 1.730e-2, 3.000e-4]},
         "1" :  {"nat": [1.470e-1, 1.770e-2, 2.010e-4], "enr": [1.340e-1, 1.750e-2, 2.820e-4], "both": [1.360e-1, 1.740e-2, 2.800e-4]},
@@ -45,7 +45,7 @@ def getSigma_v2(E, ds=None, opt=""):
         "5C" : {"nat": [1.565e-1, 1.810e-2, 2.201e-4], "enr": [1.361e-1, 1.740e-2, 2.829e-4], "both": [1.519e-1, 1.718e-2, 2.762e-4]}
     }
     p = eRes[str(ds)][opt]
-    return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)
+    return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)/2.355
 
 
 def getExpo(ds):
@@ -90,8 +90,8 @@ def plotRes():
 
     p1.legend(loc=2, fontsize=10, ncol=2)
     p2.legend(loc=2, fontsize=10, ncol=2)
-    p1.set_ylim(0.1, 0.5)
-    p2.set_ylim(0.1, 0.5)
+    p1.set_ylim(0.05, 0.2)
+    p2.set_ylim(0.05, 0.2)
     p1.set_xlabel("Energy (keV)", ha='right', x=1)
     p2.set_xlabel("Energy (keV)", ha='right', x=1)
     p1.set_ylabel(r"$\mathregular{\sigma(E)}$", ha='right', y=1)

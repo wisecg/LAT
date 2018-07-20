@@ -121,7 +121,8 @@ def plotTrap():
         tmpE = np.log(np.amax(eTrap))
         if tmpE > eMax: eMax = tmpE
 
-    fig = plt.figure(figsize=(8,8))
+    # fig = plt.figure(figsize=(8,8)) # thesis
+    fig = plt.figure(figsize=(6,8)) # defense
     p1 = plt.subplot(211)
     p2 = plt.subplot(212)
 
