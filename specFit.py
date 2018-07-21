@@ -51,13 +51,13 @@ def initialize(makePlots=False):
     # dsList = [0]
 
     enr = True
-    eff = True
 
     # special switches
+    eff = True # should almost always be true
     simEffCorr = False
     use90 = False
-    useLoEff = False # this is the one that really makes us eat shit
-    useHiEff = True
+    useLoEff = True # this is the one that really makes us eat shit
+    useHiEff = False
     constrainPeak = True # if True, will constrain width of all peaks in "bkgModelPeaks" to a gaussian
     constrainMu = True # use only for 14.4 study
 
@@ -144,7 +144,7 @@ def initialize(makePlots=False):
 
     xEff = f1['arr_0']
     totEnrEff, totNatEff = f1['arr_1'].item(), f1['arr_2'].item()
-    totEnrEffLo, totEnrEffHi = f1['arr_9'].item(), f1['arr_10'].item()  # these don't work w/ use90
+    totEnrEffLo, totEnrEffHi = f1['arr_9'].item(), f1['arr_10'].item()  # this doesn't work with use90
     totNatEffLo, totNatEffHi = f1['arr_11'].item(), f1['arr_12'].item()
 
     detEff = np.zeros(len(xEff))
@@ -168,7 +168,7 @@ def initialize(makePlots=False):
         f2 = np.load("%s/data/expo-totals-e95.npz"  % dsi.latSWDir) # << use this one
 
     # dsExpo = f2['arr_0'].item()
-    dsExpo, dsUnc = f2['arr_0'].item(), f2['arr_1'].item() # doesn't work with use90
+    dsExpo, dsUnc = f2['arr_0'].item(), f2['arr_1'].item()
     detExp = 0
     detUncVals = []
     for d in dsExpo:
@@ -552,7 +552,7 @@ def plotPDFs():
     # === 4. solar axion PDF, gae=1 -- this is what we integrate to get N_exp
     plt.close()
     xR1, hR1, _ = wl.npTH1D(tf.Get("h4"))
-    plt.plot(xR1, hR1, ls='steps', c='b', lw=3, label=r"%.2f keV/bin, $\mathregular{g_{ae}=1}$" % ppb)
+    plt.plot(xR1, hR1, ls='steps', c='b', lw=3, label=r"$\Phi_a$, %.2f keV/bin, $\mathregular{g_{ae}=1}$" % ppb)
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Flux / (keV d kg)", ha='right', y=1)
     plt.xlim(0,10)
@@ -731,11 +731,11 @@ def getTotalModel(pdfs, eLo, eHi, epb, smooth=True, amp=True):
 
 
 def getSigma(E, opt=""):
-    """ Get the MJ energy resolution, IN SIGMA (source tables are in terms of FWHM)
+    """ Get the MJ energy resolution, in sigma.
     If multiple DS are selected, weight the curve by DS exposure.
     Uses the global variable 'dsList'.
     """
-    # HG resolutions IN FWHM, from the energy unidoc.
+    # HG resolutions, from the energy unidoc.
     eRes = {
         0 :    {"nat": [1.260e-1, 1.790e-2, 2.370e-4], "enr": [1.500e-1, 1.750e-2, 2.820e-4], "both": [1.470e-1, 1.730e-2, 3.000e-4]},
         1 :    {"nat": [1.470e-1, 1.770e-2, 2.010e-4], "enr": [1.340e-1, 1.750e-2, 2.820e-4], "both": [1.360e-1, 1.740e-2, 2.800e-4]},
@@ -749,7 +749,7 @@ def getSigma(E, opt=""):
 
     if len(dsList)==1:
         p = eRes[dsList[0]][opt]
-        return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)/2.355
+        return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)
     else:
         # weight the curve by exposure
         sig, expTot = 0, 0
@@ -761,7 +761,7 @@ def getSigma(E, opt=""):
             sig += np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2) * exp
             expTot += exp
         sig /= expTot
-        return sig/2.355
+        return sig
 
 
 def getHistList(hName=None):
@@ -899,8 +899,8 @@ def fitModel(makePlots=False):
 
             # this is what i used for the 14.4 axion study where only the axion peak was floating
             pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, 0.01, 0.5)
-            # pSC = ROOT.RooGaussian("scon-"+name,"scon-"+name, pS, RF.RooConst(sig), RF.RooConst(0.1)) # "floating width"
-            pSC = ROOT.RooGaussian("scon-"+name,"scon-"+name, pS, RF.RooConst(sig), RF.RooConst(0.001)) # "fixed width"
+            pSC = ROOT.RooGaussian("scon-"+name,"scon-"+name, pS, RF.RooConst(sig), RF.RooConst(0.1)) # "floating width"
+            # pSC = ROOT.RooGaussian("scon-"+name,"scon-"+name, pS, RF.RooConst(sig), RF.RooConst(0.001)) # "fixed width"
 
             # this is what i used for the cosmogenic peak study
             # pS = ROOT.RooRealVar("sig-"+name, "sig-"+name, sig, 0.01, 0.5)
@@ -919,7 +919,6 @@ def fitModel(makePlots=False):
             pG = ROOT.RooGaussian("gaus-"+name, "gaus-"+name, hitE, pM, pS)
             pE = ROOT.RooExtendPdf("ext-"+name, "ext-"+name, pG, pN)
             peakModel.append([pE, name, mu, sig, amp, pN, pM, pS, pG])
-
 
     bkgModel = histModel + peakModel
 
@@ -1071,26 +1070,21 @@ def plotFit(plotRate=False, plotProfileResults=False):
     # compare the diffs w/ the lit values if you're floating any peaks
     for name in bkgModelPeaks:
         litE = bkgVals[name][0]
-        opt = "enr" if enr else "nat"
 
         # mu, sig, amp = fitVals["mu-"+name], fitVals["sig-"+name], fitVals["amp-"+name] # floating mean
-        # sig = sig[0]
         # mu = mu[0]
-        # dSig = getSigma(litE,opt) - sig
+        # print("using floating mean")
 
-        sig, amp = fitVals["sig-"+name], fitVals["amp-"+name] # fixed mean, for 14.4 study
-        sig = sig[0]
+        sig, amp = fitVals["sig-"+name], fitVals["amp-"+name] # fixed mean
         mu = litE
-        dSig = getSigma(litE,opt) - sig
-
-        # amp, sig = fitVals["amp-"+name],  getSigma(litE,opt) # fixed mean and width, for 14.4 study
-        # mu = litE
-        # dSig = 0
+        print("using fixed mean")
 
         dMu = litE - mu
+        opt = "enr" if enr else "nat"
+        dSig = getSigma(litE,opt) - sig[0]
         print(name)
         print("E   --  lit %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (litE, mu, dMu, 100*dMu/litE))
-        print("Sig -- func %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (getSigma(litE, opt), sig, dSig, 100*dSig/sig))
+        print("Sig -- func %.4f  fit %.4f  diff %.4f  (%.2f%%)" % (getSigma(litE, opt), sig[0], dSig, 100*dSig/sig[0]))
 
     if plotProfileResults:
         from ROOT import RooStats as RS
@@ -1375,7 +1369,7 @@ def plotProfile(makePlots=False):
     # apply the efficiency correction
     Nobs = intHi0 * effCorr0
     gae0 = np.power(Nobs/Nexp, 1/4)
-    print("reg: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae0))
+    print("No-corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae0))
 
     if getSimEff:
         tf1 = TFile("%s/data/rs-plc-1.root" % dsi.latSWDir) # sim eff correction
@@ -1388,7 +1382,7 @@ def plotProfile(makePlots=False):
         pcl1, intLo1, bestFit1, intHi1, effCorr1 = pars
         Nobs = intHi1 * effCorr1
         gae1 = np.power(Nobs/Nexp, 1/4)
-        print("sim eff: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae1))
+        print("With corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae1))
 
     if get90:
         tf2 = TFile("%s/data/rs-plc-0-fs90.root" % dsi.latSWDir) # 90% fitslo cut
@@ -1401,7 +1395,7 @@ def plotProfile(makePlots=False):
         pcl2, intLo2, bestFit2, intHi2, effCorr2 = pars
         Nobs = intHi2 * effCorr2
         gae2 = np.power(Nobs/Nexp, 1/4)
-        print("fs90: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae2))
+        print("With corr: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae2))
 
     # sanity check - graham's number
     # malbExp  = 89.5 # kg-d
@@ -1422,7 +1416,6 @@ def plotProfile(makePlots=False):
     print(chi2max)
 
     if makePlots:
-        print("i here")
         plt.close()
         plt.axhline(chi2max, c='m', lw=2, label=r"$\chi^2\mathregular{/2\ (90\%\ C.L.)}}$")
 
@@ -1525,7 +1518,7 @@ def combineProfileLoHi():
     gae2 = np.power(Nobs/Nexp, 1/4)
     print("Lo-lim: Expo (kg-d) %.2f  Nobs: %.2f  Nexp %.2e  eLo %.1f  eHi %.1f  g_ae U.L. %.4e" % (detExp, Nobs, Nexp, eLo, eHi, gae2))
 
-    print("Best gae: %.4e (+%.4e) (-%.4e)" % (gae0, gae0-gae1, gae2-gae0))
+    print("Best gae: %.4e (-%.4e) (+%.4e)" % (gae0, gae0-gae1, gae2-gae0))
 
     plt.close()
 
@@ -1581,9 +1574,15 @@ def getProfileM1():
     # === get the efficiency correction factor
 
     name = "axFe_M1"
-    # this is if you wanna let it float
-    sig, nCts = fitVals["sig-"+name][0], fitVals["amp-"+name][0]
+
+    # this is if you let the peak be a RooGaussian
     mu = bkgVals[name][0]
+    nCts = fitVals["amp-"+name][0]
+    opt = "enr" if enr else "nat"
+
+    sig = fitVals["sig-"+name][0] # floating width
+    # sig = getSigma(mu, opt) # fixed width
+
     x = np.arange(eLo, eHi, ppb)
     xpb = ppb
     y = wl.gauss_function(x, 20, mu, sig)
@@ -1612,7 +1611,10 @@ def getProfileM1():
     idx = 1 if simEffCorr else 0
 
     # tOut = TFile("%s/data/rs-plc-%d-%s.root" % (dsi.latSWDir, idx, name), "RECREATE")
+    # print("Saving fixed width file")
+
     # tOut = TFile("%s/data/rs-plc-%d-%s-float.root" % (dsi.latSWDir, idx, name), "RECREATE")
+    # print("Saving floating width file")
 
     if useLoEff:
         tOut = TFile("%s/data/rs-plc-%d-effLoM1.root" % (dsi.latSWDir, idx), "RECREATE")
@@ -1621,9 +1623,8 @@ def getProfileM1():
         tOut = TFile("%s/data/rs-plc-%d-effHiM1.root" % (dsi.latSWDir, idx), "RECREATE")
         print("Warning, saving the profile curve for eff=upper limit...")
     else:
-        tOut = TFile("%s/data/rs-plc-%d-floatM1.root" % (dsi.latSWDir, idx), "RECREATE") # << use this one by default
-        # tOut = TFile("%s/data/rs-plc-%d-floatM1-floatSig.root" % (dsi.latSWDir, idx), "RECREATE") # debug only
-        print("Warning, saving to the floaty file")
+        tOut = TFile("%s/data/rs-plc-%d-floatM1.root" % (dsi.latSWDir, idx), "RECREATE")
+        print("Warning, saving to the floaty file instead of default")
 
 
     start = time.clock()
@@ -1660,7 +1661,13 @@ def plotProfileM1():
 
     name = "axFe_M1"
     idx = 1 if simEffCorr else 0
-    tf = TFile("%s/data/rs-plc-%d-floatM1.root" % (dsi.latSWDir, idx))
+
+    # tf = TFile("%s/data/rs-plc-%d-%s.root" % (dsi.latSWDir, idx, name)) # fixed width file
+    # print("loading fixed width file")
+
+    tf = TFile("%s/data/rs-plc-%d-%s-float.root" % (dsi.latSWDir, idx, name)) # floating width file
+    print("loading floating width file")
+
     hP = tf.Get("hP_%d" % idx)
     hT = hP.GetTitle().split()
     pars = []
@@ -1700,7 +1707,7 @@ def combineProfileM1():
 
     # === 1. show effect of fixed vs floating width peak ===
 
-    tf1 = TFile("%s/data/rs-plc-0-floatM1.root" % dsi.latSWDir) # fixed mean, fixed width ("best")
+    tf1 = TFile("%s/data/rs-plc-0-axFe_M1.root" % dsi.latSWDir)
     hP1 = tf1.Get("hP_0")
     hT1 = hP1.GetTitle().split()
     pars = []
@@ -1714,7 +1721,7 @@ def combineProfileM1():
     pyCts1 = xP1[np.where(yP1>=chi2max)][0]-xpb1/2
     print("fixed: True 90CL (effcorr), %.3f" % pyCts1)
 
-    tf2 = TFile("%s/data/rs-plc-0-floatM1-floatSig.root" % dsi.latSWDir) # fixed mean, floating width ("blurst")
+    tf2 = TFile("%s/data/rs-plc-0-axFe_M1-float.root" % dsi.latSWDir)
     hP2 = tf2.Get("hP_0")
     hT2 = hP2.GetTitle().split()
     pars = []
@@ -1741,7 +1748,7 @@ def combineProfileM1():
     plt.xlabel(r"$\mathregular{N_{obs}}$", ha='right', x=1)
     plt.ylabel(r"-log $\mathregular{\lambda(\mu_{axion})}$", ha='right', y=1)
     plt.legend(loc=1, fontsize=13)
-    plt.ylim(0, 3)
+    plt.ylim(0, chi2max*3)
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/sf-fe57-systematic.pdf" % dsi.latSWDir)
@@ -1760,7 +1767,7 @@ def combineProfileM1():
     xP3, yP3 = effCorr3 * (xP3[1:] - xpb3/2), yP3[1:]
     intHi3 *= effCorr3
     pyCts3 = xP3[np.where(yP3>=chi2max)][0]-xpb3/2
-    print("regular efficiency: True 90CL (effcorr), %.3f" % pyCts3)
+    print("regular float: True 90CL (effcorr), %.3f" % pyCts3)
 
     tf4 = TFile("%s/data/rs-plc-0-effLoM1.root" % dsi.latSWDir)
     hP4 = tf4.Get("hP_0")
@@ -1774,7 +1781,7 @@ def combineProfileM1():
     xP4, yP4 = effCorr4 * (xP4[1:] - xpb4/2), yP4[1:]
     intHi4 *= effCorr4
     pyCts4 = xP4[np.where(yP4>=chi2max)][0]-xpb4/2
-    print("lower efficiency: True 90CL (effcorr), %.3f" % pyCts4)
+    print("lower float: True 90CL (effcorr), %.3f" % pyCts4)
 
     tf5 = TFile("%s/data/rs-plc-0-effHiM1.root" % dsi.latSWDir)
     hP5 = tf5.Get("hP_0")
@@ -1788,7 +1795,7 @@ def combineProfileM1():
     xP5, yP5 = effCorr5 * (xP5[1:] - xpb5/2), yP5[1:]
     intHi5 *= effCorr5
     pyCts5 = xP5[np.where(yP5>=chi2max)][0]-xpb5/2
-    print("upper efficiency: True 90CL (effcorr), %.3f" % pyCts5)
+    print("upper float: True 90CL (effcorr), %.3f" % pyCts5)
 
     plt.close()
 
@@ -1856,14 +1863,9 @@ def hadronicCurve():
         coupV[i] = np.sqrt(11.2 / 478 / (b**3) / 4.56e23 / 86400 / sigAe)
         # print(coupV[i])
 
-    # these vals were from the wrong peak width
-    # nObs = 17.17 # floating width, best fit << use this one
-    # nObs = 17.95 # floating width, lower efficiency bound (bad)
-    # nObs = 16.57 # floating width, upper efficiency bound (good)
-
-    nObs = 13.26 # floating width, best fit << use this one
-    # nObs = 14.02 # floating width, lower efficiency bound (bad)
-    # nObs = 12.74 # floating width, upper efficiency bound (good)
+    nObs = 17.165 # floating width, best fit << use this one
+    # nObs = 17.949 # floating width, lower efficiency bound (bad)
+    # nObs = 16.566 # floating width, upper efficiency bound (good)
 
     # check 3 - make a new curve
     photo144 = h1.GetBinContent(h1.FindBin(E))
@@ -1931,7 +1933,6 @@ def gaeProj():
     plt.close()
 
     # === 2. projection based on DS1--5C analysis
-    plt.figure(figsize=(6,5))
 
     # # Efficiency corrected rate, 1.5-20.0 keV:  0.062 c/(kev-kg-d)
     # # Efficiency corrected rate, 1.5-8.0 keV:  0.119 c/(kev-kg-d)
@@ -1942,28 +1943,27 @@ def gaeProj():
     # A key assumption here is that we are not seeing a significant number of counts in the axion pdf.
     # (we *are* in the current analysis, which is why the observed value is such an apparent outlier.)
 
-    # plt.axhline(2.6e-11, c='g', label="MALBEK (2015)")
+    plt.axhline(2.6e-11, c='g', label="MALBEK (2015)")
 
-    # plt.axhline(1.92e-11, c='y', label="MJD DS1--5C (Nonzero Axion Amp.), %.2f kg-y" % (detExp/365.25))
+    plt.axhline(1.92e-11, c='y', label="MJD DS1--5C (Nonzero Axion Amp.), %.2f kg-y" % (detExp/365.25))
 
     plt.plot(xE, gaeBkg(xE, tritB, eLo, eHi), c='b', label=r'Tritium-dominated (proj.), B=%.2f cts/(kev kg-d)' % tritB)
 
-    # plt.plot(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
+    plt.plot(xE, gaeBkg(xE, B, eLo, eHi), c='r', label=r'Excess-dominated (proj.), B=%.2f cts/(kev kg-d)' % B)
 
-    # plt.axhline(4.35e-12, c='m', label="PandaX (2017)")
-    # plt.axhline(3.5e-12, c='k', label="LUX (2017)")
+    plt.axhline(4.35e-12, c='m', label="PandaX (2017)")
+    plt.axhline(3.5e-12, c='k', label="LUX (2017)")
 
     plt.xlabel("Exposure (kg-y)", ha='right', x=1)
 
     plt.ylabel(r"$\mathregular{g_{ae}}$ Projected UL", ha='right', y=1)
 
-    # plt.ylim(1e-12, 3e-11)
+    plt.ylim(1e-12, 3e-11)
 
     plt.legend(loc=1, fontsize=14)
     plt.tight_layout()
     # plt.show()
-    # plt.savefig("%s/plots/gae-proj.pdf" % dsi.latSWDir)
-    plt.savefig("%s/plots/gae-proj-test.pdf" % dsi.latSWDir)
+    plt.savefig("%s/plots/gae-proj.pdf" % dsi.latSWDir)
 
 
     # === 3. insane LEGEND 10 ton-yr projection
