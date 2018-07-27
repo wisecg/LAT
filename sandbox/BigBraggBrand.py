@@ -23,8 +23,8 @@ det = dsi.DetInfo()
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-# dsList = ['5B', '5C', '6']
-dsList = ['5B']
+dsList = ['5B', '5C', '6']
+# dsList = ['5B']
 
 seedNum = 1
 # Energy range (also defines fitting range!)
@@ -32,10 +32,19 @@ seedNum = 1
 # Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
 energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
-# This start and end time are for DS5b
+
+# The start and end time are for DS5b
 startTime = 1485575988
-endTime = 1489762153 # DS5b
-# endTime = 1523836800 # DS6a (I set it as April 16th)
+# endTime = 1489762153 # DS5b
+
+# The start and end time are for DS5c
+# startTime = 1489773072
+# endTime = 1494223870 # DS5c
+
+# The start and end time are for DS5a
+# startTime = 1494535909
+endTime = 1523845062 # DS6a
+
 # Fake start times
 # startTime = 1483228800
 # endTime = 1514678400 # End of 2017
@@ -65,8 +74,6 @@ def main():
     df.sort_values(by=['UnixTime'], inplace=True)
     dataArr = df.loc[:, ['Energy','UnixTime']].values
 
-    #NOTE: Extend data by mirroring it one year later -- this is convoluted but whatever
-    # dataArr = np.append(dataArr, np.array([dataArr[:,0], np.add(dataArr[:,1], yearInSec)]).T, axis=0)
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
@@ -86,7 +93,6 @@ def main():
 
     # Create a matrix for energy bin center values
     pdfArrDict.setdefault('Energy', np.array((energyBins[:-1]+binSize/2).tolist()*nTimeBins).reshape(nTimeBins, len(energyBins[:-1]) ).T)
-
 
     # Remove columns with zeros
     pdfArrDict['Axion'] = np.delete(pdfArrDict['Axion'], removeMask, axis=1)
@@ -228,9 +234,11 @@ def constructBasicModel(pdfDict):
     return model
 
 
-def convertaxionPDF(startTime, endTime, debug = False):
+def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
     """
         Converts 2D histogram PDF for axion into numpy array
+
+        binSize = minutes per bin
 
         Wenqin's Axion PDF is generated for Lambda = 1.
         To convert a result to a lambda:
@@ -244,48 +252,62 @@ def convertaxionPDF(startTime, endTime, debug = False):
     fAxion  = ROOT.TFile('{}/Axion_averaged_MJD_reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
 
     hday = fAxion.Get('hday')
-    hday.RebinX(5) # 5 minute bins
-    # hday.RebinX(120) # 2 hour bins
+    hday.RebinX(binSize) # 5 minute bins
+
     # Find bins to cut off PDF at
-    startBin = hday.GetXaxis().FindBin(startTime)
-    endBin = hday.GetXaxis().FindBin(endTime)
+    bRepeat, endBin, endBin2 = False, 0, 0
+    nTimeBins = hday.GetNbinsX()
+    endTimeHist = hday.GetXaxis().GetBinLowEdge(nTimeBins)
+    startBin = hday.GetXaxis().FindBin(startTime) # No check is done on the start bin, assume within 2017-2018
+
+    # If there is enough time bins in the original axion histogram
+    if endTimeHist > endTime:
+        endBin = hday.GetXaxis().FindBin(endTime)
+    # If the end time extends beyond 2018, need to extend the histogram
+    else:
+        bRepeat = True
+        endBin = nTimeBins
+        endBin2 = hday.GetXaxis().FindBin(endTime - yearInSec)
+
     AxionList = []
+
     # Because this is finding the bin edges, need to go beyond the final bin
     # to get the upper end of the last time bin
     timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(time)
                         for time in range(hday.GetNbinsX())
                         if time >= startBin and time <= endBin+1]
 
-    #NOTE: Double the time bins for tests!
-    # timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(time)+yearInSec
-    #                     for time in range(hday.GetNbinsX())
-    #                     if time >= startBin and time <= endBin])
+    if debug:
+        print('Axion PDF Gap Extension (should be binsize):', timeBinLowEdge[-1], hday.GetXaxis().GetBinLowEdge(0)+yearInSec)
+    if bRepeat:
+        timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(time)+yearInSec
+                            for time in range(hday.GetNbinsX())
+                            if time >= 0 and time <= endBin2+1]) # nBins+1 overlaps with the 0 and 1st bin
 
     # Total bins is 1 less than the array length of timeBinLowEdge
     nTimeBins = len(timeBinLowEdge)-1
+
     for energyBin in range(hday.GetNbinsY()):
         # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
         if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) < energyThresh: continue
         if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) > energyThreshMax-0.1: continue
         # print("Axion Energy Bin: ", round(hday.GetYaxis().GetBinLowEdge(energyBin),1))
-        AxionList.append([hday.GetBinContent(time, energyBin)
-                            for time in range(hday.GetNbinsX())
-                            if time >= startBin and time <= endBin])
+        AxionList.append([hday.GetBinContent(timeBin, energyBin)
+                            for timeBin in range(1, hday.GetNbinsX())
+                            if timeBin >= startBin and timeBin <= endBin])
+        # Extend Axion histogram
+        if bRepeat:
+            AxionList[len(AxionList)-1].extend([hday.GetBinContent(timeBin, energyBin)
+                                for timeBin in range(1, hday.GetNbinsX()+1)
+                                if timeBin >= 1 and timeBin <= endBin2] )
 
     fAxion.Close()
     AxionArr = np.array(AxionList)
-    # AxionArr = np.append(AxionArr, AxionArr, axis=1) #NOTE: Debug -- extend pdf for tests
+    if debug:
+        print('Axion Shape', AxionArr.shape, nTimeBins)
 
-    # Old exposure mask
-    # timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
-
-    # New exposure mask
+    # Efficiency * Exposure mask
     timeMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
-
-    # Roughly normalize so the axion scale is the same as the other PDFs
-    # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
-    # print('Axion Normalization Constant:', (np.amax(AxionArr)/2.))
-    # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.) #NOTE: Debug, remove time mask for tests
 
     NormAxionArr = AxionArr*timeMask
 
@@ -480,36 +502,6 @@ def drawPDFs(pdfArrDict):
     plt.show()
 
 
-def generateLivetimeMask(timeBinLowEdge, AxionShape):
-    """
-        Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
-        Apply this mask to the PDFs to delete columns where the detectors are off
-    """
-    inFile = os.environ['LATDIR']+'/data/MCMC/DS5b_RunTimes.txt'
-    livetimeMask = np.ones(AxionShape)
-    gapMatrix = {}
-    prevEnd = 1485575988 # Start time of DS5b
-    totalGap = 0
-    try:
-        f = open(inFile)
-    except:
-        print("File doesn't exist!")
-    for line in f:
-        currentArr = np.array(line.split('\t'), dtype=np.int)
-        if currentArr[1] != prevEnd:
-            # Fills in gapMatrix with livetime gaps, run: end, start, gap size (s)
-            gapMatrix.setdefault(currentArr[0], [prevEnd, currentArr[1], currentArr[1]-prevEnd])
-            startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
-            stopIndex = np.where(timeBinLowEdge >= currentArr[1])[0][0]
-            livetimeMask[:, startIndex:stopIndex] = 0
-            totalGap += currentArr[1]-prevEnd
-            prevEnd = currentArr[2]
-        else:
-            prevEnd = currentArr[2]
-
-    return livetimeMask
-
-
 def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None, debug = False):
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
@@ -517,9 +509,12 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     """
     import ROOT
     effMask = np.ones(AxionShape)
-    print('Axion Shape:', AxionShape)
-    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
+    if debug:
+        print('Start, End Time:', startTime, endTime)
+        print('Time Bins:', timeBinLowEdge[0], timeBinLowEdge[-1])
+        print('Difference: {} -- {}'.format(startTime - timeBinLowEdge[0], timeBinLowEdge[-1] - endTime))
 
+    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
     # Dummy variable for Start time of DS5b to calculate gaps in livetime
     prevEnd = startTime
 
@@ -550,7 +545,6 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                 print("File {} doesn't exist! Skipping".format(inFile))
 
         if debug:
-            # print(runMatrix)
             expTot = 0
             for idx in runMatrix:
                 expTot += runMatrix[idx]
@@ -565,51 +559,50 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                 cArr = np.array(line.split(','), dtype=np.int)
                 run, sTime, eTime = cArr[0], cArr[1], cArr[2]
 
-                # Calculate where the time bins are for the particular run
-                startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
-                stopIndex = np.where(timeBinLowEdge >= sTime)[0][0]
+                # If the timing between runs is 1 second, it's just a rounding uncertainty
+                if sTime - prevEnd < 2: prevEnd = sTime
 
-                # If there is a gap between runs for livetime between runs -- set scaling to 0
+                # Calculate where the time bins are for the particular run
+                prevIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1] # Time bin of end of previous run
+                startIndex = np.where(timeBinLowEdge <= sTime)[0][-1] # Time bin of beginning of current run
+                stopIndex = np.where(timeBinLowEdge >= eTime)[0][0] # Time bin of end of current run
+
+                # If there is a gap between runs for livetime between runs
+                # set scaling to 0 during that time period to remove
                 if sTime != prevEnd:
                     # Fills in gapMatrix with livetime gaps, run: end, start, gap size (s)
                     # gapMatrix.setdefault(run, [prevEnd, sTime, sTime-prevEnd])
-
                     # Set the efficiency for those time bins to be zero
-                    if startIndex == stopIndex:
-                        effMask[:, startIndex] = 0
+                    if prevIndex == startIndex:
+                        effMask[:, prevIndex] = 0
                     else:
-                        effMask[:, startIndex:stopIndex] = 0
+                        effMask[:, prevIndex:startIndex] = 0
+                    # If there is a gap between runs that's less than the 5 minute bin-size
+                    # Not dealing with this for now... < 0.5 kg-day exposure difference
+                    if sTime - prevEnd < 300:
+                        print('Time gap for run {} less than 5 min: {} ({}-{})'.format(run,sTime-prevEnd, prevIndex, startIndex))
                     totalGap += sTime-prevEnd
-                    # Update end period unixtime
-                    prevEnd = eTime
+                    # Update end period unixtime to the beginning of the run
+                    prevEnd = sTime
 
                 # Otherwise, multiply by efficiency * exposure
-                else:
-                    # Update end period unixtime if there is no gap
-                    # Exposure is split up by number of bins it fills here
-                    if run in runMatrix and runMatrix[run] != 0:
-                        if startIndex == stopIndex:
-                            effMask[:, startIndex] = runMatrix[run]
-                        else:
-                            effMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex+1)
-                    else:
-                        effMask[:, startIndex:stopIndex] = 0
-                        print('Run {} setting to 0'.format(run))
-                        print(effMask[100, startIndex:stopIndex])
-
-                    print('Run {}, Start {}, End {}, ({}-{}) Exp: {}'.format(run, sTime, eTime, startIndex, stopIndex, runMatrix[run]))
+                # Update end period unixtime if there is no gap
+                # Exposure is split up by number of bins it fills here
+                if run in runMatrix and runMatrix[run] != 0:
                     if startIndex == stopIndex:
-                        print(effMask[100, startIndex])
+                        effMask[:, startIndex] = runMatrix[run]
                     else:
-                        print(effMask[100, startIndex:stopIndex])
-                    prevEnd = eTime
+                        effMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex-1)
+                else:
+                    effMask[:, startIndex:stopIndex] = 0
+                    print('Run {} setting to 0'.format(run))
+                    print(effMask[100, startIndex:stopIndex])
 
-        print('Run 23792 Debug: ', runMatrix[23792])
+                prevEnd = eTime
+
         if debug:
             print(effMask)
-            print(effMask.shape)
-            print(effMask[100, :].shape)
-            print(np.sum(effMask[100, :], axis=0)) # Sum over one axis at a high energy, should get exposure?
+            print('DS{} -- Exposure: {}'.format(ds, np.sum(effMask[100, :], axis=0))) # Sum over one axis at a high energy, should get exposure?
             print('Total time gap for DS{} -- {}'.format(ds, totalGap))
 
     return effMask
