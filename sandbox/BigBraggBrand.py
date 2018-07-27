@@ -3,7 +3,7 @@
     Big NUTS Bragg Brand fitting
 """
 
-import os
+import os, imp, time
 import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
@@ -21,25 +21,27 @@ bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
 det = dsi.DetInfo()
 
-
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
+# dsList = ['5B', '5C', '6']
+dsList = ['5B']
+
 seedNum = 1
-# Energy range (also fitting range!)
+# Energy range (also defines fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
-# Scanned from 12 to 19.8
+# Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
 energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
 # This start and end time are for DS5b
 startTime = 1485575988
-# endTime = 1489762153 # DS5b
-endTime = 1523836800 # DS6a (I set it as April 16th)
+endTime = 1489762153 # DS5b
+# endTime = 1523836800 # DS6a (I set it as April 16th)
 # Fake start times
 # startTime = 1483228800
 # endTime = 1514678400 # End of 2017
 # endTime = 1546300800 # End of 2018
 yearInSec = 31536000 # Number of seconds in 1 year
-nBurn = 1500
+nBurn = 1500 # Number of burn-in samples for the MCMC
 
 
 def main():
@@ -49,8 +51,10 @@ def main():
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask = convertaxionPDF(startTime, endTime)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask = convertaxionPDF(startTime, endTime, debug=True)
 
+    print('Generated Axion PDF')
+    return
     AxionNorm = (np.amax(AxionArr)/2.)
     # Normalize Axion
     print('Axion Normalization Constant:', AxionNorm)
@@ -100,7 +104,7 @@ def main():
     print("Data Shape", pdfArrDict['Data'].shape)
     print("Axion Shape", pdfArrDict['Axion'].shape)
     drawPDFs(pdfArrDict)
-    return
+
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
@@ -191,15 +195,15 @@ def constructModel(pdfDict, energyBins):
         # Sig = pm.Normal('Sig', mu = 5.536, sd = 0.103)
         # eff = 1./(1.+tt.exp(-(pdfDict['Energy']-Mu)/Sig))
         # Weibull efficiency
-        amp = pm.Normal('amp', mu = 0.9, sd = 0.01)
-        c = pm.Normal('c', mu = 1.8, sd = 0.2)
-        loc = pm.Normal('loc', mu = -10.8, sd = 1.)
-        scale = pm.Normal('scale', mu = 14.4, sd = 2.)
-        eff = amp*(1.-tt.exp(-tt.pow((pdfDict['Energy']-loc)/scale, c)))
+        # amp = pm.Normal('amp', mu = 0.9, sd = 0.01)
+        # c = pm.Normal('c', mu = 1.8, sd = 0.2)
+        # loc = pm.Normal('loc', mu = -10.8, sd = 1.)
+        # scale = pm.Normal('scale', mu = 14.4, sd = 2.)
+        # eff = amp*(1.-tt.exp(-tt.pow((pdfDict['Energy']-loc)/scale, c)))
 
         # Generate array of deterministic variables (per bin)
-        det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
-        # det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
+        # det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
+        det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
 
         L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
     return model
@@ -224,7 +228,7 @@ def constructBasicModel(pdfDict):
     return model
 
 
-def convertaxionPDF(startTime, endTime):
+def convertaxionPDF(startTime, endTime, debug = False):
     """
         Converts 2D histogram PDF for axion into numpy array
 
@@ -247,6 +251,7 @@ def convertaxionPDF(startTime, endTime):
     endBin = hday.GetXaxis().FindBin(endTime)
     AxionList = []
     # Because this is finding the bin edges, need to go beyond the final bin
+    # to get the upper end of the last time bin
     timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(time)
                         for time in range(hday.GetNbinsX())
                         if time >= startBin and time <= endBin+1]
@@ -256,7 +261,7 @@ def convertaxionPDF(startTime, endTime):
     #                     for time in range(hday.GetNbinsX())
     #                     if time >= startBin and time <= endBin])
 
-    # Total bins is 1 less
+    # Total bins is 1 less than the array length of timeBinLowEdge
     nTimeBins = len(timeBinLowEdge)-1
     for energyBin in range(hday.GetNbinsY()):
         # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
@@ -275,7 +280,7 @@ def convertaxionPDF(startTime, endTime):
     # timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
 
     # New exposure mask
-    timeMask = generateLivetimeMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = ['5B'])
+    timeMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
 
     # Roughly normalize so the axion scale is the same as the other PDFs
     # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
@@ -287,7 +292,7 @@ def convertaxionPDF(startTime, endTime):
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
 
-    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask
+    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, timeMask
 
 
 def drawFinalSpectra(pdfDict, trace):
@@ -475,7 +480,6 @@ def drawPDFs(pdfArrDict):
     plt.show()
 
 
-
 def generateLivetimeMask(timeBinLowEdge, AxionShape):
     """
         Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
@@ -506,25 +510,35 @@ def generateLivetimeMask(timeBinLowEdge, AxionShape):
     return livetimeMask
 
 
-def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None):
+def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None, debug = False):
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
         for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
     """
-
+    import ROOT
     effMask = np.ones(AxionShape)
+    print('Axion Shape:', AxionShape)
     fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
 
-    for dsNum in dsList:
+    # Dummy variable for Start time of DS5b to calculate gaps in livetime
+    prevEnd = startTime
+
+    for ds in dsList:
         # Create a new map for all runs with the exposure of each run
+        if ds in ['5A', '5B', '5C']:
+            dsNum = 5
+        else:
+            dsNum = int(ds)
+
+        # Builds up dictionary of run:exposure for every dataset
         runMatrix = {}
         bkgRanges = bkg.getRanges(dsNum)
-        chList = det.getGoodChanList(dsNum, mod)
+        chList = det.getGoodChanList(dsNum)
 
         # Loop through channels to build up total runLists
         for ch in chList:
             cpd = int(det.getChanCPD(dsNum,ch))
-            inFile = os.environ['LATDIR']+'/data/runLists/DS{}_C{}P{}D{}.txt'.format(dsNum, *str(cpd))
+            inFile = os.environ['LATDIR']+'/data/expLists/DS{}_C{}P{}D{}.txt'.format(ds, *str(cpd))
             try:
                 with open(inFile) as f:
                     # Loop through file,
@@ -535,33 +549,68 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
             except:
                 print("File {} doesn't exist! Skipping".format(inFile))
 
+        if debug:
+            # print(runMatrix)
+            expTot = 0
+            for idx in runMatrix:
+                expTot += runMatrix[idx]
+            print('DS{} Total Exposure: {}'.format(ds, expTot))
 
-        print(runMatrix)
-        
-        continue
         # Now loop through the full dataset runList to add in unixtimes and eliminate gaps
-        inFile2 = os.environ['LATDIR']+'/data/MCMC/DS{}_RunTimes.txt'.format(dsNum)
-        gapMatrix = {}
-        prevEnd = 1485575988 # Start time of DS5b
+        inFile2 = os.environ['LATDIR']+'/data/MCMC/DS{}_RunTimeList.txt'.format(ds)
+        # gapMatrix = {}
         totalGap = 0
         with open(inFile2) as f2:
             for line in f2:
-                currentArr = np.array(line.split(','), dtype=np.int)
-                # If there is a gap between runs for livetime between runs
-                if currentArr[1] != prevEnd:
+                cArr = np.array(line.split(','), dtype=np.int)
+                run, sTime, eTime = cArr[0], cArr[1], cArr[2]
+
+                # Calculate where the time bins are for the particular run
+                startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
+                stopIndex = np.where(timeBinLowEdge >= sTime)[0][0]
+
+                # If there is a gap between runs for livetime between runs -- set scaling to 0
+                if sTime != prevEnd:
                     # Fills in gapMatrix with livetime gaps, run: end, start, gap size (s)
-                    gapMatrix.setdefault(currentArr[0], [prevEnd, currentArr[1], currentArr[1]-prevEnd])
-                    # Calculate where the time bins are for the particular run
-                    startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
-                    stopIndex = np.where(timeBinLowEdge >= currentArr[1])[0][0]
+                    # gapMatrix.setdefault(run, [prevEnd, sTime, sTime-prevEnd])
+
                     # Set the efficiency for those time bins to be zero
-                    effMask[:, startIndex:stopIndex] = 0
-                    totalGap += currentArr[1]-prevEnd
+                    if startIndex == stopIndex:
+                        effMask[:, startIndex] = 0
+                    else:
+                        effMask[:, startIndex:stopIndex] = 0
+                    totalGap += sTime-prevEnd
                     # Update end period unixtime
-                    prevEnd = currentArr[2]
+                    prevEnd = eTime
+
+                # Otherwise, multiply by efficiency * exposure
                 else:
                     # Update end period unixtime if there is no gap
-                    prevEnd = currentArr[2]
+                    # Exposure is split up by number of bins it fills here
+                    if run in runMatrix and runMatrix[run] != 0:
+                        if startIndex == stopIndex:
+                            effMask[:, startIndex] = runMatrix[run]
+                        else:
+                            effMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex+1)
+                    else:
+                        effMask[:, startIndex:stopIndex] = 0
+                        print('Run {} setting to 0'.format(run))
+                        print(effMask[100, startIndex:stopIndex])
+
+                    print('Run {}, Start {}, End {}, ({}-{}) Exp: {}'.format(run, sTime, eTime, startIndex, stopIndex, runMatrix[run]))
+                    if startIndex == stopIndex:
+                        print(effMask[100, startIndex])
+                    else:
+                        print(effMask[100, startIndex:stopIndex])
+                    prevEnd = eTime
+
+        print('Run 23792 Debug: ', runMatrix[23792])
+        if debug:
+            print(effMask)
+            print(effMask.shape)
+            print(effMask[100, :].shape)
+            print(np.sum(effMask[100, :], axis=0)) # Sum over one axis at a high energy, should get exposure?
+            print('Total time gap for DS{} -- {}'.format(ds, totalGap))
 
     return effMask
 
@@ -717,19 +766,6 @@ def posteriorChecks(model, trace):
     # 1    61502  4.95  22.12   0.06  798.47  10.2       1
 
     return model_ppc, model_waic, model_loo
-
-
-def rebin(inArr, size=2):
-    """
-        Rebin an array
-    """
-    if not float(inArr.shape[0]/size).is_integer():
-        print('Error: Input array length is not evenly divisible by rebin size')
-        return
-    rebinnedArr = np.empty(inArr[::size].shape)
-    for i in range(size):
-        rebinnedArr += inArr[i::size]
-    return rebinnedArr
 
 
 def bin_ndarray(ndarray, new_shape, operation='sum'):

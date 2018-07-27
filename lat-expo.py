@@ -244,10 +244,13 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
+
+    # Flag for writing run + exposure lists into a file
+    writeRuns = True
 
     # output
     dsExpo = {} # {ds: [dsEnrExp, dsNatExp]}
