@@ -519,6 +519,16 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     prevEnd = startTime
 
     for ds in dsList:
+        # First build efficiency array -- assumes efficiency for all dataset is constant
+        # Also combines efficiency of natural and enriched detectors
+        hEff = fEff.Get('hDS{}_Norm_Tot'.format(ds))
+        effArr = np.ones(len(energyBins)-1)
+        for eIdx, eBin in enumerate(energyBins[:-1]):
+            effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
+
+        if debug:
+            print('DS{} Efficiency:'.format(ds), effArr, effArr.shape)
+
         # Create a new map for all runs with the exposure of each run
         if ds in ['5A', '5B', '5C']:
             dsNum = 5
@@ -590,9 +600,19 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                 # Exposure is split up by number of bins it fills here
                 if run in runMatrix and runMatrix[run] != 0:
                     if startIndex == stopIndex:
-                        effMask[:, startIndex] = runMatrix[run]
+                        effMask[:, startIndex] = effArr*runMatrix[run]
                     else:
-                        effMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex-1)
+                        # This part is really long and complicated, basically need to copy (repeat) the effArr to match the size we want to fill inside effMask, the reshape is just to make the array sizes match
+
+                        # If the shape doesn't match, it's because we're at the last time bin, shrink
+                        if effMask[:, startIndex:stopIndex].shape[1] != stopIndex-startIndex:
+                            print('Matching off run {} ({}-{})'.format(run,startIndex, stopIndex) )
+                            effMat = np.repeat(effArr,stopIndex-startIndex-1).reshape(len(effArr), stopIndex-startIndex-1)
+
+                        else:
+                            effMat = np.repeat(effArr,stopIndex-startIndex).reshape(len(effArr), stopIndex-startIndex)
+
+                        effMask[:, startIndex:stopIndex] = effMat*runMatrix[run]/(stopIndex-startIndex-1)
                 else:
                     effMask[:, startIndex:stopIndex] = 0
                     print('Run {} setting to 0'.format(run))
