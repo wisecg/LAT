@@ -26,7 +26,6 @@ thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, par
 # load fitSlo vals for cal run range closest to the run range [22513, 22566]
 dsNum, modNum, calIdx = 5, 1, 11  # calIdx 11: [[22568,22635],22568,22841],
 
-
 def main():
 
     inDir, outDir = os.environ['LATDIR'], os.environ['LATDIR']+'/plots/CalPairs'
@@ -176,9 +175,9 @@ def simtoCh(simID):
     return int(ch)
 
 
-def getSpecPandas():
+def getSpecPandas(dsNum):
     """
-        Get sum and hit spectra w/ threshold cut, without ch. 598 (it's noisy.)
+        Get sum and hit spectra w/ threshold cut
         Here we use "mHT" and "sumET" exclusively.
         Use !EventDC1Bits and trapENFCal > 0.7, all hits.  (Skim file was generated w/ 'dontSkipAnything')
         Save detailed info for events with hits < 2630 keV.
@@ -209,7 +208,7 @@ def getSpecPandas():
 
             idxList = [i for i in range(lTree.channel.size())
                 if lTree.channel.at(i) in chList
-                and lTree.channel.at(i) != 598
+                # and lTree.channel.at(i) != 598 # This was during DS5, I don't think we need it anymore
                 and lTree.channel.at(i) in thD
                 # and lTree.trapENFCal.at(i) > thD[lTree.channel.at(i)][0] + 3*thD[lTree.channel.at(i)][1] # Use DB value
                 and lTree.trapENFCal.at(i) > lTree.threshKeV.at(i) + 3*lTree.threshSigma.at(i)  # Use threshold from current run
@@ -224,23 +223,26 @@ def getSpecPandas():
             # Also, can store this as 'table' here
             if sumET < 2630:
                 dataMap = {}
+                dataMap['dsNum'] = int(dsNum)
+                dataMap['key'] = key
                 dataMap['run'] = int(lTree.run)
+                # dataMap['iEvent'] = int(lTree.iEvent)
+                dataMap['CPD1'] = int(100*lTree.C.at(idxList[0])+10*lTree.P.at(idxList[0])+lTree.D.at(idxList[0]))
+                dataMap['CPD2'] = int(100*lTree.C.at(idxList[1])+10*lTree.P.at(idxList[1])+lTree.D.at(idxList[1]))
                 dataMap['channel1'] = int(lTree.channel.at(idxList[0]))
                 dataMap['channel2'] = int(lTree.channel.at(idxList[1]))
                 dataMap['trapENFCal1'] = hitE[0]
                 dataMap['trapENFCal2'] = hitE[1]
-                dataMap['mHT'] = mHT
                 dataMap['sumET'] = sumET
-                dataMap['iEvent'] = int(lTree.iEvent)
                 dataMap['fitSlo1'] = lTree.fitSlo.at(idxList[0])
                 dataMap['fitSlo2'] = lTree.fitSlo.at(idxList[1])
                 dataMap['riseNoise1'] = lTree.riseNoise.at(idxList[0])
                 dataMap['riseNoise2'] = lTree.riseNoise.at(idxList[1])
-                dataMap['CPD1'] = int(100*lTree.C.at(idxList[0])+10*lTree.P.at(idxList[0])+lTree.D.at(idxList[0]))
-                dataMap['CPD2'] = int(100*lTree.C.at(idxList[1])+10*lTree.P.at(idxList[1])+lTree.D.at(idxList[1]))
-                dataMap['UnixTime'] = lTree.globalTime.GetSec()
+                dataMap['ToE1'] = lTree.kvorrT.at(idxList[0])/hitE[0]
+                dataMap['ToE2'] = lTree.kvorrT.at(idxList[1])/hitE[1]
                 dataList.append(dataMap)
         tf.Close()
+
     df = pd.DataFrame.from_dict(dataList)
     print(len(df))
     print(df.head(10))
@@ -252,7 +254,28 @@ def getSpecPandas():
     # There's not enough events to warrant chunk-writing
     import warnings
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
-    df.to_hdf('DS{}_Cal_HitData.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
+
+	chunksize = 100000
+	start = 0
+	end = chunksize-1
+	i = 0
+	# for i in len(df):
+	if df.shape[0] > end:
+		while end < df.shape[0]:
+			chunk = df.iloc[start:end]
+			try:
+				print('Writing to: ', '{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i))
+				chunk.to_hdf('{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i), key='skimTree',
+                format='table', mode='w', complevel=9)
+			except (Exception) as e:
+				print (e)
+				print (chunk)
+				print (chunk.info())
+			start += chunksize
+			end += chunksize
+			i += 1
+	else:
+        df.to_hdf('DS{}_Cal_HitData_0.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
 
 
 def getSimPandas():
@@ -325,10 +348,30 @@ def getSimPandas():
     print(df.head(10))
 
     # Write Dataframe to file -- suppress performance warnings
-    # There's not enough events to warrant chunk-writing
     import warnings
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
-    df.to_hdf('DS{}_Sim_HitData.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
+
+	chunksize = 100000
+	start = 0
+	end = chunksize-1
+	i = 0
+	# for i in len(df):
+	if df.shape[0] > end:
+		while end < df.shape[0]:
+			chunk = df.iloc[start:end]
+			try:
+				print('Writing to: ', '{}/{}_{}.h5'.format(outDir,inFileName.split('.')[0],i))
+				chunk.to_hdf('{}/{}_{}.h5'.format(outDir,inFileName.split('.')[0],i), key='skimTree',
+                format='table', mode='w', complevel=9)
+			except (Exception) as e:
+				print (e)
+				print (chunk)
+				print (chunk.info())
+			start += chunksize
+			end += chunksize
+			i += 1
+	else:
+        df.to_hdf('DS{}_Sim_HitData.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
 
 def loadSpec():
     """

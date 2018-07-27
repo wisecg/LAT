@@ -8,22 +8,25 @@ sns.set_style('darkgrid')
 
 def main(argv):
 
-    bUseBlind, bSkip5a = True, False
+    bUseBlind = False
     dsList, module = [1,2,3,5,6], 1
     # dsList, module = [4,5], 2
     # dsList, module = [6], 1
 
     # Channels across DS1, 2, 3, 5
-    chList = [592, 598, 608, 626, 632, 640, 648, 672, 690]
-
+    chList = [592, 608, 626, 632, 640, 648, 672, 690]
     # globalTime cut right now is because of some unrejected runs in blind DS1
-    theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && C=={} && globalTime > 0".format(module)
-    channelCut = "&& (channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={})".format(*chList)
+    theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && C=={}".format(module)
+    # channelCut = "&& (channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={})".format(*chList)
+    channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==1)||(C==1&&P==6&&D==3)||(C==1&&P==6&&D==4)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3)||(C==1&&P==7&&D==4))"
+    # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==1)||(C==1&&P==7&&D==4))"
+    # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==4)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3))"
     theCut += channelCut
     nuCut = theCut + " && mHL==1 && trapENFCalC>1000 && trapENFCalC<1400 && avse>-1 && dcr99<0"
+    # dcrCut = theCut + " && mHL==1 && trapENFCalC>1950 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     dcrCut = theCut + " && mHL==1 && trapENFCalC>1950 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     alphaCut = theCut + " && mHL==1 && trapENFCalC>4000 && trapENFCalC<8000 && avse>-1"
-    pbCut = theCut + " && mHL==1 && trapENFCalC>45.5 && trapENFCalC<47.5"
+    pbCut = theCut + " && mH==1 && trapENFCal>45.5 && trapENFCal<47.5"
     # excessCut = "C=={} && trapENFCal>2 && trapENFCal<5 || (channel!=656 && run < 6964)".format(module)
     excessCut = "C=={} && trapENFCal>2 && trapENFCal<5".format(module)
 
@@ -49,56 +52,38 @@ def main(argv):
         print "Scanning dataset", ds
         skimOpen = ROOT.TChain("skimTree")
         skimCut = ROOT.TChain("skimTree")
-        if ds == 5:
-            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-51-g69c5025/skimDS{}_*.root".format(ds))
-            if bSkip5a:
-                for i in range(80, 113):
-                    skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_{}.root".format(ds,i))
-                for i in range(80, 122):
-                    skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_{}_*.root".format(ds, i))
-            else:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
-                skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
-
-            if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
-
-        elif ds == 6:
-            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-00-66-gf078278/skimDS{}_*.root".format(ds))
-            if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
-
-        elif ds == 1 or ds == 2:
-            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
-            skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
-            if bUseBlind:
-                skimOpen.Add("/Users/brianzhu/project/skim/GAT-v02-01/skimDS{}_*.root".format(ds))
-        else:
-            skimOpen.Add("/Users/brianzhu/project/skim/GAT-v01-07/skimDS{}_*.root".format(ds))
-            skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/fr/fr_ds{}_*.root".format(ds))
+        skimOpen.Add("/Users/brianzhu/project/skim/light/lightDS{}_open.root".format(ds))
+        skimCut.Add("/Users/brianzhu/project/LATv2/bkg/cut/final95/final95_DS{}*.root".format(ds))
+        if bUseBlind:
+            skimOpen.Add("/Users/brianzhu/project/skim/light/lightDS{}_blind.root".format(ds))
 
         n2nu = skimOpen.Draw("globalTime", nuCut, "goff")
         nu = skimOpen.GetV1()
-        nuList = list(int(nu[n]) for n in xrange(n2nu))
+        nuList = list(int(nu[n]) for n in range(n2nu))
 
         nalpha = skimOpen.Draw("globalTime", alphaCut, "goff")
         alpha = skimOpen.GetV1()
-        alphaList = list(int(alpha[n]) for n in xrange(nalpha))
+        alphaList = list(int(alpha[n]) for n in range(nalpha))
 
         ne = skimOpen.Draw("globalTime", dcrCut, "goff")
         e = skimOpen.GetV1()
-        eList = list(int(e[n]) for n in xrange(ne))
+        eList = list(int(e[n]) for n in range(ne))
 
-        npb = skimOpen.Draw("globalTime", pbCut, "goff")
-        pb = skimOpen.GetV1()
-        pbList = list(int(pb[n]) for n in xrange(npb))
+        npb = skimCut.Draw("globalTime", pbCut, "goff")
+        pb = skimCut.GetV1()
+        pbList = list(int(pb[n]) for n in range(npb))
+
+        print('DS{} (1950 - 3350 keV) -- DCR Events: {}'.format(ds,ne))
+        print('DS{} (4000 - 8000 keV) -- Alpha Events: {}'.format(ds,nalpha))
+        print('DS{} (1000 - 1400 keV) -- 2nbb Events: {}'.format(ds,n2nu))
+        print('DS{} (45.5 - 47.5 keV) -- Pb210 Events: {}'.format(ds,npb))
 
         if ds == 0:
             nexcess = skimCut.Draw("globalTime", excessCut + '&& channel!=656', "goff")
         else:
             nexcess = skimCut.Draw("globalTime", excessCut, "goff")
         excess = skimCut.GetV1()
-        excessList = list(int(excess[n]) for n in xrange(nexcess))
+        excessList = list(int(excess[n]) for n in range(nexcess))
 
         sortnu = np.sort(nuList)
         sortalpha = np.sort(alphaList)
@@ -159,7 +144,7 @@ def main(argv):
     excessDate = np.asarray(sortexcesstot, dtype='datetime64[s]')
     endDate = np.asarray(endTime, dtype='datetime64[s]')
 
-    fig1, (a11, a12, a13, a14) = plt.subplots(nrows=4, figsize=(15,15))
+    fig1, (a11, a12, a13, a14) = plt.subplots(nrows=4, figsize=(12,12))
     a11.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
     a11.step(alphaDate, palphatot, color='blue', label="Alphas (4-8 MeV)")
     a12.step(nuDate, pnutot, color='green', label=r"$2\nu\beta\beta$")
@@ -216,10 +201,10 @@ def main(argv):
     # On the same plot
     fig2, a2 = plt.subplots(figsize=(10,6))
     a2.step(nuDate, pnuSumTot, color = 'black', label=r"$2\nu\beta\beta$ (Clock)")
-    # a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
+    a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
     a2.step(dcrDate, pdcrSumTot, label="DCR rejected (1950 - 3350 keV)")
-    # a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
-    # a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
+    a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
+    a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
     # a2.set_title('Module {} Eriched, DS1-4,5bc'.format(module))
     a2.set_xlabel("Date")
     a2.set_ylabel("CDF")
@@ -229,7 +214,7 @@ def main(argv):
 
     labelText = ""
     for key, ksres in ksTotResult.items():
-        if key != 'DCR': continue
+        # if key != 'DCR': continue
         labelText = labelText + "{} -- KS statistic: {:.4f} -- p-value: {:.4f} \n".format(key, ksres[0], ksres[1])
     a2.text(0.05, 0.95, labelText, transform=a2.transAxes, fontsize=12, verticalalignment='top')
     plt.tight_layout()

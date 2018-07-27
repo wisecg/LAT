@@ -13,7 +13,7 @@ sns.set(style='darkgrid', context='talk')
 def main():
     outDir = os.environ['LATDIR']
     #Set up an instance of a PPC detector
-    det = PPC("{}/data/conf/p1_new.config".format(outDir), wf_padding=10000)
+    det = PPC("{}/data/conf/p1_new.config".format(outDir), wf_padding=10000, maxWfOutputLength=10000)
 
     # Don't generate WFs beyond this
     print("Max Length (Z): {}, Max Radius (R): {}".format(det.detector_length, det.detector_radius))
@@ -42,7 +42,8 @@ def main():
             for j, z in enumerate(zs):
                 if r == 0 and z == 50: continue
                 # Current version of SigGen can't generate more than 1000 samples
-                wf_proc = det.MakeSimWaveform(r, phi, z, amp, 150, 0.1, 1000)
+                wf_proc = det.MakeSimWaveform(r, phi, z, amp, 150, 0.1, 5000)
+                # print(wf_proc)
                 # ax1.plot(wf_proc, label = "R = {:0.2f},  Z = {:.2f} ".format(r, z))
                 dataMap = {}
                 dataMap['amp'] = amp

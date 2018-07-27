@@ -14,9 +14,17 @@ from scipy.stats import norm
 import pandas as pd
 sns.set(style='darkgrid', context='poster')
 
+wl = imp.load_source('waveLibs', '{}/waveLibs.py'.format(os.environ['LATDIR']))
+dsi = imp.load_source('dsi', '{}/dsi.py'.format(os.environ['LATDIR']))
+
+bkg = dsi.BkgInfo()
+cal = dsi.CalInfo()
+det = dsi.DetInfo()
+
+
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-seedNum, dsNum = 1, 5
+seedNum = 1
 # Energy range (also fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8
@@ -24,7 +32,8 @@ energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
 # This start and end time are for DS5b
 startTime = 1485575988
-endTime = 1489762153
+# endTime = 1489762153 # DS5b
+endTime = 1523836800 # DS6a (I set it as April 16th)
 # Fake start times
 # startTime = 1483228800
 # endTime = 1514678400 # End of 2017
@@ -32,10 +41,10 @@ endTime = 1489762153
 yearInSec = 31536000 # Number of seconds in 1 year
 nBurn = 1500
 
-# Save data into dataframe -- if this hasn't been done before
-# reduceData(dsNum)
 
 def main():
+    # Save data into dataframe -- if this hasn't been done before
+    # reduceData()
 
     pdfArrDict, pdfFlatDict = {}, {}
 
@@ -48,7 +57,7 @@ def main():
     pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     # Load Background data and bin exactly as PDF
-    df = pd.read_hdf('{}/DS{}_Spectrum.h5'.format(inDir, dsNum))
+    df = pd.read_hdf('{}/Bkg_Spectrum.h5'.format(inDir))
     df.sort_values(by=['UnixTime'], inplace=True)
     dataArr = df.loc[:, ['Energy','UnixTime']].values
 
@@ -172,7 +181,7 @@ def constructModel(pdfDict, energyBins):
         Ge68 = pm.HalfFlat("Ge68")
 
         # Create the detector efficiency deterministic
-        # NOTE: Problem with
+        # NOTE: Problem with Error function because of the derivative of erf in theano
         # Mu = pm.Normal('Mu', mu = 0.36, sd = 0.5)
         # Sig = pm.Normal('Sig', mu = 1.26, sd = 0.5)
         # eff = 0.5*(1+tt.erf((pdfDict['Energy'] - Mu)/(tt.sqrt(2)*Sig)))
@@ -231,8 +240,8 @@ def convertaxionPDF(startTime, endTime):
     fAxion  = ROOT.TFile('{}/Axion_averaged_MJD_reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
 
     hday = fAxion.Get('hday')
-    # hday.RebinX(5) # 5 minute bins
-    hday.RebinX(120) # 2 hour bins
+    hday.RebinX(5) # 5 minute bins
+    # hday.RebinX(120) # 2 hour bins
     # Find bins to cut off PDF at
     startBin = hday.GetXaxis().FindBin(startTime)
     endBin = hday.GetXaxis().FindBin(endTime)
@@ -261,7 +270,12 @@ def convertaxionPDF(startTime, endTime):
     fAxion.Close()
     AxionArr = np.array(AxionList)
     # AxionArr = np.append(AxionArr, AxionArr, axis=1) #NOTE: Debug -- extend pdf for tests
-    timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
+
+    # Old exposure mask
+    # timeMask = generateLivetimeMask(np.array(timeBinLowEdge), AxionArr.shape)
+
+    # New exposure mask
+    timeMask = generateLivetimeMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = ['5B'])
 
     # Roughly normalize so the axion scale is the same as the other PDFs
     # NormAxionArr = AxionArr/(np.amax(AxionArr)/2.)*timeMask
@@ -465,7 +479,7 @@ def drawPDFs(pdfArrDict):
 def generateLivetimeMask(timeBinLowEdge, AxionShape):
     """
         Creates mask for exposure, will return a number between 0 and 1 (weight for each bin)
-
+        Apply this mask to the PDFs to delete columns where the detectors are off
     """
     inFile = os.environ['LATDIR']+'/data/MCMC/DS5b_RunTimes.txt'
     livetimeMask = np.ones(AxionShape)
@@ -490,6 +504,66 @@ def generateLivetimeMask(timeBinLowEdge, AxionShape):
             prevEnd = currentArr[2]
 
     return livetimeMask
+
+
+def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None):
+    """
+        Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
+        for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
+    """
+
+    effMask = np.ones(AxionShape)
+    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
+
+    for dsNum in dsList:
+        # Create a new map for all runs with the exposure of each run
+        runMatrix = {}
+        bkgRanges = bkg.getRanges(dsNum)
+        chList = det.getGoodChanList(dsNum, mod)
+
+        # Loop through channels to build up total runLists
+        for ch in chList:
+            cpd = int(det.getChanCPD(dsNum,ch))
+            inFile = os.environ['LATDIR']+'/data/runLists/DS{}_C{}P{}D{}.txt'.format(dsNum, *str(cpd))
+            try:
+                with open(inFile) as f:
+                    # Loop through file,
+                    for line in f:
+                        currArr = np.array(line.split(','), dtype=np.float)
+                        runMatrix.setdefault(int(currArr[0]), 0.)
+                        runMatrix[int(currArr[0])] += currArr[1]
+            except:
+                print("File {} doesn't exist! Skipping".format(inFile))
+
+
+        print(runMatrix)
+        
+        continue
+        # Now loop through the full dataset runList to add in unixtimes and eliminate gaps
+        inFile2 = os.environ['LATDIR']+'/data/MCMC/DS{}_RunTimes.txt'.format(dsNum)
+        gapMatrix = {}
+        prevEnd = 1485575988 # Start time of DS5b
+        totalGap = 0
+        with open(inFile2) as f2:
+            for line in f2:
+                currentArr = np.array(line.split(','), dtype=np.int)
+                # If there is a gap between runs for livetime between runs
+                if currentArr[1] != prevEnd:
+                    # Fills in gapMatrix with livetime gaps, run: end, start, gap size (s)
+                    gapMatrix.setdefault(currentArr[0], [prevEnd, currentArr[1], currentArr[1]-prevEnd])
+                    # Calculate where the time bins are for the particular run
+                    startIndex = np.where(timeBinLowEdge <= prevEnd)[0][-1]
+                    stopIndex = np.where(timeBinLowEdge >= currentArr[1])[0][0]
+                    # Set the efficiency for those time bins to be zero
+                    effMask[:, startIndex:stopIndex] = 0
+                    totalGap += currentArr[1]-prevEnd
+                    # Update end period unixtime
+                    prevEnd = currentArr[2]
+                else:
+                    # Update end period unixtime if there is no gap
+                    prevEnd = currentArr[2]
+
+    return effMask
 
 
 def getSigma(energy, dsNum=1):
@@ -684,12 +758,13 @@ def bin_ndarray(ndarray, new_shape, operation='sum'):
     return ndarray
 
 
-def reduceData(dsNum):
+def reduceData():
     import ROOT
-    inDir, outDir = '/Users/brianzhu/project/cuts/corrfs_rn2', os.environ['LATDIR']+'/data/MCMC'
+    inDir, outDir = os.environ['LATDATADIR']+'/bkg/cut/final95', os.environ['LATDIR']+'/data/MCMC'
     skimTree = ROOT.TChain("skimTree")
-    # skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
-    skimTree.Add("{}/corrfs_rn-DS{}-*.root".format(inDir, dsNum))
+    skimTree.Add("{}/final95_DS5B.root".format(inDir))
+    skimTree.Add("{}/final95_DS5C.root".format(inDir))
+    skimTree.Add("{}/final95_DS6.root".format(inDir))
     theCut = "trapENFCal > 2.4 && trapENFCal < 50"
     nPass = skimTree.Draw('trapENFCal:channel:globalTime', theCut, 'goff')
     print ("{} events passed all cuts".format(nPass))
@@ -702,7 +777,7 @@ def reduceData(dsNum):
 
     df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList})
     print(df.head(10))
-    df.to_hdf('{}/DS{}_Spectrum.h5'.format(outDir, dsNum), 'skimTree', mode='w', format='table')
+    df.to_hdf('{}/Bkg_Spectrum.h5'.format(outDir), 'skimTree', mode='w', format='table')
 
 
 if __name__ == '__main__':
