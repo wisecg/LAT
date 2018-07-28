@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 """
     Big NUTS Bragg Brand fitting
+
+    Limits we want to beat (for Lambda):
+    lambda = np.power(g_agg * 1e8, 4)
+    CDMS: 0.00332
+    EDELWEISS: 0.002137
+    MJD: Somewhere around 0.001
+    DAMA: 0.00084
 """
 
 import os, imp, time
@@ -12,7 +19,7 @@ import theano.tensor as tt
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import pandas as pd
-sns.set(style='darkgrid', context='poster')
+sns.set(style='darkgrid', context='talk')
 
 wl = imp.load_source('waveLibs', '{}/waveLibs.py'.format(os.environ['LATDIR']))
 dsi = imp.load_source('dsi', '{}/dsi.py'.format(os.environ['LATDIR']))
@@ -23,8 +30,8 @@ det = dsi.DetInfo()
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-dsList = ['5B', '5C', '6']
-# dsList = ['5B']
+# dsList = ['5B', '5C', '6']
+dsList = ['5B']
 
 seedNum = 1
 # Energy range (also defines fitting range!)
@@ -33,9 +40,11 @@ seedNum = 1
 energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
 
+bDebug, bDrawPDF = False, False
+
 # The start and end time are for DS5b
 startTime = 1485575988
-# endTime = 1489762153 # DS5b
+endTime = 1489762153 # DS5b
 
 # The start and end time are for DS5c
 # startTime = 1489773072
@@ -43,7 +52,7 @@ startTime = 1485575988
 
 # The start and end time are for DS5a
 # startTime = 1494535909
-endTime = 1523845062 # DS6a
+# endTime = 1523845062 # DS6a
 
 # Fake start times
 # startTime = 1483228800
@@ -56,14 +65,13 @@ nBurn = 1500 # Number of burn-in samples for the MCMC
 def main():
     # Save data into dataframe -- if this hasn't been done before
     # reduceData()
-
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask = convertaxionPDF(startTime, endTime, debug=True)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask = convertaxionPDF(startTime, endTime, debug=bDebug)
 
     print('Generated Axion PDF')
-    return
+
     AxionNorm = (np.amax(AxionArr)/2.)
     # Normalize Axion
     print('Axion Normalization Constant:', AxionNorm)
@@ -84,13 +92,14 @@ def main():
     tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec]) # Get rid of negative values
     tritInterp = interp1d(tritEnergy, tritSpec, fill_value='extrapolate')
     tritList = [tritInterp(x) for x in energyBins[:-1]]
-    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T
+    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*effMask
+    pdfArrDict['Bkg'] = np.ones(pdfArrDict['Axion'].shape)*effMask
 
     meansDict = {'Fe55':6.54, 'Zn65':8.98, 'Ge68':10.37}
     gausDict = generateGaus(energyBins[:-1], meansDict)
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
-
+        pdfArrDict[name] *= effMask
     # Create a matrix for energy bin center values
     pdfArrDict.setdefault('Energy', np.array((energyBins[:-1]+binSize/2).tolist()*nTimeBins).reshape(nTimeBins, len(energyBins[:-1]) ).T)
 
@@ -101,15 +110,19 @@ def main():
     pdfArrDict['Fe55'] = np.delete(pdfArrDict['Fe55'], removeMask, axis=1)
     pdfArrDict['Zn65'] = np.delete(pdfArrDict['Zn65'], removeMask, axis=1)
     pdfArrDict['Ge68'] = np.delete(pdfArrDict['Ge68'], removeMask, axis=1)
-    pdfArrDict['Bkg'] = np.ones(pdfArrDict['Data'].shape)
+    pdfArrDict['Bkg'] = np.delete(pdfArrDict['Bkg'], removeMask, axis=1)
     pdfArrDict['Time'] = np.delete(timeBinLowEdge, removeMask)
     pdfArrDict['Energy'] = np.delete(pdfArrDict['Energy'], removeMask, axis=1)
-    AxionArr = np.delete(AxionArr, removeMask, axis=1)
+
+    # Save axion arr separately
+    # AxionArr = np.delete(AxionArr, removeMask, axis=1)
+
     print('Generated all PDFs')
     # Draw PDFs
     print("Data Shape", pdfArrDict['Data'].shape)
     print("Axion Shape", pdfArrDict['Axion'].shape)
-    drawPDFs(pdfArrDict)
+    if bDrawPDF:
+        drawPDFs(pdfArrDict)
 
 
     # Flatten 2D arrays into 1D
@@ -132,8 +145,9 @@ def main():
     # pdfFlatDict['Ge68'] = pdfArrDict['Ge68'][:,0]
     # pdfFlatDict['Energy'] = pdfArrDict['Energy'][:,0]
 
-    print('Flattened Data Size:', pdfFlatDict['Data'].shape)
-    print('Energy Size', pdfFlatDict['Energy'].shape)
+    if bDebug:
+        for key in pdfFlatDict:
+            print('Flattend {} shape: '.format(key), pdfFlatDict[key].shape)
     print('Flattened all PDFs')
 
     model = constructModel(pdfFlatDict, energyBins)
@@ -156,8 +170,8 @@ def main():
         # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
         # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
 
-    # pm.traceplot(trace)
-    # plt.show()
+    pm.traceplot(trace)
+    plt.show()
 
 
 class ErrorFnc(pm.Continuous):
@@ -485,7 +499,7 @@ def drawPDFs(pdfArrDict):
 
     plt.tight_layout()
 
-    # fig1.savefig('{}/BraggFitPDF.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    fig1.savefig('{}/BraggFitPDF_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
 
     fig2, ax2 = plt.subplots(figsize=(10,7))
     sns.heatmap(pdfArrDict['Axion'], ax=ax2)
@@ -498,7 +512,7 @@ def drawPDFs(pdfArrDict):
     ax2.set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
     ax2.set_xticklabels(timeLabels, rotation=30)
     plt.tight_layout()
-    fig2.savefig('{}/BraggAxion.png'.format(os.environ['LATDIR']+'/plots/Axion'))
+    fig2.savefig('{}/BraggAxion_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
     plt.show()
 
 
@@ -589,7 +603,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                         effMask[:, prevIndex:startIndex] = 0
                     # If there is a gap between runs that's less than the 5 minute bin-size
                     # Not dealing with this for now... < 0.5 kg-day exposure difference
-                    if sTime - prevEnd < 300:
+                    if sTime - prevEnd < 300 and debug:
                         print('Time gap for run {} less than 5 min: {} ({}-{})'.format(run,sTime-prevEnd, prevIndex, startIndex))
                     totalGap += sTime-prevEnd
                     # Update end period unixtime to the beginning of the run
@@ -624,6 +638,14 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
             print(effMask)
             print('DS{} -- Exposure: {}'.format(ds, np.sum(effMask[100, :], axis=0))) # Sum over one axis at a high energy, should get exposure?
             print('Total time gap for DS{} -- {}'.format(ds, totalGap))
+            # from mpl_toolkits.mplot3d import Axes3D
+            # feff, aeff = plt.subplots(figsize=(8,6))
+            # sns.heatmap(effMask, ax=aeff)
+            # feff = plt.figure()
+            # aeff = feff.gca(projection='3d')
+            # xmesh, ymesh = np.meshgrid(energyBins[:-1], timeBinLowEdge[:-1])
+            # aeff.plot_surface(xmesh, ymesh, effMask.T)
+            # plt.show()
 
     return effMask
 
