@@ -6,7 +6,7 @@
     lambda = np.power(g_agg * 1e8, 4)
     CDMS: 0.00332
     EDELWEISS: 0.002137
-    MJD: Somewhere around 0.001
+    MJD: Hopefully somewhere around 0.001
     DAMA: 0.00084
 """
 
@@ -30,8 +30,8 @@ det = dsi.DetInfo()
 
 # Define some global parameters
 inDir = os.environ['LATDIR']+'/data/MCMC'
-# dsList = ['5B', '5C', '6']
-dsList = ['5B']
+dsList = ['5B', '5C', '6']
+# dsList = ['5B']
 
 seedNum = 1
 # Energy range (also defines fitting range!)
@@ -44,7 +44,7 @@ bDebug, bDrawPDF = False, False
 
 # The start and end time are for DS5b
 startTime = 1485575988
-endTime = 1489762153 # DS5b
+# endTime = 1489762153 # DS5b
 
 # The start and end time are for DS5c
 # startTime = 1489773072
@@ -52,8 +52,9 @@ endTime = 1489762153 # DS5b
 
 # The start and end time are for DS5a
 # startTime = 1494535909
-# endTime = 1523845062 # DS6a
+endTime = 1523845062 # DS6a
 
+totExposure = 2621.72447852 # DS5b, DS5c, DS6
 # Fake start times
 # startTime = 1483228800
 # endTime = 1514678400 # End of 2017
@@ -68,13 +69,13 @@ def main():
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask = convertaxionPDF(startTime, endTime, debug=bDebug)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug)
 
     print('Generated Axion PDF')
 
-    AxionNorm = (np.amax(AxionArr)/2.)
+    AxionNorm = (np.amax(AxionArr))
     # Normalize Axion
-    print('Axion Normalization Constant:', AxionNorm)
+    print('Axion Normalization Constant: {}'.format(AxionNorm))
     pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     # Load Background data and bin exactly as PDF
@@ -113,9 +114,10 @@ def main():
     pdfArrDict['Bkg'] = np.delete(pdfArrDict['Bkg'], removeMask, axis=1)
     pdfArrDict['Time'] = np.delete(timeBinLowEdge, removeMask)
     pdfArrDict['Energy'] = np.delete(pdfArrDict['Energy'], removeMask, axis=1)
+    effNorm = np.delete(effNorm, removeMask, axis=1)
 
-    # Save axion arr separately
-    # AxionArr = np.delete(AxionArr, removeMask, axis=1)
+    # Save axion arr separately for diagnostics
+    AxionArr = np.delete(AxionArr, removeMask, axis=1)
 
     print('Generated all PDFs')
     # Draw PDFs
@@ -123,7 +125,6 @@ def main():
     print("Axion Shape", pdfArrDict['Axion'].shape)
     if bDrawPDF:
         drawPDFs(pdfArrDict)
-
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
@@ -151,27 +152,25 @@ def main():
     print('Flattened all PDFs')
 
     model = constructModel(pdfFlatDict, energyBins)
-    # modelBasic = constructBasicModel(pdfFlatDict)
     print('Built model(s)')
 
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
+    backendDir = '{}/AveragedAxion_WithEffNorm'.format(inDir)
+    trace = pm.backends.text.load(backendDir, model)
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
-    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_{:d}keV'.format(inDir,energyThreshMax))
-    # modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir='{}/AveragedAxion_WithEffWb'.format(inDir), unNormAxion=AxionArr)
+    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
 
     # Sample Here
-    with model:
-        # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True)
-        db = pm.backends.Text('{}/AveragedAxion_WithEffWb'.format(inDir))
-        trace = pm.sample(draws=5000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
-    # with modelBasic:
-        # dbBasic = pm.backends.Text('{}/AveragedNoAxion'.format(inDir))
-        # traceBasic = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=dbBasic)
+    # with model:
+        # db = pm.backends.Text(backendDir)
+        # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
 
-    pm.traceplot(trace)
-    plt.show()
+    # dfSum = pm.summary(trace[nBurn:], alpha=0.1)
+    # print(dfSum.head())
+    # pm.traceplot(trace)
+    # plt.show()
 
 
 class ErrorFnc(pm.Continuous):
@@ -191,13 +190,14 @@ class ErrorFnc(pm.Continuous):
 
 
 
-def constructModel(pdfDict, energyBins):
+def constructModel(pdfDict, energyBins, bFull = True):
     """
-        Construct pymc3 model
+        Construct pymc3 model, possibility to create a null hypothesis if bFull is False (no axion signal)
     """
     with pm.Model() as model:
-        # We using HalfFlat cuz we dgaf -- probably we should switch to a more informative prior
-        Axion = pm.HalfFlat("Axion")
+        # Perhaps should switch to a more informative prior
+        if bFull:
+            Axion = pm.HalfFlat("Axion")
         Tritium = pm.HalfFlat("Tritium")
         Bkg = pm.HalfFlat("Bkg")
         Fe55 = pm.HalfFlat("Fe55")
@@ -222,27 +222,10 @@ def constructModel(pdfDict, energyBins):
         # eff = amp*(1.-tt.exp(-tt.pow((pdfDict['Energy']-loc)/scale, c)))
 
         # Generate array of deterministic variables (per bin)
-        # det = (Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68'])*eff
-        det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
-
-        L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
-    return model
-
-
-def constructBasicModel(pdfDict):
-    """
-        Construct model without axions! (Null hypothesis)
-    """
-    with pm.Model() as model:
-        # We using HalfFlat cuz we dgaf -- probably we should switch to a more informative prior
-        Tritium = pm.HalfFlat("Tritium")
-        Bkg = pm.HalfFlat("Bkg")
-        Fe55 = pm.HalfFlat("Fe55")
-        Zn65 = pm.HalfFlat("Zn65")
-        Ge68 = pm.HalfFlat("Ge68")
-
-        # Generate array of deterministic variables (per bin)
-        det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
+        if bFull:
+            det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Axion*pdfDict['Axion'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
+        else:
+            det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
 
         L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
     return model
@@ -252,10 +235,19 @@ def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
     """
         Converts 2D histogram PDF for axion into numpy array
 
-        binSize = minutes per bin
+        binSize determines the minutes per bin
+
+        startTime/endTime are determined by the unix start/stop time of the first/last runs
 
         Wenqin's Axion PDF is generated for Lambda = 1.
-        To convert a result to a lambda:
+        The units are in counts/kg/day/keV
+
+        Efficiency Correction:
+        - Axion PDF * Efficiency * Exposure: counts/kg/day/keV * (kg-day-keV) = Counts
+        - For the fit, rescale the eff*exp*axion pdf by maximum value in the PDF = Counts/Norm
+        - After the fit, integrate scaled PDF
+
+        Old way to convert a result to a lambda:
             1) Take the integral of the pdf and scale by 3600*24 (per day)
             2) Re-scale with any artificial normalizations
             3) Lambda = Limit/Re-scaled Integral
@@ -270,8 +262,8 @@ def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
 
     # Find bins to cut off PDF at
     bRepeat, endBin, endBin2 = False, 0, 0
-    nTimeBins = hday.GetNbinsX()
-    endTimeHist = hday.GetXaxis().GetBinLowEdge(nTimeBins)
+    nHistTime = hday.GetNbinsX()
+    endTimeHist = hday.GetXaxis().GetBinLowEdge(nHistTime)
     startBin = hday.GetXaxis().FindBin(startTime) # No check is done on the start bin, assume within 2017-2018
 
     # If there is enough time bins in the original axion histogram
@@ -280,23 +272,23 @@ def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
     # If the end time extends beyond 2018, need to extend the histogram
     else:
         bRepeat = True
-        endBin = nTimeBins
+        endBin = nHistTime
         endBin2 = hday.GetXaxis().FindBin(endTime - yearInSec)
 
     AxionList = []
 
     # Because this is finding the bin edges, need to go beyond the final bin
     # to get the upper end of the last time bin
-    timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(time)
-                        for time in range(hday.GetNbinsX())
-                        if time >= startBin and time <= endBin+1]
+    timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(tBin)
+                        for tBin in range(hday.GetNbinsX())
+                        if tBin >= startBin and tBin <= endBin+1]
 
-    if debug:
+    if debug and bRepeat:
         print('Axion PDF Gap Extension (should be binsize):', timeBinLowEdge[-1], hday.GetXaxis().GetBinLowEdge(0)+yearInSec)
     if bRepeat:
-        timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(time)+yearInSec
-                            for time in range(hday.GetNbinsX())
-                            if time >= 0 and time <= endBin2+1]) # nBins+1 overlaps with the 0 and 1st bin
+        timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(tBin)+yearInSec
+                            for tBin in range(hday.GetNbinsX())
+                            if tBin >= 0 and tBin <= endBin2+1]) # nBins+1 overlaps with the 0 and 1st bin
 
     # Total bins is 1 less than the array length of timeBinLowEdge
     nTimeBins = len(timeBinLowEdge)-1
@@ -312,8 +304,8 @@ def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
         # Extend Axion histogram
         if bRepeat:
             AxionList[len(AxionList)-1].extend([hday.GetBinContent(timeBin, energyBin)
-                                for timeBin in range(1, hday.GetNbinsX()+1)
-                                if timeBin >= 1 and timeBin <= endBin2] )
+                                for timeBin in range(1, hday.GetNbinsX())
+                                if timeBin <= endBin2+1])
 
     fAxion.Close()
     AxionArr = np.array(AxionList)
@@ -321,14 +313,17 @@ def convertaxionPDF(startTime, endTime, binSize = 5, debug = False):
         print('Axion Shape', AxionArr.shape, nTimeBins)
 
     # Efficiency * Exposure mask
-    timeMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
+    effMask, expMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
 
-    NormAxionArr = AxionArr*timeMask
+    NormAxionArr = AxionArr*effMask
+    effNorm = effMask/expMask
+
+    print('Axion Eff Norm: ', effNorm, effNorm.shape)
 
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
 
-    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, timeMask
+    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, effMask, effNorm
 
 
 def drawFinalSpectra(pdfDict, trace):
@@ -342,63 +337,63 @@ def drawFinalSpectra(pdfDict, trace):
     rebinSize = 28
     rebinShape = (pdfDict['Data'].shape[0], pdfDict['Data'].shape[1]/rebinSize)
     # Convert unix time to date with seconds
-    timeBins = np.array(pdfDict['Time'][:-1], dtype='datetime64[s]')
-    timeBinsD = np.array(timeBins, dtype='datetime64[D]')
+    # timeBins = np.array(pdfDict['Time'][:-1], dtype='datetime64[s]')
+    # timeBinsD = np.array(timeBins, dtype='datetime64[D]')
     # Rebin timing bins (here we only select using stepsize = rebinSize rather than summing the times)
-    timeBins = timeBins[::rebinSize]
+    # timeBins = timeBins[::rebinSize]
 
     figSpec, axSpec = plt.subplots(figsize=(10,7))
-    figTime, axTime = plt.subplots(figsize=(10,7))
-    fig2D, (ax2D1, ax2D2) = plt.subplots(ncols=2, figsize=(15,7))
+    # figTime, axTime = plt.subplots(figsize=(10,7))
+    # fig2D, (ax2D1, ax2D2) = plt.subplots(ncols=2, figsize=(15,7))
 
     DataSpec = pdfDict['Data'].sum(axis=1)
     DataSpecErr = np.sqrt(DataSpec)
-    TimeSpec = rebin(pdfDict['Data'].sum(axis=0), size=rebinSize)
-    TimeSpecErr = np.sqrt(TimeSpec)
+    # TimeSpec = rebin(pdfDict['Data'].sum(axis=0), size=rebinSize)
+    # TimeSpecErr = np.sqrt(TimeSpec)
 
     axSpec.errorbar(energyBins[:-1], DataSpec, yerr=DataSpecErr, color='black', fmt='o', label='Data')
-    axTime.errorbar(timeBins, TimeSpec, yerr=TimeSpecErr, color='black', fmt='o', label='Data')
+    # axTime.errorbar(timeBins, TimeSpec, yerr=TimeSpecErr, color='black', fmt='o', label='Data')
 
     # Create a dummy for the total spectrum
     totalSpec = np.zeros(DataSpec.shape)
-    totalTime = np.zeros(TimeSpec.shape)
-    totalModel2D = np.zeros(rebinShape)
+    # totalTime = np.zeros(TimeSpec.shape)
+    # totalModel2D = np.zeros(rebinShape)
 
     # Take all the pdfs and flatten time axis
     for key in pdfDict.keys():
-        if key == 'Data' or key == 'Time':
+        if key == 'Data' or key == 'Time' or key == 'Energy':
             continue
-        tempTime = np.zeros(TimeSpec.shape)
+        # tempTime = np.zeros(TimeSpec.shape)
         tempSpec = trace[key].mean()*pdfDict[key].sum(axis=1)
-        tempTime = trace[key].mean()*pdfDict[key].sum(axis=0)
+        # tempTime = trace[key].mean()*pdfDict[key].sum(axis=0)
 
         print('{} Integral: {:.3f}'.format(key, tempSpec.sum()))
 
-        if key == 'Axion':
-            axionRebin = rebin(tempTime, size=rebinSize)
-            axTime.plot(timeBins, axionRebin, label=key, linestyle='--')
-            totalTime += axionRebin
-        else:
-            axTime.plot(timeBins, rebinSize*np.unique(tempTime)*np.ones(TimeSpec.shape), label=key, linestyle='--')
-            totalTime += rebinSize*np.unique(tempTime)*np.ones(TimeSpec.shape)
+        # if key == 'Axion':
+            # axionRebin = rebin(tempTime, size=rebinSize)
+            # axTime.plot(timeBins, axionRebin, label=key, linestyle='--')
+            # totalTime += axionRebin
+        # else:
+            # axTime.plot(timeBins, rebinSize*np.unique(tempTime)*np.ones(TimeSpec.shape), label=key, linestyle='--')
+            # totalTime += rebinSize*np.unique(tempTime)*np.ones(TimeSpec.shape)
 
         axSpec.plot(energyBins[:-1], tempSpec, label=key, linestyle='--')
         totalSpec += tempSpec
 
     axSpec.plot(energyBins[:-1], totalSpec, label='Total Model')
-    axSpec.set_title('DS5b Enriched + Natural')
+    axSpec.set_title('DS5b, 5c, 6a Enriched + Natural')
     axSpec.set_ylabel('Counts/0.1 keV')
     axSpec.set_xlabel('Energy (keV)')
     axSpec.legend()
     plt.tight_layout()
 
-    axTime.plot(timeBins, totalTime, label='Total Model')
-    axTime.set_title('DS5b Enriched + Natural')
-    axTime.set_ylabel('Counts/(140 min)')
-    axTime.set_xlabel('Time')
-    axTime.locator_params(axis='x', nbins=len(timeBins)/50) # Draw fewer ticks
-    axTime.legend()
-    plt.tight_layout()
+    # axTime.plot(timeBins, totalTime, label='Total Model')
+    # axTime.set_title('DS5b, 5c, 6a Enriched + Natural')
+    # axTime.set_ylabel('Counts/(140 min)')
+    # axTime.set_xlabel('Time')
+    # axTime.locator_params(axis='x', nbins=len(timeBins)/50) # Draw fewer ticks
+    # axTime.legend()
+    # plt.tight_layout()
 
     # Loop again -- Make sure I don't mess up the other plots
     # The counts vs time plot with binning is very finnicky when rebinning other stuff
@@ -406,37 +401,38 @@ def drawFinalSpectra(pdfDict, trace):
         if key == 'Data' or key == 'Time':
             continue
         # Make 2D histograms
-        temp2D = np.array(trace[key].mean()*pdfDict[key], copy=True)
-        totalModel2D += bin_ndarray(temp2D, rebinShape)
+        # temp2D = np.array(trace[key].mean()*pdfDict[key], copy=True)
+        # totalModel2D += bin_ndarray(temp2D, rebinShape)
 
     # Make 2D plot
-    Data2D = np.array(pdfDict['Data'], copy=True)
-    Data2D =  bin_ndarray(Data2D, rebinShape)
-    Difference = Data2D - totalModel2D
-    timeBinsD = timeBinsD[::rebinSize]
-    print('Total Integral of Data:', Data2D.sum())
-    print('Total Integral of Model:', totalModel2D.sum())
-    print('Total Integral of Difference:', Difference.sum())
+    # Data2D = np.array(pdfDict['Data'], copy=True)
+    # Data2D =  bin_ndarray(Data2D, rebinShape)
+    # Difference = Data2D - totalModel2D
+    # timeBinsD = timeBinsD[::rebinSize]
+    # print('Total Integral of Data:', Data2D.sum())
+    # print('Total Integral of Model:', totalModel2D.sum())
+    # print('Total Integral of Difference:', Difference.sum())
 
-    sns.heatmap(Data2D, ax=ax2D1)
-    ax2D1.invert_yaxis()
-    ax2D1.set_title('DS5b Enriched + Natural (Data)')
-    ax2D1.set_ylabel('Energy (keV)')
-    ax2D1.locator_params(axis='x', nbins=len(timeBinsD[::50])) # Draw fewer ticks
-    ax2D1.locator_params(axis='y', nbins=len(energyBins[::20])) # Draw fewer ticks
-    ax2D1.set_xticklabels(timeBinsD[::50], rotation=30)
-    ax2D1.set_yticklabels([round(x,1) for x in energyBins[:-1:20]], rotation=0)
+    # sns.heatmap(Data2D, ax=ax2D1)
+    # ax2D1.invert_yaxis()
+    # ax2D1.set_title('DS5b, 5c, 6a Enriched + Natural (Data)')
+    # ax2D1.set_ylabel('Energy (keV)')
+    # ax2D1.locator_params(axis='x', nbins=len(timeBinsD[::50])) # Draw fewer ticks
+    # ax2D1.locator_params(axis='y', nbins=len(energyBins[::20])) # Draw fewer ticks
+    # ax2D1.set_xticklabels(timeBinsD[::50], rotation=30)
+    # ax2D1.set_yticklabels([round(x,1) for x in energyBins[:-1:20]], rotation=0)
+    #
+    # sns.heatmap(totalModel2D, ax=ax2D2)
+    # ax2D2.invert_yaxis()
+    # ax2D2.set_title('Total Model')
+    # ax2D2.locator_params(axis='x', nbins=len(timeBinsD[::50])) # Draw fewer ticks
+    # ax2D2.set_xticklabels(timeBinsD[::50], rotation=30)
+    # ax2D2.set_yticklabels([])
+    # plt.tight_layout()
 
-    sns.heatmap(totalModel2D, ax=ax2D2)
-    ax2D2.invert_yaxis()
-    ax2D2.set_title('Total Model')
-    ax2D2.locator_params(axis='x', nbins=len(timeBinsD[::50])) # Draw fewer ticks
-    ax2D2.set_xticklabels(timeBinsD[::50], rotation=30)
-    ax2D2.set_yticklabels([])
-    plt.tight_layout()
-    # figSpec.savefig('{}/AxionFitResult_Spectrum_2.png'.format(os.environ['LATDIR']+'/data/MCMC'))
-    # figTime.savefig('{}/AxionFitResult_Time_2.png'.format(os.environ['LATDIR']+'/data/MCMC'))
-    # fig2D.savefig('{}/AxionFitResult_2D_2.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    # figSpec.savefig('{}/AxionFitResult_Spectrum_Open.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    # figTime.savefig('{}/AxionFitResult_Time_Open.png'.format(os.environ['LATDIR']+'/data/MCMC'))
+    # fig2D.savefig('{}/AxionFitResult_2D_Open.png'.format(os.environ['LATDIR']+'/data/MCMC'))
     plt.show()
 
 
@@ -523,6 +519,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     """
     import ROOT
     effMask = np.ones(AxionShape)
+    expMask = np.ones(AxionShape) # Exposure only
     if debug:
         print('Start, End Time:', startTime, endTime)
         print('Time Bins:', timeBinLowEdge[0], timeBinLowEdge[-1])
@@ -599,8 +596,10 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                     # Set the efficiency for those time bins to be zero
                     if prevIndex == startIndex:
                         effMask[:, prevIndex] = 0
+                        expMask[:, prevIndex] = 0
                     else:
                         effMask[:, prevIndex:startIndex] = 0
+                        expMask[:, prevIndex:startIndex] = 0
                     # If there is a gap between runs that's less than the 5 minute bin-size
                     # Not dealing with this for now... < 0.5 kg-day exposure difference
                     if sTime - prevEnd < 300 and debug:
@@ -615,6 +614,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                 if run in runMatrix and runMatrix[run] != 0:
                     if startIndex == stopIndex:
                         effMask[:, startIndex] = effArr*runMatrix[run]
+                        expMask[:, startIndex] = runMatrix[run]
                     else:
                         # This part is really long and complicated, basically need to copy (repeat) the effArr to match the size we want to fill inside effMask, the reshape is just to make the array sizes match
 
@@ -622,13 +622,14 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                         if effMask[:, startIndex:stopIndex].shape[1] != stopIndex-startIndex:
                             print('Matching off run {} ({}-{})'.format(run,startIndex, stopIndex) )
                             effMat = np.repeat(effArr,stopIndex-startIndex-1).reshape(len(effArr), stopIndex-startIndex-1)
-
                         else:
                             effMat = np.repeat(effArr,stopIndex-startIndex).reshape(len(effArr), stopIndex-startIndex)
 
                         effMask[:, startIndex:stopIndex] = effMat*runMatrix[run]/(stopIndex-startIndex-1)
+                        expMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex-1) # No efficiency
                 else:
                     effMask[:, startIndex:stopIndex] = 0
+                    expMask[:, startIndex:stopIndex] = 0
                     print('Run {} setting to 0'.format(run))
                     print(effMask[100, startIndex:stopIndex])
 
@@ -647,7 +648,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
             # aeff.plot_surface(xmesh, ymesh, effMask.T)
             # plt.show()
 
-    return effMask
+    return effMask, expMask
 
 
 def getSigma(energy, dsNum=1):
@@ -677,7 +678,7 @@ def generateGaus(energyList, meansDict):
     return outDict
 
 
-def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None):
+def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, effNorm=None):
     """
         Loads saved traces, draws plots, performs diagnostics on models
         Brian's notes on diagnostics:
@@ -704,44 +705,37 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None):
     trace = pm.backends.text.load(backendDir, model)
     # Get summary of trace as a dataframe
     dfSum = pm.summary(trace[nBurn:], alpha=0.1)
-
-    Mu = dfSum.loc['Mu', 'mean']
-    Sig = dfSum.loc['Sig', 'mean']
-    eff = 1./(1.+np.exp(-(pdfArrDict['Energy']-Mu)/Sig))
+    print(dfSum.head(10))
     AxionIntegral = pdfArrDict['Axion'].sum()
 
     # This gets printed out from "convertaxionPDF", it's the amount I artificially scale the axion PDF integral
-    # AxionNorm = 11878.384765625
-    AxionNorm = (np.amax(unNormAxion)/2.)
-    AxionNormEff = (np.amax(unNormAxion*eff)/2.)
-    # AxionIntegralEff = (unNormAxion*eff).sum()
+    AxionNorm = (np.amax(unNormAxion))
     print('Axion PDF Integral:', AxionIntegral)
-    # print('Efficiency Corrected Axion PDF Integral:', AxionIntegralEff)
-    print('Normalizations: {}  -- {}'.format(AxionNorm, AxionNormEff))
+    print('Normalization: {}'.format(AxionNorm))
 
-    # Loop through and calculate 90% BCI for all parameters
-    print('Calculating 90% intervals: ')
-    print('Par \t Mean \t hpd_5 \t hpd_95')
+    # Loop through and calculate 95% CI for all parameters
+    print('Calculating 95% Credible Intervals: ')
+    print('Par \t   Mean \t   hpd_5 \t   hpd_95')
+    # Here all the PDFs are normalized in their own way (from model construction section)
+    # therefore multiplying the PDF integral by the 95% CI should give number of counts
     for par in dfSum.index:
-        if par == 'Mu': continue
-        if par == 'Sig': continue
-        parInt = pdfArrDict[par].sum()
-        print('{}, {}, {}, {}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
+        # Integrate PDF
+        parInt = (pdfArrDict[par]/effNorm).sum()
+        # Multiply integral by interval
+        print('{} \t {:.2f} \t {:.2f} \t {:.2f}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
 
 
     # Debate: when converting to lambda,
-    axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
-    axionLambdaEff = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNormEff
-    print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
-    print("Axion Lambda (Eff Corrected): {} --- g_agg (E-8 GeV): {}".format(axionLambdaEff, np.power(axionLambdaEff, 0.25)))
+    # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
+    # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
     # pm.traceplot(trace[nBurn:])
-    pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
-    pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
+    # pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
+    # pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
     traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
-    cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65'], traceBurn['Mu'], traceBurn['Sig']]).T
-    figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65', 'Mu', 'Sig'])
+    cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
+    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
 
     # Format is hpdDict[nChain][Parameter] = [lower, upper]
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
@@ -750,8 +744,7 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None):
     # pm.autocorrplot(trace[nBurn:], max_lag=100)
     # print(pm.autocorr(trace[nBurn:]))
     # pm.densityplot(trace[nBurn:])
-
-    plt.show()
+    # plt.show()
 
 
 def posteriorChecks(model, trace):
@@ -801,6 +794,19 @@ def posteriorChecks(model, trace):
     # 1    61502  4.95  22.12   0.06  798.47  10.2       1
 
     return model_ppc, model_waic, model_loo
+
+
+def rebin(inArr, size=2):
+    """
+        Rebin an array
+    """
+    if not float(inArr.shape[0]/size).is_integer():
+        print('Error: Input array length is not evenly divisible by rebin size')
+        return
+    rebinnedArr = np.empty(inArr[::size].shape)
+    for i in range(size):
+        rebinnedArr += inArr[i::size]
+    return rebinnedArr
 
 
 def bin_ndarray(ndarray, new_shape, operation='sum'):
