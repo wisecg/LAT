@@ -354,6 +354,7 @@ def loadSloData(key, pctTot, bReturnPD=False, bWide=False):
         fSloX = f['arr_10']          # xVals for fitSlo histos
         evtSlo = f['arr_11']         # m2s238 event [[fSlo1, fSlo2], ...]
         evtRise = f['arr_12']        # m2s238 event [[rise1, rise2], ...]
+        evtToE = f['arr_13']        # m2s238 event [[ToE1, ToE2], ...]
 
         # Empty dictionary for pandas output
         dfDict = {}
