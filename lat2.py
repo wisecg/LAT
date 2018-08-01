@@ -441,6 +441,11 @@ def saveSloPanda(pctTot, bUseDB=True, bWide=False):
     # This loop is the workhorse, if using database cut values
     # save bool for whether or not each hit passes/fails the db cut
     if bUseDB:
+        dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
+        print("Using DB values from:",dbFile)
+        calDB = db.TinyDB(dbFile)
+        pars = db.Query()
+
         # Group the total DF into smaller DFs by unique cpd1, key, and cIdx combinations
         dfg = df.groupby(['key', 'cIdx', 'cpd1', 'cpd2'])
 
