@@ -414,7 +414,7 @@ def loadSloData(key, pctTot, bReturnPD=False, bWide=False):
         return eff
 
 
-def saveSloPanda(pctTot, bUseDB = True):
+def saveSloPanda(pctTot, bUseDB=True, bWide=False):
     """
         This function loops through all datasets and saves the m2s238 calibration data
         into one (hopefully) convenient h5 file with (or without) the primary cut values
@@ -429,7 +429,7 @@ def saveSloPanda(pctTot, bUseDB = True):
     dfList = []
     for ds in [0,1,2,3,4,5,6]:
         for key in cal.GetKeys(ds):
-            dfList.append(loadSloData(ds, key, pctTot=pctTot))
+            dfList.append(loadSloData(ds, key, pctTot=pctTot, bReturnPD=True, bWide=bWide))
 
     # Concatenate all dataframes into one
     df = pd.concat(dfList)
