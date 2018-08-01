@@ -411,7 +411,7 @@ def loadSloData(key, pctTot, bReturnPD=False, bWide=False):
     # Returns the pandas dataframe instead of the dictionary
     if bReturnPD:
         dfKey = pd.concat(dfList)
-        print('{} head:')
+        print('{} dataframe head:'.format(key))
         print(dfKey.head())
         return dfKey
     else:
