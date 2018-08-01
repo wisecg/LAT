@@ -327,6 +327,9 @@ def loadSloData(key, pctTot, bReturnPD=False, bWide=False):
 
     # Empty list to append dataframes (for each eff file) for pandas file output
     dfList = []
+    # Dumb way of getting the dataset number
+    dsVal = [int(i) for i in key.split('_')[0] if i.isdigit()][0]
+
 
     for ci in range(cal.GetIdxs(key)):
         if bWide:
@@ -377,8 +380,8 @@ def loadSloData(key, pctTot, bReturnPD=False, bWide=False):
                 dfDict.setdefault('key',[]).append(key)
                 dfDict.setdefault('run', []).append(evtIdx[i][0])
                 dfDict.setdefault('cIdx',[]).append(evtIdx[i][2])
-                dfDict.setdefault('cpd1',[]).append(int(det.getChanCPD(ds, evtChans[i][idxLo])))
-                dfDict.setdefault('cpd2',[]).append(int(det.getChanCPD(ds, evtChans[i][idxHi])))
+                dfDict.setdefault('cpd1',[]).append(int(det.getChanCPD(dsVal, evtChans[i][idxLo])))
+                dfDict.setdefault('cpd2',[]).append(int(det.getChanCPD(dsVal, evtChans[i][idxHi])))
                 dfDict.setdefault('trapENFCal1',[]).append(evtHitE[i][idxLo])
                 dfDict.setdefault('trapENFCal2',[]).append(evtHitE[i][idxHi])
                 dfDict.setdefault('fitSlo1',[]).append(evtSlo[i][idxLo])
@@ -429,7 +432,7 @@ def saveSloPanda(pctTot, bUseDB=True, bWide=False):
     dfList = []
     for ds in [0,1,2,3,4,5,6]:
         for key in cal.GetKeys(ds):
-            dfList.append(loadSloData(ds, key, pctTot=pctTot, bReturnPD=True, bWide=bWide))
+            dfList.append(loadSloData(key, pctTot=pctTot, bReturnPD=True, bWide=bWide))
 
     # Concatenate all dataframes into one
     df = pd.concat(dfList)
