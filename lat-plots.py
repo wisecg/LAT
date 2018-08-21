@@ -27,8 +27,8 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    # spec_summary()
-    thresh_cut_cal()
+    spec_summary()
+    # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
     # m2s238_sum_peak()
@@ -45,6 +45,8 @@ def main():
     # plot_tOffset()
     # plot_riseNoise()
     # fitSlo_efficiency_uncertainty()
+    # rateCheckDS()
+    # rateCheckDet()
 
 
 def spec():
@@ -201,7 +203,7 @@ def spec_summary():
 
     from ROOT import TFile, TChain, TTree
 
-    rateMode = True
+    rateMode = False
 
     # dsList = [0]
     # dsList = [1]
@@ -215,7 +217,7 @@ def spec_summary():
     dsList = [1,2,3,4,"5A","5B","5C"]
 
     # xLo, xHi, xpb = 0, 20, 0.1
-    xLo, xHi, xpb = 0, 50, 1
+    xLo, xHi, xpb = 0, 50, 0.2
     # # xLo, xHi, xpb = 0, 10, 0.1
 
     type = "enr"
@@ -236,6 +238,7 @@ def spec_summary():
     if type=="nat":
         detExp = natExp
         specLabel = "Natural"
+
     print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
 
     # load efficiency correction
@@ -361,7 +364,7 @@ def spec_summary():
     p2.set_yticks(np.arange(0, len(cpdList))+0.5)
     p2.set_yticklabels(cpdList, fontsize=8)
 
-    # cb1 = fig.colorbar(im1, ax=p2)
+    cb1 = fig.colorbar(im1, ax=p2)
 
     plt.tight_layout()
     # plt.show()
@@ -1000,38 +1003,56 @@ def save_slowness_data():
 def slowness_vs_energy():
 
     from matplotlib import colors
-    myNorm = colors.PowerNorm(gamma=0.2)
+    # myNorm = colors.PowerNorm(gamma=0.2) # < used this one before
     # myNorm = colors.PowerNorm(gamma=1)
-    # myNorm = colors.LogNorm()
+    # myNorm = colors.PowerNorm(gamma=0.1)
+    myNorm = colors.LogNorm()
 
     f = np.load("./data/lat-slowness.npz")
     hitE1, fSlo1, fSlo2 = f['arr_0'], f['arr_1'], f['arr_2']
 
-    fig = plt.figure(figsize=(9,5))
+    fig = plt.figure(figsize=(10,5))
     p1 = plt.subplot(121)
     p2 = plt.subplot(122)
 
     xLo, xHi, xpb = 0, 250, 1
     nbx = int((xHi-xLo)/xpb)
-    yLo, yHi, ypb = 0, 200, 1
-    nby = int((yHi-yLo)/ypb)
 
-    p1.hist2d(hitE1, fSlo1, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet', norm=myNorm)
+    yLo1, yHi1, ypb1 = 0, 200, 1
+    nby1 = int((yHi1-yLo1)/ypb1)
+
+    yLo2, yHi2, ypb2 = -75, 125, 1
+    nby2 = int((yHi2-yLo2)/ypb2)
+
+    # h1 = p1.hist2d(hitE1, fSlo1, bins=[nbx, nby1], range=[[xLo,xHi],[yLo1,yHi1]])
+    # h2 = p2.hist2d(hitE1, fSlo2, bins=[nbx, nby2], range=[[xLo,xHi],[yLo2,yHi2]])
+    # h1max = np.amax(h1[0])
+    # h2max = np.amax(h2[0])
+    # plt.cla()
+    h1max = 2766
+    h2max = 7822
+
+    h1 = p1.hist2d(hitE1, fSlo1, bins=[nbx, nby1], range=[[xLo,xHi],[yLo1,yHi1]], vmin=2, vmax=h1max, cmap='jet', norm=myNorm)
     p1.set_xlabel("Energy (keV)", ha='right', x=1)
     p1.set_ylabel("fitSlo", ha='right', y=1)
-    p1.annotate('Unshifted', xy=(240, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75))
+    p1.annotate('Unshifted', xy=(210, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.9))
+    cb1 = fig.colorbar(h1[3], ax=p1)
+    cb1.ax.minorticks_off()
 
-    yLo, yHi, ypb = -75, 125, 1
-    nby = int((yHi-yLo)/ypb)
-
-    p2.hist2d(hitE1, fSlo2, bins=[nbx, nby], range=[[xLo,xHi],[yLo,yHi]], cmap='jet', norm=myNorm)
+    h2 = p2.hist2d(hitE1, fSlo2, bins=[nbx, nby2], range=[[xLo,xHi],[yLo2,yHi2]], vmin=2, vmax=h2max, cmap='jet', norm=myNorm)
     p2.set_xlabel("Energy (keV)", ha='right', x=1)
-    p2.annotate('Shifted', xy=(240, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.75))
+    p2.annotate('Shifted', xy=(210, 270), xycoords='axes points', size=14, ha='right', va='center', bbox=dict(boxstyle='round', fc='w', alpha=0.9))
     # p2.set_ylabel("fitSlo (shifted)", ha='right', y=1)
+    cb2 = fig.colorbar(h2[3], ax=p2)
+    cb2.ax.minorticks_off()
+
+
+    print("h1 max:",np.amax(h1[0]))
+    print("h2 max:",np.amax(h2[0]))
 
     plt.tight_layout()
-    plt.show()
-    # plt.savefig("./plots/lat-fitSlo-dist.pdf")
+    # plt.show()
+    plt.savefig("./plots/lat-fitSlo-dist.pdf")
 
 
 def fitSlo_stability():
@@ -2189,6 +2210,249 @@ def fitSlo_efficiency_uncertainty():
         dbVals = effLimitHi
         dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
         print("DB filled:",dbKey)
+
+
+def rateCheckDS():
+    """ ideas:
+    rate under 5 kev, for enriched and natural, each DS and combination of DS
+    module 1 vs module 2, vs det's w/ high 46.5
+    the question is, is the 46.5 correlated w/ the excess?
+
+    table 1: rate from 0-5 kev, module 1 and 2, enr and nat, different DS combinations
+    """
+    from ROOT import TFile, TChain, TTree, gROOT
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    mod1 = 0 # 0 false, 1 true
+    mod2 = 1
+    isEnr = False
+    xLo, xHi, xpb = 1, 50, 0.5
+    eLo, eHi = 1, 5 # rate window
+    # eLo, eHi = 20, 40
+
+    print("Mod1 %d  Mod2 %d  isEnr %d  xLo %d  xHi %d  xpb %.2f  eLo %d  eHi %d" % (mod1, mod2, isEnr, xLo, xHi, xpb, eLo, eHi))
+
+    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
+    xEff0 = f['arr_0']
+    detEff, detExpo = f['arr_13'].item(), f['arr_14'].item()
+    detList = det.allDets
+
+    dsListList = [ # i'm hilarious
+        [0],
+        [1],
+        [2],
+        [3],
+        [4],
+        ["5A"],
+        ["5B"],
+        ["5C"],
+        [0,1,2,3,4,"5A","5B","5C"],
+        [1,2,3,4,"5A","5B","5C"],
+        [1,2,3,4,"5B","5C"]
+    ]
+
+    for dsList in dsListList:
+
+        tt = TChain("skimTree")
+        enrExp, natExp = 0, 0
+        xEff = xEff0
+        enrEff, natEff = np.zeros(len(xEff)), np.zeros(len(xEff))
+        thisEff = np.zeros(len(xEff))
+
+        for ds in dsList:
+            tt.Add("%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds))
+
+            # get exposure (enrExp, natExp) and efficiency (enrEff, natEff)
+            for cpd in detList:
+                if (cpd[0]=='1' and mod1) or (cpd[0]=='2' and mod2):
+                    if det.isEnr(cpd):
+                        enrExp += detExpo[ds][cpd]
+                        enrEff = np.add(enrEff, detEff[ds][cpd])
+                        # print(ds, cpd, "%.2f" % detExpo[ds][cpd], "%.2f" % enrExp)
+                    else:
+                        natExp += detExpo[ds][cpd]
+                        natEff = np.add(natEff, detEff[ds][cpd])
+                        # print(ds, cpd, "%.2f" % detExpo[ds][cpd], "%.2f" % natExp)
+
+        # draw the data
+        tCut = "isEnr" if isEnr else "!isEnr"
+        if mod1 and not mod2: tCut += " && C==1"
+        if mod2 and not mod1: tCut += " && C==2"
+        n = tt.Draw("trapENFCal",tCut,"goff")
+        if n == 0: continue
+        hitE = tt.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hCts = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        # final efficiency and exposure (thisEff, thisExp)
+        thisEff = enrEff if isEnr else natEff
+        thisExp = enrExp if isEnr else natExp
+        effNorm = (np.amax(thisEff)/365.25) / (thisExp/365.25)
+        thisEff = effNorm * np.divide(thisEff, np.amax(thisEff))
+        idxE = np.where((xEff <= xHi) & (xEff >= xLo))
+        xEff, thisEff = xEff[idxE], thisEff[idxE]
+        hSpec = np.divide(hCts, thisExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+        hErr = np.asarray([np.sqrt(hBin /(thisExp * xpb)) for hBin in hSpec]) # statistical error in each bin
+
+        # get the efficiency-corrected rate
+        idxE = np.where((xEff >= eLo) & (xEff <= eHi))
+        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        idxR = np.where((x >= eLo) & (x <= eHi))
+        hRate = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
+        hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+
+        print("%.3f ± %.3f" % (hRate, hRateUnc),  dsList)
+
+        tt.Reset()
+
+
+
+def rateCheckDet():
+    """ table 2: ds1-5c, detector rate at 46 vs rate in 0-5, marking which ones are enriched """
+
+    from ROOT import TFile, TChain, TTree, gROOT
+    gROOT.ProcessLine("gErrorIgnoreLevel = 3001;")
+
+    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
+    xEff0 = f['arr_0']
+    detEff, detExpo = f['arr_13'].item(), f['arr_14'].item()
+    detList = det.allDets
+
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
+
+    eff = {cpd:np.zeros(len(xEff0)) for cpd in detList}
+    expo = {cpd:0 for cpd in detList}
+
+    tt = TChain("skimTree")
+    for ds in dsList:
+        tt.Add("%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds))
+        for cpd in detList:
+            eff[cpd] = np.add(eff[cpd], detEff[ds][cpd])
+            expo[cpd] += detExpo[ds][cpd]
+
+    r5n, r46n, pbn, pbUn, r5Un = [], [], [], [], []
+    r5e, r46e, pbe, pbUe, r5Ue = [], [], [], [], []
+
+    # for cpd in detList[:10]:
+    for cpd in detList:
+        if expo[cpd]==0: continue
+        if cpd in ['254']: continue # not enough counts in peak
+        isEnr = det.isEnr(cpd)
+
+        # draw the data
+        tCut = "C==%s && P==%s && D==%s" % (cpd[0], cpd[1], cpd[2])
+        xLo, xHi, xpb = 1, 50, 0.5
+
+        n = tt.Draw("trapENFCal",tCut,"goff")
+        if n == 0: continue
+        hitE = tt.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hCts = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+        thisEff = eff[cpd]
+        thisExp = expo[cpd]
+
+        effNorm = (np.amax(thisEff)/365.25) / (thisExp/365.25)
+        thisEff = effNorm * np.divide(thisEff, np.amax(thisEff))
+        idxE = np.where((xEff0 <= xHi) & (xEff0 >= xLo))
+        xEff, thisEff = xEff0[idxE], thisEff[idxE]
+        hSpec = np.divide(hCts, thisExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+        hErr = np.asarray([np.sqrt(hBin /(thisExp * xpb)) for hBin in hSpec]) # statistical error in each bin
+
+        # get the efficiency-corrected rates
+
+        # 1--5 keV
+        eLo, eHi = 1, 5
+        idxE = np.where((xEff >= eLo) & (xEff <= eHi))
+        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        idxR = np.where((x >= eLo) & (x <= eHi))
+        rate5 = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
+        rate5Unc = rate5 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+        if rate5 < 0: continue
+
+        if isEnr:
+            r5e.append(rate5)
+            r5Ue.append(rate5Unc)
+        else:
+            r5n.append(rate5)
+            r5Un.append(rate5Unc)
+
+        # 46--47 keV
+        eLo, eHi = 45.5, 47.5
+        idxE = np.where((xEff >= eLo) & (xEff <= eHi))
+        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        idxR = np.where((x >= eLo) & (x <= eHi))
+        rate46 = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
+        rate46Unc = rate46 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+
+        if isEnr:
+            r46e.append(rate46)
+        else:
+            r46n.append(rate46)
+
+        # try to plot the 46.5 -- maybe do sideband analysis to subtract the bkg, and skip the eff corr (it's 95%)
+        tCut = "C==%s && P==%s && D==%s" % (cpd[0], cpd[1], cpd[2])
+        xLo, xHi, xpb = 40, 55, 0.2
+        n = tt.Draw("trapENFCal",tCut,"goff")
+        if n == 0: continue
+        hitE = tt.GetV1()
+        hitE = [hitE[i] for i in range(n)]
+        x, hCts = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+        hSpec = np.divide(hCts, thisExp * xpb)
+
+        pLo, pHi = 46, 47
+
+        idxB = np.where((x <= pLo) | (x >= pHi))
+        rateBkg = np.sum(xpb * hSpec[idxB]) /  (pLo-xLo + xHi-pHi)
+        rateBkgU = rateBkg * np.sqrt(np.sum(hCts[idxB]))/np.sum(hCts[idxB])
+
+        idxP = np.where((x >= pLo) & (x <= pHi))
+        ratePk = np.sum(xpb * hSpec[idxP]) / (pHi-pLo)
+
+        ratePkU = ratePk * np.sqrt(np.sum(hCts[idxP]))/np.sum(hCts[idxP])
+
+        pkBkg = ratePk / rateBkg
+        pkBkgU = pkBkg * np.sqrt( (ratePkU/ratePk)**2 + (rateBkgU/rateBkg)**2 )
+
+        if isEnr:
+            pbe.append(pkBkg)
+            pbUe.append(pkBkgU)
+        else:
+            pbn.append(pkBkg)
+            pbUn.append(pkBkgU)
+
+        print("cpd %s  r5: %.3f ± %.3f  r46: %.3f ± %.3f  P %.4f  B %.4f  P/B %.4f" % (cpd, rate5, rate5Unc, rate46, rate46Unc, rateBkg, ratePk, pkBkg))
+
+        # plt.axhline(rateBkg, c='g')
+        # plt.axhline(ratePk, c='r')
+        # plt.step(x, hSpec)
+        # plt.show()
+        # exit()
+
+
+
+    # plot the rates
+
+    fig, (p1, p2) = plt.subplots(1,2, figsize=(9,5))
+
+    p1.plot(r5e, pbe, ".b", label="Enriched")
+    p1.errorbar(r5e, pbe, yerr=pbUe, xerr=r5Ue, color='k', linewidth=0.8, fmt='none')
+    p1.set_xlabel(r"$\mathregular{r_{1-5}}$ [cts/kg-d]", ha='right', x=1)
+    p1.set_ylabel(r"$\mathregular{r_{46.5}\ /\ r_{bkg}}$", ha='right', y=1)
+    p1.legend(loc=1)
+
+    p2.plot(r5n, pbn, ".r", label="Natural")
+    p2.errorbar(r5n, pbn, yerr=pbUn, xerr=r5Un, color='k', linewidth=0.8, fmt='none')
+    p2.set_xlabel(r"$\mathregular{r_{1-5}}$ [cts/kg-d]", ha='right', x=1)
+    p2.set_ylabel(r"$\mathregular{r_{46.5}\ /\ r_{bkg}}$", ha='right', y=1)
+    p2.legend(loc=1)
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig("%s/plots/rates46.pdf" % dsi.latSWDir)
+
+
+
 
 
 if __name__=="__main__":

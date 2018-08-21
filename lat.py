@@ -144,9 +144,10 @@ def main(argv):
         # theCut += customPar
         # theCut = "(channel==672 || channel==674) && mH==2" # sync chan: 672, extp chan: 674
         # theCut += " && fitSlo < 10"
-        theCut = "trapENFCal > 2 && trapENFCal < 15 && riseNoise > 5"
+        # theCut = "trapENFCal > 2 && trapENFCal < 15 && riseNoise > 5"
         # theCut = "trapENFCal > 5 && trapENFCal < 15 && fitSlo > 300"
         # theCut = "trapENFCal >= 1.1 && trapENFCal <= 1.2"
+        theCut = "trapENFCal > 5 && trapENFCal < 15 && riseNoise > 2.5"
         print("WARNING: Custom cut in use! : ",theCut)
 
     gatTree.Draw(">>elist", theCut, "entrylist")
@@ -718,21 +719,22 @@ def main(argv):
                 p0.set_xlabel("Time (ns)", ha='right', x=1.)
                 p0.set_ylabel("Voltage (ADC)", ha='right', y=1.)
 
-
                 # plot 1 - all WPT coefficients
-                p1.cla()
-                p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower", extent=[0, 1, 0, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
+                # p1.cla()
+                # myp1 = p1.imshow(wpCoeff, interpolation='nearest', aspect="auto", origin="lower", extent=[0, 1, 0, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
+                # plt.colorbar(myp1,ax=p1)
 
                 # plot 2 - riseNoise box, only show coeffs w/ level >= 2.
-                # p1.cla()
-                # p1.imshow(wpCoeff[2:,:], interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 2, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
-                # nX = wpCoeff.shape[1]
-                # p1.axvline(wpLoRise/nX, c='cyan', alpha=0.7)
-                # p1.axvline(wpHiRise/nX, c='cyan', alpha=0.7)
-                # p1.axhline(15.9, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
-                # p1.axhline(2.05, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
-                # p1.plot(np.nan, np.nan, label="riseNoise: %.2f" % riseNoise[iH])
-                # p1.legend(loc=1,markerscale=0)
+                p1.cla()
+                myp1 = p1.imshow(wpCoeff[2:,:], interpolation='nearest', aspect="auto", origin="lower",extent=[0, 1, 2, len(wpCoeff)], norm=colors.PowerNorm(gamma=1), cmap='inferno')
+                nX = wpCoeff.shape[1]
+                p1.axvline(wpLoRise/nX, c='cyan', alpha=0.7)
+                p1.axvline(wpHiRise/nX, c='cyan', alpha=0.7)
+                p1.axhline(15.9, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
+                p1.axhline(2.05, xmin=wpLoRise/nX, xmax=wpHiRise/nX, c='cyan', alpha=0.7)
+                p1.plot(np.nan, np.nan, label="riseNoise: %.2f" % riseNoise[iH])
+                p1.legend(loc=1,markerscale=0)
+                plt.colorbar(myp1,ax=p1)
 
                 p1.set_xlabel("Time (%)", ha='right', x=1.)
                 p1.set_ylabel("WPT Coefficients", ha='right', y=1.)

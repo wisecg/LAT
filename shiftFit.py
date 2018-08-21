@@ -26,8 +26,8 @@ def main():
     # loadShiftedData() # this leaves something wierd in memory that causes other functions to segfault
     # plotShiftedData()
 
-    # combineProfiles()
-    # exit()
+    combineProfiles()
+    exit()
 
     # lower than 2.0 introduces big outliers, higher than 3.5 introduces a peak
     # mjd 3 sigma peak width at 2.6 keV:  sig 0.19, lo 2.04, hi 3.20
@@ -1319,10 +1319,17 @@ def combineProfiles():
         df = 1
         cx = np.linspace(chi2.ppf(0.85, df), chi2.ppf(0.92, df), 100)
         cy = chi2.cdf(cx, df)
-        chi2max = cx[np.where(cy>=0.9)][0] * 0.5
-        pyCts = xP[np.where(yP>chi2max)][0]-xpb/2 # sometimes the interval reported by the PLC isn't the true 90% value in the curve??
+        # chi2max = cx[np.where(cy>=0.9)][0] * 0.5
+        chi2max = 1.355
+        pyCts = xP[np.where(yP>chi2max)][0]
         # Nobs = intHi
         Nobs = pyCts
+
+        # There's some funny business w/ the PLC, so this is to make the plots consistent w/ the
+        # numbers I get in plotShiftProfile
+        # print("Warning, forcing counts to match plotShiftProfile result")
+        # ctsDict = {1:65.93, 2:93.69, 3:110.52, 4:203.73}
+        # pCts = ctsDict[nPks]
 
         # expected counts
         pk0 = 4-i
@@ -1374,7 +1381,7 @@ def combineProfiles():
     hT1 = hP1.GetTitle().split()
     xP1, yP1, xpb1 = wl.npTH1D(hP1)
     xP1, yP1 = xP1[1:] - xpb1/2, yP1[1:]
-    pyCts1 = xP1[np.where(yP1>chi2max)][0]-xpb1/2
+    pyCts1 = xP1[np.where(yP1>chi2max)][0]
     gae = np.power(pyCts1/Nexp_P, 1/4)
     tf1.Close()
     plt.plot(xP1, yP1, '-b', lw=2, label=r"nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts1,gae))
@@ -1386,7 +1393,7 @@ def combineProfiles():
     hT12 = hP2.GetTitle().split()
     xP2, yP2, xpb2 = wl.npTH1D(hP2)
     xP2, yP2 = xP2[1:] - xpb2/2, yP2[1:]
-    pyCts2 = xP2[np.where(yP2>chi2max)][0]-xpb2/2
+    pyCts2 = xP2[np.where(yP2>chi2max)][0]
     gae = np.power(pyCts2/Nexp_P, 1/4)
     tf2.Close()
     plt.plot(xP2, yP2, '-r', lw=2, label=r"nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts2,gae))
@@ -1398,7 +1405,7 @@ def combineProfiles():
     hT3 = hP3.GetTitle().split()
     xP3, yP3, xpb3 = wl.npTH1D(hP3)
     xP3, yP3 = xP3[1:] - xpb3/2, yP3[1:]
-    pyCts3 = xP3[np.where(yP3>chi2max)][0]-xpb3/2
+    pyCts3 = xP3[np.where(yP3>chi2max)][0]
     gae = np.power(pyCts3/Nexp_P, 1/4)
     tf1.Close()
     plt.plot(xP3, yP3, '-g', lw=2, label=r"Floating $\sigma$, nPks: %d, eLo: %.1f keV, nCts: %.1f, $\mathregular{g_{ae} \leq}$ %.2e" % (nPks,eLo,pyCts3,gae))

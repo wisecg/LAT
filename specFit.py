@@ -22,6 +22,7 @@ def main(argv):
     # getUnscaledPDFs(makePlots=True)
     # plotPDFs()
     # testFunc()
+    # getHistList()
 
     # fitModel(makePlots=True)
     # plotFit(plotRate=False, plotProfileResults=True)
@@ -33,30 +34,31 @@ def main(argv):
     # plotProfileM1()
     # combineProfileM1()
 
-    hadronicCurve()
+    # hadronicCurve()
 
-    # gaeProj()
+    gaeProj()
 
 
 def initialize(makePlots=False):
 
-    global dsList, enr, eff, simEffCorr, use90, eLo, eHi, epb, pLo, pHi, ppb, nB, nBP
+    global dsList, enr, eff, res, simEffCorr, use90, eLo, eHi, epb, pLo, pHi, ppb, nB, nBP
     global bkgModelHists, bkgModelPeaks, profileVars, bkgVals, sigLabels
     global effLim, effMax, xEff, detEff, dsExpo, detExp, bkgModelPeaks
     global useLoEff, useHiEff, constrainPeak, constrainMu
 
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
-    dsList = [1,2,3,4,"5A","5B","5C"]
-    # dsList = [1,2,3,4,"5B","5C"]
+    # dsList = [1,2,3,4,"5A","5B","5C"]
+    dsList = [1,2,3,4,"5B","5C"]
     # dsList = [0]
 
     enr = True
 
     # special switches
     eff = True # should almost always be true
+    res = True # should almost always be true
     simEffCorr = False
     use90 = False
-    useLoEff = True # this is the one that really makes us eat shit
+    useLoEff = False # this is the one that really makes us eat shit
     useHiEff = False
     constrainPeak = True # if True, will constrain width of all peaks in "bkgModelPeaks" to a gaussian
     constrainMu = True # use only for 14.4 study
@@ -64,11 +66,11 @@ def initialize(makePlots=False):
     print(dsList)
     print("Enriched" if enr else "Natural")
 
-    # # full spectrum axion fit
-    # eLo, eHi, epb = 1.5, 20, 0.2
-    # bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
-    # bkgModelPeaks = []
-    # profileVars = ["axion"]
+    # full spectrum axion fit
+    eLo, eHi, epb = 1.5, 20, 0.2
+    bkgModelHists = ["trit","flat","49V","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axion"]
+    bkgModelPeaks = []
+    profileVars = ["axion"]
 
     # reference fit
     # eLo, eHi, epb = 1.5, 20, 0.2
@@ -83,13 +85,13 @@ def initialize(makePlots=False):
     # bkgModelPeaks = ["55Fe","65Zn","68Ga","68Ge"]
     # profileVars = []
 
-    # 14.4 keV axion
-    eLo, eHi, epb = 5, 30, 0.2
-    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
-    # bkgModelPeaks = []
-    bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
-    bkgModelPeaks = ["axFe_M1"]
-    profileVars = ["axFe_M1"]
+    # # 14.4 keV axion
+    # eLo, eHi, epb = 5, 30, 0.2
+    # # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge","axFe_M1"] # fixed peak
+    # # bkgModelPeaks = []
+    # bkgModelHists = ["trit","flat","54Mn","55Fe","57Co","65Zn","68Ga","68Ge"] # floating width peak
+    # bkgModelPeaks = ["axFe_M1"]
+    # profileVars = ["axFe_M1"]
 
     # binning of continuum histograms
     pLo, pHi, ppb = 0, 30, 0.05
@@ -144,8 +146,9 @@ def initialize(makePlots=False):
 
     xEff = f1['arr_0']
     totEnrEff, totNatEff = f1['arr_1'].item(), f1['arr_2'].item()
-    totEnrEffLo, totEnrEffHi = f1['arr_9'].item(), f1['arr_10'].item()  # this doesn't work with use90
-    totNatEffLo, totNatEffHi = f1['arr_11'].item(), f1['arr_12'].item()
+    if not use90:
+        totEnrEffLo, totEnrEffHi = f1['arr_9'].item(), f1['arr_10'].item()  # this doesn't work with use90
+        totNatEffLo, totNatEffHi = f1['arr_11'].item(), f1['arr_12'].item()
 
     detEff = np.zeros(len(xEff))
     detEffLo = np.zeros(len(xEff))
@@ -153,12 +156,14 @@ def initialize(makePlots=False):
     for ds in dsList:
         if enr:
             detEff += totEnrEff[ds]
-            detEffLo += totEnrEffLo[ds]
-            detEffHi += totEnrEffHi[ds]
+            if not use90:
+                detEffLo += totEnrEffLo[ds]
+                detEffHi += totEnrEffHi[ds]
         else:
             detEff += totNatEff[ds]
-            detEffLo += totNatEffLo[ds]
-            detEffHi += totNatEffHi[ds]
+            if not use90:
+                detEffLo += totNatEffLo[ds]
+                detEffHi += totNatEffHi[ds]
 
     # load exposure
     if use90:
@@ -167,24 +172,31 @@ def initialize(makePlots=False):
     else:
         f2 = np.load("%s/data/expo-totals-e95.npz"  % dsi.latSWDir) # << use this one
 
-    # dsExpo = f2['arr_0'].item()
-    dsExpo, dsUnc = f2['arr_0'].item(), f2['arr_1'].item()
+    if use90:
+        dsExpo = f2['arr_0'].item()
+    else:
+        dsExpo, dsUnc = f2['arr_0'].item(), f2['arr_1'].item()
     detExp = 0
     detUncVals = []
     for d in dsExpo:
         if d in dsList:
             if enr:
                 detExp += dsExpo[d][0]
-                detUncVals.append(dsUnc[d][0])
+                if not use90:
+                    detUncVals.append(dsUnc[d][0])
             else:
                 detExp += dsExpo[d][1]
-                detUncVals.append(dsUnc[d][1])
-    detUnc = np.sqrt(np.sum(detUncVals))
+                if not use90:
+                    detUncVals.append(dsUnc[d][1])
+
+    if not use90:
+        detUnc = np.sqrt(np.sum(detUncVals))
 
     # normalize the efficiency
     detEff = np.divide(detEff, detExp)
-    detEffLo = np.divide(detEffLo, detExp)
-    detEffHi = np.divide(detEffHi, detExp)
+    if not use90:
+        detEffLo = np.divide(detEffLo, detExp)
+        detEffHi = np.divide(detEffHi, detExp)
 
     effLim, effMax = xEff[-1], detEff[-1] # used in interpolating for weighted data
 
@@ -449,6 +461,7 @@ def getUnscaledPDFs(ma=0, makePlots=False):
             if np.isnan(trit): trit = 0.
             h5.SetBinContent(iB+1, trit)
 
+
     # Pb210 (from separate file)
     tf2 = TFile("%s/data/Pb210PDFs.root" % dsi.latSWDir)
     h6 = tf2.Get("hPb210TDL") # with TDL
@@ -550,15 +563,20 @@ def plotPDFs():
     plt.savefig("%s/plots/sf-axFlux.pdf" % dsi.latSWDir)
 
     # === 4. solar axion PDF, gae=1 -- this is what we integrate to get N_exp
+
     plt.close()
-    xR1, hR1, _ = wl.npTH1D(tf.Get("h4"))
+    hB = tf.Get("h4")
+    xR1, hR1, _ = wl.npTH1D(hB)
+    xR2, hR2, _ = wl.npTH1D(getResConv(hB,"axion"))
     plt.plot(xR1, hR1, ls='steps', c='b', lw=3, label=r"$\Phi_a$, %.2f keV/bin, $\mathregular{g_{ae}=1}$" % ppb)
+    plt.plot(xR2, hR2, ls='steps', c='r', lw=3, label=r"Convolved with $\sigma_{MJ}$")
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.ylabel("Flux / (keV d kg)", ha='right', y=1)
     plt.xlim(0,10)
     plt.legend()
     plt.tight_layout()
     # plt.show()
+    # exit()
     plt.savefig("%s/plots/sf-axPDF.pdf" % dsi.latSWDir)
 
     # === 5. tritium (show example of efficiency correction)
@@ -566,13 +584,19 @@ def plotPDFs():
     hT = tf.Get("h5")
 
     xT, yT, xpb = wl.npTH1D(hT)
+
     xT, yT = normPDF(xT, yT, 0.1, 20)
+
+    xT2, yT2, _ = wl.npTH1D(getResConv(hT,"trit"))
+    xT3, yT3 = normPDF(xT2, yT2, 0.1, 20)
 
     hC = getEffCorrTH1D(hT, pLo, pHi, nBP)
     xC, yC, xpb = wl.npTH1D(hC)
+
     xC, yC = normPDF(xC, yC, 0.1, 20)
 
     plt.plot(xT, yT, "-", c='b', label="Raw")
+    plt.step(xT3, yT3, "-", c='g', label=r"Convolved with $\sigma_{MJ}$")
     opt = "Enr" if enr else "Nat"
     plt.plot(xC, yC, "-", c='r', label="Eff.Corr, DS%d-%s, %s, Norm'd" % (dsList[0], dsList[-1], opt))
     plt.axvline(1, c='g', lw=1, label="1.0 keV")
@@ -583,6 +607,7 @@ def plotPDFs():
     plt.xlim(0,20)
     plt.tight_layout()
     # plt.show()
+    # exit()
     plt.savefig('%s/plots/sf-trit.pdf' % dsi.latSWDir)
 
     # === 6. Pb210-TDL PDF
@@ -764,15 +789,87 @@ def getSigma(E, opt=""):
         return sig
 
 
+def getResConv(h, hName):
+    """ Convolve continuum PDF's (axion, tritium) with the MJ energy resolution """
+    from ROOT import TH1D
+
+    np.random.seed(0)
+    def jitter(vals,mu,sig):
+        return [np.random.normal(mu, sig) for v in vals]
+    opt = "enr" if enr else "nat"
+
+    if hName == "axFlux": hScale = 1e35
+    elif hName == "axion": hScale = 1e38
+    elif hName == "trit": hScale = 1e-9
+    else:
+        print("unknown name!")
+        exit()
+
+    x1, y1, xpb = wl.npTH1D(h)
+    y1 /= hScale
+
+    xj = []
+    for i in range(len(x1)):
+        tmp = np.full(int(y1[i]), x1[i]) # get n copies of value x
+        jit = jitter(tmp, x1[i], getSigma(x1[i], opt))
+        xj.extend(jit)
+    x2, y2 = wl.GetHisto(xj, pLo, pHi, ppb)
+
+    # correct the scale of y2 (taking integer copies above messes it up)
+    int1 = np.sum(y1[np.where((x1>=5)&(x1<=10))]) * ppb
+    int2 = np.sum(y2[np.where((x2>=5)&(x2<=10))]) * ppb
+    ySca = int1/int2
+
+    # # make sure you're getting the resolution you expect
+    # from scipy.optimize import curve_fit
+    # def axBkg(x, mu, sig, amp, B, C):
+    #     return amp * np.exp(-(x - mu)**2 / (2 * sig**2)) / (sig * np.sqrt(2*np.pi)) + B*x + C
+    # idx = np.where((x2>=6)&(x2<=7.5))
+    # popt, pcov = curve_fit(axBkg, x2[idx], y2[idx], p0=(6.6, getSigma(6.6, opt), 1000, 10, 500))
+    # xF = np.arange(6, 7.5, 0.005)
+    # plt.plot(xF, axBkg(xF, *popt), c='g')
+    # print("init sigma",getSigma(6.6, opt), "fit sigma",popt[1])
+    # # print(popt)
+    # plt.step(x1, y1, c='b', lw=2)
+    # plt.step(x2, y2, c='r', lw=2)
+    # plt.ylim(0, 2500)
+    # plt.xlim(6, 7.5)
+    # plt.show()
+
+    y1 = np.multiply(y1, hScale)
+    y2 = np.multiply(y2, ySca * hScale)
+    int1 = np.sum(y1[np.where((x1>=5)&(x1<=10))]) * ppb
+    int2 = np.sum(y2[np.where((x2>=5)&(x2<=10))]) * ppb
+    # print("int1 %.4e  int2 %.4e" % (int1, int2))
+
+    # now create a TH1D and return it
+    hOut = TH1D(hName,hName,nBP,pLo,pHi)
+    for iB in range(nBP+1):
+        ctr = (iB + 0.5)*ppb + pLo
+        bLo, bHi = ctr - ppb/2, ctr + ppb/2
+        hOut.SetBinContent(iB, y2[iB])
+
+    # check it
+    # x3, y3, xpb3 = wl.npTH1D(hOut,"") # don't shift up
+    # plt.step(x2, y2, c='r')
+    # plt.step(x3, y3, c='g')
+    # plt.show()
+    # exit()
+
+    return hOut
+
+
 def getHistList(hName=None):
     """ Loads TH1D's for the background model. """
     from ROOT import TH1D
+    print("Getting hists ...")
 
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
 
     if hName is not None:
         if hName == "axion":
             hB = tf2.Get("h4")
+            if res: hB = getResConv(hB, "axion")
             if eff: hB = getEffCorrTH1D(hB, pLo, pHi, nBP)
             hB.SetDirectory(0)
             return hB
@@ -785,15 +882,17 @@ def getHistList(hName=None):
             hB = getBkgPDF(eff)
         elif name=="trit":
             hB = tf2.Get("h5")
+            # if res: hB = getResConv(hB, name) # trit does not need to be res-corrected, marino phd pg.185
             if eff: hB = getEffCorrTH1D(hB, pLo, pHi, nBP)
         elif name=="axion":
             hB = tf2.Get("h4")
+            if res: hB = getResConv(hB, name)
             if eff: hB = getEffCorrTH1D(hB, pLo, pHi, nBP)
         elif name=="210Pb_c":
             hB = tf2.Get("h6") # with preliminary TDL
             if eff: hB = getEffCorrTH1D(hB, hB.GetXaxis().GetXmin(), hB.GetXaxis().GetXmax(), hB.GetNbinsX())
         else:
-            opt = "enr" if eff else "nat"
+            opt = "enr" if enr else "nat"
             hB = peakPDF(pars[0], getSigma(pars[0], opt), name, eff)
 
         if hB is None:
@@ -820,7 +919,7 @@ def testFunc():
     fData = ROOT.RooDataSet("data", "data", tt, ROOT.RooArgSet(hitE, hEnr), tCut)
 
     name = "68Ge"
-    opt = "enr" if eff else "nat"
+    opt = "enr" if enr else "nat"
     mu, sig, amp = bkgVals[name][0], getSigma(bkgVals[name][0], opt), bkgVals[name][1]
     pN = ROOT.RooRealVar("amp-"+name, "amp-"+name, amp)
     pM = ROOT.RooRealVar("mu-"+name, "mu-"+name, mu)
@@ -886,7 +985,7 @@ def fitModel(makePlots=False):
 
     peakModel = []
     for name in bkgModelPeaks:
-        opt = "enr" if eff else "nat"
+        opt = "enr" if enr else "nat"
         mu, sig, amp = bkgVals[name][0], getSigma(bkgVals[name][0], opt), bkgVals[name][1]
 
         if constrainPeak:
@@ -1163,11 +1262,12 @@ def plotFit(plotRate=False, plotProfileResults=False):
     cmap = plt.cm.get_cmap('jet',len(bkgModel))
     pdfs, pdfsCorr = [], []
     nTot, nTotC = 0, 0
+    hList = getHistList()
 
     for i, name in enumerate(bkgModel):
 
         if name in bkgModelHists:
-            for h in getHistList():
+            for h in hList:
                 if h[1]==name: hB = h[0]
             x, y, xpb = wl.npTH1D(hB)
             x, y = normPDF(x, y, eLo, eHi)
@@ -1218,7 +1318,7 @@ def plotFit(plotRate=False, plotProfileResults=False):
         plt.ylabel("Counts / keV / kg-d", ha='right', y=1)
 
     else:
-        plt.plot(xT, yT, 'r', lw=2, alpha=0.7, label="Model w/o Eff.: %d cts" % nTot)
+        plt.plot(xT, yT, 'r', lw=2, alpha=0.7, label="Full Model PDF")
         plt.plot(xTc, yTc, c='m', lw=3, alpha=0.7, label="Model w/ Eff: %d cts" % nTotC)
         plt.ylabel("Counts / %.1f keV" % epb, ha='right', y=1)
 
@@ -1243,7 +1343,7 @@ def plotFit(plotRate=False, plotProfileResults=False):
     nWtd2 = np.sum(hDataW[idx])
     print("Efficiency corrected rate, %.1f-%.1f keV:  %.3f c/(kev-kg-d)" % (1.5, 8, nWtd2/detExp/(8-1.5)))
 
-    plt.plot(np.nan, np.nan, ".w", label="Data w/ Eff: %d cts" % nWtd)
+    # plt.plot(np.nan, np.nan, ".w", label="Data w/ Eff: %d cts" % nWtd)
 
     plt.xlabel("Energy (keV)", ha='right', x=1)
     plt.legend(loc=1, fontsize=11)
@@ -1354,6 +1454,7 @@ def plotProfile(makePlots=False):
 
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     hA = tf2.Get("h4")
+    if res: hA = getResConv(hA, "axion")
     Nexp = hA.Integral(hA.FindBin(eLo), hA.FindBin(eHi), "width") * detExp
 
     tf0 = TFile("%s/data/rs-plc-0.root" % dsi.latSWDir) # no correction
@@ -1465,6 +1566,7 @@ def combineProfileLoHi():
 
     tf2 = TFile("%s/data/specPDFs.root" % dsi.latSWDir)
     hA = tf2.Get("h4")
+    if res: hA = getResConv(hA, "axion")
     Nexp = hA.Integral(hA.FindBin(eLo), hA.FindBin(eHi), "width") * detExp
 
     # best
@@ -1933,6 +2035,7 @@ def gaeProj():
     plt.close()
 
     # === 2. projection based on DS1--5C analysis
+    # plt.figure(figsize=(6,5))
 
     # # Efficiency corrected rate, 1.5-20.0 keV:  0.062 c/(kev-kg-d)
     # # Efficiency corrected rate, 1.5-8.0 keV:  0.119 c/(kev-kg-d)
@@ -1960,7 +2063,7 @@ def gaeProj():
 
     plt.ylim(1e-12, 3e-11)
 
-    plt.legend(loc=1, fontsize=14)
+    plt.legend(loc=1, bbox_to_anchor=(0., 0.73, 1, 0.2), fontsize=13)
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/gae-proj.pdf" % dsi.latSWDir)
@@ -1968,6 +2071,7 @@ def gaeProj():
 
     # === 3. insane LEGEND 10 ton-yr projection
     plt.close()
+    plt.figure(figsize=(6,5))
 
     B = 0.119
 
@@ -1993,11 +2097,10 @@ def gaeProj():
 
     # plt.ylim(3e-12, 1e-10)
 
-    plt.legend(loc=1, fontsize=13, bbox_to_anchor=(0., 0.73, 1, 0.2))
+    plt.legend(loc=1, fontsize=10, bbox_to_anchor=(0., 0.73, 1, 0.2))
     plt.tight_layout()
     # plt.show()
     plt.savefig("%s/plots/gae-proj-legend.pdf" % dsi.latSWDir)
-
 
 
 if __name__=="__main__":

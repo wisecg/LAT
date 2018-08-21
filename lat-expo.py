@@ -244,13 +244,10 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
-    dsList = [0,1,2,3,4,"5A","5B","5C",6]
+    dsList = [0,1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
-
-    # Flag for writing run + exposure lists into a file
-    writeRuns = True
 
     # output
     dsExpo = {} # {ds: [dsEnrExp, dsNatExp]}
@@ -636,16 +633,16 @@ def getEfficiency():
     detEff = {ds:{} for ds in dsList}
     detEffLo = {ds:{} for ds in dsList}
     detEffHi = {ds:{} for ds in dsList}
+    detExpo = {ds:{} for ds in dsList}
     for ds in dsList:
         detEff[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
         detEffLo[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
         detEffHi[ds] = {cpd:np.zeros(len(xEff)) for cpd in det.allDets}
+        detExpo[ds] = {cpd:0 for cpd in det.allDets}
 
     # recalculate these, make sure they match getExposure
     enrExp = {ds:0 for ds in dsList}
     natExp = {ds:0 for ds in dsList}
-
-    detExp = {cpd:0 for cpd in det.allDets}
 
     # 1. loop over dataset
     for ds in dsList:
@@ -783,6 +780,9 @@ def getEfficiency():
                             subExpoLo[ch] += expoLo
                             subExpoHi[ch] += expoHi
 
+                            cpd = det.getChanCPD(dsNum,ch)
+                            detExpo[ds][cpd] += expo
+
                             if detID > 100000:
                                 enrExp[ds] += expo
                             else:
@@ -864,12 +864,17 @@ def getEfficiency():
                 plt.show()
                 exit()
 
+            expTot = 0
             for ch in chList:
                 cpd = det.getChanCPD(dsNum,ch)
                 detEff[ds][cpd] = totEff[ch]
                 detEffLo[ds][cpd] = totEffLo[ch]
                 detEffHi[ds][cpd] = totEffHi[ch]
                 # print(ch, cpd, detEff[ds][cpd][500:520], totEff[ch][500:520])
+
+                expTot += detExpo[ds][cpd]
+                # print(ds, cpd, detExpo[ds][cpd])
+            # print(expTot)
 
             # plt.plot(xEff,detEff[ds]['164'])
             # plt.show()
@@ -953,7 +958,7 @@ def getEfficiency():
     if debugMode:
         print("I'm not saving output, I'm in debug mode, dsList:",dsList)
     if not debugMode:
-        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp, totEnrEffLo, totEnrEffHi, totNatEffLo, totNatEffHi)
+        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp, totEnrEffLo, totEnrEffHi, totNatEffLo, totNatEffHi, detEff, detExpo)
 
 
 def getEfficiencyROOT():

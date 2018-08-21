@@ -788,7 +788,6 @@ def asymTrapFilter(data,ramp=200,flat=100,fall=40,padAfter=False):
     return trap
 
 
-
 def MakeSiggenWaveform(samp,r,z,ene,t0,smooth=1,phi=np.pi/8):
     # This works FINE on my machine but not on PDSF.  Damn you, PDSF.
     # Use pysiggen to generate a waveform w/ arb. ADC amplitude. Thanks Ben.
