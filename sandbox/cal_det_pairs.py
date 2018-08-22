@@ -315,12 +315,13 @@ def getSimPandas():
             if mHT != 2: continue
 
             # Apply threshold and channel selection cuts
+            # Update: 8/9/2018 -- Since Micah already added threshold values, don't use threshold here
             idxList = [i for i in range(mHT)
                 if simtoCPD(ae.GetElement(i).GetWaveformID()) in cpdList
-                and simtoCPD(ae.GetElement(i).GetWaveformID()) != ds.CPD[5][598]
+                # and simtoCPD(ae.GetElement(i).GetWaveformID()) != ds.CPD[5][598]
                 and simtoCh(ae.GetElement(i).GetWaveformID()) in thD
-                and ae.GetElement(i).GetEnergy()*1000 > thD[simtoCh(ae.GetElement(i).GetWaveformID())][0] + 3*thD[simtoCh(ae.GetElement(i).GetWaveformID())][1]
-                and 0.7 < ae.GetElement(i).GetEnergy()*1000 < 9999
+                # and ae.GetElement(i).GetEnergy()*1000 > thD[simtoCh(ae.GetElement(i).GetWaveformID())][0] + 3*thD[simtoCh(ae.GetElement(i).GetWaveformID())][1]
+                and 0.7 < ae.GetElement(i).GetEnergy()*1000 < 9999 # Basic energy cut
                 ]
             # If two hits don't remain, skip
             if len(idxList) is not 2: continue

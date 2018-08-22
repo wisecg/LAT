@@ -244,7 +244,7 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
@@ -252,6 +252,12 @@ def getExposure():
     # output
     dsExpo = {} # {ds: [dsEnrExp, dsNatExp]}
     dsUnc = {} # {ds: [dsEnrUnc, dsNatUnc]}
+    detExpo = {ds:{cpd:0 for cpd in det.allDets} for ds in dsList}
+
+    writeRuns = False # Flag for writting run-lists that detectors are active
+    bExclude253 = True # Flag for excluding C2P5D3 from exposure calculations cuz it sucks
+    if bExclude253:
+        print("Excluding C2P5D3 because it sucks!")
 
     # store all vals so we can add the uncertainties in quadrature
     rawTot, psaTot, burstTot, expTot = {}, {}, {}, {}
@@ -289,6 +295,7 @@ def getExposure():
         psaTot[ds] = {ch:[] for ch in chList}
         burstTot[ds] = {ch:[] for ch in chList}
         expTot[ds] = {ch:[] for ch in chList} # after cuts
+        runTot = {det.getChanCPD(dsNum,ch):[] for ch in chList} # for run lists
 
         # loop over bIdx's
         for bIdx in range(bLo, bHi+1):
@@ -330,7 +337,10 @@ def getExposure():
                     burstTot[ds][ch].append(expo)
                     continue
 
+                # Flag for skipping C2P5D3 here
+                if bExclude253 and int(cpd) == 253: continue
                 expTot[ds][ch].append(expo)
+                runTot[cpd].append((int(ltRun[i]),expo))
 
         # get values for this DS
 
@@ -348,6 +358,8 @@ def getExposure():
             detID = det.getDetIDChan(dsNum,ch)
             aMass = det.allActiveMasses[detID]
             aMassUnc = det.allActiveMassesUnc[detID]
+
+
             re = np.sum(rawTot[ds][ch])
             pe = np.sum(psaTot[ds][ch])
             be = np.sum(burstTot[ds][ch])
@@ -359,6 +371,15 @@ def getExposure():
                 psaEnrUnc += pe * (aMassUnc/aMass)
                 burstEnrExp += be
                 burstEnrUnc += be * (aMassUnc/aMass)
+
+                # This block is only for rejecting C2P5D3
+                # Consider 253 to be rejected by PSA cut -- Set the burst cut for this detector to 0
+                if bExclude253 and int(cpd)== 253:
+                    psaEnrExp += expTot[ds][ch]
+                    psaTot[ds][ch] += expTot[ds][ch]
+                    burstEnrExp -= burstTot[ds][ch]
+                    burstTot[ds][ch] -= burstTot[ds][ch]
+
                 finalEnrExp += ee
                 finalEnrUnc += ee * (aMassUnc/aMass)
 
@@ -371,6 +392,9 @@ def getExposure():
                 burstNatUnc += be * (aMassUnc/aMass)
                 finalNatExp += ee
                 finalNatUnc += ee * (aMassUnc/aMass)
+
+            detExpo[ds][cpd] += expTot[ds][ch] - psaTot[ds][ch] - burstTot[ds][ch]
+            print('DS{} Ch{} C{}P{}D{} - Exposure: {exp}'.format(ds, ch, *str(cpd), exp=detExpo[ds][cpd]))
 
         print("DS-%s" % ds)
         print("Enriched (kg-d)")
@@ -398,6 +422,13 @@ def getExposure():
         dsExpo[ds] = [finalEnrExp, finalNatExp]
         dsUnc[ds] = [finalEnrUnc, finalNatUnc]
 
+        # Write exposure lists
+        if writeRuns:
+            for k in runTot:
+                with open('./data/expLists/DS{}_C{}P{}D{}.txt'.format(ds, *str(k)), 'w') as f:
+                    for (r,j) in runTot[k]:
+                        f.write('{},{}\n'.format(r,j))
+
     grandTotEnr = np.sum([v[0] for v in grandTotEnrVals]) / 365.25
     grandTotEnrUnc = np.sqrt(np.sum([v[1]**2 for v in grandTotEnrVals])) / 365.25
 
@@ -409,7 +440,7 @@ def getExposure():
     print("Natural  (kg-y): %.3f ± %.3f" % (grandTotNat, grandTotNatUnc))
 
     # save output
-    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, dsUnc)
+    np.savez("./data/expo-totals-e%d.npz" % (pctTot), dsExpo, dsUnc, detExpo)
 
 
 def makeFinalFiles():
@@ -426,7 +457,7 @@ def makeFinalFiles():
     # outType = "final%d" % pctTot
     outType = "final%dt" % pctTot
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
     # dsList = [0]
@@ -494,7 +525,7 @@ def makeMovies():
     from matplotlib import animation
     import pywt
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
     wfLimit = None
 
     # dsList = [0]
@@ -613,10 +644,13 @@ def getEfficiency():
     # mode = "slo"   # slowness efficiency only
     mode = "all"   # does all PS <-- use this one
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]  # default
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]  # default
     # dsList = ["5A"]
     # dsList = [3]
 
+    bExclude253 = True # Flag for excluding C2P5D3 from exposure calculations cuz it sucks
+    if bExclude253:
+        print("Excluding C2P5D3 because it sucks!")
     debugMode = False
     if debugMode:
         print("WARNING: debug mode.  dsList:",dsList)
@@ -781,6 +815,8 @@ def getEfficiency():
                             subExpoHi[ch] += expoHi
 
                             cpd = det.getChanCPD(dsNum,ch)
+                            # Skip C2P5D3
+                            if bExclude253 and int(cpd) == 253: continue
                             detExpo[ds][cpd] += expo
 
                             if detID > 100000:

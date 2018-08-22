@@ -134,6 +134,7 @@ def main():
     # Draw PDFs
     print("Data Shape", pdfArrDict['Data'].shape)
     print("Axion Shape", pdfArrDict['Axion'].shape)
+    return
     if bDrawPDF:
         drawPDFs(pdfArrDict)
 
