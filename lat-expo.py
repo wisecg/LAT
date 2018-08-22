@@ -715,7 +715,7 @@ def getEfficiency():
         # 2. loop over modules
         mods = [1]
         if dsNum == 4: mods = [2]
-        if dsNum == 5: mods = [1,2]
+        if dsNum >= 5: mods = [1,2]
         for mod in mods:
 
             calKey = "ds%d_m%d" % (dsNum, mod)
