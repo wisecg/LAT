@@ -393,7 +393,7 @@ def getExposure():
                 finalNatExp += ee
                 finalNatUnc += ee * (aMassUnc/aMass)
 
-            detExpo[ds][cpd] += expTot[ds][ch] - psaTot[ds][ch] - burstTot[ds][ch]
+            detExpo[ds][cpd] += np.sum(expTot[ds][ch]) - np.sum(psaTot[ds][ch]) - np.sum(burstTot[ds][ch])
             print('DS{} Ch{} C{}P{}D{} - Exposure: {exp}'.format(ds, ch, *str(cpd), exp=detExpo[ds][cpd]))
 
         print("DS-%s" % ds)
