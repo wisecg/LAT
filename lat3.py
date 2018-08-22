@@ -151,8 +151,8 @@ def getOutliers(verbose=False, usePass2=False, noSkip=False):
     enrRates, natRates = [], []
 
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
-    # dsList = [0,1,2,3,4,"5A","5B","5C", 6]
+    # dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C", 6]
 
     for ds in dsList:
     # for ds in ["5A"]:
