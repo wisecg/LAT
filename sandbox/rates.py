@@ -1,26 +1,29 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
+import os, imp
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('../pltReports.mplstyle')
 from matplotlib.colors import LogNorm
 
-import dsi
+dsi = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
+wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 bkg = dsi.BkgInfo()
 det = dsi.DetInfo()
 cal = dsi.CalInfo()
-import waveLibs as wl
+
 from ROOT import TFile, TChain, TTree
 
 def main():
 
-    # dcrRates()
-    lowRates()
+    dcrRates()
+    # lowRates()
 
 
 def getExpoLTD(dsList, useBlind=False):
     """ get detector exposures from parsing the livetime document tables"""
 
-    with open("/Users/wisecg/dev/sandbox/vince/ds06-exp.txt") as f:
+    with open("{}/data/ds06-exp.txt".format(os.environ['LATDIR'])) as f:
         lines = f.readlines()
 
     detList = det.allDets
@@ -65,7 +68,7 @@ def getExpoLTD(dsList, useBlind=False):
 def dcrRates():
 
     tt = TChain("skimTree")
-    tt.Add("/Users/wisecg/project/bkg/highE/lightDS*")
+    tt.Add("/Users/brianzhu/project/skim/light/lightDS*")
 
     # all detectors in the skims
     n = tt.Draw("(C*100+P*10+D)","","goff")
@@ -74,14 +77,14 @@ def dcrRates():
     detList = sorted(list(set(detList)))
 
     # hits w/ positive dcr (alphas), 1--5.5 MeV
-    n1 = tt.Draw("trapENFCal:dcr99:(C*100+P*10+D)","trapENFCal>1000 && trapENFCal<5500 && dcr99 > 0 && isGood","goff")
+    n1 = tt.Draw("trapENFCal:dcr99:(C*100+P*10+D)","trapENFCal>1000 && trapENFCal<5500 && avse>-1 && dcr99 > 0 && isGood","goff")
     hit1, dcr1, det1 = tt.GetV1(), tt.GetV2(), tt.GetV3()
     hit1 = np.asarray([hit1[i] for i in range(n1)])
     dcr1 = np.asarray([dcr1[i] for i in range(n1)])
     det1 = np.asarray([str(int(det1[i])) for i in range(n1)])
 
     # events 2.7--5.5 MeV passing DCR, these are probably alphas too
-    n2 = tt.Draw("trapENFCal:dcr99:(C*100+P*10+D)","trapENFCal>2700 && trapENFCal<5500 && dcr99 < 0 && isGood","goff")
+    n2 = tt.Draw("trapENFCal:dcr99:(C*100+P*10+D)","trapENFCal>2700 && trapENFCal<5500 && avse>-1 && dcr99 < 0 && isGood","goff")
     hit2, dcr2, det2 = tt.GetV1(), tt.GetV2(), tt.GetV3()
     hit2 = np.asarray([hit2[i] for i in range(n2)])
     dcr2 = np.asarray([dcr2[i] for i in range(n2)])
@@ -114,7 +117,8 @@ def dcrRates():
         if nAlphas > 0 and expo == 0:
             print("Warning, %d alphas w/ 0 exposure" % nAlphas)
 
-        print("det %s  nA %-6d  exp %-6.2f  r_A %.3f (cts/kg-y)" % (str(cpd), nAlphas, expo, rAlphas))
+        # print("det %s  nA %-6d  exp %-6.2f  r_A %.3f (cts/kg-y)" % (str(cpd), nAlphas, expo, rAlphas))
+        print("%s,%d,%.2f,%.3f" % (str(cpd), nAlphas, expo, rAlphas))
 
 
 def lowRates():

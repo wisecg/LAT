@@ -2,18 +2,77 @@
 """
     This script compares 46 keV events by detector/total and alpha events (both full peak alphas and rejected by DCR) using open data from DS0-6
 """
-import os, imp, ROOT
+import os, imp
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('module://ipykernel.pylab.backend_inline')
+import seaborn as sns
+import pandas as pd
 from scipy.optimize import curve_fit
 from scipy.misc import factorial
 ds = imp.load_source('dsi',os.environ['LATDIR']+'/dsi.py')
-sns.set(style='darkgrid', context='talk')
-
+sns.set(style='darkgrid', context='talk', palette='coolwarm')
 detInfo = ds.DetInfo()
 
 def main():
+
+    plotAlphavsPb()
+
+def plotAlphavsPb():
+    """
+        These are rates from DS1-6, calculated by Clint (taking into account exposure and efficiency)
+    """
+    inDir = os.environ['LATDIR'] + '/data'
+    outDir = os.environ['LATDIR'] + '/plots/AlphaRate'
+    # Load data
+    dfAlpha = pd.read_csv('{}/Pb210Data/alphaRates.csv'.format(inDir))
+    dfLowE = pd.read_csv('{}/Pb210Data/lowERates.csv'.format(inDir))
+    # Add colume for alpha rate uncertainty
+    dfLowE['Rate46'] = 365.25*dfLowE['Rate46']
+    dfLowE['Rate46Err'] = 365.25*dfLowE['Rate46Err']
+    dfLowE['Rate15'] = 365.25*dfLowE['Rate15']
+    dfLowE['Rate15Err'] = 365.25*dfLowE['Rate15Err']
+    dfAlpha['AlphaRateErr'] = np.sqrt(dfAlpha['numAlpha'])/dfAlpha['Exp']
+
+    dfAlpha.set_index('CPD', inplace=True)
+    dfLowE.set_index('CPD', inplace=True)
+
+    # Combines dataframes and takes intersection (only uses CPD valid in both)
+    # dfTot = pd.concat([dfAlpha, dfLowE], axis=1, join_axes=[dfAlpha.index])
+    dfTot = pd.concat([dfAlpha, dfLowE], axis=1, join='inner')
+    print(dfTot.head(20))
+    dfTot.reset_index(inplace=True)
+    print(dfTot.head(20))
+    dfM1 = dfTot.loc[dfTot['CPD'] < 200]
+    dfM2 = dfTot.loc[dfTot['CPD'] > 200]
+    dfM1['Module'] = 1
+    dfM2['Module'] = 2
+
+
+    # fig1, ax1 = plt.subplots(figsize=(10,7))
+    # for row in dfM1.iterrows():
+        # ax1.errorbar(x=row['AlphaRate'],y=row['Rate46'],xerr= label='C{}P{}D{}'.format(row['CPD']))
+
+    g1 = sns.FacetGrid(data=dfM1, col='Type', hue='CPD', col_order=['Natural', 'Enriched'], height=10, legend_out=True)
+    g1 = g1.map(plt.errorbar, 'AlphaRate', 'Rate46','Rate46Err','AlphaRateErr' ,fmt='o',capsize=2.,elinewidth=2,markeredgewidth=2).add_legend()
+    g1.set_xlabels('Alpha Rate (c/kg/yr)')
+    g1.set_ylabels('46.5 peak Rate (c/kg/yr)')
+    g1.savefig('{}/AlphavsPb_M1_avse.png'.format(outDir))
+
+    g2 = sns.FacetGrid(data=dfM2, col='Type', hue='CPD', col_order=['Natural', 'Enriched'], height=10, legend_out=True)
+    g2 = g2.map(plt.errorbar, 'AlphaRate', 'Rate46','Rate46Err', 'AlphaRateErr' ,fmt='o',capsize=2.,elinewidth=2,markeredgewidth=2).add_legend()
+    g2.set_xlabels('Alpha Rate (c/kg/yr)')
+    g2.set_ylabels('46.5 peak Rate (c/kg/yr)')
+    g2.savefig('{}/AlphavsPb_M2_avse.png'.format(outDir))
+
+    g3 = sns.FacetGrid(data=pd.concat([dfM1, dfM2]), col='Type', row='Module', hue='CPD', col_order=['Natural', 'Enriched'], height=10, legend_out=True)
+    g3 = g3.map(plt.errorbar, 'AlphaRate', 'Rate46','Rate46Err', 'AlphaRateErr' ,fmt='o',capsize=2.,elinewidth=2,markeredgewidth=2).add_legend()
+    g3.set_xlabels('Alpha Rate (c/kg/yr)')
+    g3.set_ylabels('46.5 peak Rate (c/kg/yr)')
+    g3.savefig('{}/AlphavsPb_Tot.png'.format(outDir))
+
+def plotAlphaRatesData():
     outDir = os.environ['LATDIR'] + '/plots/AlphaRate'
     dsList, module = [6], 1
     # dsList, module = [4,5,6], 2
