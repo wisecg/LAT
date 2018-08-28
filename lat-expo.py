@@ -656,7 +656,8 @@ def getEfficiency():
         print("WARNING: debug mode.  dsList:",dsList)
 
     # efficiency output
-    xLo, xHi = 0, 50
+    # xLo, xHi = 0, 50
+    xLo, xHi = 0, 200 # Higher range
     xEff = np.arange(xLo, xHi, 0.01)
     totEnrEff = {ds:np.zeros(len(xEff)) for ds in dsList}
     totEnrEffLo = {ds:np.zeros(len(xEff)) for ds in dsList}
