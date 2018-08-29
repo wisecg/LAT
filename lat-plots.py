@@ -290,12 +290,19 @@ def spec_summary():
         # plt.show()
 
         # calculate the efficiency corrected rate
-        effpb = xEff[1] - xEff[0]
         idxE2 = np.where((xEff>=20) & (xEff <= 40))
-        effCorr = 1 - 1 / (effpb * np.sum(detEff[idxE2]))
-        hRateEff = hRate / effCorr
-        hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR])) / effCorr
-        hRateEffUnc = hRateUnc / effCorr
+
+        # old version, wrong
+        # effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(detEff[idxE2]))
+        # hRateEff = hRate / effCorr
+        # hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR])) / effCorr
+        # hRateEffUnc = hRateUnc / effCorr
+
+        effCorr = ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE2]))
+        hRateEff = effCorr * np.sum(xpb * hSpec[idxR])/ (eHi-eLo)
+        hRateUnc = hRateEff * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR]))
+        hRateEffUnc = hRateUnc * effCorr
+
         print("EC Rate 20-40: %.5f ± %.5f" % (hRateEff, hRateEffUnc) )
 
         if rateMode:
@@ -2307,10 +2314,15 @@ def rateCheckDS():
 
         # get the efficiency-corrected rate
         idxE = np.where((xEff >= eLo) & (xEff <= eHi))
-        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        # effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        # idxR = np.where((x >= eLo) & (x <= eHi))
+        # hRate = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
+        # hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+
+        effCorr = ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
         idxR = np.where((x >= eLo) & (x <= eHi))
-        hRate = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
-        hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+        hRate = effCorr * np.sum(xpb * hSpec[idxR])/ (eHi-eLo)
+        hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR]))
 
         print("%.3f ± %.3f" % (hRate, hRateUnc),  dsList)
 
@@ -2375,10 +2387,11 @@ def rateCheckDet():
         # 1--5 keV
         eLo, eHi = 1, 5
         idxE = np.where((xEff >= eLo) & (xEff <= eHi))
-        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        effCorr = ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
         idxR = np.where((x >= eLo) & (x <= eHi))
-        rate5 = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
-        rate5Unc = rate5 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+        rate5 = effCorr * np.sum(xpb * hSpec[idxR])/ (eHi-eLo)
+        rate5Unc = rate5 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR]))
+
         if rate5 < 0: continue
 
         if isEnr:
@@ -2391,10 +2404,10 @@ def rateCheckDet():
         # 46--47 keV
         eLo, eHi = 45.5, 47.5
         idxE = np.where((xEff >= eLo) & (xEff <= eHi))
-        effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
+        effCorr = ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE]))
         idxR = np.where((x >= eLo) & (x <= eHi))
-        rate46 = np.sum(xpb * hSpec[idxR])/ (eHi-eLo) / effCorr
-        rate46Unc = rate46 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR])) / effCorr
+        rate46 = effCorr * np.sum(xpb * hSpec[idxR])/ (eHi-eLo)
+        rate46Unc = rate46 * np.sqrt(np.sum(hCts[idxR])) / (np.sum(hCts[idxR]))
 
         if isEnr:
             r46e.append(rate46)

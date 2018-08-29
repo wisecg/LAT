@@ -636,7 +636,7 @@ def fillThreshDB():
     bkg = dsi.BkgInfo()
 
     # loop over datasets and bkgIdx
-#    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+    #    for ds in [0,1,2,3,4,"5A","5B","5C",6]:
     for ds in [6]:
         dsNum = ds if isinstance(ds, int) else 5
         goodChans = det.getGoodChanList(dsNum)
@@ -754,7 +754,8 @@ def getThreshDB():
     bkg = dsi.BkgInfo()
 
     # loop over datasets
-    for ds in [0,1,2,3,4,5,6]:
+    # for ds in [0,1,2,3,4,5,6]:
+    for ds in [6]:
         dsNum = ds if isinstance(ds, int) else 5
         goodChans = det.getGoodChanList(dsNum)
 
@@ -769,7 +770,12 @@ def getThreshDB():
             for subIdx, (runLo, runHi) in enumerate(subRanges):
 
                 key = "thresh_ds%d_bkg%d_sub%d" % (dsNum, bkgIdx, subIdx)
+
+                thD = dsi.getDBRecord(key, False, calDB, pars)
                 print(key)
+                for ch in thD:
+                    print(ch,":",thD[ch])
+                print("")
 
 
 def compareCoverage():
