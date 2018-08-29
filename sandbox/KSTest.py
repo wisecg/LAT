@@ -9,6 +9,7 @@ sns.set_style('darkgrid')
 def main(argv):
 
     bUseBlind = True
+    # dsList, module = [0,1,2,3,5,6], 1
     dsList, module = [1,2,3,5,6], 1
     # dsList, module = [4,5], 2
     # dsList, module = [6], 1
@@ -18,10 +19,10 @@ def main(argv):
     # globalTime cut right now is because of some unrejected runs in blind DS1
     theCut = "isGood && !wfDCBits && !(isLNFill1 && C==1) && !(isLNFill2&&C==2) && isEnr && !muVeto && C=={}".format(module)
     # channelCut = "&& (channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={}||channel=={})".format(*chList)
-    # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==1)||(C==1&&P==6&&D==3)||(C==1&&P==6&&D==4)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3)||(C==1&&P==7&&D==4))"
+    channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==1)||(C==1&&P==6&&D==3)||(C==1&&P==6&&D==4)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3)||(C==1&&P==7&&D==4))"
 
     # M1 Detectors across DS0-6
-    channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==3)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3))"
+    # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==2)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==3)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3))"
 
     # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==2&&D==3)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==3)||(C==1&&P==3&&D==4)||(C==1&&P==5&&D==3)||(C==1&&P==6&&D==1)||(C==1&&P==7&&D==4))"
     # channelCut = "&&((C==1&&P==1&&D==2)||(C==1&&P==1&&D==3)||(C==1&&P==1&&D==4)||(C==1&&P==3&&D==2)||(C==1&&P==3&&D==4)||(C==1&&P==7&&D==2)||(C==1&&P==7&&D==3))"
@@ -30,7 +31,7 @@ def main(argv):
     # dcrCut = theCut + " && mHL==1 && trapENFCalC>1950 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     # dcrCut = theCut + " && mHL==1 && trapENFCalC>1950 && trapENFCalC<3350 && avse>-1 && dcr99>=0"
     alphaCut = theCut + " && mHL==1 && trapENFCalC>4000 && trapENFCalC<8000 && avse>-1"
-    dcrCut = theCut + " && mHL==1 && ((trapENFCalC>1000 && trapENFCalC<4000 && avse>-1 && dcr99>=0) || (trapENFCalC>4000 && trapENFCalC<8000 && avse>-1))"
+    dcrCut = theCut + " && mHL==1 && avse>-1 && ((trapENFCalC>1000 && trapENFCalC<5500 && dcr99>=0) || (dcr99<0 && trapENFCalC>2700 && trapENFCalC<5500)) "
     pbCut = theCut + " && mH==1 && trapENFCal>45.5 && trapENFCal<47.5"
     # excessCut = "C=={} && trapENFCal>2 && trapENFCal<5 || (channel!=656 && run < 6964)".format(module)
     excessCut = "C=={} && trapENFCal>2 && trapENFCal<5".format(module)
@@ -207,7 +208,7 @@ def main(argv):
     fig2, a2 = plt.subplots(figsize=(10,6))
     a2.step(nuDate, pnuSumTot, color = 'black', label=r"$2\nu\beta\beta$ (Clock)")
     # a2.step(alphaDate, palphaSumTot, label="Alphas (4-8 MeV)")
-    a2.step(dcrDate, pdcrSumTot, label="DCR rejected (1950 - 3350 keV)")
+    a2.step(dcrDate, pdcrSumTot, label="Alpha Events")
     # a2.step(pbDate, ppbSumTot, label="Pb210 (46 keV)")
     # a2.step(excessDate, pexcessSumTot, label="Low E (2 - 5 keV)")
     # a2.set_title('Module {} Eriched, DS1-4,5bc'.format(module))

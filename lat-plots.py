@@ -28,7 +28,7 @@ def main():
 
     # spec()
     # spec_vs_cpd()
-    spec_summary()
+    # spec_summary()
     # thresh_cut_cal()
     # ds3_det_eff()
     # hi_mult_cal_spec()
@@ -48,6 +48,7 @@ def main():
     # fitSlo_efficiency_uncertainty()
     # rateCheckDS()
     # rateCheckDet()
+    rateSummary()
 
 
 def spec():
@@ -198,31 +199,20 @@ def spec_vs_cpd():
         print(cpd, int(np.sum(hEnr[bLo:bHi,col])))
 
 
-def spec_summary():
+def spec_summary(dsList=None, dtype='enr', rateMode=False, eMin=20, eMax=40):
     """ Make separate plots for enr/nat, with the spectrum and efficiency,
     and then a 2d by channel under it. """
 
     from ROOT import TFile, TChain, TTree
 
-    rateMode = False
+    if eMin < 1:
+        print('Cannot currently calculate rates below 1 keV, setting minimum to 1 keV')
+        eMin = 1
 
-    # dsList = [0]
-    # dsList = [1]
-    # dsList = [2]
-    # dsList = [3]
-    # dsList = [4]
-    # dsList = ["5A"]
-    # dsList = ["5B"]
-    # dsList = ["5C"]
-    # dsList = [0,1,2,3,4,"5A","5B","5C"]
-    dsList = [1,2,3,4,"5A","5B","5C",6]
+    if not dsList:
+        dsList = [1,2,3,4,"5A","5B","5C",6]
 
-    # xLo, xHi, xpb = 0, 20, 0.1
-    xLo, xHi, xpb = 0, 50, 0.2
-    # # xLo, xHi, xpb = 0, 10, 0.1
-
-    type = "enr"
-    # type = "nat"
+    xLo, xHi, xpb = 0, 200, 0.2
 
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
@@ -245,17 +235,17 @@ def spec_summary():
     for ds in dsList:
         enrExp += enrExpDict[ds]
         natExp += natExpDict[ds]
-        if type=="enr": detEff += totEnrEff[ds]
-        if type=="nat": detEff += totNatEff[ds]
+        if dtype=="enr": detEff += totEnrEff[ds]
+        if dtype=="nat": detEff += totNatEff[ds]
 
-    if type=="enr":
+    if dtype=="enr":
         detExp = enrExp
         specLabel = "Enriched"
-    if type=="nat":
+    if dtype=="nat":
         detExp = natExp
         specLabel = "Natural"
 
-    print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
+    if not rateMode: print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
 
     # normalize the efficiency
     effNorm = (np.amax(detEff)/365.25) / (detExp/365.25)
@@ -268,8 +258,8 @@ def spec_summary():
 
     # ==== 1. energy spectrum ====
 
-    if type=="enr": tCut = "isEnr"
-    if type=="nat": tCut = "!isEnr"
+    if dtype=="enr": tCut = "isEnr"
+    if dtype=="nat": tCut = "!isEnr"
 
     n = tt.Draw("trapENFCal",tCut,"goff")
     hitE = tt.GetV1()
@@ -280,33 +270,18 @@ def spec_summary():
     hErr = np.asarray([np.sqrt(hBin/(detExp*xpb)) for hBin in hSpec]) # statistical error in each bin
 
     # calculate background index rate (smaller error if you use 1 keV bins)
-    idxR = np.where((x>=20) & (x<=40))
-    if xHi > 40:
-        hRate = np.sum(xpb * hSpec[idxR])/20
-        hRateUnc = np.sqrt(np.sum(np.square(hErr[idxR]))/20)
-        # print("Rate 20-40: %.5f ± %.5f" % (hRate, hRateUnc) )
-        # plt.close()
-        # plt.plot(x, hSpec, 'b', ls='steps', lw=2)
-        # plt.show()
+    idxR = np.where((x>=eMin) & (x<=eMax))
 
-        # calculate the efficiency corrected rate
-        idxE2 = np.where((xEff>=20) & (xEff <= 40))
-
-        # old version, wrong
-        # effCorr = 1 - 1 / ((xEff[1] - xEff[0]) * np.sum(detEff[idxE2]))
-        # hRateEff = hRate / effCorr
-        # hRateUnc = hRate * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR])) / effCorr
-        # hRateEffUnc = hRateUnc / effCorr
-
-        effCorr = ((xEff[1] - xEff[0]) * np.sum(thisEff[idxE2]))
-        hRateEff = effCorr * np.sum(xpb * hSpec[idxR])/ (eHi-eLo)
-        hRateUnc = hRateEff * np.sqrt(np.sum(hCts[idxR]))/(np.sum(hCts[idxR]))
-        hRateEffUnc = hRateUnc * effCorr
-
-        print("EC Rate 20-40: %.5f ± %.5f" % (hRateEff, hRateEffUnc) )
-
-        if rateMode:
-            return
+    # Only do this in rateMode
+    if xHi >= eMax and rateMode:
+        hSpecCorr = hSpec[:-1]/detEff[::int(len(detEff)/(len(hSpec)-1))]
+        hRate = np.sum(xpb * hSpec[idxR])/(eMax-eMin)
+        hRateUnc = np.sqrt(np.sum(np.square(hErr[idxR]))/(eMax-eMin))
+        hRateCorr = np.sum(xpb * hSpecCorr[idxR])/(eMax-eMin)
+        hRateCorrUnc = np.sqrt(np.sum(xpb*hCts[idxR]))/np.sum(xpb*hCts[idxR])*hRateCorr
+        # print("Rate %d-%d: %.5f ± %.5f, %.5f ± %.5f" % (eMin, eMax, hRate, hRateUnc, hRateCorr, hRateCorrUnc))
+        print("%d-%d & %.3f $\pm$ %.3f" % (eMin, eMax, hRateCorr, hRateCorrUnc))
+        return
 
     dsLabel = "DS%s--%s" % (dsList[0], dsList[-1]) if len(dsList) > 1 else "DS%s" % dsList[0]
     p1.plot(x, hSpec, 'b', ls='steps', lw=2, label="%s, %s" % (specLabel, dsLabel))
@@ -351,8 +326,8 @@ def spec_summary():
         # print(ds, cpdTmp)
         for ch in chTmp:
             cpd = det.getChanCPD(dsTmp,ch)
-            if type=="enr" and det.isEnr(cpd): cpdList.append(int(cpd))
-            if type=="nat" and not det.isEnr(cpd): cpdList.append(int(cpd))
+            if dtype=="enr" and det.isEnr(cpd): cpdList.append(int(cpd))
+            if dtype=="nat" and not det.isEnr(cpd): cpdList.append(int(cpd))
 
     cpdList = sorted(list(set(cpdList)))
 
@@ -360,8 +335,8 @@ def spec_summary():
     print("Rejected detectors:",rejectedDetectors)
 
     # if we check for the set, we don't plot detectors that have been completely killed by cuts from the good detector list
-    if type=="enr": cpdList = [cpd for cpd in cpdList if det.isEnr(cpd) and int(cpd) in set(hitCPD)]
-    if type=="nat": cpdList = [cpd for cpd in cpdList if not det.isEnr(cpd) and int(cpd) in set(hitCPD)]
+    if dtype=="enr": cpdList = [cpd for cpd in cpdList if det.isEnr(cpd) and int(cpd) in set(hitCPD)]
+    if dtype=="nat": cpdList = [cpd for cpd in cpdList if not det.isEnr(cpd) and int(cpd) in set(hitCPD)]
 
     cpdMap = {cpdList[i]:i for i in range(len(cpdList))}
     hitCPD = [ cpdMap[int("%d%d%d" % (hitC[i],hitP[i],hitD[i])) ] for i in range(n)]
@@ -386,7 +361,7 @@ def spec_summary():
     cb1.ax.set_ylabel('Counts', rotation=90)
     plt.tight_layout()
     # plt.show()
-    plt.savefig("./plots/lat-final%d-%s-DS%s-%d.pdf" % (pctTot, type, ''.join([str(d) for d in dsList]), xHi))
+    # plt.savefig("./plots/lat-final%d-%s-DS%s-%d.pdf" % (pctTot, dtype, ''.join([str(d) for d in dsList]), xHi))
 
 
 def thresh_cut_cal():
@@ -2476,7 +2451,37 @@ def rateCheckDet():
     plt.savefig("%s/plots/rates46.pdf" % dsi.latSWDir)
 
 
+def rateSummary():
+    """
+        Summary of rates for tables:
+        Uses spec_summary for dopeness
+    """
+    dsCombo = [
+        [0],
+        [1],
+        [2],
+        [3],
+        [4],
+        ["5A"],
+        ["5B"],
+        ["5C"],
+        [6],
+        [0,1,2,3,4,"5A","5B","5C",6],
+        [1,2,3,4,"5A","5B","5C"],
+        [1,2,3,4,"5A","5B","5C",6],
+        [1,2,3,4,"5B","5C",6]
+    ]
 
+    # Can't go all the way to 200 keV cuz of where I calculated the efficiencies
+    # I can probably extrapolate to 250 if we want rates to 250
+    eWindowList = [[2,5],[5,20],[20,40],[46,47],[50,100],[100,199]]
+    rateMode = True
+    for dsL in dsCombo:
+        print('DS',dsL)
+        for dtype in ['enr','nat']:
+            print('dtype',dtype)
+            for eWindow in eWindowList:
+                spec_summary(dsList=dsL, dtype=dtype, rateMode=rateMode, eMin=eWindow[0], eMax=eWindow[1])
 
 
 if __name__=="__main__":
