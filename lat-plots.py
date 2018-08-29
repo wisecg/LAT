@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 """
 ===================== lat-plots.py ======================
@@ -214,7 +215,7 @@ def spec_summary():
     # dsList = ["5B"]
     # dsList = ["5C"]
     # dsList = [0,1,2,3,4,"5A","5B","5C"]
-    dsList = [1,2,3,4,"5A","5B","5C"]
+    dsList = [1,2,3,4,"5A","5B","5C",6]
 
     # xLo, xHi, xpb = 0, 20, 0.1
     xLo, xHi, xpb = 0, 50, 0.2
@@ -225,13 +226,28 @@ def spec_summary():
 
     tt = TChain("skimTree")
     enrExp, natExp = 0, 0
+    # Change exposures to grab from the output file rather than from ROOT files
     for ds in dsList:
         inFile = "%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
         tf = TFile(inFile)
-        enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
-        natExp += float(tf.Get("natExp (kg-d)").GetTitle())
+        # enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
+        # natExp += float(tf.Get("natExp (kg-d)").GetTitle())
         tf.Close()
         tt.Add(inFile)
+
+    # load efficiency correction
+    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
+    xEff = f['arr_0']
+    totEnrEff, totNatEff = f['arr_1'].item(), f['arr_2'].item()
+    enrExpDict, natExpDict = f['arr_3'].item(), f['arr_4'].item()
+
+    detEff = np.zeros(len(xEff))
+    for ds in dsList:
+        enrExp += enrExpDict[ds]
+        natExp += natExpDict[ds]
+        if type=="enr": detEff += totEnrEff[ds]
+        if type=="nat": detEff += totNatEff[ds]
+
     if type=="enr":
         detExp = enrExp
         specLabel = "Enriched"
@@ -240,16 +256,6 @@ def spec_summary():
         specLabel = "Natural"
 
     print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
-
-    # load efficiency correction
-    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
-    xEff = f['arr_0']
-    totEnrEff, totNatEff = f['arr_1'].item(), f['arr_2'].item()
-
-    detEff = np.zeros(len(xEff))
-    for ds in dsList:
-        if type=="enr": detEff += totEnrEff[ds]
-        if type=="nat": detEff += totNatEff[ds]
 
     # normalize the efficiency
     effNorm = (np.amax(detEff)/365.25) / (detExp/365.25)
@@ -364,8 +370,13 @@ def spec_summary():
     p2.set_yticks(np.arange(0, len(cpdList))+0.5)
     p2.set_yticklabels(cpdList, fontsize=8)
 
-    cb1 = fig.colorbar(im1, ax=p2)
-
+    # Specially tuned colorbar parameters
+    # These numbers probably only work for this specific figure size
+    # cax = fig.add_axes([0.91, 0.11, 0.02, 0.35]) # For non-tight_layout
+    cax = fig.add_axes([0.895, 0.11, 0.015, 0.39])
+    cb1 = fig.colorbar(im1, cax=cax)
+    cb1.ax.get_yaxis().labelpad = 0
+    cb1.ax.set_ylabel('Counts', rotation=90)
     plt.tight_layout()
     # plt.show()
     plt.savefig("./plots/lat-final%d-%s-DS%s-%d.pdf" % (pctTot, type, ''.join([str(d) for d in dsList]), xHi))
