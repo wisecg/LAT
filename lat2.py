@@ -539,7 +539,7 @@ def setSloCut(pctTot):
     makePlots = True
     writeEffData = False
 
-    dsList = [0,1,2,3,4,5]
+    dsList = [0,1,2,3,4,5,6]
     # dsList = [1]
     detList = det.allDets
     detIDs = det.allDetIDs
