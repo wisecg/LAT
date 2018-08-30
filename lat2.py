@@ -1024,7 +1024,7 @@ def setRiseCut():
         calDB = db.TinyDB(dbFile)
         pars = db.Query()
 
-    dsList = [0,1,2,3,4,5]
+    dsList = [0,1,2,3,4,5,6]
     # dsList = [0]
 
     # loop over ds's, separated by cal key
@@ -1415,6 +1415,18 @@ def badRiseChans():
         1298:[4,5,6,7],     # "
         1330:[4,6,7,8],     # "
         1332:[4]            # "
+        }
+    removeList["ds6_m1"] = {
+        598:list(range(0, 48+1))     # threshold noise causes too much curvature (C1P5D2)
+        }
+    removeList["ds6_m2"] = {
+        1106:[1],                       # threshold noise causes too much curvature
+        1124:[1, 48],                   # "
+        1128:[1],                       # "
+        1170:[48],                      # "
+        1174:[1,48],                    # "
+        1232:[1],                       # "
+        1236:[1]                        # "
         }
 
     # load DB vals : {calIdx: {ch:[a,b,c99,c,fitPass] for ch in goodList} }}
