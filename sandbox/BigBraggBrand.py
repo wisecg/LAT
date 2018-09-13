@@ -75,10 +75,9 @@ nBurn = 1500 # Number of burn-in samples for the MCMC
 
 def main():
     # Save data into dataframe -- if this hasn't been done before
-    reduceData()
-    return
+    # reduceData()
+    # return
 
-    
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
@@ -94,7 +93,8 @@ def main():
     # Load Background data and bin exactly as PDF
     df = pd.read_hdf('{}/Bkg_Spectrum.h5'.format(inDir))
     df.sort_values(by=['UnixTime'], inplace=True)
-    dataArr = df.loc[:, ['Energy','UnixTime']].values
+    # Select Enriched detectors only, grab numpy array of the values
+    dataArr = df[['Energy', 'UnixTime']].loc[df['isEnr']==1].values
 
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
@@ -172,8 +172,8 @@ def main():
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
-    # backendDir = '{}/AveragedAxion_WithEff_4_18'.format(inDir)
-    backendDir = '{}/AveragedAxion_WithEffNorm'.format(inDir)
+    backendDir = '{}/AveragedAxion_Enr_4_18'.format(inDir)
+    # backendDir = '{}/AveragedAxion_Enr_WithEffNorm'.format(inDir)
     # trace = pm.backends.text.load(backendDir, model)
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
@@ -888,7 +888,7 @@ def reduceData():
     nEnergy = skimTree.GetV1()
     nCh = skimTree.GetV2()
     nTime = skimTree.GetV3()
-    nEnr = skimTree.GetV3()
+    nEnr = skimTree.GetV4()
     nChList = list(int(nCh[n]) for n in range(nPass))
     nEnergyList = list(float(nEnergy[n]) for n in range(nPass))
     nTimeList = list(int(nTime[n]) for n in range(nPass))
