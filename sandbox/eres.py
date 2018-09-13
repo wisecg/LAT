@@ -11,9 +11,9 @@ def main():
     plotRes()
 
     # check the Q value, you idiot
-    sig = getSigma_v2(2039, "5A", "enr")
-    fwhm = sig * 2.355
-    print(sig, fwhm)
+    # sig = getSigma_v2(2039, "5A", "enr")
+    # fwhm = sig * 2.355
+    # print(sig, fwhm)
 
 
 def getSigma(E, ds=None):
@@ -36,7 +36,7 @@ def getSigma(E, ds=None):
 
 
 def getSigma_v2(E, ds=None, opt=""):
-    """ HG resolutions, from the energy unidoc. They are given in terms of FWHM, but I want a single Gaussian width (sigma).
+    """ HG resolutions, from the energy unidoc. They are given in terms of SIGMA, even though the unidoc SAYS FWHM.  Dammit Pinghan!
     """
     eRes = {
         "0" :  {"nat": [1.260e-1, 1.790e-2, 2.370e-4], "enr": [1.500e-1, 1.750e-2, 2.820e-4], "both": [1.470e-1, 1.730e-2, 3.000e-4]},
@@ -46,7 +46,8 @@ def getSigma_v2(E, ds=None, opt=""):
         "4" :  {"nat": [2.140e-1, 1.540e-2, 3.970e-4], "enr": [2.170e-1, 1.490e-2, 3.190e-4], "both": [2.180e-1, 1.500e-2, 3.500e-4]},
         "5A" : {"nat": [2.248e-1, 1.894e-2, 2.794e-4], "enr": [2.660e-1, 2.215e-2, 2.868e-4], "both": [2.592e-1, 2.057e-2, 3.086e-4]},
         "5B" : {"nat": [1.650e-1, 1.760e-2, 2.828e-4], "enr": [1.815e-1, 1.705e-2, 3.153e-4], "both": [1.815e-1, 1.690e-2, 3.187e-4]},
-        "5C" : {"nat": [1.565e-1, 1.810e-2, 2.201e-4], "enr": [1.361e-1, 1.740e-2, 2.829e-4], "both": [1.519e-1, 1.718e-2, 2.762e-4]}
+        "5C" : {"nat": [1.565e-1, 1.810e-2, 2.201e-4], "enr": [1.361e-1, 1.740e-2, 2.829e-4], "both": [1.519e-1, 1.718e-2, 2.762e-4]},
+        "6"  : {"nat": [1.299e-1, 1.840e-2, 1.884e-4], "enr": [1.314e-1, 1.728e-2, 2.742e-4], "both": [1.419e-1, 1.728e-2, 2.589e-4]}
     }
     p = eRes[str(ds)][opt]
     return np.sqrt(p[0]**2 + p[1]**2 * E + p[2]**2 * E**2)
@@ -54,17 +55,22 @@ def getSigma_v2(E, ds=None, opt=""):
 
 def getExpo(ds):
 
-    f = np.load("%s/data/expo-totals-e95.npz"  % dsi.latSWDir)
-    dsExpo, detExpo = f['arr_0'].item(), f['arr_1'].item()
+    f = np.load("%s/data/expos_tot.npz" % dsi.latSWDir)
+    dsExpo = f['arr_0'].item()
     enrExp, natExp = dsExpo[ds][0], dsExpo[ds][1]
     return enrExp, natExp
+
+    # f = np.load("%s/data/expo-totals-e95.npz"  % dsi.latSWDir)
+    # dsExpo, detExpo = f['arr_0'].item(), f['arr_1'].item()
+    # enrExp, natExp = dsExpo[ds][0], dsExpo[ds][1]
+    # return enrExp, natExp
 
 
 def plotRes():
 
     fig, (p1, p2) = plt.subplots(1, 2, figsize=(9,5))
 
-    dsList = [0,1,2,3,4,"5A","5B","5C"]
+    dsList = [0,1,2,3,4,"5A","5B","5C",6]
 
     x = np.arange(0, 250, 0.01)
     resWEnr = np.zeros(len(x))

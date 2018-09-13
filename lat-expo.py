@@ -244,10 +244,10 @@ def getExposure():
     cutType = "fr"
     burstType = "frb"
 
-    dsList = [0,1,2,3,4,"5A","5B","5C",6]
+    # dsList = [0,1,2,3,4,"5A","5B","5C",6]
     # dsList = [1,2,3,4,"5A","5B","5C"]
     # dsList = [1,2,3,4,"5B"]
-    # dsList = [0]
+    dsList = [0]
 
     # output
     dsExpo = {} # {ds: [dsEnrExp, dsNatExp]}
