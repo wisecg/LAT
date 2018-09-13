@@ -36,7 +36,7 @@ class GPXFitter {
 		virtual ~GPXFitter();
 
         // Constructs model PDF -- MUST be called after LoadData()!
-        virtual void ConstructPDF(bool bNoEff = false);
+        virtual void ConstructPDF(bool bNoEff = false, bool bWFMode = false);
 
         // Do the fit
         // Set minimizer type here also... there's like Minuit, Minuit2, probably more
@@ -122,7 +122,10 @@ class GPXFitter {
 				// Exposure Map
 				std::map<std::string, std::vector<double>> fExposureMap;
 
-        // Energy
+				// Efficiency Scaling Map
+				std::map<std::string, double> fEffMap;
+
+				// Energy
         RooRealVar *fEnergy;
 				RooFormulaVar *fEnergyShift;
 
@@ -140,6 +143,8 @@ class GPXFitter {
 				// RooAbsPdf *fModelPDFFinal;
 				// RooEffProd *fModelPDFFinal;
     	  TH1D *fEffSpec;
+				bool bCustomEff;
+				bool fWFMode;
 
         // Minimizer
         RooMinimizer *fMinimizer;

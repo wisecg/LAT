@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
 # sns.set(style='darkgrid')
-plt.style.use('../pltReports.mplstyle')
+# plt.style.use('../pltReports.mplstyle')
 
 # load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
@@ -33,9 +33,9 @@ def main():
 
     # Create files with hits
     # getSpecPandas()
-    # getSimPandas()
+    getSimPandas()
     # loadSpec()
-    loadFraction()
+    # loadFraction()
     # plotFraction()
     # plotComptonEdge()
     return
@@ -255,30 +255,30 @@ def getSpecPandas(dsNum):
     import warnings
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
 
-	chunksize = 100000
-	start = 0
-	end = chunksize-1
-	i = 0
-	# for i in len(df):
-	if df.shape[0] > end:
-		while end < df.shape[0]:
-			chunk = df.iloc[start:end]
-			try:
-				print('Writing to: ', '{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i))
-				chunk.to_hdf('{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i), key='skimTree',
+    chunksize = 100000
+    start = 0
+    end = chunksize-1
+    i = 0
+    # for i in len(df):
+    if df.shape[0] > end:
+        while end < df.shape[0]:
+            chunk = df.iloc[start:end]
+            try:
+                print('Writing to: ', '{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i))
+                chunk.to_hdf('{}/DS{}_Cal_HitData_{}.h5'.format(outDir,dsNum,i), key='skimTree',
                 format='table', mode='w', complevel=9)
-			except (Exception) as e:
-				print (e)
-				print (chunk)
-				print (chunk.info())
-			start += chunksize
-			end += chunksize
-			i += 1
-	else:
+            except (Exception) as e:
+                print (e)
+                print (chunk)
+                print (chunk.info())
+            start += chunksize
+            end += chunksize
+            i += 1
+    else:
         df.to_hdf('DS{}_Cal_HitData_0.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
 
 
-def getSimPandas():
+def getSimPandas(mod=1):
     """
         Get sum and hit events from simulation data
         Here we use the same thresholds and channel selection as the data to be consistent:
@@ -287,9 +287,9 @@ def getSimPandas():
     """
     from ROOT import TFile, TTree
     # inDir = '/projecta/projectdirs/majorana/sim/MJDG41003GAT/MJDemonstrator/linesource/M1CalSource/A224_Z88'
-    inDir = '/mnt/mjdDisk1/Majorana/users/psz/MAGE/Processed/5M'
+    inDir, outDir = '/mnt/mjdDisk1/Majorana/users/psz/MAGE/Processed/5M', '/mnt/mjdDisk1/Majorana/users/psz/LAT/data'
     inPath = pathlib.Path(inDir)
-    files = inPath.glob('processed_M1CalSource_A224_Z88_p*.root')
+    files = inPath.glob('DS5_processed_M{}CalSource_A224_Z88_p*.root'.format(mod))
     fileList = []
 
     fileList.extend([str(f) for f in files]) # Because ROOT doesn't play nice with python paths
@@ -352,27 +352,27 @@ def getSimPandas():
     import warnings
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
 
-	chunksize = 100000
-	start = 0
-	end = chunksize-1
-	i = 0
-	# for i in len(df):
-	if df.shape[0] > end:
-		while end < df.shape[0]:
-			chunk = df.iloc[start:end]
-			try:
-				print('Writing to: ', '{}/{}_{}.h5'.format(outDir,inFileName.split('.')[0],i))
-				chunk.to_hdf('{}/{}_{}.h5'.format(outDir,inFileName.split('.')[0],i), key='skimTree',
+    chunksize = 1000000
+    start = 0
+    end = chunksize-1
+    i = 0
+    # for i in len(df):
+    if df.shape[0] > end:
+        while end < df.shape[0]:
+            chunk = df.iloc[start:end]
+            try:
+                print('Writing to: ', '{}/DS5_M1_SimHitData_{}.h5'.format(outDir, i))
+                chunk.to_hdf('{}/DS5_M1_SimHitData_{}.h5'.format(outDir, i), key='skimTree',
                 format='table', mode='w', complevel=9)
-			except (Exception) as e:
-				print (e)
-				print (chunk)
-				print (chunk.info())
-			start += chunksize
-			end += chunksize
-			i += 1
-	else:
-        df.to_hdf('DS{}_Sim_HitData.h5'.format(dsNum), key='skimTree', format = 'table', mode = 'w', complevel=9)
+            except (Exception) as e:
+                print (e)
+                print (chunk)
+                print (chunk.info())
+            start += chunksize
+            end += chunksize
+            i += 1
+    else:
+        df.to_hdf('DS5_M1_SimHitData_0.h5', key='skimTree', format = 'table', mode = 'w', complevel=9)
 
 def loadSpec():
     """

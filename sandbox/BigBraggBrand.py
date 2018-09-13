@@ -75,7 +75,10 @@ nBurn = 1500 # Number of burn-in samples for the MCMC
 
 def main():
     # Save data into dataframe -- if this hasn't been done before
-    # reduceData()
+    reduceData()
+    return
+
+    
     pdfArrDict, pdfFlatDict = {}, {}
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
@@ -880,16 +883,18 @@ def reduceData():
     skimTree.Add("{}/final95_DS5C.root".format(inDir))
     skimTree.Add("{}/final95_DS6.root".format(inDir))
     theCut = "trapENFCal > 2.4 && trapENFCal < 50"
-    nPass = skimTree.Draw('trapENFCal:channel:globalTime', theCut, 'goff')
+    nPass = skimTree.Draw('trapENFCal:channel:globalTime:isEnr', theCut, 'goff')
     print ("{} events passed all cuts".format(nPass))
     nEnergy = skimTree.GetV1()
     nCh = skimTree.GetV2()
     nTime = skimTree.GetV3()
+    nEnr = skimTree.GetV3()
     nChList = list(int(nCh[n]) for n in range(nPass))
     nEnergyList = list(float(nEnergy[n]) for n in range(nPass))
     nTimeList = list(int(nTime[n]) for n in range(nPass))
+    nEnrList = list(int(nEnr[n]) for n in range(nPass))
 
-    df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList})
+    df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList, 'isEnr':nEnrList})
     print(df.head(10))
     df.to_hdf('{}/Bkg_Spectrum.h5'.format(outDir), 'skimTree', mode='w', format='table')
 
