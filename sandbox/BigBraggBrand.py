@@ -19,7 +19,7 @@
 
 """
 
-import os, imp, time
+import sys, os, imp, time
 import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
@@ -42,15 +42,15 @@ inDir = os.environ['LATDIR']+'/data/MCMC'
 dsList = ['5B', '5C', '6']
 # dsList = ['5B']
 
+# Set initial seed number here
 seedNum = 1
+
 # Energy range (also defines fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
 # energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
 energyThresh, energyThreshMax, binSize = 4.0, 18.0, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
-
-bDebug, bDrawPDF = True, False
 
 # The start and end time are for DS5b
 startTime = 1485575988
@@ -72,23 +72,52 @@ totExposure = 2621.72447852 # DS5b, DS5c, DS6
 yearInSec = 31536000 # Number of seconds in 1 year
 nBurn = 1500 # Number of burn-in samples for the MCMC
 
+def main(argv):
 
-def main():
-    # Save data into dataframe -- if this hasn't been done before
-    # reduceData()
-    # return
-
+    bDebug, bDrawPDF, bDiagnostic = False, False, False
+    bSample, bFull = True, True
+    axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
 
+    if len(argv)==0: return
+    for i,opt in enumerate(argv):
+        if opt == '-reduce':
+            # Save data into dataframe -- if this hasn't been done before -- exits immediately afterwards
+            print('Converting ROOT data into DataFrame -- this only needs to be done once!')
+            reduceData()
+            return
+        if opt == '-seed':
+            seedNum = int(argv[i+1])
+            print('Setting seed to: {}'.format(seedNum))
+        if opt == '-debug':
+            bDebug = True
+            print('Debug mode ON!')
+        if opt == '-drawPDF':
+            bDrawPDF = True
+            print('Drawing PDFs only!')
+        if opt == '-diagnostic':
+            bDiagnostic = True
+            print('Generating Model Diagnostics, MCMC chain needs to be sampled!')
+        if opt == '-noaxion':
+            bFull = False
+            print('Building Model without Axion PDF!')
+        if opt == '-nosample':
+            bSample = False
+            print('MCMC Sampling OFF')
+        if opt == '-setaxionbinsize':
+            axionBinSize = int(argv[i+1])
+            print('Setting axion bin size to be {} minutes'.format(axionBinSize))
+
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize = axionBinSize)
+
+    # Normalize Axion PDF by maximum (this is arbitrary for simplifying the sampling)
+    AxionNorm = (np.amax(AxionArr))
+    pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     print('Generated Axion PDF')
     print('Axion Integral:', AxionArr.sum())
-    AxionNorm = (np.amax(AxionArr))
-    # Normalize Axion
     print('Axion Normalization Constant: {}'.format(AxionNorm))
-    pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     # Load Background data and bin exactly as PDF
     df = pd.read_hdf('{}/Bkg_Spectrum.h5'.format(inDir))
@@ -96,20 +125,25 @@ def main():
     # Select Enriched detectors only, grab numpy array of the values
     dataArr = df[['Energy', 'UnixTime']].loc[df['isEnr']==1].values
 
+    # Bin the data into a 2D histogram -- here we use the exact time bin edges of the axion PDF to make sure everything is binned properly
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
     # NOTE: We may want to use 0.2 keV bins, the difference may not be noticeable and the
+    # NOTE: I can probably just generate this into 0.1 keV bins at some point but I've been lazy...
     dfTrit = pd.read_hdf('{}/TritSpec.h5'.format(inDir))
     tritEnergy = dfTrit['Energy'].values
     tritSpec = dfTrit['Tritium'].values
-    tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec]) # Get rid of negative values
+    # The tritium calculation has some slightly negative values around 0 (fluctuations), get rid of them!
+    tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec])
     tritInterp = interp1d(tritEnergy, tritSpec, fill_value='extrapolate')
     tritList = [tritInterp(x) for x in energyBins[:-1]]
     pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*effMask
     pdfArrDict['Bkg'] = np.ones(pdfArrDict['Axion'].shape)*effMask
 
-    meansDict = {'Fe55':6.50, 'Zn65':8.98, 'Ge68':10.37} # Fe55 is slightly shifted from 6.54
+    # Generate the Gaussian PDFs
+    # Fe55 is slightly shifted from 6.54 -- Perhaps should introduce as a constraint of some sort
+    meansDict = {'Fe55':6.50, 'Zn65':8.98, 'Ge68':10.37}
     gausDict = generateGaus(energyBins[:-1], meansDict)
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
@@ -118,7 +152,8 @@ def main():
     # Create a matrix for energy bin center values -- this was used for efficiency sampling within the model
     # pdfArrDict.setdefault('Energy', np.array((energyBins[:-1]+binSize/2).tolist()*nTimeBins).reshape(nTimeBins, len(energyBins[:-1]) ).T)
 
-    # Remove columns with zeros
+    # Remove columns with zeros -- the zeros are from the times when there is no data-taking
+    # This will considerably reduce the DOF and speed up the sampling
     pdfArrDict['Axion'] = np.delete(pdfArrDict['Axion'], removeMask, axis=1)
     pdfArrDict['Data'] = np.delete(pdfArrDict['Data'], removeMask, axis=1)
     pdfArrDict['Tritium'] = np.delete(pdfArrDict['Tritium'], removeMask, axis=1)
@@ -130,16 +165,18 @@ def main():
     # pdfArrDict['Energy'] = np.delete(pdfArrDict['Energy'], removeMask, axis=1)
     effNorm = np.delete(effNorm, removeMask, axis=1)
 
-    # Save axion arr separately for diagnostics
+    # Save un-normalized axion matrix separately for diagnostics
     AxionArr = np.delete(AxionArr, removeMask, axis=1)
 
     print('Generated all PDFs')
+    if bDebug:
+        print("Data Shape", pdfArrDict['Data'].shape)
+        print("Axion Shape", pdfArrDict['Axion'].shape)
+
     # Draw PDFs
-    print("Data Shape", pdfArrDict['Data'].shape)
-    print("Axion Shape", pdfArrDict['Axion'].shape)
-    return
     if bDrawPDF:
         drawPDFs(pdfArrDict)
+        return
 
     # Flatten 2D arrays into 1D
     pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
@@ -164,24 +201,26 @@ def main():
     if bDebug:
         for key in pdfFlatDict:
             print('Flattend {} shape: '.format(key), pdfFlatDict[key].shape)
-    print('Flattened all PDFs')
+            print('Flattened all PDFs')
 
-    model = constructModel(pdfFlatDict, energyBins)
+    model = constructModel(pdfFlatDict, energyBins, bFull = bFull)
     print('Built model(s)')
 
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
     backendDir = '{}/AveragedAxion_Enr_4_18'.format(inDir)
-    # backendDir = '{}/AveragedAxion_Enr_WithEffNorm'.format(inDir)
     # trace = pm.backends.text.load(backendDir, model)
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
-    modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
-
     # Sample Here
-    # with model:
-        # db = pm.backends.Text(backendDir)
-        # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+    if bSample:
+        with model:
+            db = pm.backends.Text(backendDir)
+            trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+
+    # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
+    if bDiagnostic:
+        modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
 
     # dfSum = pm.summary(trace[nBurn:], alpha=0.1)
     # print(dfSum.head())
@@ -192,10 +231,13 @@ def main():
 class ErrorFnc(pm.Continuous):
     """
         Custom Error Function distribution for pymc3
+        This is for efficiency/uncertainty sampling
+        Not currently used
     """
     def __init__(self, mu, sd, *args, **kwargs):
         self._mu = tt.as_tensor_variable(mu)
         self._sd = tt.as_tensor_variable(sd)
+        # Inherit all the arguments from pm.Continuous
         super(ErrorFnc, self).__init__(*args, **kwargs)
 
     def logp(self, value):
@@ -205,8 +247,7 @@ class ErrorFnc(pm.Continuous):
         return tt.log( 0.5 + (1.+ tt.erf(value-mu)/(sigma*tt.sqrt(2))))
 
 
-
-def constructModel(pdfDict, energyBins, bFull = True):
+def constructModel(pdfDict, energyBins, bFull=True):
     """
         Construct pymc3 model, possibility to create a null hypothesis if bFull is False (no axion signal)
     """
@@ -263,12 +304,8 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
         - For the fit, rescale the eff*exp*axion pdf by maximum value in the PDF = Counts/Norm
         - After the fit, integrate scaled PDF
 
-        Convert to Lambda:
-            1) Get Integral of number of events from 90 CI from axion PDF with efficiency*exposure
-            2) Get Integral of number of events from axion pdf with efficiency*exposure (lambda = 1)
-            3) Take the ratio of them to get a limit on lambda
-
     """
+
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
     fAxion = ROOT.TFile('{}/Axion_averaged_MJD_reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
@@ -900,4 +937,4 @@ def reduceData():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
