@@ -41,10 +41,6 @@ det = dsi.DetInfo()
 inDir = os.environ['LATDIR']+'/data/MCMC'
 dsList = ['5B', '5C', '6']
 # dsList = ['5B']
-
-# Set initial seed number here
-seedNum = 1
-
 # Energy range (also defines fitting range!)
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
@@ -75,11 +71,23 @@ nBurn = 1500 # Number of burn-in samples for the MCMC
 def main(argv):
 
     bDebug, bDrawPDF, bDiagnostic = False, False, False
-    bSample, bFull = True, True
+    bSample, bFull = False, True
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
+    # Set initial seed number here
+    seedNum = 1
 
-    if len(argv)==0: return
+    if len(argv)==0:
+        print("BigBraggBrand Run Options:")
+        print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
+        print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
+        print("\t -debug: Turns on debug mode, more output/plots")
+        print("\t -drawPDF: Only draws the PDFs")
+        print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
+        print("\t -noaxion: Builds model without Axion signal")
+        print("\t -sample: Turns on MCMC sampling")
+        print("\t -setbinsize: Sets axion bin size (default 5 minutes)")
+        return
     for i,opt in enumerate(argv):
         if opt == '-reduce':
             # Save data into dataframe -- if this hasn't been done before -- exits immediately afterwards
@@ -101,10 +109,10 @@ def main(argv):
         if opt == '-noaxion':
             bFull = False
             print('Building Model without Axion PDF!')
-        if opt == '-nosample':
-            bSample = False
-            print('MCMC Sampling OFF')
-        if opt == '-setaxionbinsize':
+        if opt == '-sample':
+            bSample = True
+            print('MCMC Sampling ON')
+        if opt == '-setbinsize':
             axionBinSize = int(argv[i+1])
             print('Setting axion bin size to be {} minutes'.format(axionBinSize))
 
@@ -209,14 +217,15 @@ def main(argv):
     # print(trace['Axion'])
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
-    backendDir = '{}/AveragedAxion_Enr_4_18'.format(inDir)
+    backendDir = '{}/AveragedAxion_Enr_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
     # trace = pm.backends.text.load(backendDir, model)
     # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
     # Sample Here
     if bSample:
         with model:
             db = pm.backends.Text(backendDir)
-            trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+            # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
+            trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True, trace=db)
 
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
