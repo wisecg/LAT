@@ -66,7 +66,7 @@ totExposure = 2621.72447852 # DS5b, DS5c, DS6
 # endTime = 1514678400 # End of 2017
 # endTime = 1546300800 # End of 2018
 yearInSec = 31536000 # Number of seconds in 1 year
-nBurn = 1500 # Number of burn-in samples for the MCMC
+nBurn = 1000 # Number of burn-in samples for the MCMC
 
 def main(argv):
 
@@ -815,8 +815,8 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
     # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
-    # pm.traceplot(trace[nBurn:])
-    # pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
+    pm.traceplot(trace[nBurn:])
+    pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
     # pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
     # traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
@@ -830,7 +830,7 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     # pm.autocorrplot(trace[nBurn:], max_lag=100)
     # print(pm.autocorr(trace[nBurn:]))
     # pm.densityplot(trace[nBurn:])
-    # plt.show()
+    plt.show()
 
 
 def posteriorChecks(model, trace):
