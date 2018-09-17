@@ -58,10 +58,12 @@ startTime = 1485575988
 
 # The start and end time are for DS5a
 # startTime = 1494535909
-endTime = 1523845062 # DS6a
+endTime = 1523845062 # DS6a end day (April 16th 2018)
 
+# This is for calculating stuff... that I haven't set yet
 totExposure = 2621.72447852 # DS5b, DS5c, DS6
-# Fake start times
+
+# Fake start times for testing
 # startTime = 1483228800
 # endTime = 1514678400 # End of 2017
 # endTime = 1546300800 # End of 2018
@@ -112,7 +114,7 @@ def main(argv):
             print('MCMC Sampling ON')
         if opt == '-setbinsize':
             axionBinSize = int(argv[i+1])
-            print('Setting axion bin size to be {} minutes'.format(axionBinSize))
+            print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
     AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize = axionBinSize)
@@ -346,7 +348,7 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
     timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(tBin)
                         for tBin in range(hday.GetNbinsX())
                         if tBin >= startBin and tBin <= endBin+1]
-
+    # Here is if we extend the PDF beyond 1 year
     if debug and bRepeat:
         print('Axion PDF Gap Extension (should be binsize):', timeBinLowEdge[-1], hday.GetXaxis().GetBinLowEdge(0)+yearInSec)
     if bRepeat:
@@ -962,7 +964,7 @@ def help_options():
     print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
     print("\t -noaxion: Builds model without Axion signal")
     print("\t -sample: Turns on MCMC sampling")
-    print("\t -setbinsize: Sets axion bin size (default 5 minutes)")
+    print("\t -setbinsize: Sets axion bin size (Default/RECOMMENDED 5 minutes)")
     return
 
 
