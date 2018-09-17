@@ -28,7 +28,7 @@ import theano.tensor as tt
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import pandas as pd
-sns.set(style='darkgrid', context='talk')
+sns.set(style='darkgrid')
 
 wl = imp.load_source('waveLibs', '{}/waveLibs.py'.format(os.environ['LATDIR']))
 dsi = imp.load_source('dsi', '{}/dsi.py'.format(os.environ['LATDIR']))
@@ -45,8 +45,8 @@ dsList = ['5B', '5C', '6']
 # Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
 # Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
 # energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
-energyThresh, energyThreshMax, binSize = 4.0, 18.0, 0.1
-energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/0.1)+1)
+energyThresh, energyThreshMax, binSize = 4.0, 20.0, 0.1
+energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/binSize)+1)
 
 # The start and end time are for DS5b
 startTime = 1485575988
@@ -357,7 +357,9 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
     # Total bins is 1 less than the array length of timeBinLowEdge
     nTimeBins = len(timeBinLowEdge)-1
 
-    for energyBin in range(hday.GetNbinsY()):
+    # Loop through energy bins, grabbing the bin content of each bin and filling into matrix
+    # For the loop, start with 1 and go through NbinsY+1 -- this allows for a range up to 20 keV in the fit
+    for energyBin in range(1, hday.GetNbinsY()+1):
         # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
         if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) < energyThresh: continue
         if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) > energyThreshMax-0.1: continue
@@ -461,14 +463,14 @@ def drawFinalSpectra(pdfDict, trace):
         totalSpec += tempSpec
 
     axSpec.plot(energyBins[:-1], totalSpec, label='Total Model')
-    axSpec.set_title('DS5b, 5c, 6a Enriched + Natural')
+    axSpec.set_title('DS5b, 5c, 6a Enriched')
     axSpec.set_ylabel('Counts/0.1 keV')
     axSpec.set_xlabel('Energy (keV)')
     axSpec.legend()
     plt.tight_layout()
 
     axTime.plot(timeBins, totalTime, label='Total Model')
-    axTime.set_title('DS5b, 5c, 6a Enriched + Natural')
+    axTime.set_title('DS5b, 5c, 6a Enriched')
     axTime.set_ylabel('Counts/(140 min)')
     axTime.set_xlabel('Time')
     axTime.locator_params(axis='x', nbins=len(timeBins)/250) # Draw fewer ticks
@@ -495,7 +497,7 @@ def drawFinalSpectra(pdfDict, trace):
 
     sns.heatmap(Data2D, ax=ax2D1)
     ax2D1.invert_yaxis()
-    ax2D1.set_title('DS5b, 5c, 6a Enriched + Natural (Data)')
+    ax2D1.set_title('DS5b, 5c, 6a Enriched (Data)')
     ax2D1.set_ylabel('Energy (keV)')
     ax2D1.locator_params(axis='x', nbins=len(timeBinsD[::250])) # Draw fewer ticks
     ax2D1.locator_params(axis='y', nbins=len(energyBins[::20])) # Draw fewer ticks
@@ -554,7 +556,7 @@ def drawPDFs(pdfArrDict):
     ax1[1,0].locator_params(axis='y', nbins=len(energyBins[::50]))
     ax1[1,0].locator_params(axis='x', nbins=5)
     ax1[1,0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
-    ax1[1,0].set_xticklabels(timeLabels, rotation=50)
+    ax1[1,0].set_xticklabels(timeLabels, rotation=30)
 
     sns.heatmap(pdfArrDict['Zn65'], ax=ax1[1,1])
     ax1[1,1].set_title('Zn65 PDF')
@@ -562,7 +564,7 @@ def drawPDFs(pdfArrDict):
     ax1[1,1].invert_yaxis()
     ax1[1,1].locator_params(axis='x', nbins=5)
     ax1[1,1].set_yticklabels([])
-    ax1[1,1].set_xticklabels(timeLabels, rotation=50)
+    ax1[1,1].set_xticklabels(timeLabels, rotation=30)
 
     sns.heatmap(pdfArrDict['Ge68'], ax=ax1[1,2])
     ax1[1,2].set_title('Ge68 PDF')
@@ -570,11 +572,11 @@ def drawPDFs(pdfArrDict):
     ax1[1,2].invert_yaxis()
     ax1[1,2].locator_params(axis='x', nbins=5)
     ax1[1,2].set_yticklabels([])
-    ax1[1,2].set_xticklabels(timeLabels, rotation=50)
+    ax1[1,2].set_xticklabels(timeLabels, rotation=30)
 
     plt.tight_layout()
 
-    fig1.savefig('{}/BraggFitPDF_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
+    # fig1.savefig('{}/BraggFitPDF_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
 
     fig2, ax2 = plt.subplots(figsize=(10,7))
     sns.heatmap(pdfArrDict['Axion'], ax=ax2)
@@ -587,7 +589,7 @@ def drawPDFs(pdfArrDict):
     ax2.set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
     ax2.set_xticklabels(timeLabels, rotation=30)
     plt.tight_layout()
-    fig2.savefig('{}/BraggAxion_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
+    # fig2.savefig('{}/BraggAxion_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
     plt.show()
 
 
