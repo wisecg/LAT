@@ -70,7 +70,7 @@ nBurn = 1000 # Number of burn-in samples for the MCMC
 
 def main(argv):
 
-    bDebug, bDrawPDF, bDiagnostic = False, False, False
+    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra = False, False, False, False
     bSample, bFull = False, True
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
@@ -78,17 +78,12 @@ def main(argv):
     seedNum = 1
 
     if len(argv)==0:
-        print("BigBraggBrand Run Options:")
-        print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
-        print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
-        print("\t -debug: Turns on debug mode, more output/plots")
-        print("\t -drawPDF: Only draws the PDFs")
-        print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
-        print("\t -noaxion: Builds model without Axion signal")
-        print("\t -sample: Turns on MCMC sampling")
-        print("\t -setbinsize: Sets axion bin size (default 5 minutes)")
+        help_options()
         return
     for i,opt in enumerate(argv):
+        if opt == '-h' or opt == '--help':
+            help_options()
+            return
         if opt == '-reduce':
             # Save data into dataframe -- if this hasn't been done before -- exits immediately afterwards
             print('Converting ROOT data into DataFrame -- this only needs to be done once!')
@@ -103,6 +98,9 @@ def main(argv):
         if opt == '-drawPDF':
             bDrawPDF = True
             print('Drawing PDFs only!')
+        if opt == '-drawSpectra':
+            bFinalSpectra = True
+            print('Drawing Final Spectra! MCMC chain must be sampled!')
         if opt == '-diagnostic':
             bDiagnostic = True
             print('Generating Model Diagnostics, MCMC chain needs to be sampled!')
@@ -218,8 +216,7 @@ def main(argv):
     # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
     # print(dfTrace.head())
     backendDir = '{}/AveragedAxion_Enr_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
-    # trace = pm.backends.text.load(backendDir, model)
-    # drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
+
     # Sample Here
     if bSample:
         with model:
@@ -230,6 +227,10 @@ def main(argv):
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
         modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
+
+    if bFinalSpectra:
+        trace = pm.backends.text.load(backendDir, model)
+        drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
 
     # dfSum = pm.summary(trace[nBurn:], alpha=0.1)
     # print(dfSum.head())
@@ -943,6 +944,24 @@ def reduceData():
     df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList, 'isEnr':nEnrList})
     print(df.head(10))
     df.to_hdf('{}/Bkg_Spectrum.h5'.format(outDir), 'skimTree', mode='w', format='table')
+
+
+def help_options():
+    """
+        Prints the different options
+    """
+    print("BigBraggBrand Run Options:")
+    print("\t -h or --help: Prints this help message")
+    print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
+    print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
+    print("\t -debug: Turns on debug mode, more output/plots")
+    print("\t -drawPDF: Only draws the PDFs")
+    print("\t -drawSpectra: Draws final spectra, MCMC chain needs to be sampled")
+    print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
+    print("\t -noaxion: Builds model without Axion signal")
+    print("\t -sample: Turns on MCMC sampling")
+    print("\t -setbinsize: Sets axion bin size (default 5 minutes)")
+    return
 
 
 if __name__ == '__main__':
