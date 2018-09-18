@@ -45,7 +45,7 @@ def main():
     # plot_ext_pulser()
     # plot_tOffset()
     # plot_riseNoise()
-    # fitSlo_efficiency_uncertainty()
+    fitSlo_efficiency_uncertainty()
     # rateCheckDS()
     # rateCheckDet()
     # rateSummary()
@@ -2014,8 +2014,8 @@ def fitSlo_efficiency_uncertainty():
     Keys: fitSlo_cpd_effLo95 = {cpd : [-1, -1, ampLo, cLo, locLo, scLo, ampELo, cELo, locELo, scELo]}
           fitSlo_cpd_effHi95 = {cpd : [-1, -1, ampHi, cHi, locHi, scHi, ampEHi, cEHi, locEHi, scEHi]}
     """
-    makePlots = False
-    writeDB = True
+    makePlots = True
+    writeDB = False
 
     from statsmodels.stats import proportion
     from scipy.optimize import curve_fit
