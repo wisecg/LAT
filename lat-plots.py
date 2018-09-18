@@ -48,7 +48,8 @@ def main():
     # fitSlo_efficiency_uncertainty()
     # rateCheckDS()
     # rateCheckDet()
-    rateSummary()
+    # rateSummary()
+    check_spec()
 
 
 def spec():
@@ -2482,6 +2483,121 @@ def rateSummary():
             print('dtype',dtype)
             for eWindow in eWindowList:
                 spec_summary(dsList=dsL, dtype=dtype, rateMode=rateMode, eMin=eWindow[0], eMax=eWindow[1])
+
+
+def check_spec(dsList=None, dtype='enr', rateMode=False, eMin=20, eMax=40):
+    from ROOT import TFile, TChain, TTree
+
+    dtype='enr'
+
+    if eMin < 1:
+        print('Cannot currently calculate rates below 1 keV, setting minimum to 1 keV')
+        eMin = 1
+
+    if not dsList:
+        dsList = [1,2,3,4,"5A","5B","5C",6]
+
+    # xLo, xHi, xpb = 0, 200, 0.4
+    xLo, xHi, xpb = 130, 160, 0.2
+    # xLo, xHi, xpb = 20, 50, 0.2
+    fName = "./plots/lat-ds6-spec-%s-%d-%d.pdf" % (dtype, xLo, xHi)
+    legLoc = 2
+
+    tt = TChain("skimTree")
+    enrExp, natExp = 0, 0
+    # Change exposures to grab from the output file rather than from ROOT files
+    for ds in dsList:
+        inFile = "%s/bkg/cut/final%dt/final%dt_DS%s.root" % (dsi.dataDir, pctTot, pctTot, ds)
+        tf = TFile(inFile)
+        # enrExp += float(tf.Get("enrExp (kg-d)").GetTitle())
+        # natExp += float(tf.Get("natExp (kg-d)").GetTitle())
+        tf.Close()
+        tt.Add(inFile)
+
+    # load efficiency correction
+    f = np.load("./data/lat-expo-efficiency-all-e%d.npz" % pctTot)
+    xEff = f['arr_0']
+    totEnrEff, totNatEff = f['arr_1'].item(), f['arr_2'].item()
+    enrExpDict, natExpDict = f['arr_3'].item(), f['arr_4'].item()
+
+    detEff = np.zeros(len(xEff))
+    for ds in dsList:
+        enrExp += enrExpDict[ds]
+        natExp += natExpDict[ds]
+        if dtype=="enr": detEff += totEnrEff[ds]
+        if dtype=="nat": detEff += totNatEff[ds]
+
+    if dtype=="enr":
+        detExp = enrExp
+        specLabel = "Enriched"
+    if dtype=="nat":
+        detExp = natExp
+        specLabel = "Natural"
+
+    if not rateMode: print("%s Exp: %.2f, ds" % (specLabel, detExp/365.25), dsList)
+
+    # normalize the efficiency
+    effNorm = (np.amax(detEff)/365.25) / (detExp/365.25)
+    detEff = effNorm * np.divide(detEff, np.amax(detEff))
+    idxE = np.where((xEff <= xHi) & (xEff >= xLo))
+    xEff, detEff = xEff[idxE], detEff[idxE]
+
+    # make the plot!
+    # fig, (p1, p2) = plt.subplots(2,1, figsize=(8,7))
+    fig, p1 = plt.subplots(1,1, figsize=(8,5))
+
+    # ==== 1. energy spectrum ====
+
+    if dtype=="enr": tCut = "isEnr"
+    if dtype=="nat": tCut = "!isEnr"
+
+    n = tt.Draw("trapENFCal",tCut,"goff")
+    hitE = tt.GetV1()
+    hitE = [hitE[i] for i in range(n)]
+    x, hCts = wl.GetHisto(hitE, xLo, xHi, xpb, shift=False)
+
+    hSpec = np.divide(hCts, detExp * xpb) # scale by exposure and binning to get cts/(keV kg d)
+    hErr = np.asarray([np.sqrt(hBin/(detExp*xpb)) for hBin in hSpec]) # statistical error in each bin
+
+    # calculate background index rate (smaller error if you use 1 keV bins)
+    idxR = np.where((x>=eMin) & (x<=eMax))
+
+    # Only do this in rateMode
+    if xHi >= eMax and rateMode:
+        hSpecCorr = hSpec[:-1]/detEff[::int(len(detEff)/(len(hSpec)-1))]
+        hRate = np.sum(xpb * hSpec[idxR])/(eMax-eMin)
+        hRateUnc = np.sqrt(np.sum(np.square(hErr[idxR]))/(eMax-eMin))
+        hRateCorr = np.sum(xpb * hSpecCorr[idxR])/(eMax-eMin)
+        hRateCorrUnc = np.sqrt(np.sum(xpb*hCts[idxR]))/np.sum(xpb*hCts[idxR])*hRateCorr
+        # print("Rate %d-%d: %.5f ± %.5f, %.5f ± %.5f" % (eMin, eMax, hRate, hRateUnc, hRateCorr, hRateCorrUnc))
+        print("%d-%d & %.3f $\pm$ %.3f" % (eMin, eMax, hRateCorr, hRateCorrUnc))
+        return
+
+    dsLabel = "DS%s--%s" % (dsList[0], dsList[-1]) if len(dsList) > 1 else "DS%s" % dsList[0]
+    p1.plot(x, hSpec, 'b', ls='steps', lw=2, label="%s, %s" % (specLabel, dsLabel))
+
+    p1.plot(np.nan, np.nan, '--r', alpha=0.8, lw=2, label="Eff, %.2f%% at %d keV" % (effNorm*100, xHi))
+    # p1.axvline(1, c='g', lw=1, alpha=0.8, label="1.0 keV")
+    # p1.axvline(1.5, c='m', lw=1, alpha=0.8, label="1.5 keV")
+
+    p1.set_xlim(xLo, xHi)
+    p1.set_xticks(np.arange(xLo, xHi+1, (xHi-xLo)/10))
+    p1.set_xlabel("Energy (keV)", ha='right', x=1)
+    p1.set_ylabel("Counts/keV-kg-d  (%.2f keV bins)" % xpb, ha='right', y=1)
+    # p1.legend(loc=1, fontsize=14, bbox_to_anchor=(0., 0.7, 1, 0.2))
+    p1.legend(loc=legLoc, fontsize=14, bbox_to_anchor=(0., 0.7, 1, 0.2))
+    # p1.legend(loc=legLoc, fontsize=14)
+
+    p1a = p1.twinx()
+    p1a.plot(xEff, detEff, '--r', alpha=0.8, lw=2)
+    p1a.set_ylabel('Efficiency', color='r', ha='right', y=1)
+    p1a.set_yticks(np.arange(0,1.1, 0.2))
+    p1a.tick_params('y', colors='r')
+
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig(fName)
+
 
 
 if __name__=="__main__":

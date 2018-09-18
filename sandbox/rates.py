@@ -68,7 +68,8 @@ def getExpoLTD(dsList, useBlind=False):
 def dcrRates():
 
     tt = TChain("skimTree")
-    tt.Add("/Users/brianzhu/project/skim/light/lightDS*")
+    # tt.Add("/Users/brianzhu/project/skim/light/lightDS*")
+    tt.Add("/Users/wisecg/project/bkg/highE/*")
 
     # all detectors in the skims
     n = tt.Draw("(C*100+P*10+D)","","goff")

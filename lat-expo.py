@@ -11,6 +11,7 @@ each DS.
 import sys, os, time
 import tinydb as db
 import numpy as np
+import pandas as pd
 
 # LAT libraries
 import dsi
@@ -35,11 +36,11 @@ def main(argv):
         # check DB cuts
         if opt=="-cov":
             # manual
-            # getPSACutRuns(argv[i+1],argv[i+2], verbose=True) # ds, cutType
+            getPSACutRuns(argv[i+1],argv[i+2], verbose=True) # ds, cutType
 
             # batch <-- use this one
-            for ds in [0,1,2,3,4,"5A","5B","5C"]:
-                getPSACutRuns(ds,"fr")
+            # for ds in [0,1,2,3,4,"5A","5B","5C",6]:
+                # getPSACutRuns(ds,"fr")
 
         # finally, calculate exposure!
         if opt=="-xp":
@@ -68,54 +69,54 @@ def getPSACutRuns(ds, cutType, verbose=False):
     accounting for multiple bkg and cal sub-Idx's.
     This is a 5-layered loop, which is pretty badass.
 
-        ** For BOTH of these, the DB has already been updated to reflect these changes **
+    ** For BOTH of these, the DB has already been updated to reflect these changes **
 
-        ========= fitSlo detectors cut:  (lat2::setSloCut) =========
-        # Detectors to cut.  This is from inspecting the 'makePlots' output.
-        # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
-        # NOTE: these detectors could probably be brought back if we included the
-        # DS6 cal runs to bump up the stats in M2.
-        cutDets = {
-            90: ['211','214','221','254','261','274'],
-            95: ['211','214','221','261','274']
+    ========= fitSlo detectors cut:  (lat2::setSloCut) =========
+    # Detectors to cut.  This is from inspecting the 'makePlots' output.
+    # Criteria: nBin must be higher than 4 (50% statistical error in the bins)
+    # NOTE: these detectors could probably be brought back if we included the
+    # DS6 cal runs to bump up the stats in M2.
+    cutDets = {
+        90: ['211','214','221','254','261','274'],
+        95: ['211','214','221','261','274']
+    }
+    fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
+    dbVals[ch] = [fsCut, fs200, nBin]
+
+    ========= riseNoise chan/calIdx cut: (lat2::badRiseChans) =========
+    # the corresponding plots are saved in ./plots/rise/ for reference
+    removeList = {}
+    removeList["ds0_m1"] = {
+        692:[26,27]   # HF burst
         }
-        fitSlo can ALSO be bad in a calIdx when fsCut and nBin are == -1.
-        dbVals[ch] = [fsCut, fs200, nBin]
-
-        ========= riseNoise chan/calIdx cut: (lat2::badRiseChans) =========
-        # the corresponding plots are saved in ./plots/rise/ for reference
-        removeList = {}
-        removeList["ds0_m1"] = {
-            692:[26,27]   # HF burst
-            }
-        removeList["ds1_m1"] = {
-            594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
-            692:[56]                    # too much curvature
-            }
-        removeList["ds3_m1"] = {
-            594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
-            }
-        removeList["ds4_m2"] = {
-            1106:[1,4,7,8], # HF burst
-            1136:[4,7,8],   # "
-            1144:[7],       # too much curvature
-            1296:[4,7,8],   # HF burst
-            1298:[4]        # "
-            }
-        removeList["ds5_m1"] = {
-            584:[7],    # threshold noise causes too much curvature
-            608:[7,8],  # "
-            632:[7],    # "
-            662:[8],    # "
-            692:[7,8]   # "
-            }
-        removeList["ds5_m2"] = {
-            1232:[4,5,6,7],     # threshold noise causes too much curvature
-            1236:[4,5,6,7,8],   # "
-            1298:[4,5,6,7],     # "
-            1330:[4,6,7,8],     # "
-            1332:[4]            # "
-            }
+    removeList["ds1_m1"] = {
+        594:list(range(29,56+1)),   # 2nd HF population starting @ 50 keV (C1P7D3)
+        692:[56]                    # too much curvature
+        }
+    removeList["ds3_m1"] = {
+        594:list(range(0,8+1))      # 2nd HF population starting @ 50 keV (C1P7D3)
+        }
+    removeList["ds4_m2"] = {
+        1106:[1,4,7,8], # HF burst
+        1136:[4,7,8],   # "
+        1144:[7],       # too much curvature
+        1296:[4,7,8],   # HF burst
+        1298:[4]        # "
+        }
+    removeList["ds5_m1"] = {
+        584:[7],    # threshold noise causes too much curvature
+        608:[7,8],  # "
+        632:[7],    # "
+        662:[8],    # "
+        692:[7,8]   # "
+        }
+    removeList["ds5_m2"] = {
+        1232:[4,5,6,7],     # threshold noise causes too much curvature
+        1236:[4,5,6,7,8],   # "
+        1298:[4,5,6,7],     # "
+        1330:[4,6,7,8],     # "
+        1332:[4]            # "
+        }
     """
     # NOTE: input for DS5 must be 5A, 5B, or 5C, not 5.
     dsNum = int(ds[0]) if isinstance(ds, str) else int(ds)
@@ -148,7 +149,7 @@ def getPSACutRuns(ds, cutType, verbose=False):
     # 1. loop over modules
     mods = [1]
     if dsNum == 4: mods = [2]
-    if dsNum == 5: mods = [1,2]
+    if dsNum >= 5: mods = [1,2]
     for mod in mods:
 
         calKey = "ds%d_m%d" % (dsNum, mod)
@@ -636,24 +637,30 @@ def getEfficiency():
     import matplotlib.pyplot as plt
     plt.style.use('./pltReports.mplstyle')
 
-    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
-    pars = db.Query()
-    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
-
-    # mode = "trig"  # trigger efficiency only
-    # mode = "slo"   # slowness efficiency only
-    mode = "all"   # does all PS <-- use this one
-
     dsList = [0,1,2,3,4,"5A","5B","5C",6]  # default
     # dsList = ["5A"]
     # dsList = [3]
 
+    # mode = "trig"  # trigger efficiency only
+    # mode = "slo"   # slowness efficiency only
+    mode = "all"   # does all PS <-- use this one
+    npzOut = "./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot)
+
+    # pandas output for cosmo calculation
+    pndOut = "./data/lat-runTimes.h5"
+    pndDict = {"ds":[], "run":[], "det":[], "start":[], "stop":[], "lt":[], "rt":[], "expo":[]}
+
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    enrExc, natExc, _, _ = lat3.getOutliers(verbose=False, usePass2=False)
+
     bExclude253 = True # Flag for excluding C2P5D3 from exposure calculations cuz it sucks
     if bExclude253:
         print("Excluding C2P5D3 because it sucks!")
+
     debugMode = False
     if debugMode:
-        print("WARNING: debug mode.  dsList:",dsList)
+        print("WARNING: debug mode.  Not saving output. dsList:",dsList)
 
     # efficiency output
     # xLo, xHi = 0, 50
@@ -694,8 +701,8 @@ def getEfficiency():
         # get psa cut runs and detector fitSlo efficiencies
         f = np.load('./data/lat-psa%dRunCut-ds%s.npz' % (pctTot,ds))
         psaRuns = f['arr_0'].item() # {ch: [runLo1, runHi1, runLo2, runHi2, ...]}
-        fsD = dsi.getDBRecord("fitSlo_cpd_eff%d" % pctTot, False, calDB, pars)
 
+        fsD = dsi.getDBRecord("fitSlo_cpd_eff%d" % pctTot, False, calDB, pars)
         fsU = dsi.getDBRecord("fitSlo_cpd_effHi%d" % pctTot, False, calDB, pars) # upper
         fsL = dsi.getDBRecord("fitSlo_cpd_effLo%d" % pctTot, False, calDB, pars) # lower
 
@@ -710,7 +717,8 @@ def getEfficiency():
         # print(skipList)
 
         # load ds_livetime output
-        tl = TFile("./data/ds_%s_livetime.root" % str(ds))
+        # tl = TFile("./data/ds_%s_livetime.root" % str(ds))
+        tl = TFile("./data/ds_%s_output.root" % str(ds)) # these have extra info
         lt = tl.Get("dsTree")
 
         # 2. loop over modules
@@ -787,6 +795,16 @@ def getEfficiency():
                         subExpoHi = {ch:0 for ch in chList}
                         n = lt.Draw("run:channel:livetime","run>=%d && run<=%d" % (covLo, covHi), 'goff')
                         ltRun, ltChan, ltLive = lt.GetV1(), lt.GetV2(), lt.GetV3()
+                        ltRun = [ltRun[j] for j in range(n)]
+                        ltChan = [ltChan[j] for j in range(n)]
+                        ltLive = [ltLive[j] for j in range(n)]
+
+                        nf = lt.Draw("runtime:unixStart:unixStop","run>=%d && run<=%d" % (covLo, covHi), 'goff')
+                        ltRT, ltStart, ltStop = lt.GetV1(), lt.GetV2(), lt.GetV3()
+                        ltRT = [ltRT[j] for j in range(n)]
+                        ltStart = [ltStart[j] for j in range(n)]
+                        ltStop = [ltStop[j] for j in range(n)]
+
                         for j in range(n):
                             ch = ltChan[j]
                             detID = det.getDetIDChan(dsNum,ch)
@@ -811,12 +829,13 @@ def getEfficiency():
                             if burstCutRuns[ltChan[j]] is True:
                                 continue
 
+                            # skip all runs removed by low-e analysis
                             subExpo[ch] += expo
                             subExpoLo[ch] += expoLo
                             subExpoHi[ch] += expoHi
 
+                            # skip C2P5D3
                             cpd = det.getChanCPD(dsNum,ch)
-                            # Skip C2P5D3
                             if bExclude253 and int(cpd) == 253: continue
                             detExpo[ds][cpd] += expo
 
@@ -824,6 +843,17 @@ def getEfficiency():
                                 enrExp[ds] += expo
                             else:
                                 natExp[ds] += expo
+
+                            # fill pandas output
+                            pndDict["ds"].append(dsTmp)
+                            pndDict["run"].append(ltRun[j])
+                            pndDict["det"].append(int(cpd))
+                            pndDict["start"].append(ltStart[j])
+                            pndDict["stop"].append(ltStop[j])
+                            pndDict["lt"].append(ltLive[j])
+                            pndDict["rt"].append(ltRT[j])
+                            pndDict["expo"].append(expo)
+
 
                         # 6. loop over channels
                         for ch in chList:
@@ -889,17 +919,17 @@ def getEfficiency():
                                 print("Unknown mode! exiting ...")
                                 exit()
 
-            if debugMode:
-                for ch in chList[1:2]:
-                    # plt.plot(xEff, trigEff[ch], '-')
-                    # plt.plot(xEff, fSloEff[ch], '-')
-                    plt.plot(xEff, totEff[ch], '-r',label='Best, %s' % det.getChanCPD(ds,ch))
-                    plt.plot(xEff, totEffLo[ch], '-g',label="Lo")
-                    plt.plot(xEff, totEffHi[ch], '-b',label='Hi')
-                plt.legend()
-                plt.xlim(0,10)
-                plt.show()
-                exit()
+            # if debugMode:
+            #     for ch in chList[1:2]:
+            #         # plt.plot(xEff, trigEff[ch], '-')
+            #         # plt.plot(xEff, fSloEff[ch], '-')
+            #         plt.plot(xEff, totEff[ch], '-r',label='Best, %s' % det.getChanCPD(ds,ch))
+            #         plt.plot(xEff, totEffLo[ch], '-g',label="Lo")
+            #         plt.plot(xEff, totEffHi[ch], '-b',label='Hi')
+            #     plt.legend()
+            #     plt.xlim(0,10)
+            #     plt.show()
+            #     exit()
 
             expTot = 0
             for ch in chList:
@@ -995,7 +1025,12 @@ def getEfficiency():
     if debugMode:
         print("I'm not saving output, I'm in debug mode, dsList:",dsList)
     if not debugMode:
-        np.savez("./data/lat-expo-efficiency-%s-e%d.npz" % (mode, pctTot), xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp, totEnrEffLo, totEnrEffHi, totNatEffLo, totNatEffHi, detEff, detExpo)
+        print("Saving output ...")
+        np.savez(npzOut, xEff, totEnrEff, totNatEff, enrExp, natExp, finalEnrEff, finalNatEff, finalEnrExp, finalNatExp, totEnrEffLo, totEnrEffHi, totNatEffLo, totNatEffHi, detEff, detExpo)
+        df = pd.DataFrame.from_dict(pndDict)
+        try: os.remove(pndOut)
+        except OSError: pass
+        df.to_hdf(pndOut, key='runTimeInfo')
 
 
 def getEfficiencyROOT():
