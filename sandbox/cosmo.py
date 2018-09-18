@@ -10,8 +10,8 @@ def main():
     """ lat-expo output in pandas:
     ['ds', 'run', 'det', 'start', 'stop', 'lt', 'rt', 'expo'] """
 
-    checkExpo()
-    getWeights()
+    # checkExpo()
+    # getWeights()
     getCurves()
 
 
@@ -55,9 +55,12 @@ def getWeights():
 
     enrDets = set(df.loc[ df['det'].isin(enrList) & df['ds'].isin(dsList) ]['det'])
     totMass = sum([ detAMs[detIDs[str(cpd)]] for cpd in enrDets])
+
+    detWts = {cpd: detAMs[detIDs[str(cpd)]]/totMass for cpd in enrDets}
+
     print(totMass/1000)
-
-
+    print(detWts)
+    print(sum([detWts[cpd] for cpd in detWts]))
 
 
 def Fij(tDF, t12, t0):
@@ -77,12 +80,19 @@ def getCurves():
 
     t12 = {"68Ge": 0.7414}
 
+    cols = ["trit","trit-e","210Pb","210Pb-e","68Ge","68Ge-e","68Ga","68Ga-e",
+            "65Zn","65Zn-e","55Fe","55Fe-e","54Mn","54Mn-e","flat","flat-e"]
+    dfFit = pd.DataFrame(columns=cols)
+    dfFit.loc["M1"] = [1817.44, 97.2, 57.89, 10.1, 6.95, 10.9, 11.01, 12.0, 38.13, 13.5, 47.31, 16.3, 0.00, 19.9, 1709.10, 49.0]
+    dfFit.loc["M2"] = [302.47, 40.7, 27.32, 6.3, 59.00, 9.3, 0.0, 3.3, 3.28, 5.5, 0.0, 7.0, 12.34, 7.6, 417.77, 24.0]
+
     df = pd.read_hdf("../data/lat-runTimes.h5")
     df = df.loc[ df['ds'].isin(dsList) ]
     t0 = df.loc[ df['ds'] == dsList[0] ]['start'].iloc[0]
 
     for iso in t12:
 
+        fSum = 0
         expTot = 0
         for cpd in detList:
 
@@ -92,6 +102,7 @@ def getCurves():
             # calculate Fij terms
             eFac = dfCPD.apply(Fij, axis=1, args=(t12[iso], t0))
             fTot = eFac.sum()
+            fSum += fTot
 
             # sanity check stuff
             ts = dfCPD['start'].iloc[0]
@@ -101,17 +112,14 @@ def getCurves():
             rt = (dfCPD['stop'] - dfCPD['start']).sum()
             rtCal = tf - ts
 
-            # check exposure
-            aMass = detAMs[detIDs[str(cpd)]]
-            xp = lt/86400 * aMass/1000
-            if det.isEnr(cpd):
-                expTot += xp
-
             print("%d  fTot %.3f  f0 %.3f  lt/rt %.3f, rt/rtCal %.2f %%" % (cpd, fTot, f0, lt/rt, 100 * rt/rtCal))
 
-        print("enr exp tot:",expTot/365.25)
+        N_c = dfFit[iso].sum() # this is all detectors, fit result
+        N_0 = N_c / fSum
 
-        # we need some kinda normalization term
+        print(iso, "N_c: %.1f, N_0: %.2f" % (N_c, N_0))
+
+        # do we need some kinda normalization term?
         # s/t Sum_i^dets m N_i^0 = 1 or something
         # if i had 13 detectors, each 1 kg, then i would have a factor 13*N_0 in the current version of the sum
         # that doesn't seem like the right way to weight it
