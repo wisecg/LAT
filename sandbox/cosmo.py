@@ -52,10 +52,8 @@ def getWeights():
     detList = sorted([int(cpd) for cpd in det.allDetIDs])
     enrList = [cpd for cpd in detList if det.isEnr(cpd)]
     natList = [cpd for cpd in detList if not det.isEnr(cpd)]
-
     enrDets = set(df.loc[ df['det'].isin(enrList) & df['ds'].isin(dsList) ]['det'])
     totMass = sum([ detAMs[detIDs[str(cpd)]] for cpd in enrDets])
-
     detWts = {cpd: detAMs[detIDs[str(cpd)]]/totMass for cpd in enrDets}
 
     print(totMass/1000)
@@ -77,6 +75,9 @@ def getCurves():
     detIDs = det.allDetIDs
     detAMs = det.allActiveMasses
     detList = sorted([int(cpd) for cpd in det.allDetIDs])
+    enrList = [cpd for cpd in detList if det.isEnr(cpd)]
+    enrDets = set(df.loc[ df['det'].isin(enrList) & df['ds'].isin(dsList) ]['det'])
+    enrMass = sum([ detAMs[detIDs[str(cpd)]] for cpd in enrDets])
 
     t12 = {"68Ge": 0.7414}
 
@@ -94,14 +95,17 @@ def getCurves():
 
         fSum = 0
         expTot = 0
-        for cpd in detList:
+        for cpd in enrList:
 
             dfCPD = df.loc[ df['det'] == cpd, ['start','stop','lt']]
             if dfCPD.shape[0] == 0: continue
 
+            # weighting factor: det active mass / total active mass
+            wt = detAMs[detIDs[str(cpd)]] / enrMass
+
             # calculate Fij terms
             eFac = dfCPD.apply(Fij, axis=1, args=(t12[iso], t0))
-            fTot = eFac.sum()
+            fTot = eFac.sum() / wt
             fSum += fTot
 
             # sanity check stuff
