@@ -17,12 +17,14 @@
 #include "TGraphErrors.h"
 #include "TMath.h"
 #include "TLegend.h"
+#include <iostream>
+#include <fstream>
 // #include <Python/Python.h>
 
 using namespace RooFit;
 using namespace std;
 
-void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode);
+void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode, string fCPD);
 
 int main(int argc, char** argv)
 {
@@ -31,21 +33,39 @@ int main(int argc, char** argv)
 
 	if(argc <= 4)
 	{
-		cout << "Usage: " << argv[0] << " [DS (string)] [Fit Min] [Fit Max] [Cut Mode (string)]" << endl;
+		cout << "Usage: " << argv[0] << " [DS (string)] [Fit Min] [Fit Max] [Cut Mode (string)] [CPD (string, optional)]" << endl;
 		return 0;
 	}
 
 	vector<string> dsList = {"0", "1", "2", "3", "4", "5A", "5B", "5C", "6", "All", "LowBkg"};
-	vector<string> modeList = {"AllDet", "Nat", "Enr", "M1LowBkg", "M1All", "M2LowBkg", "M2LowCosmo", "LowBkg", "M1Enr", "M2Enr"};
+	vector<string> modeList = {"AllDet", "Nat", "Enr", "M1LowBkg", "M1All", "M2LowBkg", "M2LowCosmo", "LowBkg", "M1Enr", "M2Enr", "Det"};
+	vector<string> detList = {"112", "113", "114", "122", "123", "132", "133", "134", "141", "142", "143", "144", "145", "151", "152", "153", "154", "161", "162", "163", "164", "171", "172", "173", "174", "222", "223", "231", "232", "241", "242", "244", "251", "254", "262", "273"};
 
 	string fDS = argv[1];
 	float fitMin = atof(argv[2]);
 	float fitMax = atof(argv[3]);
 	string fMode = argv[4];
+	string fCPD = "";
+	if(argc > 5)
+	{
+		fCPD = argv[5];
+	}
 
 	// Make sure the options are available
 	bool bDS = std::find(dsList.begin(), dsList.end(), fDS) != dsList.end();
 	bool bMode = std::find(modeList.begin(), modeList.end(), fMode) != modeList.end();
+	bool bCPD = false;
+
+	if(fMode == "Det" && argc == 6)
+	{
+		bCPD = std::find(detList.begin(), detList.end(), fCPD) != detList.end();
+		if(bCPD == 0)
+		{
+			cout << fCPD << " is not an available detector!" << endl;
+			cout << "Options are: 112, 113, 114, 122, 123, 132, 133, 134, 141, 142, 143, 144, 145, 151, 152, 153, 154, 161, 162, 163, 164, 171, 172, 173, 174, 222, 223, 231, 232, 241, 242, 244, 251, 254, 262, 273" << endl;
+			return 0;
+		}
+	}
 	if(bDS == 0)
 	{
 		cout << fDS << " is not an available dataset option!" << endl;
@@ -55,17 +75,17 @@ int main(int argc, char** argv)
 	if(bMode == 0)
 	{
 		cout << fMode << " is not an available mode option!" << endl;
-		cout << "Options are: AllDet, Nat, Enr, LowBkg, M1LowBkg, M1All, M2LowBkg, M2LowCosmo" << endl;
+		cout << "Options are: AllDet, Nat, Enr, LowBkg, M1LowBkg, M1All, M2LowBkg, M2LowCosmo, Det" << endl;
 		return 0;
 	}
 
 	gStyle->SetOptStat(0);
-	RunBasicFit(fDS, fitMin, fitMax, fMode);
+	RunBasicFit(fDS, fitMin, fitMax, fMode, fCPD);
 
 	return 0;
 }
 
-void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
+void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode, string fCPD)
 {
 		// Calculated and saved from lat-expo.py
 		// Reject C2P5D3 from good detector list in M2, it only contributes noise in DS5a, doesn't seem to exist in DS5b and is tiny in DS5c
@@ -171,6 +191,11 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
 			theCut += "&&((C==2&&P==3&&D==1)||(C==2&&P==3&&D==2))";
 			fitter->SetExposureMap(expoM2);
 		}
+		else if(fMode == "Det")
+		{
+			theCut += Form("&&(C==%c&&P==%c&&D==%c)", fCPD.c_str()[0], fCPD.c_str()[1],fCPD.c_str()[2]);
+			fitter->SetExposureMap(expoFull); // This doesn't matter because it won't be used
+		}
 		else
 		{
 			cout << "Cut Mode not recognized, exiting" << endl;
@@ -187,7 +212,6 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
     skimTree->Add(Form("%s/final95_DS4*.root", inDir.c_str()) );
     skimTree->Add(Form("%s/final95_DS5*.root", inDir.c_str()) );
 		skimTree->Add(Form("%s/final95_DS6*.root", inDir.c_str()) );
-		fitter->SetSavePrefix(Form("Cosmo_%s_%s_%.1f_%.1f", fDS.c_str(), fMode.c_str(), fitMin, fitMax));
 		}
 		else if(fDS == "LowBkg")
 		{
@@ -197,14 +221,20 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
 			skimTree->Add(Form("%s/final95_DS4*.root", inDir.c_str()) );
 			skimTree->Add(Form("%s/final95_DS5*.root", inDir.c_str()) );
 			skimTree->Add(Form("%s/final95_DS6*.root", inDir.c_str()) );
-			fitter->SetSavePrefix(Form("Cosmo_%s_%s_%.1f_%.1f", fDS.c_str(), fMode.c_str(), fitMin, fitMax));
 		}
 		// Single Datasets
 		else {
 			skimTree->Add(Form("%s/final95_DS%s*.root", inDir.c_str(), fDS.c_str()) );
-			fitter->SetSavePrefix(Form("Cosmo_DS%s_%s_%.1f_%.1f", fDS.c_str(), fMode.c_str(), fitMin, fitMax));
 		}
-    fitter->LoadChainData(skimTree, theCut);
+		if(fMode == "Det")
+		{
+			fitter->SetSavePrefix(Form("C%cP%cD%c_%s_%s_%.1f_%.1f", fCPD.c_str()[0], fCPD.c_str()[1],fCPD.c_str()[2], fDS.c_str(), fMode.c_str(), fitMin, fitMax));
+		}
+		else
+		{
+			fitter->SetSavePrefix(Form("Cosmo_%s_%s_%.1f_%.1f", fDS.c_str(), fMode.c_str(), fitMin, fitMax));
+		}
+		fitter->LoadChainData(skimTree, theCut);
 
 		// std::string effDir = "/Users/brianzhu/macros/code/LAT/data";
 		// TFile *effFile = new TFile(Form("%s/lat-expo-efficiency_final95.root", effDir.c_str()));
@@ -212,15 +242,23 @@ void RunBasicFit(string fDS, double fitMin, double fitMax, string fMode)
     // Construct PDF and do fit
 		bool bNoEff = false; // Turns on/off efficiency
 		bool bWFMode = false; // Turns on/off WF collapse
-		fitter->ConstructPDF(bNoEff, bWFMode);
+		fitter->ConstructPDF(bNoEff, bWFMode, fCPD);
 		fitter->DoFit("Minuit");
 		fitter->DrawBasic(0.3, true, false, false);
 		fitter->GetFitResult()->Print("v");
 
-		// vector<string> argTest = {"Tritium", "Ge68", "Zn65", "Fe55", "Mn54"};
+		vector<string> argTest = {"Tritium", "Ge68", "Ga68", "Zn65", "Fe55", "Mn54", "Pb210", "Bkg"};
 		// auto LimitMap = fitter->ProfileNLL(argTest);
 
-		// cout << "Extended Term: " << fitter->GetWorkspace()->pdf("model")->extendedTerm(1) << endl;
+		ofstream outFile;
+		outFile.open(Form("/Users/brianzhu/macros/code/MJDAnalysis/Wenqin/CosmoFits/C%cP%cD%c_%s_FitOutput.csv", fCPD.c_str()[0], fCPD.c_str()[1],fCPD.c_str()[2],fDS.c_str()));
+		outFile << Form("C%cP%cD%c", fCPD.c_str()[0], fCPD.c_str()[1],fCPD.c_str()[2]) << endl;
+		for(auto arg: argTest)
+		{
+			vector<double> valTemp = fitter->GetVar(arg);
+			outFile << arg << "," << valTemp[0] << "," << valTemp[1] << endl;
+		}
+		outFile.close();
 
 /*
     vector<double> valTrit0 = fitter->GetVar("Tritium");

@@ -36,7 +36,7 @@ class GPXFitter {
 		virtual ~GPXFitter();
 
         // Constructs model PDF -- MUST be called after LoadData()!
-        virtual void ConstructPDF(bool bNoEff = false, bool bWFMode = false);
+        virtual void ConstructPDF(bool bNoEff = false, bool bWFMode = false, std::string fCPD="");
 
         // Do the fit
         // Set minimizer type here also... there's like Minuit, Minuit2, probably more
@@ -145,6 +145,7 @@ class GPXFitter {
     	  TH1D *fEffSpec;
 				bool bCustomEff;
 				bool fWFMode;
+				bool fDetMode;
 
         // Minimizer
         RooMinimizer *fMinimizer;
