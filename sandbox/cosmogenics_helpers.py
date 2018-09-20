@@ -17,6 +17,9 @@ cal = dsi.CalInfo()
 # process_MJD_as_built_mage_results -o /mnt/mjdDisk1/Majorana/users/psz/MAGE/Processed/surf/Pb210/1_0.99_0.99 -c /mnt/mjdDisk1/Majorana/users/psz/MAGE/config/det_config_DS5.json -t 1.0 0.99 0.99 /mnt/mjdDisk1/Majorana/users/psz/MAGE/Simulations/surf/Pb210/MJDem_DUPTFE_Pb210_surf_p051.root
 
 
+# Full det list:
+# [112, 113, 114, 122, 123, 132, 133, 134, 141, 142, 143, 144, 145, 151, 152, 153, 154, 161, 162, 163, 164, 171, 172, 173, 174, 222, 223, 231, 232, 241, 242, 244, 251, 254, 262, 273]
+
 # Module 1 DS0-6: ['C1P1D2', 'C1P1D3', 'C1P1D4', 'C1P2D2', 'C1P2D3', 'C1P3D4', 'C1P5D3', 'C1P6D3', 'C1P7D2', 'C1P7D3']
 # Module 1 DS1-6: ['C1P1D2', 'C1P1D3', 'C1P1D4', 'C1P2D2', 'C1P2D3', 'C1P3D2', 'C1P3D3', 'C1P3D4', 'C1P5D3', 'C1P6D1', 'C1P6D3', 'C1P6D4', 'C1P7D2', 'C1P7D3', 'C1P7D4']
 # Module 2 DS4-6: ['C2P1D4', 'C2P3D1', 'C2P3D2', 'C2P6D2', 'C2P7D3'] # Rejected C2P5D3 because of noise

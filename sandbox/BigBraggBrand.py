@@ -17,6 +17,16 @@
     From 3.8 - 18: 0.877228 of total axion
     From 4.0 - 18: 0.848106 of total axion
 
+    Wenqin's Current Fits (mean):
+    5 -- 20:
+    lambda: 175.3/206623.6666 = 0.00085
+    4 -- 20:
+    lambda: 181.7/258812.4304 = 0.0007
+
+    Brian's results (95 Limit):
+    5 -- 20: 209.167060373 => 0.00101
+    4 -- 20: 294.202131301 => 0.00114
+
 """
 
 import sys, os, imp, time
@@ -26,7 +36,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import theano.tensor as tt
 from scipy.interpolate import interp1d
-from scipy.stats import norm
+from scipy.stats import norm, mode
 import pandas as pd
 sns.set(style='darkgrid')
 
@@ -37,15 +47,14 @@ bkg = dsi.BkgInfo()
 cal = dsi.CalInfo()
 det = dsi.DetInfo()
 
-# Define some global parameters
+# Define some global parameters -- I can definitely organize this better but whatever
 inDir = os.environ['LATDIR']+'/data/MCMC'
 dsList = ['5B', '5C', '6']
 # dsList = ['5B']
 # Energy range (also defines fitting range!)
-# Wenqin stops at 12 keV since the axions stop at 12 -- endpoint of trit is 18.
-# Scanned from 12 to 19.8 -- makes more sense to go to at least the end of the tritium spectrum
-# energyThresh, energyThreshMax, binSize = 2.4, 18, 0.1
-energyThresh, energyThreshMax, binSize = 4.0, 20.0, 0.1
+# The tritium endpoint is 18 keV, the axion PDF stops at 12 keV.
+#we want to extend the PDF to slightly beyond the tritium endpoint in order to capture the flat bkg
+energyThresh, energyThreshMax, binSize = 5.0, 20.0, 0.1
 energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/binSize)+1)
 
 # The start and end time are for DS5b
@@ -71,12 +80,12 @@ yearInSec = 31536000 # Number of seconds in 1 year
 nBurn = 1000 # Number of burn-in samples for the MCMC
 
 def main(argv):
-
+    # Some random booleans
     bDebug, bDrawPDF, bDiagnostic, bFinalSpectra = False, False, False, False
     bSample, bFull = False, True
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
-    # Set initial seed number here
+    # Set initial seed number here -- this is an option that can be changed
     seedNum = 1
 
     if len(argv)==0:
@@ -117,18 +126,20 @@ def main(argv):
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, effMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize = axionBinSize)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize=axionBinSize)
 
     # Normalize Axion PDF by maximum (this is arbitrary for simplifying the sampling)
+    #I guess it's questionable whether or not this is actually useful...
     AxionNorm = (np.amax(AxionArr))
     pdfArrDict['Axion'] = AxionArr/AxionNorm
 
-    print('Generated Axion PDF')
-    print('Axion Integral:', AxionArr.sum())
+    print('Generated Axion PDF!')
+    print('Axion Integral: {}'.format(AxionArr.sum()))
     print('Axion Normalization Constant: {}'.format(AxionNorm))
 
     # Load Background data and bin exactly as PDF
     df = pd.read_hdf('{}/Bkg_Spectrum.h5'.format(inDir))
+    # Sort by UnixTime -- I forget why I did this...
     df.sort_values(by=['UnixTime'], inplace=True)
     # Select Enriched detectors only, grab numpy array of the values
     dataArr = df[['Energy', 'UnixTime']].loc[df['isEnr']==1].values
@@ -137,7 +148,7 @@ def main(argv):
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
     # Build Tritium PDF -- need interpolation because it's 0.2 keV bins!
-    # NOTE: We may want to use 0.2 keV bins, the difference may not be noticeable and the
+    # NOTE: We may want to use 0.2 keV bins, the difference may not be noticeable and the sampling will be significantly faster
     # NOTE: I can probably just generate this into 0.1 keV bins at some point but I've been lazy...
     dfTrit = pd.read_hdf('{}/TritSpec.h5'.format(inDir))
     tritEnergy = dfTrit['Energy'].values
@@ -146,8 +157,8 @@ def main(argv):
     tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec])
     tritInterp = interp1d(tritEnergy, tritSpec, fill_value='extrapolate')
     tritList = [tritInterp(x) for x in energyBins[:-1]]
-    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*effMask
-    pdfArrDict['Bkg'] = np.ones(pdfArrDict['Axion'].shape)*effMask
+    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*eeMask
+    pdfArrDict['Bkg'] = np.ones(pdfArrDict['Axion'].shape)*eeMask
 
     # Generate the Gaussian PDFs
     # Fe55 is slightly shifted from 6.54 -- Perhaps should introduce as a constraint of some sort
@@ -155,9 +166,9 @@ def main(argv):
     gausDict = generateGaus(energyBins[:-1], meansDict)
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
-        pdfArrDict[name] *= effMask
+        pdfArrDict[name] *= eeMask
 
-    # Create a matrix for energy bin center values -- this was used for efficiency sampling within the model
+    #NOTE: Create a matrix for energy bin center values -- this was used for efficiency sampling within the model
     # pdfArrDict.setdefault('Energy', np.array((energyBins[:-1]+binSize/2).tolist()*nTimeBins).reshape(nTimeBins, len(energyBins[:-1]) ).T)
 
     # Remove columns with zeros -- the zeros are from the times when there is no data-taking
@@ -196,16 +207,6 @@ def main(argv):
     pdfFlatDict['Ge68'] = pdfArrDict['Ge68'].flatten()
     # pdfFlatDict['Energy'] = pdfArrDict['Energy'].flatten()
 
-    # 1D plot only
-    # pdfFlatDict['Data'] = pdfArrDict['Data'].sum(axis=1)
-    # pdfFlatDict['Tritium'] = pdfArrDict['Tritium'][:,0]
-    # pdfFlatDict['Axion'] = pdfArrDict['Axion'][:,0]
-    # pdfFlatDict['Bkg'] = pdfArrDict['Bkg'][:,0]
-    # pdfFlatDict['Fe55'] = pdfArrDict['Fe55'][:,0]
-    # pdfFlatDict['Zn65'] = pdfArrDict['Zn65'][:,0]
-    # pdfFlatDict['Ge68'] = pdfArrDict['Ge68'][:,0]
-    # pdfFlatDict['Energy'] = pdfArrDict['Energy'][:,0]
-
     if bDebug:
         for key in pdfFlatDict:
             print('Flattend {} shape: '.format(key), pdfFlatDict[key].shape)
@@ -214,17 +215,14 @@ def main(argv):
     model = constructModel(pdfFlatDict, energyBins, bFull = bFull)
     print('Built model(s)')
 
-    # print(trace['Axion'])
-    # dfTrace = pm.trace_to_dataframe(trace[nBurn:])
-    # print(dfTrace.head())
     backendDir = '{}/AveragedAxion_Enr_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
 
     # Sample Here
     if bSample:
         with model:
             db = pm.backends.Text(backendDir)
-            # trace = pm.sample(draws=10000, chains=1, n_init=1500, chain_idx=seedNum, seed=seedNum, tune=1500, progressbar=True, trace=db)
-            trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True, trace=db)
+            trace = pm.sample(draws=10000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
+            # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True, trace=db)
 
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
@@ -233,11 +231,6 @@ def main(argv):
     if bFinalSpectra:
         trace = pm.backends.text.load(backendDir, model)
         drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
-
-    # dfSum = pm.summary(trace[nBurn:], alpha=0.1)
-    # print(dfSum.head())
-    # pm.traceplot(trace)
-    # plt.show()
 
 
 class ErrorFnc(pm.Continuous):
@@ -316,6 +309,12 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
         - For the fit, rescale the eff*exp*axion pdf by maximum value in the PDF = Counts/Norm
         - After the fit, integrate scaled PDF
 
+        returns: NormAxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm
+
+        nTimeBins and timeBinLowEdge: used to bin the data and every other PDF EXACTLY like the axion PDF
+        removeMask: 2D (time vs Energy) array of columns where the exposure is 0 (detectors are off during these time bins)
+        eeMask: 2D (time vs Energy) array of the exposure*efficiency -- every PDF needs to be multiplied by this!
+        effNorm: 2D (time vs Energy) array of the normalization factor (efficiency*exposure/exposure only)
     """
 
     import ROOT
@@ -385,10 +384,10 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
         print('Axion Shape', AxionArr.shape, nTimeBins)
 
     # Efficiency * Exposure mask
-    effMask, expMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
+    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
 
-    NormAxionArr = AxionArr*effMask
-    effNorm = effMask/expMask
+    NormAxionArr = AxionArr*eeMask
+    effNorm = eeMask/expMask
 
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
@@ -396,9 +395,9 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
     binScaling = (binSize*5./(60*24)/90)
 
     # print('Axion Eff Norm: ', effNorm, effNorm.shape)
-    print('Axion Integral: {} (before exposure) -- {} (before efficiency) --- {} (after efficiency)'.format(AxionArr.sum()*binScaling, (AxionArr*expMask).sum()*binScaling, NormAxionArr.sum()*binScaling))
+    print('Axion Integral: {} (before exposure) -- {} (after efficiency/before exposure) -- {} (before efficiency) --- {} (after efficiency)'.format(AxionArr.sum()*binScaling, (AxionArr*effMask).sum()*binScaling, (AxionArr*expMask).sum()*binScaling, NormAxionArr.sum()*binScaling))
 
-    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, effMask, effNorm
+    return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, eeMask, effNorm
 
 
 def drawFinalSpectra(pdfDict, trace):
@@ -409,30 +408,30 @@ def drawFinalSpectra(pdfDict, trace):
     from matplotlib.ticker import FormatStrFormatter
 
     rebinSize = 0
+    # Here we're rebinning the time spectrum, this is purely for visualization
     # Choose first valid rebin value that will evenly divide the number of time bins
-    for rb in range(12, 51):
+    for rb in range(15, 2001):
         if pdfDict['Data'].shape[1]%rb == 0:
             rebinSize = rb
             break
-    print('Before Rebinning:', pdfDict['Data'].shape[0], pdfDict['Data'].shape[1])
-    print('Rebinning by {}, the bin size will be {} minutes'.format(rebinSize, 5*rebinSize))
+    # This is done automatically! Don't mess with it
+    print('Data Shape Before Rebinning:', pdfDict['Data'].shape[0], pdfDict['Data'].shape[1])
+    print('Rebinning time axis by {}, the bin size will be {} minutes'.format(rebinSize, 5*rebinSize))
 
     rebinShape = (pdfDict['Data'].shape[0], pdfDict['Data'].shape[1]/rebinSize)
     # Convert unix time to date with seconds
     timeBins = np.array(pdfDict['Time'][:-1], dtype='datetime64[s]')
-    timeBinsD = np.array(timeBins, dtype='datetime64[D]')
     # Rebin timing bins (here we only select using stepsize = rebinSize rather than summing the times)
     timeBins = timeBins[::rebinSize]
 
     figSpec, axSpec = plt.subplots(figsize=(10,7))
     figTime, axTime = plt.subplots(figsize=(10,7))
-    fig2D, (ax2D1, ax2D2) = plt.subplots(ncols=2, figsize=(15,7))
 
     DataSpec = pdfDict['Data'].sum(axis=1)
     DataSpecErr = np.sqrt(DataSpec)
     TimeSpec = rebin(pdfDict['Data'].sum(axis=0), size=rebinSize)
     TimeSpecErr = np.sqrt(TimeSpec)
-
+    # print('Data', TimeSpec, np.amax(TimeSpec), np.amin(TimeSpec))
     axSpec.errorbar(energyBins[:-1], DataSpec, yerr=DataSpecErr, color='black', fmt='o', label='Data')
     axTime.errorbar(timeBins, TimeSpec, yerr=TimeSpecErr, color='black', fmt='o', label='Data')
 
@@ -451,33 +450,43 @@ def drawFinalSpectra(pdfDict, trace):
         tempSpec = trace[key].mean()*pdfDict[key].sum(axis=1)
         tempTime = trace[key].mean()*pdfDict[key].sum(axis=0)
 
-        print('{} Integral: {:.3f}'.format(key, tempSpec.sum()))
+        # print('{} Integral: {:.3f}'.format(key, tempSpec.sum()))
 
         if key == 'Axion':
             axionRebin = rebin(tempTime, size=rebinSize)
-            axTime.plot(timeBins, axionRebin, label=key, linestyle='--')
+            # axTime.plot(timeBins, axionRebin, label=key, linestyle='--')
             totalTime += axionRebin
+            # print(key, axionRebin, axionRebin.shape, np.amax(axionRebin), np.amin(axionRebin))
         else:
-            axTime.plot(timeBins, rebinSize*rebin(tempTime, size=rebinSize), label=key, linestyle='--')
-            totalTime += rebinSize*rebin(tempTime, size=rebinSize)
+            tempRebin = rebinSize*rebin(tempTime, size=rebinSize)
+            # axTime.plot(timeBins, tempRebin, label=key, linestyle='--')
+            totalTime += tempRebin
+            # print(key, tempRebin, tempRebin.shape, np.amax(tempRebin), np.amin(tempRebin))
 
         axSpec.plot(energyBins[:-1], tempSpec, label=key, linestyle='--')
         totalSpec += tempSpec
 
-    axSpec.plot(energyBins[:-1], totalSpec, label='Total Model')
+    axSpec.plot(energyBins[:-1], totalSpec, c='r', lw='3', label='Total Model')
     axSpec.set_title('DS5b, 5c, 6a Enriched')
     axSpec.set_ylabel('Counts/0.1 keV')
     axSpec.set_xlabel('Energy (keV)')
     axSpec.legend()
     plt.tight_layout()
 
-    axTime.plot(timeBins, totalTime, label='Total Model')
+    # Labels for plots only -- only label 5 bins
+    timeLabels = np.linspace(startTime, endTime, 5, dtype='datetime64[s]')
+    timeLabels = np.array(timeLabels, dtype='datetime64[D]')
+    print('Total', totalTime, np.amax(totalTime), np.amin(totalTime))
+    # axTime.plot(timeBins, totalTime, c='r', lw='3', label='Total Model')
     axTime.set_title('DS5b, 5c, 6a Enriched')
-    axTime.set_ylabel('Counts/(140 min)')
-    axTime.set_xlabel('Time')
-    axTime.locator_params(axis='x', nbins=len(timeBins)/250) # Draw fewer ticks
+    axTime.set_ylabel('Counts/({} min)'.format(5*rebinSize))
+    # axTime.set_xlabel('Time')
+    axTime.locator_params(axis='x', nbins=len(timeLabels)) # Draw fewer ticks
+    axTime.set_xticklabels(timeLabels, rotation=30)
     axTime.legend()
     plt.tight_layout()
+    plt.show()
+    # return
 
     # Loop again -- Make sure I don't mess up the other plots
     # The counts vs time plot with binning is very finnicky when rebinning other stuff
@@ -488,11 +497,11 @@ def drawFinalSpectra(pdfDict, trace):
         temp2D = np.array(trace[key].mean()*pdfDict[key], copy=True)
         totalModel2D += bin_ndarray(temp2D, rebinShape)
 
-    # Make 2D plot
+    # Make 2D plot of Energy vs Time
+    fig2D, (ax2D1, ax2D2) = plt.subplots(ncols=2, figsize=(15,7))
     Data2D = np.array(pdfDict['Data'], copy=True)
     Data2D =  bin_ndarray(Data2D, rebinShape)
     Difference = Data2D - totalModel2D
-    timeBinsD = timeBinsD[::rebinSize]
     print('Total Integral of Data:', Data2D.sum())
     print('Total Integral of Model:', totalModel2D.sum())
     print('Total Integral of Difference:', Difference.sum())
@@ -501,15 +510,15 @@ def drawFinalSpectra(pdfDict, trace):
     ax2D1.invert_yaxis()
     ax2D1.set_title('DS5b, 5c, 6a Enriched (Data)')
     ax2D1.set_ylabel('Energy (keV)')
-    ax2D1.locator_params(axis='x', nbins=len(timeBinsD[::250])) # Draw fewer ticks
+    ax2D1.locator_params(axis='x', nbins=len(timeLabels)) # Draw fewer ticks
     ax2D1.locator_params(axis='y', nbins=len(energyBins[::20])) # Draw fewer ticks
-    ax2D1.set_xticklabels(timeBinsD[::250], rotation=30)
+    ax2D1.set_xticklabels(timeLabels, rotation=30)
     ax2D1.set_yticklabels([round(x,1) for x in energyBins[:-1:20]], rotation=0)
     sns.heatmap(totalModel2D, ax=ax2D2)
     ax2D2.invert_yaxis()
     ax2D2.set_title('Total Model')
-    ax2D2.locator_params(axis='x', nbins=len(timeBinsD[::250])) # Draw fewer ticks
-    ax2D2.set_xticklabels(timeBinsD[::250], rotation=30)
+    ax2D2.locator_params(axis='x', nbins=len(timeLabels)) # Draw fewer ticks
+    ax2D2.set_xticklabels(timeLabels, rotation=30)
     ax2D2.set_yticklabels([])
     plt.tight_layout()
 
@@ -599,10 +608,17 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
         for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
+
+        returns:
+            eeMask -- Exposure*Efficnecy mask
+            expMask -- Exposure mask only (no efficiency applied)
+            effMask -- Efficiency mask only (no exposure applied)
+
     """
     import ROOT
-    effMask = np.ones(AxionShape)
+    eeMask = np.ones(AxionShape)
     expMask = np.ones(AxionShape) # Exposure only
+    effMask = np.ones(AxionShape) # Efficiency only
     if debug:
         print('Start, End Time:', startTime, endTime)
         print('Time Bins:', timeBinLowEdge[0], timeBinLowEdge[-1])
@@ -682,11 +698,13 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                     # gapMatrix.setdefault(run, [prevEnd, sTime, sTime-prevEnd])
                     # Set the efficiency for those time bins to be zero
                     if prevIndex == startIndex:
-                        effMask[:, prevIndex] = 0
+                        eeMask[:, prevIndex] = 0
                         expMask[:, prevIndex] = 0
+                        effMask[:, prevIndex] = 0
                     else:
-                        effMask[:, prevIndex:startIndex] = 0
+                        eeMask[:, prevIndex:startIndex] = 0
                         expMask[:, prevIndex:startIndex] = 0
+                        effMask[:, prevIndex:startIndex] = 0
                     # If there is a gap between runs that's less than the 5 minute bin-size
                     # Not dealing with this for now... < 0.5 kg-day exposure difference
                     if sTime - prevEnd < 300 and debug:
@@ -700,42 +718,46 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
                 # Exposure is split up by number of bins it fills here (nTimeBins * nEnergyBins)
                 if run in runMatrix and runMatrix[run] != 0:
                     if startIndex == stopIndex:
-                        effMask[:, startIndex] = effArr*runMatrix[run]/(len(energyBins)-1)
+                        eeMask[:, startIndex] = effArr*runMatrix[run]/(len(energyBins)-1)
                         expMask[:, startIndex] = runMatrix[run]/(len(energyBins)-1)
+                        effMask[:, startIndex] = effArr
                     else:
-                        # This part is really long and complicated, basically need to copy (repeat) the effArr to match the size we want to fill inside effMask, the reshape is just to make the array sizes match
+                        # This part is really long and complicated, basically need to copy (repeat) the effArr to match the size we want to fill inside eeMask, the reshape is just to make the array sizes match
 
                         # If the shape doesn't match, it's because we're at the last time bin, shrink
-                        if effMask[:, startIndex:stopIndex].shape[1] != stopIndex-startIndex:
+                        if eeMask[:, startIndex:stopIndex].shape[1] != stopIndex-startIndex:
                             print('Matching off run {} ({}-{})'.format(run,startIndex, stopIndex) )
                             effMat = np.repeat(effArr,stopIndex-startIndex-1).reshape(len(effArr), stopIndex-startIndex-1)
                         else:
                             effMat = np.repeat(effArr,stopIndex-startIndex).reshape(len(effArr), stopIndex-startIndex)
 
-                        effMask[:, startIndex:stopIndex] = effMat*runMatrix[run]/(stopIndex-startIndex-1)/(len(energyBins)-1)
+
+                        eeMask[:, startIndex:stopIndex] = effMat*runMatrix[run]/(stopIndex-startIndex-1)/(len(energyBins)-1)
                         expMask[:, startIndex:stopIndex] = runMatrix[run]/(stopIndex-startIndex-1)/(len(energyBins)-1) # No efficiency
+                        effMask[:, startIndex:stopIndex] = effMat # No exposure
                 else:
-                    effMask[:, startIndex:stopIndex] = 0
+                    eeMask[:, startIndex:stopIndex] = 0
                     expMask[:, startIndex:stopIndex] = 0
+                    effMask[:, startIndex:stopIndex] = 0
                     print('Run {} setting to 0'.format(run))
-                    print(effMask[100, startIndex:stopIndex])
+                    print(eeMask[100, startIndex:stopIndex])
 
                 prevEnd = eTime
 
         if debug:
-            print(effMask)
-            print('DS{} -- Exposure: {} -- Eff Corr Exposure: {} (kg-day)'.format(ds, expMask.sum(), effMask.sum())) # Sum over one axis at a high energy, should get exposure?
-            print('Total time gap for DS{} -- {}'.format(ds, totalGap))
+            print(eeMask)
+            print('DS{} -- Exposure: {} -- Eff Corr Exposure: {} (kg-day)'.format(ds, expMask.sum(), eeMask.sum())) # Sum over one axis at a high energy, should get exposure?
+            print('Total time gap for DS{} -- {}'.format(ds, totalGap)) # Residual time gap
             # from mpl_toolkits.mplot3d import Axes3D
             # feff, aeff = plt.subplots(figsize=(8,6))
-            # sns.heatmap(effMask, ax=aeff)
+            # sns.heatmap(eeMask, ax=aeff)
             # feff = plt.figure()
             # aeff = feff.gca(projection='3d')
             # xmesh, ymesh = np.meshgrid(energyBins[:-1], timeBinLowEdge[:-1])
-            # aeff.plot_surface(xmesh, ymesh, effMask.T)
+            # aeff.plot_surface(xmesh, ymesh, eeMask.T)
             # plt.show()
 
-    return effMask, expMask
+    return eeMask, expMask, effMask
 
 
 def getSigma(energy, dsNum=1):
@@ -771,7 +793,7 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
         Brian's notes on diagnostics:
 
         Gelman-Rubin (Rhat) -- tests for lack of convergence by comparing the variance between multiple chains to the variance within one chain.
-        If the chains are converged, the variance should be the same (ratio should be 1). Needs multiple chains with differing starting points.
+        If the chains are converged, the variance should be the same (ratio should be 1). Needs multiple chains with differing starting points (different seeds!).
 
         Auto-correlation -- measures how linearly dependent the current value of the chain is to past values
         It essentially tells us how much information is avaliable, if there is a lot of correlation,
@@ -791,7 +813,16 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     print('Loading Backend from',backendDir)
     trace = pm.backends.text.load(backendDir, model)
     # Get summary of trace as a dataframe
+    print(trace[nBurn:])
+    modes,_ = mode(trace[nBurn:])
+    # print(modes)
+    print(trace[nBurn:]['Axion'])
+    print(trace[nBurn:]['Axion'].shape)
+    # print(mode(np.around(trace[nBurn:]['Axion']), 5))
+
+    modeList = [modes[0]['Axion'], modes[0]['Tritium'], modes[0]['Bkg'], modes[0]['Fe55'], modes[0]['Zn65'], modes[0]['Ge68']]
     dfSum = pm.summary(trace[nBurn:], alpha=0.1)
+    dfSum['mode'] = modeList
     print(dfSum.head(10))
     AxionIntegral = pdfArrDict['Axion'].sum()
 
@@ -805,9 +836,17 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     print('Par \t  Mean \t hpd_5 \t hpd_95')
     # Here all the PDFs are normalized in their own way (from model construction section)
     # therefore multiplying the PDF integral by the 95% CI should give number of counts
+    print('Efficiency Scaling factor (summed over 1 axis):',1./effNorm.sum(axis=1)[0], 1./effNorm.sum(axis=1)[1])
+
+    bkgIntegral = 0
+    axionIntegral = 0
+    axionMeanIntegral = 0
+    bkgIntegralMode = 0
+    axionIntegralMode = 0
     for par in dfSum.index:
         # Integrate PDF
         parInt = (pdfArrDict[par]/effNorm).sum()
+        parRaw = pdfArrDict[par].sum()
         # parInt = (pdfArrDict[par]).sum()
 
         # Multiply integral by interval
@@ -815,18 +854,30 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
         if par == 'Axion':
             print('Axion: Scaled Integral: {} \t Unscaled Integral: {}'.format(parInt*dfSum.loc[par, 'hpd_95'], parInt))
             print('95% CI limit: {}'.format(parInt*dfSum.loc[par, 'hpd_95']/parInt))
+            axionMeanIntegral = parRaw*dfSum.loc[par, 'mean']
+            axionIntegral = parRaw*dfSum.loc[par, 'hpd_95']
+            axionIntegralMode = parRaw*dfSum.loc[par, 'mode']
+        else:
+            bkgIntegral += parRaw*dfSum.loc[par, 'mean']
+            bkgIntegralMode += parRaw*dfSum.loc[par, 'mode']
 
+    print('Background Mean Integral: {}'.format(bkgIntegral))
+    print('Background Mode Integral: {}'.format(bkgIntegralMode))
+    print('Axion Mean Integral: {}'.format(axionMeanIntegral))
+    print('Axion Mode Integral: {}'.format(axionIntegralMode))
+    print('Axion 95% Integral: {}'.format(axionIntegral))
     # Debate: when converting to lambda,
+
     # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
     # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
     pm.traceplot(trace[nBurn:])
     pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
     # pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
-    # traceBurn = trace[nBurn:]
+    traceBurn = trace[nBurn:]
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
-    # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
-    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
+    cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
+    figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
 
     # Format is hpdDict[nChain][Parameter] = [lower, upper]
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
