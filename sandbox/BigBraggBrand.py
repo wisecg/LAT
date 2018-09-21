@@ -134,7 +134,7 @@ def main(argv):
     pdfArrDict['Axion'] = AxionArr/AxionNorm
 
     print('Generated Axion PDF!')
-    print('Axion Integral: {}'.format(AxionArr.sum()))
+    print('Axion Integral: {} -- Shape: {}'.format(AxionArr.sum(), AxionArr.shape))
     print('Axion Normalization Constant: {}'.format(AxionNorm))
 
     # Load Background data and bin exactly as PDF
@@ -392,10 +392,15 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
 
+    # Get stuff into counts
     binScaling = (binSize*5./(60*24)/90)
 
     # print('Axion Eff Norm: ', effNorm, effNorm.shape)
+    print('Bin Scaling: {}'.format(binScaling))
+    print('Efficiency integral: {}, shape: {}'.format(effMask.sum(axis=0), effMask.sum(axis=0).shape ))
     print('Axion Integral: {} (before exposure) -- {} (after efficiency/before exposure) -- {} (before efficiency) --- {} (after efficiency)'.format(AxionArr.sum()*binScaling, (AxionArr*effMask).sum()*binScaling, (AxionArr*expMask).sum()*binScaling, NormAxionArr.sum()*binScaling))
+    print('Axion Integral Ratio: {} -- max: {} -- min {}'.format(((AxionArr*effMask)/AxionArr),np.amax((AxionArr*effMask)/AxionArr), np.amin((AxionArr*effMask)/AxionArr)))
+    print('Test Integral: {}'.format((AxionArr*effMask).sum()/AxionArr.sum()))
 
     return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, eeMask, effNorm
 
@@ -641,7 +646,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
             effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
 
         if debug:
-            print('DS{} Efficiency:'.format(ds), effArr, effArr.shape)
+            print('DS{} Efficiency Array:'.format(ds), effArr, effArr.shape)
 
         # Create a new map for all runs with the exposure of each run
         if ds in ['5A', '5B', '5C']:
@@ -795,13 +800,11 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
         Gelman-Rubin (Rhat) -- tests for lack of convergence by comparing the variance between multiple chains to the variance within one chain.
         If the chains are converged, the variance should be the same (ratio should be 1). Needs multiple chains with differing starting points (different seeds!).
 
-        Auto-correlation -- measures how linearly dependent the current value of the chain is to past values
-        It essentially tells us how much information is avaliable, if there is a lot of correlation,
-        there's less information than sampled from stationary distribution
-        The value is between -1 and 1, the lag where the autocorr is ~0 means the number of samples where the values aren't autocorrelated
-        The amount of autocorrelation determines the effective sample size (n_effective), for setting a 95% credible interval
+        Auto-correlation -- measures how linearly dependent the current value of the chain is to past values. It essentially tells us how much information is avaliable, if there is a lot of correlation, there's less information than sampled from stationary distribution. The value is between -1 and 1, the lag where the autocorr is ~0 means the number of samples where the values aren't autocorrelated. The amount of autocorrelation determines the effective sample size (n_effective), for setting a 95% credible interval. This number needs to be computed for every parameter in the model
 
-        Effective sample size (effective_n) -- is an estimate on the effective sample size
+        Effective sample size (effective_n, ESS) -- is an estimate on the effective number of independent samples taking into account auto-correlation (ESS = N_samples/(1 + 2*sum_i(autocorr_i))). This number is not equal to the actual number of samples drawn as the samples are often correlated (since this is a Markov Chain!), this number is also different per parameter in the model.
+
+        Monte Carlo Standard Error (MCSE or mc_error) -- MCSE^2 = Var(f)/ESS
 
         Highest Posterior Density (HPD) -- The HPD is an estimator that calculates the minimum width of the Bayesian credible interval (BCI).
         If the posterior density is multimodal, the HPD does not result in an interval estimate (thankfully it's not for our case)
@@ -891,10 +894,12 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
 
 def posteriorChecks(model, trace):
     """
-        Performs various posterior checks
+        In the Bayesian perspective we define a model that we assume is true and we fit it to the data, but what if the model is wrong? Posterior Predictive Checks performs another check on the model by requiring reasonable predictive performance using the model. In standard machine learning, holding out a dataset gives some check of predictive performance but it is only one point, not an ensemble. Cross-validation doesn't give predictive performance, it gives a sense of partitioning performance.
+
         Posterior Predictive Checks:
             - Simulates replicating data under the fitted model and then comparing these to the observed data
             - This checks for systematic discrepancies between real and simulated data
+            - Effectively computes the probability of psuedo-data given the data (comes for free with the MCMC): p(D'|D) = Int( P(D'|w) * P(w|D) * dw )
 
         Widely-applicable Information Criterion (WAIC):
             - Fully Bayesian criterion for estimating out-of-sample expectation, using the computed log pointwise posterior predictive density (LPPD) and correcting for the effective number of parameters to adjust for overfitting.
