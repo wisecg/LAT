@@ -25,7 +25,7 @@ Optional Python packages: Pandas, Seaborn, pymc3, theano, PyTables
 - `dsi.py`: Helper module that contains properties of the data sets, including background, calibration, special runs, and detector info
 - `waveLibs.py`: Helper module that contains a variety of convenience functions (Basic waveform processing, histogramming, various commonly used functions, simple filter, etc)
 - `./data/runs*.json`: run lists for bkg runs (match `DataSetInfo.cc`), calibration, and special runs
-- `spec-fit`: Final spectrum fits using RooFit
+- `spec-fit.py`: Final spectrum fits using RooFit
 
 There are a lot of half-baked ideas, some useful, in `LAT/sandbox`.
 
