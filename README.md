@@ -23,7 +23,7 @@ Optional Python packages: Pandas, Seaborn, pymc3, theano, PyTables
 - `lat3.py`: Calculates rate of each ch+subDS in order to perform outlier removal (burst cut). Makes skim files with addition of burst cut applied. Must be run after `lat2.py` and `ds_livetime.cc`.
 - `lat-expo.py`: Evaluates the livetime and exposure of each ch+subDS with any combination of cuts. Evaluates efficiency and saves into files. Makes final skim files with `tOffset` cut applied. Makes movies of waveforms after all cuts are applied.
 - `dsi.py`: Helper module that contains properties of the data sets, including background, calibration, special runs, and detector info
-- `waveLibs.py`: Helper module that contains a variety of convenience functions (Basic waveform processing, histogramming, various commonly used functions, simple filter, etc)
+- `waveLibs.py`: Helper module that contains a variety of convenience functions (basic waveform processing, histogramming, various commonly used functions, simple filter, etc)
 - `./data/runs*.json`: run lists for bkg runs (match `DataSetInfo.cc`), calibration, and special runs
 - `spec-fit.py`: Final spectrum fits using RooFit
 
