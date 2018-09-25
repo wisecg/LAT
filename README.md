@@ -1,6 +1,6 @@
 # LAT (Low-Energy Analysis Toolkit)
 
-Written to perform a complete analysis of Majorana Demonstrator DS0-6A low-energy data.
+Written to perform a complete analysis of Majorana Demonstrator DS0-6A low-energy data. Current analysis was performed with the LATv2 tag. 
 
 ## Dependencies: 
 Base: ROOT, MGDO, and GAT.
