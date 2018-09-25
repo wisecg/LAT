@@ -3,8 +3,10 @@
 Written to perform a complete analysis of Majorana Demonstrator DS0-6A low-energy data.
 
 ## Dependencies: 
-Base: ROOT, MGDO, and GAT
+Base: ROOT, MGDO, and GAT.
+
 Python Packages: Python (2.7 or 3.x), SciPy ecosystem (NumPy, SciPy, and Matplotlib), pyROOT, tinydb, and PyWavelets.
+
 Optional Python packages: Pandas, Seaborn, pymc3, theano, PyTables
 
 ## Main Routines and data production workflow:
