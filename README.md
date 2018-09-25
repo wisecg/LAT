@@ -7,19 +7,7 @@ Base: ROOT, MGDO, and GAT
 Python Packages: Python (2.7 or 3.x), SciPy ecosystem (NumPy, SciPy, and Matplotlib), pyROOT, tinydb, and PyWavelets.
 Optional Python packages: Pandas, Seaborn, pymc3, theano, PyTables
 
-## Main Routines:
-- `skim_mjd_data`: produce low energy skim files w/ special options to reduce threshold
-- `wave-skim`: grab all waveforms for hits passing basic data cleaning cuts
-- `ds_livetime`: calculate livetime w/o low-e run and channel selection
-- `lat-jobs`: control job submission
-- `lat-settings`: save channel map and threshold/HV settings for all runs
-- `lat`: waveform fitting and wavelet packet decomposition (PSA parameters)
-- `lat2`: tune and apply PSA cuts
-- `lat3`: tune and apply burst cut
-- `lat-check`: data integrity checks for all files
-- `lat-expo`: exposure and efficiency
-
-## Main Routines -- LAT production workflow:
+## Main Routines and data production workflow:
 - `lat-jobs.py`: This is a script that wraps all the codes and submits all of the codes in order onto PDSF/CORI/etc. Also can run some diagnostics.
 - `lat-checks.py`: This script runs basic file integrity checks after every stage in LAT up to the end of lat.py. This script verifies that no events are lost during the LAT production process.
 - `skim_mjd_data.cc`: Standard MJD code that creates skim files, except we use the option to include additional parameters as well as lower the threshold
