@@ -3,6 +3,7 @@ import sys, os, imp, pathlib, itertools
 import numpy as np
 import pandas as pd
 from statsmodels.stats import proportion
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
@@ -19,7 +20,9 @@ detInfo = dsi.DetInfo()
 # load threshold data
 import tinydb as db
 dsNum, bkgIdx = 5, 83
-calDB = db.TinyDB('calDB.json')
+dbFile = '%s/calDB-v2.json' % (dsi.latSWDir)
+# calDB = db.TinyDB('calDB.json')
+calDB = db.TinyDB(dbFile)
 pars = db.Query()
 thD = ds.getDBRecord("thresh_ds%d_bkgidx%d" % (dsNum, bkgIdx), False, calDB, pars)
 
@@ -33,7 +36,10 @@ def main():
 
     # Create files with hits
     # getSpecPandas()
-    getSimPandas()
+    # plotM1Spectra()
+    combinedEff()
+    # plotDetSpectra()
+    # getSimPandas()
     # loadSpec()
     # loadFraction()
     # plotFraction()
@@ -352,7 +358,7 @@ def getSimPandas(mod=1):
     import warnings
     warnings.filterwarnings(action="ignore", module="pandas", message="^\nyour performance")
 
-    chunksize = 1000000
+    chunksize = 10000000
     start = 0
     end = chunksize-1
     i = 0
@@ -710,6 +716,168 @@ def plotComptonEdge():
     plt.tight_layout()
     plt.show()
     # plt.savefig('../plots/sim-sloFrac-allDets.pdf')
+
+
+def plotDetSpectra():
+    """
+        Draws the detector-by-detector m2s238 spectrum from simulations
+    """
+
+    # Want to draw the spectrum of simulated events per detector and compare it with the calibration data
+    df = pd.concat([pd.read_hdf('{}/data/DS5_M1_SimHitData_{}.h5'.format(os.environ['LATDIR'], i)) for i in range(2)])
+    df = (df.dropna()
+            .loc[(df['sumET'] > 237.28) & (df['sumET'] < 239.46)])
+
+    dfg = df.groupby(['CPD1'])
+
+    fig1, ax1 = plt.subplots(figsize=(10,7))
+    bins = np.linspace(0, 120, 61)
+
+    for name, g in dfg:
+        # highE = g['trapENFCal2'].values
+        lowE = g['trapENFCal1'].values
+
+        # print(highE, highE.shape)
+        # print(lowE, lowE.shape)
+
+        ax1.cla()
+        sns.distplot(lowE, bins=bins, kde=False, label='C{}P{}D{}'.format(*str(name)), ax=ax1)
+        fig1.savefig('{}/plots/CalSim/C{}P{}D{}_Spectra.png'.format(os.environ['LATDIR'], *str(name)))
+
+
+def plotM1Spectra():
+    """
+        Plot the mHL spectra data with and without cuts
+    """
+    sns.set(style='ticks')
+    df = pd.read_hdf('/mnt/mjdDisk1/Majorana/users/psz/LAT/data/CalPairHit_WithDbCut_mH1.h5')
+
+    # fig1, ax1 = plt.subplots(figsize=(10,7))
+    # aCuts = df.loc[(df['Pass1'] == True)&(df['cpd1'] > 200), 'trapENFCal1'].values
+    # bCuts = df.loc[df['cpd1'] > 200,'trapENFCal1'].values
+    # ax1.set_title('Module 2, mHT == 1 Spectrum ({:.2f}% passing cuts)'.format(float(len(aCuts)/len(bCuts))*100))
+    # ax1.set_xlabel('Energy (keV)')
+    # ax1.set_ylabel('Counts')
+    # ax1.legend()
+    # plt.tight_layout()
+
+    dfg = df.groupby(['cpd1'])
+    cpdList = df['cpd1'].unique()
+    fig2, ax2 = plt.subplots(ncols=7, nrows=5, figsize=(17,15))
+    ax2 = ax2.flatten()
+    idx = 0
+    for name, g in dfg:
+        bCuts = g['trapENFCal1'].values
+        aCuts = g.loc[(df['Pass1'] == True), 'trapENFCal1'].values
+        sns.distplot(aCuts, kde=False, color='b', label='After Cut', ax=ax2[idx])
+        sns.distplot(bCuts, kde=False, color='r', label='Before Cut', ax=ax2[idx])
+        sns.despine()
+        isEnr = detInfo.isEnr(name)
+        isEnrStr = ''
+        if isEnr:
+            isEnrStr = 'Enr'
+        else:
+            isEnrStr = 'Nat'
+
+        ax2[idx].set(title='C{}P{}D{} ({enr}) ({eff:.1f}%)'.format(*str(name),
+                    enr=isEnrStr, eff=100.*len(aCuts)/len(bCuts)))
+        idx += 1
+
+    # Turn off the last axes without figures
+    for i in range(idx,len(ax2)):
+        ax2[i].axis('off')
+
+    plt.tight_layout()
+    fig2.savefig('Detector_mH1Eff.png')
+    # plt.show()
+
+
+def combinedEff():
+    """
+        Utilizes the data produced by lat2 and combines all detectors to calculate one efficiency
+
+        Currently this data only runs out to 50 keV, we can change it to go out farther in energy
+    """
+    from statsmodels.stats import proportion
+    sns.set(style='whitegrid', context='talk')
+
+    f = np.load(os.environ['LATDIR']+'/data/lat2-eff-data-95.npz')
+    effData = f['arr_0'].item()
+
+    detList = effData.keys()
+    xCenterVals = effData['112'][0]
+    xVals = effData['112'][7]
+
+    # These are detectors skipped because of low statistics
+    #for now I am going to keep all detectors regardless of statistics
+    skipList = ['211','214','221','261','274']
+
+    # Split between Natural and Enriched efficiencies
+    hPassNat, hFullNat = np.zeros(len(xVals)), np.zeros(len(xVals))
+    hPassEnr, hFullEnr = np.zeros(len(xVals)), np.zeros(len(xVals))
+
+    for det in detList:
+        isEnr = detInfo.isEnr(det)
+        # Pass is the 4th array, total is the 6th
+        # print(det, len(effData[det][7]), len(effData[det][4]), len(effData[det][6]))
+        # print(effData[det][4], effData[det][6])
+        if isEnr:
+            hPassEnr += effData[det][4]
+            hFullEnr += effData[det][6]
+        else:
+            hPassNat += effData[det][4]
+            hFullNat += effData[det][6]
+
+
+    hEffEnr = np.nan_to_num(hPassEnr/hFullEnr)
+    hEffNat = np.nan_to_num(hPassNat/hFullNat)
+
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99))
+    initialGuess = [1, -1.6, 2.75, 0.95]
+    poptnat, pcovnat = curve_fit(wl.weibull, xVals, hEffNat, p0=initialGuess, bounds=fitBnd)
+    poptenr, pcovenr = curve_fit(wl.weibull, xVals, hEffEnr, p0=initialGuess, bounds=fitBnd)
+
+    print(poptenr, pcovenr)
+    print(poptnat, pcovnat)
+    effNat = wl.weibull(xVals,*poptnat)
+    effEnr = wl.weibull(xVals,*poptenr)
+    return
+
+    fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
+    ax11.set_title('Total Enriched Efficiency')
+    ax11.set_xlabel('Energy (keV)')
+    ax11.set_ylabel('Efficiency')
+    ax11.scatter(xVals, hEffEnr)
+    ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
+    ax12.set_title('Total Natural Efficiency')
+    ax12.set_xlabel('Energy (keV)')
+    ax12.set_ylabel('Efficiency')
+    ax12.scatter(xVals, hEffNat)
+    ax12.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
+    sns.despine(ax=ax11)
+    sns.despine(ax=ax12)
+
+    # Now Draw all the individual detector efficiencies on the plots in a lighter tone
+    # Grab fitSlo efficiency values from DB
+    fsD = dsi.getDBRecord("fitSlo_cpd_eff95", False, calDB, pars)
+
+    for det in detList:
+        isEnr = detInfo.isEnr(det)
+        cpd = int(det)
+        if cpd in fsD:
+            c, loc, scale, amp = fsD[cpd][3], fsD[cpd][4], fsD[cpd][5], fsD[cpd][2]
+            effCh = wl.weibull(xVals, c, loc, scale, amp)
+        else:
+            print('Detector {} is not in the DB'.format(det))
+            continue
+        if isEnr:
+            ax11.plot(xVals, effCh, color='b', alpha=0.2)
+        else:
+            ax12.plot(xVals, effCh, color='b', alpha=0.2)
+
+
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__=="__main__":

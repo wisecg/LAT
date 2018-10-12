@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """
-    Big NUTS Bragg Brand fitting
+    This code performs the Coherent Bragg-Primakov Axion analysis using pymc3
+
+    0) This code requires a couple of inputs:
+        a) Angle-averaged Axion PDF (provided by Wenqin)
+            => In the current implementation, this PDF is loaded and wrangled everytime the code is run, which is admittedly very inefficient in terms of overhead.
+        b) Final low energy spectra from 5 - 20 keV
+            => In the current implementation, the ROOT file is converted to a HDF file (only once)
+        c) Final low energy efficiencies (in a ROOT file) along with data-set specific run lists (in a text file)
+            => In the current implementation of the code, these inputs are calculated in dsi.py
 
     Limits we want to beat (for Lambda):
     lambda = np.power(g_agg * 1e8, 4)
@@ -25,6 +33,7 @@
 
     Brian's results (95 Limit):
     5 -- 20: 209.167060373 => 0.00101
+    New: 211.01599 => 0.00102
     4 -- 20: 294.202131301 => 0.00114
 
 """
@@ -813,19 +822,12 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     import corner
 
     # Load from files
-    print('Loading Backend from',backendDir)
+    print('Loading Backend from {}'.format(backendDir))
     trace = pm.backends.text.load(backendDir, model)
     # Get summary of trace as a dataframe
     print(trace[nBurn:])
-    modes,_ = mode(trace[nBurn:])
-    # print(modes)
-    print(trace[nBurn:]['Axion'])
-    print(trace[nBurn:]['Axion'].shape)
-    # print(mode(np.around(trace[nBurn:]['Axion']), 5))
-
-    modeList = [modes[0]['Axion'], modes[0]['Tritium'], modes[0]['Bkg'], modes[0]['Fe55'], modes[0]['Zn65'], modes[0]['Ge68']]
-    dfSum = pm.summary(trace[nBurn:], alpha=0.1)
-    dfSum['mode'] = modeList
+    traceBurn = trace[nBurn:]
+    dfSum = pm.summary(traceBurn, alpha=0.1)
     print(dfSum.head(10))
     AxionIntegral = pdfArrDict['Axion'].sum()
 
@@ -844,8 +846,6 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     bkgIntegral = 0
     axionIntegral = 0
     axionMeanIntegral = 0
-    bkgIntegralMode = 0
-    axionIntegralMode = 0
     for par in dfSum.index:
         # Integrate PDF
         parInt = (pdfArrDict[par]/effNorm).sum()
@@ -853,34 +853,29 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
         # parInt = (pdfArrDict[par]).sum()
 
         # Multiply integral by interval
-        print('{}    {:.2f}    {:.2f}    {:.2f}'.format(par, parInt*dfSum.loc[par, 'mean'], parInt*dfSum.loc[par, 'hpd_5'], parInt*dfSum.loc[par, 'hpd_95']))
+        print('{}    {:.2f}    {:.2f}    {:.2f}'.format(par, parRaw*dfSum.loc[par, 'mean'], parRaw*dfSum.loc[par, 'hpd_5'], parRaw*dfSum.loc[par, 'hpd_95']))
         if par == 'Axion':
-            print('Axion: Scaled Integral: {} \t Unscaled Integral: {}'.format(parInt*dfSum.loc[par, 'hpd_95'], parInt))
-            print('95% CI limit: {}'.format(parInt*dfSum.loc[par, 'hpd_95']/parInt))
+            # print('Axion: Scaled Integral: {} \t Unscaled Integral: {}'.format(parRaw*dfSum.loc[par, 'hpd_95'], parRaw))
+            # print('95% CI limit: {}'.format(parRaw*dfSum.loc[par, 'hpd_95']/parRaw))
             axionMeanIntegral = parRaw*dfSum.loc[par, 'mean']
             axionIntegral = parRaw*dfSum.loc[par, 'hpd_95']
-            axionIntegralMode = parRaw*dfSum.loc[par, 'mode']
         else:
             bkgIntegral += parRaw*dfSum.loc[par, 'mean']
-            bkgIntegralMode += parRaw*dfSum.loc[par, 'mode']
 
-    print('Background Mean Integral: {}'.format(bkgIntegral))
-    print('Background Mode Integral: {}'.format(bkgIntegralMode))
-    print('Axion Mean Integral: {}'.format(axionMeanIntegral))
-    print('Axion Mode Integral: {}'.format(axionIntegralMode))
-    print('Axion 95% Integral: {}'.format(axionIntegral))
+    print('Total Background Integral (Mean): {}'.format(bkgIntegral))
+    print('Axion Integral (Mean): {}'.format(axionMeanIntegral))
+    print('Axion Integral (95% C.I.): {}'.format(axionIntegral))
     # Debate: when converting to lambda,
 
     # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
     # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
-    pm.traceplot(trace[nBurn:])
-    pm.plot_posterior(trace[nBurn:], alpha_level=0.1, round_to=6)
-    # pm.forestplot(trace[nBurn:], varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
-    traceBurn = trace[nBurn:]
+    pm.traceplot(traceBurn)
+    pm.plot_posterior(traceBurn, alpha_level=0.1, round_to=6)
+    pm.forestplot(traceBurn, varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
-    cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
-    figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
+    # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
+    # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])
 
     # Format is hpdDict[nChain][Parameter] = [lower, upper]
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
