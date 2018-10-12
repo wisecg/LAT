@@ -799,7 +799,7 @@ def combinedEff():
         Currently this data only runs out to 50 keV, we can change it to go out farther in energy
     """
     from statsmodels.stats import proportion
-    sns.set(style='whitegrid', context='talk')
+    sns.set(style='ticks')
 
     f = np.load(os.environ['LATDIR']+'/data/lat2-eff-data-95.npz')
     effData = f['arr_0'].item()
@@ -837,25 +837,91 @@ def combinedEff():
     poptnat, pcovnat = curve_fit(wl.weibull, xVals, hEffNat, p0=initialGuess, bounds=fitBnd)
     poptenr, pcovenr = curve_fit(wl.weibull, xVals, hEffEnr, p0=initialGuess, bounds=fitBnd)
 
-    print(poptenr, pcovenr)
-    print(poptnat, pcovnat)
-    effNat = wl.weibull(xVals,*poptnat)
-    effEnr = wl.weibull(xVals,*poptenr)
-    return
+    # print(poptenr, pcovenr)
+    # print(poptnat, pcovnat)
+
+    effNat = wl.weibull(xVals, *poptnat)
+    effEnr = wl.weibull(xVals, *poptenr)
 
     fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
     ax11.set_title('Total Enriched Efficiency')
     ax11.set_xlabel('Energy (keV)')
     ax11.set_ylabel('Efficiency')
     ax11.scatter(xVals, hEffEnr)
-    ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
     ax12.set_title('Total Natural Efficiency')
     ax12.set_xlabel('Energy (keV)')
     ax12.set_ylabel('Efficiency')
     ax12.scatter(xVals, hEffNat)
-    ax12.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
     sns.despine(ax=ax11)
     sns.despine(ax=ax12)
+
+    # Now generate 5000 toyMC and re-fit the toyMC spectra
+    nMC = 5000
+    cNatList, locNatList, scaleNatList, ampNatList = [], [], [], []
+    cEnrList, locEnrList, scaleEnrList, ampEnrList = [], [], [], []
+
+    for idx in range(nMC):
+        ePass = np.random.poisson(hPassEnr)
+        eFull = np.random.poisson(hFullEnr)
+        nPass = np.random.poisson(hPassNat)
+        nFull = np.random.poisson(hFullNat)
+
+        eEff = np.nan_to_num(ePass/eFull)
+        nEff = np.nan_to_num(nPass/nFull)
+
+        popte, _ = curve_fit(wl.weibull, xVals, eEff, p0=initialGuess, bounds=fitBnd)
+        poptn, _ = curve_fit(wl.weibull, xVals, nEff, p0=initialGuess, bounds=fitBnd)
+
+        effE = wl.weibull(xVals, *popte)
+        effN = wl.weibull(xVals, *poptn)
+
+        cNatList.append(poptn[0])
+        locNatList.append(poptn[1])
+        scaleNatList.append(poptn[2])
+        ampNatList.append(poptn[3])
+
+        cEnrList.append(popte[0])
+        locEnrList.append(popte[1])
+        scaleEnrList.append(popte[2])
+        ampEnrList.append(popte[3])
+
+        ax11.plot(xVals, effE, color='b', alpha=0.005)
+        ax12.plot(xVals, effN, color='b', alpha=0.005)
+
+    # Draw these last so they show up!
+    ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
+    ax12.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
+    ax11.set_ylim(0.75, 1.0)
+    ax12.set_ylim(0.75, 1.0)
+    plt.tight_layout()
+
+
+    fig2, ax2 = plt.subplots(ncols=4, nrows=2, figsize=(17,17))
+    ax2 = ax2.flatten()
+    sns.distplot(cEnrList, kde=False, ax=ax2[0])
+    ax2[0].set_title('Enriched c')
+    sns.distplot(locEnrList, kde=False, ax=ax2[1])
+    ax2[1].set_title('Enriched loc')
+    sns.distplot(scaleEnrList, kde=False, ax=ax2[2])
+    ax2[2].set_title('Enriched scale')
+    sns.distplot(ampEnrList, kde=False, ax=ax2[3])
+    ax2[3].set_title('Enriched amp')
+
+    sns.distplot(cNatList, kde=False, ax=ax2[4])
+    ax2[4].set_title('Natural c')
+    sns.distplot(locNatList, kde=False, ax=ax2[5])
+    ax2[5].set_title('Natural loc')
+    sns.distplot(scaleNatList, kde=False, ax=ax2[6])
+    ax2[6].set_title('Natural scale')
+    sns.distplot(ampNatList, kde=False, ax=ax2[7])
+    ax2[7].set_title('Natural amp')
+
+    plt.tight_layout()
+    fig1.savefig('TotalEfficiency_ToyMC.png')
+    fig2.savefig('TotalEfficiency_ToyMC_Pars.png')
+    # plt.show()
+
+    return
 
     # Now Draw all the individual detector efficiencies on the plots in a lighter tone
     # Grab fitSlo efficiency values from DB
@@ -875,9 +941,12 @@ def combinedEff():
         else:
             ax12.plot(xVals, effCh, color='b', alpha=0.2)
 
-
     plt.tight_layout()
     plt.show()
+
+
+def toyMC(inArr):
+    return outArr
 
 
 if __name__=="__main__":
