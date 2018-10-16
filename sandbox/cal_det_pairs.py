@@ -750,7 +750,7 @@ def plotM1Spectra():
         Plot the mHL spectra data with and without cuts
     """
     sns.set(style='ticks')
-    df = pd.read_hdf('/mnt/mjdDisk1/Majorana/users/psz/LAT/data/CalPairHit_WithDbCut_mH1.h5')
+    df = pd.read_hdf(os.environ['LATDIR']+'/data/CalPairHit_WithDbCut_mH1.h5')
 
     # fig1, ax1 = plt.subplots(figsize=(10,7))
     # aCuts = df.loc[(df['Pass1'] == True)&(df['cpd1'] > 200), 'trapENFCal1'].values
@@ -767,8 +767,9 @@ def plotM1Spectra():
     ax2 = ax2.flatten()
     idx = 0
     for name, g in dfg:
-        bCuts = g['trapENFCal1'].values
-        aCuts = g.loc[(df['Pass1'] == True), 'trapENFCal1'].values
+        # Apply avse right now
+        bCuts = g.loc[(df['avse1'] > -1.) ,'trapENFCal1'].values
+        aCuts = g.loc[(df['Pass1'] == True) & (df['avse1'] > -1.), 'trapENFCal1'].values
         sns.distplot(aCuts, kde=False, color='b', label='After Cut', ax=ax2[idx])
         sns.distplot(bCuts, kde=False, color='r', label='Before Cut', ax=ax2[idx])
         sns.despine()
@@ -788,7 +789,7 @@ def plotM1Spectra():
         ax2[i].axis('off')
 
     plt.tight_layout()
-    fig2.savefig('Detector_mH1Eff.png')
+    fig2.savefig('Detector_mH1Eff_avse.png')
     # plt.show()
 
 
@@ -810,13 +811,17 @@ def combinedEff():
 
     # These are detectors skipped because of low statistics
     #for now I am going to keep all detectors regardless of statistics
-    skipList = ['211','214','221','261','274']
+    skipList = ['111','211','214','221','261','274']
 
     # Split between Natural and Enriched efficiencies
     hPassNat, hFullNat = np.zeros(len(xVals)), np.zeros(len(xVals))
     hPassEnr, hFullEnr = np.zeros(len(xVals)), np.zeros(len(xVals))
 
     for det in detList:
+        # Skip the bad stuff
+        if det in skipList:
+            # print('Skipping', det)
+            continue
         isEnr = detInfo.isEnr(det)
         # Pass is the 4th array, total is the 6th
         # print(det, len(effData[det][7]), len(effData[det][4]), len(effData[det][6]))
@@ -831,6 +836,16 @@ def combinedEff():
 
     hEffEnr = np.nan_to_num(hPassEnr/hFullEnr)
     hEffNat = np.nan_to_num(hPassNat/hFullNat)
+
+    # Calculate CI of points based off of stats only
+    nat_ci_low, nat_ci_upp = proportion.proportion_confint(hPassNat, hFullNat, alpha=0.1, method='beta')
+    enr_ci_low, enr_ci_upp = proportion.proportion_confint(hPassEnr, hFullEnr, alpha=0.1, method='beta')
+
+    # get the set of upper and lower points, removing nan's
+    # hEffEnrHi = np.asarray([hEffEnr[i] + (enr_ci_upp[i] - hEffEnr[i]) for i in range(len(hEffEnr))]) # upper
+    # hEffEnrLo = np.asarray([hEffEnr[i] - (hEffEnr[i] - enr_ci_low[i]) for i in range(len(hEffEnr))]) # lower
+    # hEffNatHi = np.asarray([hEffNat[i] + (nat_ci_upp[i] - hEffNat[i]) for i in range(len(hEffNat))]) # upper
+    # hEffNatLo = np.asarray([hEffNat[i] - (hEffNat[i] - nat_ci_low[i]) for i in range(len(hEffNat))]) # lower
 
     fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99))
     initialGuess = [1, -1.6, 2.75, 0.95]
@@ -847,16 +862,61 @@ def combinedEff():
     ax11.set_title('Total Enriched Efficiency')
     ax11.set_xlabel('Energy (keV)')
     ax11.set_ylabel('Efficiency')
-    ax11.scatter(xVals, hEffEnr)
+    ax11.errorbar(xVals, hEffEnr, yerr=[hEffEnr - enr_ci_low, enr_ci_upp - hEffEnr], color='k', linewidth=0.8, fmt='o', capsize=2)
+    # ax11.scatter(xVals, hEffEnr)
+
     ax12.set_title('Total Natural Efficiency')
     ax12.set_xlabel('Energy (keV)')
     ax12.set_ylabel('Efficiency')
-    ax12.scatter(xVals, hEffNat)
+    ax12.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
+    # ax12.scatter(xVals, hEffNat)
     sns.despine(ax=ax11)
     sns.despine(ax=ax12)
 
-    # Now generate 5000 toyMC and re-fit the toyMC spectra
-    nMC = 5000
+    # Now Draw all the individual detector efficiencies on the plots in a lighter tone
+    # Grab fitSlo efficiency values from DB
+    fsD = dsi.getDBRecord("fitSlo_cpd_eff95", False, calDB, pars)
+
+    for det in detList:
+        if det in skipList:
+            continue
+        isEnr = detInfo.isEnr(det)
+        cpd = int(det)
+        if cpd in fsD:
+            c, loc, scale, amp = fsD[cpd][3], fsD[cpd][4], fsD[cpd][5], fsD[cpd][2]
+            effCh = wl.weibull(xVals, c, loc, scale, amp)
+        else:
+            print('Detector {} is not in the DB'.format(det))
+            continue
+        if isEnr:
+            # ax11.plot(xVals, effCh, color='b', alpha=0.2)
+            ax11.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
+        else:
+            # ax12.plot(xVals, effCh, color='b', alpha=0.2)
+            ax12.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
+
+    ax11.plot(xVals, effEnr, lw=3, color='r', label='Total Efficiency')
+    ax12.plot(xVals, effNat, lw=3, color='r', label='Total Efficiency')
+    ax11.legend(loc='lower right', ncol=3)
+    ax12.legend(loc='lower right', ncol=3)
+    plt.tight_layout()
+    fig1.savefig('CombinedEfficiency_skipbad.png')
+    # plt.show()
+
+    fig21, (ax21, ax22) = plt.subplots(ncols=2, figsize=(15,7))
+    ax21.set_title('Total Enriched Efficiency')
+    ax21.set_xlabel('Energy (keV)')
+    ax21.set_ylabel('Efficiency')
+    ax21.errorbar(xVals, hEffEnr, yerr=[hEffEnr - enr_ci_low, enr_ci_upp - hEffEnr], color='k', linewidth=0.8, fmt='o', capsize=2)
+    # ax11.scatter(xVals, hEffEnr)
+
+    ax22.set_title('Total Natural Efficiency')
+    ax22.set_xlabel('Energy (keV)')
+    ax22.set_ylabel('Efficiency')
+    ax22.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
+
+    # Now generate 10000 toyMC and re-fit the toyMC spectra
+    nMC = 10000
     cNatList, locNatList, scaleNatList, ampNatList = [], [], [], []
     cEnrList, locEnrList, scaleEnrList, ampEnrList = [], [], [], []
 
@@ -885,18 +945,18 @@ def combinedEff():
         scaleEnrList.append(popte[2])
         ampEnrList.append(popte[3])
 
-        ax11.plot(xVals, effE, color='b', alpha=0.005)
-        ax12.plot(xVals, effN, color='b', alpha=0.005)
+        ax21.plot(xVals, effE, color='b', alpha=0.005)
+        ax22.plot(xVals, effN, color='b', alpha=0.005)
 
     # Draw these last so they show up!
-    ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
-    ax12.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
-    ax11.set_ylim(0.75, 1.0)
-    ax12.set_ylim(0.75, 1.0)
+    ax21.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
+    ax22.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
+    ax21.set_ylim(0.75, 1.0)
+    ax22.set_ylim(0.75, 1.0)
     plt.tight_layout()
 
 
-    fig2, ax2 = plt.subplots(ncols=4, nrows=2, figsize=(17,17))
+    fig22, ax2 = plt.subplots(ncols=4, nrows=2, figsize=(20,17))
     ax2 = ax2.flatten()
     sns.distplot(cEnrList, kde=False, ax=ax2[0])
     ax2[0].set_title('Enriched c')
@@ -917,36 +977,10 @@ def combinedEff():
     ax2[7].set_title('Natural amp')
 
     plt.tight_layout()
-    fig1.savefig('TotalEfficiency_ToyMC.png')
-    fig2.savefig('TotalEfficiency_ToyMC_Pars.png')
+    fig21.savefig('TotalEfficiency_ToyMC.png')
+    fig22.savefig('TotalEfficiency_ToyMC_Pars.png')
     # plt.show()
-
-    return
-
-    # Now Draw all the individual detector efficiencies on the plots in a lighter tone
-    # Grab fitSlo efficiency values from DB
-    fsD = dsi.getDBRecord("fitSlo_cpd_eff95", False, calDB, pars)
-
-    for det in detList:
-        isEnr = detInfo.isEnr(det)
-        cpd = int(det)
-        if cpd in fsD:
-            c, loc, scale, amp = fsD[cpd][3], fsD[cpd][4], fsD[cpd][5], fsD[cpd][2]
-            effCh = wl.weibull(xVals, c, loc, scale, amp)
-        else:
-            print('Detector {} is not in the DB'.format(det))
-            continue
-        if isEnr:
-            ax11.plot(xVals, effCh, color='b', alpha=0.2)
-        else:
-            ax12.plot(xVals, effCh, color='b', alpha=0.2)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def toyMC(inArr):
-    return outArr
+    # return
 
 
 if __name__=="__main__":
