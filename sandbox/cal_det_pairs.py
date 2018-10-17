@@ -807,7 +807,7 @@ def combinedEff():
 
     detList = effData.keys()
     xCenterVals = effData['112'][0]
-    xVals = effData['112'][7]
+    xVals = effData['112'][7][1:]
 
     # These are detectors skipped because of low statistics
     #for now I am going to keep all detectors regardless of statistics
@@ -827,15 +827,20 @@ def combinedEff():
         # print(det, len(effData[det][7]), len(effData[det][4]), len(effData[det][6]))
         # print(effData[det][4], effData[det][6])
         if isEnr:
-            hPassEnr += effData[det][4]
-            hFullEnr += effData[det][6]
+            hPassEnr += effData[det][4][1:]
+            hFullEnr += effData[det][6][1:]
         else:
-            hPassNat += effData[det][4]
-            hFullNat += effData[det][6]
+            hPassNat += effData[det][4][1:]
+            hFullNat += effData[det][6][1:]
 
 
     hEffEnr = np.nan_to_num(hPassEnr/hFullEnr)
     hEffNat = np.nan_to_num(hPassNat/hFullNat)
+
+    print(len(xVals), xVals)
+    print(hPassEnr)
+    print(hFullEnr)
+    print(hEffEnr)
 
     # Calculate CI of points based off of stats only
     nat_ci_low, nat_ci_upp = proportion.proportion_confint(hPassNat, hFullNat, alpha=0.1, method='beta')
@@ -852,11 +857,27 @@ def combinedEff():
     poptnat, pcovnat = curve_fit(wl.weibull, xVals, hEffNat, p0=initialGuess, bounds=fitBnd)
     poptenr, pcovenr = curve_fit(wl.weibull, xVals, hEffEnr, p0=initialGuess, bounds=fitBnd)
 
-    # print(poptenr, pcovenr)
-    # print(poptnat, pcovnat)
+    print(poptenr, pcovenr)
+    print(poptnat, pcovnat)
+
 
     effNat = wl.weibull(xVals, *poptnat)
     effEnr = wl.weibull(xVals, *poptenr)
+
+    zVal = 1.645
+    # Simple Uncertainties
+    Sigma_Enr = np.sqrt(np.diagonal(pcovenr))
+    Sigma_Nat = np.sqrt(np.diagonal(pcovnat))
+
+    effEnrUpper = wl.weibull(xVals, *(np.array(poptenr) + zVal*Sigma_Enr))
+    effEnrLower = wl.weibull(xVals, *(np.array(poptenr) - zVal*Sigma_Enr))
+    effNatUpper = wl.weibull(xVals, *(np.array(poptnat) + zVal*Sigma_Nat))
+    effNatLower = wl.weibull(xVals, *(np.array(poptnat) - zVal*Sigma_Nat))
+
+    eff2EnrUpper = np.exp( np.log(effEnr)*np.exp(zVal/np.sqrt(np.array(hFullEnr))) )
+    eff2EnrLower = np.exp( np.log(effEnr)*np.exp(-1.*zVal/np.sqrt(np.array(hFullEnr))) )
+    eff2NatUpper = np.exp( np.log(effNat)*np.exp(zVal/np.sqrt(np.array(hFullNat))) )
+    eff2NatLower = np.exp( np.log(effNat)*np.exp(-1.*zVal/np.sqrt(np.array(hFullNat))) )
 
     fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
     ax11.set_title('Total Enriched Efficiency')
@@ -889,19 +910,26 @@ def combinedEff():
             print('Detector {} is not in the DB'.format(det))
             continue
         if isEnr:
+            # continue
             # ax11.plot(xVals, effCh, color='b', alpha=0.2)
             ax11.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
         else:
+            # continue
             # ax12.plot(xVals, effCh, color='b', alpha=0.2)
             ax12.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
 
-    ax11.plot(xVals, effEnr, lw=3, color='r', label='Total Efficiency')
-    ax12.plot(xVals, effNat, lw=3, color='r', label='Total Efficiency')
+    ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
+    # ax11.fill_between(xVals, eff2EnrLower, eff2EnrUpper, color='r', alpha=0.2)
+    ax12.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
+    # ax12.fill_between(xVals, eff2NatLower, eff2NatUpper, color='r', alpha=0.2)
+    # ax11.set_ylim(0.75, 1.0)
+    # ax12.set_ylim(0.75, 1.0)
     ax11.legend(loc='lower right', ncol=3)
     ax12.legend(loc='lower right', ncol=3)
     plt.tight_layout()
-    fig1.savefig('CombinedEfficiency_skipbad.png')
+    # fig1.savefig('CombinedEfficiency_skipbad_floatX.png')
     # plt.show()
+    # return
 
     fig21, (ax21, ax22) = plt.subplots(ncols=2, figsize=(15,7))
     ax21.set_title('Total Enriched Efficiency')
@@ -950,7 +978,9 @@ def combinedEff():
 
     # Draw these last so they show up!
     ax21.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
+    sns.despine()
     ax22.plot(xVals, effNat, lw=2, color='r', label='Total Efficiency')
+    sns.despine()
     ax21.set_ylim(0.75, 1.0)
     ax22.set_ylim(0.75, 1.0)
     plt.tight_layout()
@@ -977,9 +1007,9 @@ def combinedEff():
     ax2[7].set_title('Natural amp')
 
     plt.tight_layout()
-    fig21.savefig('TotalEfficiency_ToyMC.png')
-    fig22.savefig('TotalEfficiency_ToyMC_Pars.png')
-    # plt.show()
+    fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
+    fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
+    plt.show()
     # return
 
 
