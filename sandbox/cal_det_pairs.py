@@ -37,7 +37,9 @@ def main():
     # Create files with hits
     # getSpecPandas()
     # plotM1Spectra()
-    combinedEff()
+    # combinedEff(bSave=True)
+    plotMCEffUnc()
+
     # plotDetSpectra()
     # getSimPandas()
     # loadSpec()
@@ -793,7 +795,7 @@ def plotM1Spectra():
     # plt.show()
 
 
-def combinedEff():
+def combinedEff(bSave = False):
     """
         Utilizes the data produced by lat2 and combines all detectors to calculate one efficiency
 
@@ -842,6 +844,7 @@ def combinedEff():
     print(hFullEnr)
     print(hEffEnr)
 
+
     # Calculate CI of points based off of stats only
     nat_ci_low, nat_ci_upp = proportion.proportion_confint(hPassNat, hFullNat, alpha=0.1, method='beta')
     enr_ci_low, enr_ci_upp = proportion.proportion_confint(hPassEnr, hFullEnr, alpha=0.1, method='beta')
@@ -860,9 +863,20 @@ def combinedEff():
     print(poptenr, pcovenr)
     print(poptnat, pcovnat)
 
-
     effNat = wl.weibull(xVals, *poptnat)
     effEnr = wl.weibull(xVals, *poptenr)
+
+    # Generate and save a large dataset into a dataframe
+    dfEBFList, dfNBFList = [], []
+    dfEList, dfNList = [], []
+    xValsFine = np.linspace(0, 250, 2501)
+
+    effBFNat = wl.weibull(xValsFine, *poptnat)
+    effBFEnr = wl.weibull(xValsFine, *poptenr)
+
+    dfEBFList.append({xValsFine[i]:effBFEnr[i] for i in range(len(xValsFine))})
+    dfNBFList.append({xValsFine[i]:effBFNat[i] for i in range(len(xValsFine))})
+
 
     zVal = 1.645
     # Simple Uncertainties
@@ -944,11 +958,14 @@ def combinedEff():
     ax22.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
 
     # Now generate 10000 toyMC and re-fit the toyMC spectra
-    nMC = 10000
+    nMC = 50000
     cNatList, locNatList, scaleNatList, ampNatList = [], [], [], []
     cEnrList, locEnrList, scaleEnrList, ampEnrList = [], [], [], []
 
+
     for idx in range(nMC):
+        if idx%1000 == 0:
+            print('Current Loop: {} of {}'.format(idx, nMC))
         ePass = np.random.poisson(hPassEnr)
         eFull = np.random.poisson(hFullEnr)
         nPass = np.random.poisson(hPassNat)
@@ -963,6 +980,14 @@ def combinedEff():
         effE = wl.weibull(xVals, *popte)
         effN = wl.weibull(xVals, *poptn)
 
+        effEFine = wl.weibull(xValsFine, *popte)
+        effNFine = wl.weibull(xValsFine, *poptn)
+
+        dETemp = {xValsFine[i]:effEFine[i] for i in range(len(xValsFine))}
+        dNTemp = {xValsFine[i]:effNFine[i] for i in range(len(xValsFine))}
+
+        dfEList.append(dETemp)
+        dfNList.append(dNTemp)
         cNatList.append(poptn[0])
         locNatList.append(poptn[1])
         scaleNatList.append(poptn[2])
@@ -976,6 +1001,21 @@ def combinedEff():
         ax21.plot(xVals, effE, color='b', alpha=0.005)
         ax22.plot(xVals, effN, color='b', alpha=0.005)
 
+    if bSave:
+        dfBFE = pd.DataFrame.from_dict(dfEBFList)
+        dfBFN = pd.DataFrame.from_dict(dfNBFList)
+
+        dfE = pd.DataFrame.from_dict(dfEList)
+        dfN = pd.DataFrame.from_dict(dfNList)
+
+        print(dfE.head(10))
+        dfBFE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='EnrBF', format='table', mode='w', complevel=9)
+        dfBFN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='NatBF', format='table', mode='a', complevel=9)
+        dfE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Enr', format='table', mode='a', complevel=9)
+        dfN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Nat', format='table', mode='a', complevel=9)
+
+    return
+
     # Draw these last so they show up!
     ax21.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
     sns.despine()
@@ -984,7 +1024,6 @@ def combinedEff():
     ax21.set_ylim(0.75, 1.0)
     ax22.set_ylim(0.75, 1.0)
     plt.tight_layout()
-
 
     fig22, ax2 = plt.subplots(ncols=4, nrows=2, figsize=(20,17))
     ax2 = ax2.flatten()
@@ -1007,10 +1046,92 @@ def combinedEff():
     ax2[7].set_title('Natural amp')
 
     plt.tight_layout()
-    fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
-    fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
+    # fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
+    # fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
     plt.show()
-    # return
+
+def plotMCEffUnc():
+    """
+        Loads the toy efficiency data produced from before, does some sanity checks, and calculates the std, etc
+    """
+    sns.set(style='ticks')
+
+    dfEnr = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'Enr')
+    dfNat = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'Nat')
+
+    # Best Fit curve
+    dfEnrBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'EnrBF')
+    dfNatBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'NatBF')
+
+    xVals = np.linspace(0, 250, 2501)
+    # Here I take the means and compare to the best fit, for the best fit DF, there's only 1 value so it doesn't matter if I take the mean
+    EnrEff = dfEnrBF.mean(axis=0).values
+    NatEff = dfNatBF.mean(axis=0).values
+    toyEnrEff = dfEnr.mean(axis=0).values
+    toyNatEff = dfNat.mean(axis=0).values
+
+    toyEnrStd = dfEnr.std(axis=0).values
+    toyNatStd = dfNat.std(axis=0).values
+    zVal = 1.645
+    EnrEffHi = EnrEff + zVal*toyEnrStd
+    EnrEffLo = EnrEff - zVal*toyEnrStd
+    NatEffHi = NatEff + zVal*toyNatStd
+    NatEffLo = NatEff - zVal*toyNatStd
+
+    # Loop through the first couple of columns using iloc and plot the distributions, see if they look gaussian
+    #Spoilers: they look Gaussian so we can use the std calculated from Pandas
+    fig0, ax0 = plt.subplots(ncols=8, nrows=5, figsize=(15,12))
+    ax0 = ax0.flatten()
+    bins = np.linspace(0.25, 1.0, 600)
+    for i in range(len(ax0)):
+        # Start with bin 15 (1 keV)
+        idx = i + 11
+        # sns.distplot(dfEnr.iloc[idx,:].values, kde=False, bins=bins, ax=ax0[i])
+        print('Best Fit mean: {}'.format(EnrEff[idx]))
+        # binRange = EnrEff[idx]
+        ax0[i].hist(dfEnr.iloc[:,idx].values, bins=bins)
+        ax0[i].set_title('{:.1f} keV'.format(0.1*(idx-1)))
+        ax0[i].set_xlim(EnrEff[idx] - 5*toyEnrStd[idx], EnrEff[idx] + 5*toyEnrStd[idx])
+        ax0[i].axvline(x=EnrEff[idx], color='r')
+        ax0[i].axvline(x=EnrEff[idx]-zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
+        ax0[i].axvline(x=EnrEff[idx]+zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
+        sns.despine()
+
+    plt.tight_layout()
+    fig0.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc_Dist.png')
+    return
+
+    # print(EnrEff)
+    # print(toyEnrStd)
+
+    # Plot them side by side to make sure it makes sense
+    # they differ by less than 0.1% at each point
+    # uncertainties look good
+    fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
+    ax11.plot(xVals, EnrEff, 'r', label='Best Fit Efficiency')
+    # ax11.fill_between(xVals, EnrEffLo, EnrEffHi, color='r', alpha=0.3, label=r'$1 \sigma$ Uncertainties')
+    ax11.fill_between(xVals, EnrEffLo, EnrEffHi, color='r', alpha=0.3, label='90% C.I.')
+    ax11.plot(xVals, toyEnrEff, 'b--', label='Toy MC Mean Efficiency')
+    sns.despine()
+    ax12.plot(xVals, NatEff, 'r', label='Best Fit Efficiency')
+    ax12.plot(xVals, toyNatEff, 'b--', label='Toy MC Mean Efficiency')
+    # ax12.fill_between(xVals, NatEffLo, NatEffHi, color='r', alpha=0.3, label=r'$1 \sigma$ Uncertainties')
+    ax12.fill_between(xVals, NatEffLo, NatEffHi, color='r', alpha=0.3, label='90% C.I.')
+    sns.despine()
+    ax11.set(title='Total Enriched Efficiency', ylabel='Efficiency', xlabel='Energy (keV)')
+    ax12.set(title='Total Natural Efficiency', ylabel='Efficiency', xlabel='Energy (keV)')
+    ax11.set_ylim(0.75, 1.0)
+    ax12.set_ylim(0.75, 1.0)
+    ax11.set_xlim(0,50.)
+    ax12.set_xlim(0,50.)
+    ax11.legend(loc = 'lower right')
+    ax12.legend(loc = 'lower right')
+    plt.tight_layout()
+    # fig1.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc.png')
+    # plt.show()
+
+    # import ROOT
+    # hEnr = ROOT.TH1D()
 
 
 if __name__=="__main__":
