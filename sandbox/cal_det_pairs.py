@@ -37,8 +37,11 @@ def main():
     # Create files with hits
     # getSpecPandas()
     # plotM1Spectra()
-    # combinedEff(bSave=True)
-    plotMCEffUnc()
+
+    # Run these two functions to combine all Enr/Nat detector efficiencies
+    #and to calculate uncertainties
+    combinedEff(bSave = False, bWriteDB = False)
+    # plotMCEffUnc(bSave = False)
 
     # plotDetSpectra()
     # getSimPandas()
@@ -795,7 +798,7 @@ def plotM1Spectra():
     # plt.show()
 
 
-def combinedEff(bSave = False):
+def combinedEff(bSave = False, bWriteDB = False):
     """
         Utilizes the data produced by lat2 and combines all detectors to calculate one efficiency
 
@@ -844,16 +847,9 @@ def combinedEff(bSave = False):
     print(hFullEnr)
     print(hEffEnr)
 
-
     # Calculate CI of points based off of stats only
     nat_ci_low, nat_ci_upp = proportion.proportion_confint(hPassNat, hFullNat, alpha=0.1, method='beta')
     enr_ci_low, enr_ci_upp = proportion.proportion_confint(hPassEnr, hFullEnr, alpha=0.1, method='beta')
-
-    # get the set of upper and lower points, removing nan's
-    # hEffEnrHi = np.asarray([hEffEnr[i] + (enr_ci_upp[i] - hEffEnr[i]) for i in range(len(hEffEnr))]) # upper
-    # hEffEnrLo = np.asarray([hEffEnr[i] - (hEffEnr[i] - enr_ci_low[i]) for i in range(len(hEffEnr))]) # lower
-    # hEffNatHi = np.asarray([hEffNat[i] + (nat_ci_upp[i] - hEffNat[i]) for i in range(len(hEffNat))]) # upper
-    # hEffNatLo = np.asarray([hEffNat[i] - (hEffNat[i] - nat_ci_low[i]) for i in range(len(hEffNat))]) # lower
 
     fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99))
     initialGuess = [1, -1.6, 2.75, 0.95]
@@ -869,7 +865,7 @@ def combinedEff(bSave = False):
     # Generate and save a large dataset into a dataframe
     dfEBFList, dfNBFList = [], []
     dfEList, dfNList = [], []
-    xValsFine = np.linspace(0, 250, 2501)
+    xValsFine = np.linspace(0, 200, 2001)
 
     effBFNat = wl.weibull(xValsFine, *poptnat)
     effBFEnr = wl.weibull(xValsFine, *poptenr)
@@ -877,34 +873,55 @@ def combinedEff(bSave = False):
     dfEBFList.append({xValsFine[i]:effBFEnr[i] for i in range(len(xValsFine))})
     dfNBFList.append({xValsFine[i]:effBFNat[i] for i in range(len(xValsFine))})
 
-
     zVal = 1.645
     # Simple Uncertainties
     Sigma_Enr = np.sqrt(np.diagonal(pcovenr))
     Sigma_Nat = np.sqrt(np.diagonal(pcovnat))
 
+    # These are some preliminary uncertainty calculations, the first one is based off of using the diagonal as the uncertainty (ignoring all corrlations)
+    # The second one is using a calculation from https://stats.stackexchange.com/questions/135749/confidence-intervals-of-fitted-weibull-survival-function
+    # We decided to go with the Toy MC method as it's the most accurate (and doesn't require me to do more math)
+
     effEnrUpper = wl.weibull(xVals, *(np.array(poptenr) + zVal*Sigma_Enr))
     effEnrLower = wl.weibull(xVals, *(np.array(poptenr) - zVal*Sigma_Enr))
     effNatUpper = wl.weibull(xVals, *(np.array(poptnat) + zVal*Sigma_Nat))
     effNatLower = wl.weibull(xVals, *(np.array(poptnat) - zVal*Sigma_Nat))
-
     eff2EnrUpper = np.exp( np.log(effEnr)*np.exp(zVal/np.sqrt(np.array(hFullEnr))) )
     eff2EnrLower = np.exp( np.log(effEnr)*np.exp(-1.*zVal/np.sqrt(np.array(hFullEnr))) )
     eff2NatUpper = np.exp( np.log(effNat)*np.exp(zVal/np.sqrt(np.array(hFullNat))) )
     eff2NatLower = np.exp( np.log(effNat)*np.exp(-1.*zVal/np.sqrt(np.array(hFullNat))) )
+
+    # Save stuff into calDB
+    dbKey = "fitSlo_Combined_m2s238_eff95"
+    cEnr, locEnr, scEnr, ampEnr = poptenr
+    cEEnr, locEEnr, scEEnr, ampEEnr = Sigma_Enr
+    cNat, locNat, scNat, ampNat = poptnat
+    cENat, locENat, scENat, ampENat = Sigma_Nat
+
+    dbVals = {}
+    # 0 = Enr, 1 = Nat (similar to gain)
+    dbVals[0] = [cEnr, locEnr, scEnr, ampEnr, cEEnr, locEEnr, scEEnr, ampEEnr]
+    dbVals[1] = [cNat, locNat, scNat, ampNat, cENat, locENat, scENat, ampENat]
+
+    if bWriteDB:
+        print('Writing dbVals:', dbVals)
+        dsi.setDBRecord({"key":dbKey, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+        print("DB filled:",dbKey)
+
+        fsN = dsi.getDBRecord(dbKey, False, calDB, pars)
+        print(fsN)
+    return
 
     fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
     ax11.set_title('Total Enriched Efficiency')
     ax11.set_xlabel('Energy (keV)')
     ax11.set_ylabel('Efficiency')
     ax11.errorbar(xVals, hEffEnr, yerr=[hEffEnr - enr_ci_low, enr_ci_upp - hEffEnr], color='k', linewidth=0.8, fmt='o', capsize=2)
-    # ax11.scatter(xVals, hEffEnr)
 
     ax12.set_title('Total Natural Efficiency')
     ax12.set_xlabel('Energy (keV)')
     ax12.set_ylabel('Efficiency')
     ax12.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
-    # ax12.scatter(xVals, hEffNat)
     sns.despine(ax=ax11)
     sns.despine(ax=ax12)
 
@@ -924,12 +941,8 @@ def combinedEff(bSave = False):
             print('Detector {} is not in the DB'.format(det))
             continue
         if isEnr:
-            # continue
-            # ax11.plot(xVals, effCh, color='b', alpha=0.2)
             ax11.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
         else:
-            # continue
-            # ax12.plot(xVals, effCh, color='b', alpha=0.2)
             ax12.plot(xVals, effCh, alpha=0.5, label='C{}P{}D{}'.format(*det))
 
     ax11.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
@@ -942,26 +955,23 @@ def combinedEff(bSave = False):
     ax12.legend(loc='lower right', ncol=3)
     plt.tight_layout()
     # fig1.savefig('CombinedEfficiency_skipbad_floatX.png')
-    # plt.show()
-    # return
 
     fig21, (ax21, ax22) = plt.subplots(ncols=2, figsize=(15,7))
     ax21.set_title('Total Enriched Efficiency')
     ax21.set_xlabel('Energy (keV)')
     ax21.set_ylabel('Efficiency')
     ax21.errorbar(xVals, hEffEnr, yerr=[hEffEnr - enr_ci_low, enr_ci_upp - hEffEnr], color='k', linewidth=0.8, fmt='o', capsize=2)
-    # ax11.scatter(xVals, hEffEnr)
 
     ax22.set_title('Total Natural Efficiency')
     ax22.set_xlabel('Energy (keV)')
     ax22.set_ylabel('Efficiency')
     ax22.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
 
-    # Now generate 10000 toyMC and re-fit the toyMC spectra
+
+    # Now generate 50000 toyMC and re-fit the toyMC spectra
     nMC = 50000
     cNatList, locNatList, scaleNatList, ampNatList = [], [], [], []
     cEnrList, locEnrList, scaleEnrList, ampEnrList = [], [], [], []
-
 
     for idx in range(nMC):
         if idx%1000 == 0:
@@ -1014,8 +1024,6 @@ def combinedEff(bSave = False):
         dfE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Enr', format='table', mode='a', complevel=9)
         dfN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Nat', format='table', mode='a', complevel=9)
 
-    return
-
     # Draw these last so they show up!
     ax21.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
     sns.despine()
@@ -1048,9 +1056,9 @@ def combinedEff(bSave = False):
     plt.tight_layout()
     # fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
     # fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
-    plt.show()
+    # plt.show()
 
-def plotMCEffUnc():
+def plotMCEffUnc(bSave = False):
     """
         Loads the toy efficiency data produced from before, does some sanity checks, and calculates the std, etc
     """
@@ -1063,7 +1071,7 @@ def plotMCEffUnc():
     dfEnrBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'EnrBF')
     dfNatBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'NatBF')
 
-    xVals = np.linspace(0, 250, 2501)
+    xVals = np.linspace(0, 200, 2001)
     # Here I take the means and compare to the best fit, for the best fit DF, there's only 1 value so it doesn't matter if I take the mean
     EnrEff = dfEnrBF.mean(axis=0).values
     NatEff = dfNatBF.mean(axis=0).values
