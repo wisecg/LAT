@@ -1034,61 +1034,247 @@ def getEfficiency():
 
 
 def getEfficiencyROOT():
-    from ROOT import TFile, TH1D
+    """
+        Uses the trigger efficiency only file to build total efficiencies and uncertainties
+        Total efficiencies and uncertainties calculated through Toy MC in sandbox/cal_det_pairs.py
 
+        Note: because of the amount of data the Toy MC takes up, the binning is in 0.1 keV bins rather than 0.01 keV bins, must rebin the efficiencies manually
+    """
+    from ROOT import TFile, TH1D
+    import matplotlib.pyplot as plt
     # load trigger efficiency npz file and convert to TH1D for RooFit.
-    f = np.load(dsi.latSWDir+'/data/lat-expo%d-efficiency-all.npz' % pctTot)
+    f = np.load(dsi.latSWDir+'/data/lat-expo-efficiency-trig-e95.npz')
 
     xEff = f['arr_0']
-    eMin, eMax, nBins = 0, 50, len(xEff)
+    eMin, eMax, nBins = 0, 200, len(xEff)
     totEnrEff = f['arr_1'].tolist()
     totNatEff = f['arr_2'].tolist()
     enrExp = f['arr_3'].tolist()
     natExp = f['arr_4'].tolist()
+    detEff = f['arr_13'].item()
+    detExpo = f['arr_14'].item()
+    # Have to manually set this because depending on the version of python, sometimes the dictionary keys don't automatically get read
+    dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
 
-    # do this to normalize the max value to 1, that's what roofit needs
-    # enrRooEff = np.divide(totEnrEff[ds], np.amax(totEnrEff[ds]))
-    # natRooEff = np.divide(totNatEff[ds], np.amax(totNatEff[ds]))
+    # Grab total fitSlo efficiency from DB
+    calDB = db.TinyDB('%s/calDB-v2.json' % (dsi.latSWDir))
+    pars = db.Query()
+    dbKey = "fitSlo_Combined_m2s238_eff95"
+    fsN = dsi.getDBRecord(dbKey, False, calDB, pars)
+    enrpars = fsN[0]
+    natpars = fsN[1]
+    fEffEnr = wl.weibull(xEff, *enrpars[:4])
+    fEffNat = wl.weibull(xEff, *natpars[:4])
 
+    # Correct efficiency by riseNoise efficiency
+    riseEff = 0.995 # riseNoise is defined to be 99.5% efficient, no energy dependence
+    fEffEnr = np.multiply(fEffEnr, riseEff)
+    fEffNat = np.multiply(fEffNat, riseEff)
+
+    totalEnrEff, totalNatEff = {}, {}
+    totalEnrExp, totalNatExp = {}, {}
+    for ds in dsList:
+        dsNum = int(ds[0]) if isinstance(ds,str) else ds
+        mods = [1]
+        if dsNum == 4: mods = [2]
+        if dsNum >= 5: mods = [1,2]
+        totalEnrEff.setdefault(ds, np.zeros(len(xEff)))
+        totalNatEff.setdefault(ds, np.zeros(len(xEff)))
+        totalEnrExp.setdefault(ds, 0.)
+        totalNatExp.setdefault(ds, 0.)
+
+        for mod in mods:
+            expTot = 0
+            chList = det.getGoodChanList(dsNum, mod)
+
+            for ch in chList:
+                cpd = det.getChanCPD(dsNum,ch)
+                intcpd = int(cpd)
+                if intcpd == 253:
+                    continue
+                if det.allDetIDs[cpd] > 100000:
+                    totalEnrEff[ds] += detEff[ds][cpd]
+                    totalEnrExp[ds] += detExpo[ds][cpd]
+                    # print(ds, cpd, detExpo[ds][cpd], totalEnrExp[ds])
+                else:
+                    totalNatEff[ds] += detEff[ds][cpd]
+                    totalNatExp[ds] += detExpo[ds][cpd]
+                    # print(ds, cpd, detExpo[ds][cpd], totalNatExp[ds])
+
+                expTot += detExpo[ds][cpd]
+                # print(ds, cpd, detExpo[ds][cpd])
+            # print(expTot)
+
+    # For debugging purposes
+    # print(totalEnrEff)
+    # print(totalNatEff)
+    # print(totalEnrExp)
+    # print(totalNatExp)
+    # print(len(totalEnrEff[1][::10]))
+
+    # Load Toy MC data now
+    dfEnr = pd.concat(
+            [pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(i), 'Enr')
+            for i in range(1,11)])
+    dfNat = pd.concat(
+            [pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(i), 'Nat')
+            for i in range(1,11)])
+
+    zVal = 1.645 # this is for 90% CI for Gaussian (we checked this is valid)
+    toyEnrEff = dfEnr.mean(axis=0).values
+    toyNatEff = dfNat.mean(axis=0).values
+    toyEnrStd = dfEnr.std(axis=0).values
+    toyNatStd = dfNat.std(axis=0).values
+
+    eMin, eMax = 0, 200
+    xVals = np.arange(eMin, eMax, 0.1)
+    nBins = len(xVals)
+
+    # Correct efficiency by exposures and calculate uncertainties for each dataset
     hEnr, hNat = {}, {}
     hEnrNorm, hNatNorm = {}, {}
-    fFile = TFile(dsi.latSWDir+'/data/lat-expo%d-efficiency.root' % pctTot, 'RECREATE')
+    hEnrHi, hNatHi = {}, {}
+    hEnrHiNorm, hNatHiNorm = {}, {}
+    hEnrLo, hNatLo = {}, {}
+    hEnrLoNorm, hNatLoNorm = {}, {}
+    hEnrHi90, hNatHi90 = {}, {}
+    hEnrHi90Norm, hNatHi90Norm = {}, {}
+    hEnrLo90, hNatLo90 = {}, {}
+    hEnrLo90Norm, hNatLo90Norm = {}, {}
+
+    fFile = TFile(dsi.latSWDir+'/data/lat-expo-efficiency_Combined.root', 'RECREATE')
     fFile.cd()
+    for ds in dsList:
+        fEffEnrTemp = np.multiply(fEffEnr[::10], totalEnrEff[ds][::10])
+        fEffNatTemp = np.multiply(fEffNat[::10], totalNatEff[ds][::10])
 
-    for ds in totEnrEff:
-        hEnr[ds] = TH1D('hDS{}_Enr'.format(ds), 'Dataset {} (Enriched) Efficiency'.format(ds),  nBins, eMin, eMax)
-        hNat[ds] = TH1D('hDS{}_Nat'.format(ds), 'Dataset {} (Natural) Efficiency'.format(ds),  nBins, eMin, eMax)
-        hEnrNorm[ds] = TH1D('hDS{}_Norm_Enr'.format(ds), 'Dataset {} (Enriched) Normalized Efficiency'.format(ds),  nBins, eMin, eMax)
-        hNatNorm[ds] = TH1D('hDS{}_Norm_Nat'.format(ds), 'Dataset {} (Natural) Normalized Efficiency'.format(ds),  nBins, eMin, eMax)
+        hEnr[ds] = TH1D('hDS{}_Enr'.format(ds), 'DS{} Enr Efficiency'.format(ds), nBins, eMin, eMax)
+        hNat[ds] = TH1D('hDS{}_Nat'.format(ds), 'DS{} Nat Efficiency'.format(ds), nBins, eMin, eMax)
+        hEnrHi[ds] = TH1D('hDS{}_Enr_Hi'.format(ds), 'DS{} Enr Efficiency (+68% CI)'.format(ds), nBins, eMin, eMax)
+        hNatHi[ds] = TH1D('hDS{}_Nat_Hi'.format(ds), 'DS{} Nat Efficiency (+68% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrLo[ds] = TH1D('hDS{}_Enr_Lo'.format(ds), 'DS{} Enr Efficiency (-68% CI)'.format(ds), nBins, eMin, eMax)
+        hNatLo[ds] = TH1D('hDS{}_Nat_Lo'.format(ds), 'DS{} Nat Efficiency (-68% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrHi90[ds] = TH1D('hDS{}_Enr_Hi90'.format(ds), 'DS{} Enr Efficiency (+90% CI)'.format(ds), nBins, eMin, eMax)
+        hNatHi90[ds] = TH1D('hDS{}_Nat_Hi90'.format(ds), 'DS{} Nat Efficiency (+90% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrLo90[ds] = TH1D('hDS{}_Enr_Lo90'.format(ds), 'DS{} Enr Efficiency (-90% CI)'.format(ds), nBins, eMin, eMax)
+        hNatLo90[ds] = TH1D('hDS{}_Nat_Lo90'.format(ds), 'DS{} Nat Efficiency (-90% CI)'.format(ds), nBins, eMin, eMax)
 
-        for idx in range(len(xEff)):
-            # Divide by 10 to account for rebinning later
-            hEnr[ds].SetBinContent(idx, totEnrEff[ds][idx]/10.)
-            hNat[ds].SetBinContent(idx, totNatEff[ds][idx]/10.)
-            hEnrNorm[ds].SetBinContent(idx, totEnrEff[ds][idx]/enrExp[ds]/10.)
-            hNatNorm[ds].SetBinContent(idx, totNatEff[ds][idx]/natExp[ds]/10.)
+        hEnrNorm[ds] = TH1D('hDS{}_Norm_Enr'.format(ds), 'DS{} Enr Norm Efficiency'.format(ds),  nBins, eMin, eMax)
+        hNatNorm[ds] = TH1D('hDS{}_Norm_Nat'.format(ds), 'DS{} Nat Norm Efficiency'.format(ds),  nBins, eMin, eMax)
+        hEnrHiNorm[ds] = TH1D('hDS{}_Norm_Enr_Hi'.format(ds), 'DS{} Enr Norm Efficiency (+68% CI)'.format(ds), nBins, eMin, eMax)
+        hNatHiNorm[ds] = TH1D('hDS{}_Norm_Nat_Hi'.format(ds), 'DS{} Nat Norm Efficiency (+68% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrLoNorm[ds] = TH1D('hDS{}_Norm_Enr_Lo'.format(ds), 'DS{} Enr Norm Efficiency (-68% CI)'.format(ds), nBins, eMin, eMax)
+        hNatLoNorm[ds] = TH1D('hDS{}_Norm_Nat_Lo'.format(ds), 'DS{} Nat Norm Efficiency (-68% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrHi90Norm[ds] = TH1D('hDS{}_Norm_Enr_Hi90'.format(ds), 'DS{} Enr Norm Efficiency (+90% CI)'.format(ds), nBins, eMin, eMax)
+        hNatHi90Norm[ds] = TH1D('hDS{}_Norm_Nat_Hi90'.format(ds), 'DS{} Nat Norm Efficiency (+90% CI)'.format(ds), nBins, eMin, eMax)
+        hEnrLo90Norm[ds] = TH1D('hDS{}_Norm_Enr_Lo90'.format(ds), 'DS{} Enr Norm Efficiency (-90% CI)'.format(ds), nBins, eMin, eMax)
+        hNatLo90Norm[ds] = TH1D('hDS{}_Norm_Nat_Lo90'.format(ds), 'DS{} Nat Norm Efficiency (-90% CI)'.format(ds), nBins, eMin, eMax)
 
-        # Rebin to 0.1 keV bins
-        hEnr[ds].Rebin(10)
-        hNat[ds].Rebin(10)
-        hEnrNorm[ds].Rebin(10)
-        hNatNorm[ds].Rebin(10)
+        fEffEnrHi = fEffEnrTemp + toyEnrStd*totalEnrExp[ds]
+        fEffEnrLo = fEffEnrTemp - toyEnrStd*totalEnrExp[ds]
+        fEffNatHi = fEffNatTemp + toyNatStd*totalNatExp[ds]
+        fEffNatLo = fEffNatTemp - toyNatStd*totalNatExp[ds]
 
-        # Make stuff pretty
-        hEnr[ds].GetXaxis().SetTitle('Energy (keV)')
-        hEnr[ds].GetYaxis().SetTitle('Efficiency (kg-d)')
-        hNat[ds].GetXaxis().SetTitle('Energy (keV)')
-        hNat[ds].GetYaxis().SetTitle('Efficiency (kg-d)')
+        fEffEnrHi90 = fEffEnrTemp + zVal*toyEnrStd*totalEnrExp[ds]
+        fEffEnrLo90 = fEffEnrTemp - zVal*toyEnrStd*totalEnrExp[ds]
+        fEffNatHi90 = fEffNatTemp + zVal*toyNatStd*totalNatExp[ds]
+        fEffNatLo90 = fEffNatTemp - zVal*toyNatStd*totalNatExp[ds]
 
-        hEnrNorm[ds].GetXaxis().SetTitle('Energy (keV)')
-        hEnrNorm[ds].GetYaxis().SetTitle('Efficiency')
-        hNatNorm[ds].GetXaxis().SetTitle('Energy (keV)')
-        hNatNorm[ds].GetYaxis().SetTitle('Efficiency')
+        for idx in range(len(xVals)):
+            # Unnormalized (should sum up to the exposure * efficiency)
+            hEnr[ds].SetBinContent(idx+1, fEffEnrTemp[idx])
+            hNat[ds].SetBinContent(idx+1, fEffNatTemp[idx])
+
+            hEnrHi[ds].SetBinContent(idx+1, fEffEnrHi[idx])
+            hEnrLo[ds].SetBinContent(idx+1, fEffEnrLo[idx])
+            hNatHi[ds].SetBinContent(idx+1, fEffNatHi[idx])
+            hNatLo[ds].SetBinContent(idx+1, fEffNatLo[idx])
+
+            hEnrHi90[ds].SetBinContent(idx+1, fEffEnrHi90[idx])
+            hEnrLo90[ds].SetBinContent(idx+1, fEffEnrLo90[idx])
+            hNatHi90[ds].SetBinContent(idx+1, fEffNatHi90[idx])
+            hNatLo90[ds].SetBinContent(idx+1, fEffNatLo90[idx])
+
+            # Normalized (efficiency only)
+            hEnrNorm[ds].SetBinContent(idx+1, fEffEnrTemp[idx]/totalEnrExp[ds])
+            hNatNorm[ds].SetBinContent(idx+1, fEffNatTemp[idx]/totalNatExp[ds])
+
+            hEnrHiNorm[ds].SetBinContent(idx+1, fEffEnrHi[idx]/totalEnrExp[ds])
+            hEnrLoNorm[ds].SetBinContent(idx+1, fEffEnrLo[idx]/totalEnrExp[ds])
+            hNatHiNorm[ds].SetBinContent(idx+1, fEffNatHi[idx]/totalNatExp[ds])
+            hNatLoNorm[ds].SetBinContent(idx+1, fEffNatLo[idx]/totalNatExp[ds])
+
+            hEnrHi90Norm[ds].SetBinContent(idx+1, fEffEnrHi90[idx]/totalEnrExp[ds])
+            hEnrLo90Norm[ds].SetBinContent(idx+1, fEffEnrLo90[idx]/totalEnrExp[ds])
+            hNatHi90Norm[ds].SetBinContent(idx+1, fEffNatHi90[idx]/totalNatExp[ds])
+            hNatLo90Norm[ds].SetBinContent(idx+1, fEffNatLo90[idx]/totalNatExp[ds])
+
+        hEnr[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNat[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrHi[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatHi[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrLo[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatLo[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrHi90[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatHi90[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrLo90[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatLo90[ds].GetXaxis().SetTitle("Energy (keV)")
+
+        hEnrNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrHiNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatHiNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrLoNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatLoNorm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrHi90Norm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatHi90Norm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hEnrLo90Norm[ds].GetXaxis().SetTitle("Energy (keV)")
+        hNatLo90Norm[ds].GetXaxis().SetTitle("Energy (keV)")
+
+        hEnr[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hNat[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hEnrHi[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hNatHi[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hEnrLo[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hNatLo[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hEnrHi90[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hNatHi90[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hEnrLo90[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+        hNatLo90[ds].GetYaxis().SetTitle("Efficiency (kg-d)")
+
+        hEnrNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hNatNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hEnrHiNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hNatHiNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hEnrLoNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hNatLoNorm[ds].GetYaxis().SetTitle("Efficiency")
+        hEnrHi90Norm[ds].GetYaxis().SetTitle("Efficiency")
+        hNatHi90Norm[ds].GetYaxis().SetTitle("Efficiency")
+        hEnrLo90Norm[ds].GetYaxis().SetTitle("Efficiency")
+        hNatLo90Norm[ds].GetYaxis().SetTitle("Efficiency")
 
         hEnr[ds].Write()
         hNat[ds].Write()
+        hEnrHi[ds].Write()
+        hNatHi[ds].Write()
+        hEnrLo[ds].Write()
+        hNatLo[ds].Write()
+        hEnrHi90[ds].Write()
+        hNatHi90[ds].Write()
+        hEnrLo90[ds].Write()
+        hNatLo90[ds].Write()
+
         hEnrNorm[ds].Write()
         hNatNorm[ds].Write()
+        hEnrHiNorm[ds].Write()
+        hNatHiNorm[ds].Write()
+        hEnrLoNorm[ds].Write()
+        hNatLoNorm[ds].Write()
+        hEnrHi90Norm[ds].Write()
+        hNatHi90Norm[ds].Write()
+        hEnrLo90Norm[ds].Write()
+        hNatLo90Norm[ds].Write()
+
     fFile.Close()
 
 

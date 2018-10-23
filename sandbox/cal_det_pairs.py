@@ -40,7 +40,7 @@ def main():
 
     # Run these two functions to combine all Enr/Nat detector efficiencies
     #and to calculate uncertainties
-    combinedEff(bSave = False, bWriteDB = False)
+    combinedEff(bSave = True, bWriteDB = False, seedNum=1)
     # plotMCEffUnc(bSave = False)
 
     # plotDetSpectra()
@@ -798,12 +798,16 @@ def plotM1Spectra():
     # plt.show()
 
 
-def combinedEff(bSave = False, bWriteDB = False):
+def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     """
         Utilizes the data produced by lat2 and combines all detectors to calculate one efficiency
 
-        Currently this data only runs out to 50 keV, we can change it to go out farther in energy
+        Option to save all the ToyMC data into a HDF file (it's quite large, ~700 MB, and takes a bit of time for 10k Toy MC fits)
+
+        The Toy MC HDF file is ultimately used in lat-expo::getEfficiencyROOT and combined with the trigger efficiency + riseNoise efficiency to get ROOT histograms of the efficiency/exposure for analysis
+
     """
+    np.random.seed(seedNum)
     from statsmodels.stats import proportion
     sns.set(style='ticks')
 
@@ -865,7 +869,10 @@ def combinedEff(bSave = False, bWriteDB = False):
     # Generate and save a large dataset into a dataframe
     dfEBFList, dfNBFList = [], []
     dfEList, dfNList = [], []
-    xValsFine = np.linspace(0, 200, 2001)
+    # Use the 10x less binning than in lat-expo.py
+    xLo, xHi = 0, 200
+    xValsFine = np.arange(xLo, xHi, 0.1)
+    # xValsFine = np.linspace(0, 200, 2001)
 
     effBFNat = wl.weibull(xValsFine, *poptnat)
     effBFEnr = wl.weibull(xValsFine, *poptenr)
@@ -910,7 +917,6 @@ def combinedEff(bSave = False, bWriteDB = False):
 
         fsN = dsi.getDBRecord(dbKey, False, calDB, pars)
         print(fsN)
-    return
 
     fig1, (ax11, ax12) = plt.subplots(ncols=2, figsize=(15,7))
     ax11.set_title('Total Enriched Efficiency')
@@ -954,7 +960,8 @@ def combinedEff(bSave = False, bWriteDB = False):
     ax11.legend(loc='lower right', ncol=3)
     ax12.legend(loc='lower right', ncol=3)
     plt.tight_layout()
-    # fig1.savefig('CombinedEfficiency_skipbad_floatX.png')
+    if bSavePlots:
+        fig1.savefig('CombinedEfficiency_skipbad_floatX.png')
 
     fig21, (ax21, ax22) = plt.subplots(ncols=2, figsize=(15,7))
     ax21.set_title('Total Enriched Efficiency')
@@ -967,51 +974,50 @@ def combinedEff(bSave = False, bWriteDB = False):
     ax22.set_ylabel('Efficiency')
     ax22.errorbar(xVals, hEffNat, yerr=[hEffNat - nat_ci_low, nat_ci_upp - hEffNat], color='k', linewidth=0.8, fmt='o', capsize=2)
 
-
     # Now generate 50000 toyMC and re-fit the toyMC spectra
-    nMC = 50000
+    nMC = 10000
     cNatList, locNatList, scaleNatList, ampNatList = [], [], [], []
     cEnrList, locEnrList, scaleEnrList, ampEnrList = [], [], [], []
 
-    for idx in range(nMC):
-        if idx%1000 == 0:
-            print('Current Loop: {} of {}'.format(idx, nMC))
-        ePass = np.random.poisson(hPassEnr)
-        eFull = np.random.poisson(hFullEnr)
-        nPass = np.random.poisson(hPassNat)
-        nFull = np.random.poisson(hFullNat)
-
-        eEff = np.nan_to_num(ePass/eFull)
-        nEff = np.nan_to_num(nPass/nFull)
-
-        popte, _ = curve_fit(wl.weibull, xVals, eEff, p0=initialGuess, bounds=fitBnd)
-        poptn, _ = curve_fit(wl.weibull, xVals, nEff, p0=initialGuess, bounds=fitBnd)
-
-        effE = wl.weibull(xVals, *popte)
-        effN = wl.weibull(xVals, *poptn)
-
-        effEFine = wl.weibull(xValsFine, *popte)
-        effNFine = wl.weibull(xValsFine, *poptn)
-
-        dETemp = {xValsFine[i]:effEFine[i] for i in range(len(xValsFine))}
-        dNTemp = {xValsFine[i]:effNFine[i] for i in range(len(xValsFine))}
-
-        dfEList.append(dETemp)
-        dfNList.append(dNTemp)
-        cNatList.append(poptn[0])
-        locNatList.append(poptn[1])
-        scaleNatList.append(poptn[2])
-        ampNatList.append(poptn[3])
-
-        cEnrList.append(popte[0])
-        locEnrList.append(popte[1])
-        scaleEnrList.append(popte[2])
-        ampEnrList.append(popte[3])
-
-        ax21.plot(xVals, effE, color='b', alpha=0.005)
-        ax22.plot(xVals, effN, color='b', alpha=0.005)
-
     if bSave:
+        for idx in range(nMC):
+            if idx%1000 == 0:
+                print('Current Loop: {} of {}'.format(idx, nMC))
+            ePass = np.random.poisson(hPassEnr)
+            eFull = np.random.poisson(hFullEnr)
+            nPass = np.random.poisson(hPassNat)
+            nFull = np.random.poisson(hFullNat)
+
+            eEff = np.nan_to_num(ePass/eFull)
+            nEff = np.nan_to_num(nPass/nFull)
+
+            popte, _ = curve_fit(wl.weibull, xVals, eEff, p0=initialGuess, bounds=fitBnd)
+            poptn, _ = curve_fit(wl.weibull, xVals, nEff, p0=initialGuess, bounds=fitBnd)
+
+            effE = wl.weibull(xVals, *popte)
+            effN = wl.weibull(xVals, *poptn)
+
+            effEFine = wl.weibull(xValsFine, *popte)
+            effNFine = wl.weibull(xValsFine, *poptn)
+
+            dETemp = {xValsFine[i]:effEFine[i] for i in range(len(xValsFine))}
+            dNTemp = {xValsFine[i]:effNFine[i] for i in range(len(xValsFine))}
+
+            dfEList.append(dETemp)
+            dfNList.append(dNTemp)
+            cNatList.append(poptn[0])
+            locNatList.append(poptn[1])
+            scaleNatList.append(poptn[2])
+            ampNatList.append(poptn[3])
+
+            cEnrList.append(popte[0])
+            locEnrList.append(popte[1])
+            scaleEnrList.append(popte[2])
+            ampEnrList.append(popte[3])
+
+            ax21.plot(xVals, effE, color='b', alpha=0.005)
+            ax22.plot(xVals, effN, color='b', alpha=0.005)
+
         dfBFE = pd.DataFrame.from_dict(dfEBFList)
         dfBFN = pd.DataFrame.from_dict(dfNBFList)
 
@@ -1019,10 +1025,10 @@ def combinedEff(bSave = False, bWriteDB = False):
         dfN = pd.DataFrame.from_dict(dfNList)
 
         print(dfE.head(10))
-        dfBFE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='EnrBF', format='table', mode='w', complevel=9)
-        dfBFN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='NatBF', format='table', mode='a', complevel=9)
-        dfE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Enr', format='table', mode='a', complevel=9)
-        dfN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', key='Nat', format='table', mode='a', complevel=9)
+        dfBFE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(seedNum), key='EnrBF', format='table', mode='w', complevel=9)
+        dfBFN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(seedNum), key='NatBF', format='table', mode='a', complevel=9)
+        dfE.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(seedNum), key='Enr', format='table', mode='a', complevel=9)
+        dfN.to_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(seedNum), key='Nat', format='table', mode='a', complevel=9)
 
     # Draw these last so they show up!
     ax21.plot(xVals, effEnr, lw=2, color='r', label='Total Efficiency')
@@ -1054,9 +1060,10 @@ def combinedEff(bSave = False, bWriteDB = False):
     ax2[7].set_title('Natural amp')
 
     plt.tight_layout()
-    # fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
-    # fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
-    # plt.show()
+    if bSavePlots:
+        fig21.savefig('TotalEfficiency_ToyMC_2_floatX.png')
+        fig22.savefig('TotalEfficiency_ToyMC_Pars_floatX.png')
+
 
 def plotMCEffUnc(bSave = False):
     """
@@ -1071,7 +1078,10 @@ def plotMCEffUnc(bSave = False):
     dfEnrBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'EnrBF')
     dfNatBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'NatBF')
 
-    xVals = np.linspace(0, 200, 2001)
+    # xVals = np.linspace(0, 200, 2001)
+    xLo, xHi = 0, 200
+    xVals = np.arange(xLo, xHi, 0.01)
+
     # Here I take the means and compare to the best fit, for the best fit DF, there's only 1 value so it doesn't matter if I take the mean
     EnrEff = dfEnrBF.mean(axis=0).values
     NatEff = dfNatBF.mean(axis=0).values
@@ -1106,8 +1116,8 @@ def plotMCEffUnc(bSave = False):
         sns.despine()
 
     plt.tight_layout()
-    fig0.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc_Dist.png')
-    return
+    if bSave:
+        fig0.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc_Dist.png')
 
     # print(EnrEff)
     # print(toyEnrStd)
@@ -1135,11 +1145,10 @@ def plotMCEffUnc(bSave = False):
     ax11.legend(loc = 'lower right')
     ax12.legend(loc = 'lower right')
     plt.tight_layout()
-    # fig1.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc.png')
+    if bSave:
+        fig1.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc.png')
     # plt.show()
 
-    # import ROOT
-    # hEnr = ROOT.TH1D()
 
 
 if __name__=="__main__":
