@@ -39,9 +39,10 @@ def main():
     # plotM1Spectra()
 
     # Run these two functions to combine all Enr/Nat detector efficiencies
-    #and to calculate uncertainties
-    combinedEff(bSave = True, bWriteDB = False, seedNum=1)
+    # and to calculate uncertainties as well as write the combined efficiency fit results in to the DB
+    # combinedEff(bSave = True, bWriteDB = False, seedNum=1)
     # plotMCEffUnc(bSave = False)
+    checkROOTEff()
 
     # plotDetSpectra()
     # getSimPandas()
@@ -1149,6 +1150,61 @@ def plotMCEffUnc(bSave = False):
         fig1.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc.png')
     # plt.show()
 
+
+def checkROOTEff():
+    import ROOT
+
+    dsList = dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
+    oldF = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
+    newF = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
+
+    c1 = ROOT.TCanvas('c1', 'c1', 1200, 600)
+    ROOT.gStyle.SetOptStat(0)
+    c1.Divide(2, 1)
+    for ds in dsList:
+        hOldEnr = oldF.Get('hDS{}_Norm_Enr'.format(ds))
+        hNewEnr = newF.Get('hDS{}_Norm_Enr'.format(ds))
+        hNewEnrHi = newF.Get('hDS{}_Norm_Enr_Hi90'.format(ds))
+        hNewEnrLo = newF.Get('hDS{}_Norm_Enr_Lo90'.format(ds))
+
+        hOldNat = oldF.Get('hDS{}_Norm_Nat'.format(ds))
+        hNewNat = newF.Get('hDS{}_Norm_Nat'.format(ds))
+        hNewNatHi = newF.Get('hDS{}_Norm_Nat_Hi90'.format(ds))
+        hNewNatLo = newF.Get('hDS{}_Norm_Nat_Lo90'.format(ds))
+
+        c1.cd(1)
+        hOldEnr.SetLineColor(ROOT.kBlue)
+        hOldEnr.GetYaxis().SetTitleOffset(1.5)
+        maxValEnr = hNewEnr.GetMaximum()
+        hOldEnr.GetYaxis().SetRangeUser(0.75*maxValEnr, 1.05*maxValEnr)
+        hOldEnr.GetXaxis().SetRangeUser(0, 50.)
+        hOldEnr.Draw()
+        hNewEnr.SetLineColor(ROOT.kRed)
+        hNewEnrHi.SetLineStyle(ROOT.kDashed)
+        hNewEnrHi.SetLineColor(ROOT.kRed)
+        hNewEnrLo.SetLineStyle(ROOT.kDashed)
+        hNewEnrLo.SetLineColor(ROOT.kRed)
+        hNewEnr.Draw("SAME")
+        hNewEnrHi.Draw("SAME")
+        hNewEnrLo.Draw("SAME")
+
+        c1.cd(2)
+        hOldNat.SetLineColor(ROOT.kBlue)
+        hOldNat.GetYaxis().SetTitleOffset(1.5)
+        maxValNat = hNewNat.GetMaximum()
+        hOldNat.GetYaxis().SetRangeUser(0.75*maxValNat, 1.05*maxValNat)
+        hOldNat.GetXaxis().SetRangeUser(0, 50.)
+        hOldNat.Draw()
+        hNewNat.SetLineColor(ROOT.kRed)
+        hNewNatHi.SetLineStyle(ROOT.kDashed)
+        hNewNatHi.SetLineColor(ROOT.kRed)
+        hNewNatLo.SetLineStyle(ROOT.kDashed)
+        hNewNatLo.SetLineColor(ROOT.kRed)
+        hNewNat.Draw("SAME")
+        hNewNatHi.Draw("SAME")
+        hNewNatLo.Draw("SAME")
+        
+        c1.SaveAs(os.environ['LATDIR'] + '/DS{}_CombinedEffComparison.pdf'.format(ds))
 
 
 if __name__=="__main__":
