@@ -42,6 +42,7 @@ import sys, os, imp, time
 import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import seaborn as sns
 import theano.tensor as tt
 from scipy.interpolate import interp1d
@@ -90,12 +91,14 @@ nBurn = 1000 # Number of burn-in samples for the MCMC
 
 def main(argv):
     # Some random booleans
-    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra = False, False, False, False
+    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend = False, False, False, False, False
+    backendDir = ''
     bSample, bFull = False, True
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
     # Set initial seed number here -- this is an option that can be changed
-    seedNum = 1
+    dsNum, seedNum = 1, '5b'
+
 
     if len(argv)==0:
         help_options()
@@ -115,6 +118,9 @@ def main(argv):
         if opt == '-debug':
             bDebug = True
             print('Debug mode ON!')
+        if opt == '-ds':
+            dsNum = str(argv[i+1])
+            print('Setting Resolution to Dataset',dsNum)
         if opt == '-drawPDF':
             bDrawPDF = True
             print('Drawing PDFs only!')
@@ -130,6 +136,10 @@ def main(argv):
         if opt == '-sample':
             bSample = True
             print('MCMC Sampling ON')
+        if opt == '-backend':
+            bBackend = True
+            backendDir = str(argv[i+1])
+            print('Using Backend Directory: {}'.format(backendDir))
         if opt == '-setbinsize':
             axionBinSize = int(argv[i+1])
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
@@ -171,8 +181,8 @@ def main(argv):
 
     # Generate the Gaussian PDFs
     # Fe55 is slightly shifted from 6.54 -- Perhaps should introduce as a constraint of some sort
-    meansDict = {'Fe55':6.50, 'Zn65':8.98, 'Ge68':10.37}
-    gausDict = generateGaus(energyBins[:-1], meansDict)
+    meansDict = {'Fe55':6.54, 'Zn65':8.98, 'Ge68':10.37}
+    gausDict = generateGaus(energyBins[:-1], meansDict, dsNum)
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
         pdfArrDict[name] *= eeMask
@@ -224,7 +234,8 @@ def main(argv):
     model = constructModel(pdfFlatDict, energyBins, bFull = bFull)
     print('Built model(s)')
 
-    backendDir = '{}/AveragedAxion_Enr_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
+    if not bBackend:
+        backendDir = '{}/AveragedAxion2_Enr_LowEff_DS5breso_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
 
     # Sample Here
     if bSample:
@@ -328,7 +339,8 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
 
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
-    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
+    # fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS5breso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
+    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS6areso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
 
     hday = fAxion.Get('hday')
     hday.RebinX(axionBinSize) # 5 minute bins
@@ -642,14 +654,15 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     if debug:
         print('Timing Bin size: ', timeBinSize)
 
-    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
+    # fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
+    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
     # Dummy variable for Start time of DS5b to calculate gaps in livetime
     prevEnd = startTime
 
     for ds in dsList:
         # First build efficiency array -- assumes efficiency for all dataset is constant
         # Also combines efficiency of natural and enriched detectors
-        hEff = fEff.Get('hDS{}_Norm_Tot'.format(ds))
+        hEff = fEff.Get('hDS{}_Norm_Enr_Lo90'.format(ds))
         effArr = np.ones(len(energyBins)-1)
         for eIdx, eBin in enumerate(energyBins[:-1]):
             effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
@@ -774,30 +787,40 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     return eeMask, expMask, effMask
 
 
-def getSigma(energy, dsNum=1):
+def getSigma(energy, dsNum='6'):
+
     p0,p1,p2 = 0., 0., 0.
-    if dsNum==0:
+    if dsNum=='0':
         p0 = 0.147; p1=0.0173; p2=0.0003
-    elif dsNum==1:
+    elif dsNum=='1':
         p0 = 0.136; p1=0.0174; p2=0.00028
-    elif dsNum==3:
+    elif dsNum=='3':
         p0 = 0.162; p1=0.0172; p2=0.000297
-    elif dsNum==4:
+    elif dsNum=='4':
         p0 = 0.218; p1=0.015; p2=0.00035
-    elif dsNum==5:
-        p0 = 0.2121; p1=0.01838; p2=0.00031137
+    elif dsNum=='5a':
+        p0 = 0.2592; p1=0.2057; p2=0.00030863
+    elif dsNum=='5b':
+        p0 = 0.1815; p1=0.01705; p2=0.00031527
+    elif dsNum=='5c':
+        p0 = 0.1361; p1=0.0174; p2=0.0002829
+    elif dsNum=='6':
+        p0 = 0.1314; p1=0.01728; p2=0.0002742
+
+    # Use DS6a as default
     else:
-        p0 = 0.2121; p1=0.01838; p2=0.00031137
+        p0 = 0.1314; p1=0.01728; p2=0.0002742
+
     return np.sqrt(p0*p0 + p1*p1*energy + p2*p2*energy*energy)
 
 
-def generateGaus(energyList, meansDict):
+def generateGaus(energyList, meansDict, dsNum):
     """
         Generates Gaussian PDFs for X-ray peaks based off of energy array
     """
     outDict = {}
     for name, mean in meansDict.items():
-        outDict.setdefault(name, norm.pdf(energyList, loc=mean, scale=getSigma(mean, 5)))
+        outDict.setdefault(name, norm.pdf(energyList, loc=mean, scale=getSigma(mean, dsNum=dsNum)))
     return outDict
 
 
@@ -870,9 +893,27 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
     # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
-    pm.traceplot(traceBurn)
-    pm.plot_posterior(traceBurn, alpha_level=0.1, round_to=6)
-    pm.forestplot(traceBurn, varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
+    # Plot Traces
+    # fig1, ax1 = plt.subplots(nrows=6,ncols=2,figsize=(10, 16))
+    # pm.traceplot(traceBurn, ax=ax1)
+    # fig1.savefig('AxionFit_5_20_Trace.png')
+
+    # Plot forestplots
+    # fig2, ax2 = plt.subplots(figsize=(10, 7))
+    # gs0 = pm.forestplot(traceBurn, varnames=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'], alpha=0.1)
+    # gr0_plot = plt.subplot(gs0[1])
+    # gr0_plot.set_xlim(0.99, 1.01)
+    # fig2.savefig('AxionFit_5_20_Forest.png')
+    # fig3, ax3 = plt.subplots(figsize=(10, 7))
+    # gs = pm.forestplot(traceBurn, varnames=['Axion'], alpha=0.1)
+    # gr_plot = plt.subplot(gs[1])
+    # gr_plot.set_xlim(0.99, 1.01)
+    # fig3.savefig('AxionFit_5_20_Forest_Axion.png')
+
+    # Plot Posteriors
+    pm.plot_posterior(traceBurn, alpha_level=0.1, round_to=5)
+
+
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
     # cornerArr = np.array([traceBurn['Axion'], traceBurn['Tritium'], traceBurn['Bkg'], traceBurn['Ge68'], traceBurn['Fe55'], traceBurn['Zn65']]).T
     # figure = corner.corner(cornerArr,  quantiles=[0.05, 0.95], show_titles=True, title_fmt=".5f", labels=['Axion', 'Tritium', 'Bkg', 'Ge68', 'Fe55', 'Zn65'])

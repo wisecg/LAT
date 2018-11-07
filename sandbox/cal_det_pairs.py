@@ -40,10 +40,11 @@ def main():
 
     # Run these two functions to combine all Enr/Nat detector efficiencies
     # and to calculate uncertainties as well as write the combined efficiency fit results in to the DB
-    # combinedEff(bSave = True, bWriteDB = False, seedNum=1)
-    # plotMCEffUnc(bSave = False)
-    checkROOTEff()
+    # combinedEff(bSave = False, bWriteDB = False, seedNum=1)
+    plotMCEffUnc(bSave = False)
+    # checkROOTEff()
 
+    # These are old functions that were for simulated calibration plots, etc
     # plotDetSpectra()
     # getSimPandas()
     # loadSpec()
@@ -827,22 +828,51 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     hPassNat, hFullNat = np.zeros(len(xVals)), np.zeros(len(xVals))
     hPassEnr, hFullEnr = np.zeros(len(xVals)), np.zeros(len(xVals))
 
+    fig0, ax0 = plt.subplots(ncols=2, figsize=(15,7))
+    ax0 = ax0.flatten()
+    cList = sns.color_palette('husl', n_colors=8)
+    markerList = ['o', 'v', 's', 'D']
+    eIdx, eMIdx = 0, 0
+    nIdx, nMIdx = 0, 0
     for det in detList:
         # Skip the bad stuff
         if det in skipList:
             # print('Skipping', det)
             continue
         isEnr = detInfo.isEnr(det)
-        # Pass is the 4th array, total is the 6th
+        # Number of events passing cuts is the 4th array, Number of total events is the 6th
         # print(det, len(effData[det][7]), len(effData[det][4]), len(effData[det][6]))
         # print(effData[det][4], effData[det][6])
+        # print(det, effData[det][4][4], np.array(effData[det][4][4], dtype=float)/effData[det][6][4], effData[det][4][9], float(effData[det][4][9])/effData[det][6][9])
         if isEnr:
+            eIdx += 1
+            if eIdx%11==0:
+                eMIdx += 1
             hPassEnr += effData[det][4][1:]
             hFullEnr += effData[det][6][1:]
+
+            nc5 = effData[det][4][4]
+            neff5 = np.array(effData[det][4][4], dtype=float)/effData[det][6][4]
+            nc10 = effData[det][4][9]
+            neff10 = np.array(effData[det][4][9], dtype=float)/effData[det][6][9]
+            ax0[0].arrow(neff5, nc5, neff10-neff5, nc10-nc5, fc="k", ec="k", alpha=0.4)
+            ax0[0].scatter(neff5, nc5, c=cList[eIdx%8], marker=markerList[eMIdx], label='C{}P{}D{}'.format(*det))
+            ax0[0].scatter(neff10, nc10, c=cList[eIdx%8], marker=markerList[eMIdx])
         else:
+            nIdx += 1
+            if nIdx%11==0:
+                nMIdx += 1
             hPassNat += effData[det][4][1:]
             hFullNat += effData[det][6][1:]
 
+            nc5 = effData[det][4][4]
+            neff5 = np.array(effData[det][4][4], dtype=float)/effData[det][6][4]
+            nc10 = effData[det][4][9]
+            neff10 = np.array(effData[det][4][9], dtype=float)/effData[det][6][9]
+
+            ax0[1].arrow(neff5, nc5, neff10-neff5, nc10-nc5, fc="k", ec="k", alpha=0.4)
+            ax0[1].scatter(neff5, nc5, c=cList[nIdx%8], marker=markerList[nMIdx], label='C{}P{}D{}'.format(*det))
+            ax0[1].scatter(neff10, nc10, c=cList[nIdx%8], marker=markerList[nMIdx])
 
     hEffEnr = np.nan_to_num(hPassEnr/hFullEnr)
     hEffNat = np.nan_to_num(hPassNat/hFullNat)
@@ -851,6 +881,19 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     print(hPassEnr)
     print(hFullEnr)
     print(hEffEnr)
+    ax0[0].legend(ncol=3)
+    ax0[1].legend(ncol=3)
+    # ax0[2].legend(ncol=3)
+    # ax0[3].legend(ncol=3)
+    ax0[0].set(title = 'Enriched Counts vs Eff (5 to 10 keV)', xlabel='Efficiency', ylabel='Counts')
+    ax0[1].set(title = 'Natural Counts vs Eff (5 to 10 keV)', xlabel='Efficiency', ylabel='Counts')
+    # ax0[2].set(title = 'Enriched Counts vs Eff (10 keV)', xlabel='Efficiency', ylabel='Counts')
+    # ax0[3].set(title = 'Natural Counts vs Eff (5 keV)', xlabel='Efficiency', ylabel='Counts')
+    plt.tight_layout()
+    # plt.show()
+    fig0.savefig(os.environ['LATDIR']+'/CountsvsEff.png')
+    return
+
 
     # Calculate CI of points based off of stats only
     nat_ci_low, nat_ci_upp = proportion.proportion_confint(hPassNat, hFullNat, alpha=0.1, method='beta')
@@ -1072,16 +1115,21 @@ def plotMCEffUnc(bSave = False):
     """
     sns.set(style='ticks')
 
-    dfEnr = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'Enr')
-    dfNat = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'Nat')
+    dfEnr = pd.concat(
+            [pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(i), 'Enr')
+            for i in range(1,11)])
+    dfNat = pd.concat(
+            [pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_{}.h5'.format(i), 'Nat')
+            for i in range(1,11)])
 
     # Best Fit curve
-    dfEnrBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'EnrBF')
-    dfNatBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff.h5', 'NatBF')
+    dfEnrBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_1.h5', 'EnrBF')
+    dfNatBF = pd.read_hdf(os.environ['LATDIR']+'/data/ToyMCEff_1.h5', 'NatBF')
 
     # xVals = np.linspace(0, 200, 2001)
     xLo, xHi = 0, 200
-    xVals = np.arange(xLo, xHi, 0.01)
+    # xVals = np.arange(xLo, xHi, 0.01)
+    xVals = np.arange(xLo, xHi, 0.1)
 
     # Here I take the means and compare to the best fit, for the best fit DF, there's only 1 value so it doesn't matter if I take the mean
     EnrEff = dfEnrBF.mean(axis=0).values
@@ -1099,26 +1147,37 @@ def plotMCEffUnc(bSave = False):
 
     # Loop through the first couple of columns using iloc and plot the distributions, see if they look gaussian
     #Spoilers: they look Gaussian so we can use the std calculated from Pandas
-    fig0, ax0 = plt.subplots(ncols=8, nrows=5, figsize=(15,12))
-    ax0 = ax0.flatten()
-    bins = np.linspace(0.25, 1.0, 600)
-    for i in range(len(ax0)):
-        # Start with bin 15 (1 keV)
-        idx = i + 11
-        # sns.distplot(dfEnr.iloc[idx,:].values, kde=False, bins=bins, ax=ax0[i])
-        print('Best Fit mean: {}'.format(EnrEff[idx]))
-        # binRange = EnrEff[idx]
-        ax0[i].hist(dfEnr.iloc[:,idx].values, bins=bins)
-        ax0[i].set_title('{:.1f} keV'.format(0.1*(idx-1)))
-        ax0[i].set_xlim(EnrEff[idx] - 5*toyEnrStd[idx], EnrEff[idx] + 5*toyEnrStd[idx])
-        ax0[i].axvline(x=EnrEff[idx], color='r')
-        ax0[i].axvline(x=EnrEff[idx]-zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
-        ax0[i].axvline(x=EnrEff[idx]+zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
-        sns.despine()
+    # fig0, ax0 = plt.subplots(ncols=8, nrows=5, figsize=(15,12))
+    # ax0 = ax0.flatten()
+    # bins = np.linspace(0.25, 1.0, 600)
+    # for i in range(len(ax0)):
+    #     # Start with bin 15 (1 keV)
+    #     idx = i + 11
+    #     # sns.distplot(dfEnr.iloc[idx,:].values, kde=False, bins=bins, ax=ax0[i])
+    #     print('Best Fit mean: {}'.format(EnrEff[idx]))
+    #     # binRange = EnrEff[idx]
+    #     ax0[i].hist(dfEnr.iloc[:,idx].values, bins=bins)
+    #     ax0[i].set_title('{:.1f} keV'.format(0.1*(idx-1)))
+    #     ax0[i].set_xlim(EnrEff[idx] - 5*toyEnrStd[idx], EnrEff[idx] + 5*toyEnrStd[idx])
+    #     ax0[i].axvline(x=EnrEff[idx], color='r')
+    #     ax0[i].axvline(x=EnrEff[idx]-zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
+    #     ax0[i].axvline(x=EnrEff[idx]+zVal*toyEnrStd[idx], color='r', linestyle='--', alpha=0.7)
+    #     sns.despine()
+    #
+    #
+    # plt.tight_layout()
+    # if bSave:
+    #     fig0.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc_Dist.png')
 
-    plt.tight_layout()
-    if bSave:
-        fig0.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc_Dist.png')
+    # Grab total fitSlo efficiency from DB
+    dbKey = "fitSlo_Combined_m2s238_eff95"
+    fsN = dsi.getDBRecord(dbKey, False, calDB, pars)
+    enrpars = fsN[0]
+    natpars = fsN[1]
+    EnrEffHi2 = wl.weibull(xVals, *(np.array(enrpars[:4]) + 3*zVal*np.array(enrpars[4:])))
+    EnrEffLo2 = wl.weibull(xVals, *(np.array(enrpars[:4]) - 3*zVal*np.array(enrpars[4:])))
+    NatEffHi2 = wl.weibull(xVals, *(np.array(natpars[:4]) + 3*zVal*np.array(natpars[4:])))
+    NatEffLo2 = wl.weibull(xVals, *(np.array(natpars[:4]) - 3*zVal*np.array(natpars[4:])))
 
     # print(EnrEff)
     # print(toyEnrStd)
@@ -1130,12 +1189,14 @@ def plotMCEffUnc(bSave = False):
     ax11.plot(xVals, EnrEff, 'r', label='Best Fit Efficiency')
     # ax11.fill_between(xVals, EnrEffLo, EnrEffHi, color='r', alpha=0.3, label=r'$1 \sigma$ Uncertainties')
     ax11.fill_between(xVals, EnrEffLo, EnrEffHi, color='r', alpha=0.3, label='90% C.I.')
+    ax11.fill_between(xVals, EnrEffLo2, EnrEffHi2, color='b', alpha=0.3, label='90% C.I. (diagonal cov)')
     ax11.plot(xVals, toyEnrEff, 'b--', label='Toy MC Mean Efficiency')
     sns.despine()
     ax12.plot(xVals, NatEff, 'r', label='Best Fit Efficiency')
     ax12.plot(xVals, toyNatEff, 'b--', label='Toy MC Mean Efficiency')
     # ax12.fill_between(xVals, NatEffLo, NatEffHi, color='r', alpha=0.3, label=r'$1 \sigma$ Uncertainties')
     ax12.fill_between(xVals, NatEffLo, NatEffHi, color='r', alpha=0.3, label='90% C.I.')
+    ax12.fill_between(xVals, NatEffLo2, NatEffHi2, color='b', alpha=0.3, label='90% C.I. (diagonal cov)')
     sns.despine()
     ax11.set(title='Total Enriched Efficiency', ylabel='Efficiency', xlabel='Energy (keV)')
     ax12.set(title='Total Natural Efficiency', ylabel='Efficiency', xlabel='Energy (keV)')
@@ -1148,10 +1209,18 @@ def plotMCEffUnc(bSave = False):
     plt.tight_layout()
     if bSave:
         fig1.savefig(os.environ['LATDIR']+'/TotalEfficiency_Unc.png')
-    # plt.show()
+    plt.show()
 
 
 def checkROOTEff():
+    """
+        This function loads the ROOT efficiency files and compares them
+
+        The first file (lat-expo-efficiency_final95_Full.root) is built from summing together individual detector efficiency*exposure curves
+
+        The second file (lat-expo-efficiency_Combined.root) is built from combining detector efficiencies and then multiplying with a combined exposure curve
+    """
+
     import ROOT
 
     dsList = dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
@@ -1203,7 +1272,7 @@ def checkROOTEff():
         hNewNat.Draw("SAME")
         hNewNatHi.Draw("SAME")
         hNewNatLo.Draw("SAME")
-        
+
         c1.SaveAs(os.environ['LATDIR'] + '/DS{}_CombinedEffComparison.pdf'.format(ds))
 
 
