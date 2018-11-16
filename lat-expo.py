@@ -64,7 +64,7 @@ def main(argv):
 
 
 def getPSACutRuns(ds, cutType, verbose=False):
-    """ ./chan-sl.py -cov [ds] [cutType]
+    """ ./lat-expo.py -cov [ds] [cutType]
     Check which bkgIdx's we have good cut values for,
     accounting for multiple bkg and cal sub-Idx's.
     This is a 5-layered loop, which is pretty badass.
@@ -1035,10 +1035,11 @@ def getEfficiency():
 
 def getEfficiencyROOT():
     """
-        Uses the trigger efficiency only file to build total efficiencies and uncertainties
-        Total efficiencies and uncertainties calculated through Toy MC in sandbox/cal_det_pairs.py
-
-        Note: because of the amount of data the Toy MC takes up, the binning is in 0.1 keV bins rather than 0.01 keV bins, must rebin the efficiencies manually
+    Uses the trigger efficiency only file to build total efficiencies
+    and uncertainties. Total efficiencies and uncertainties are calculated
+    by a toy MC in lat-eff.py
+    Note: because of the amount of data the Toy MC takes up, the binning is in
+    0.1 keV bins rather than 0.01 keV bins, must rebin the efficiencies manually
     """
     from ROOT import TFile, TH1D
     import matplotlib.pyplot as plt
@@ -1053,7 +1054,8 @@ def getEfficiencyROOT():
     natExp = f['arr_4'].tolist()
     detEff = f['arr_13'].item()
     detExpo = f['arr_14'].item()
-    # Have to manually set this because depending on the version of python, sometimes the dictionary keys don't automatically get read
+    # Have to manually set this because depending on the version of python,
+    # sometimes the dictionary keys don't automatically get read
     dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
 
     # Grab total fitSlo efficiency from DB
