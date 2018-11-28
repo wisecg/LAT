@@ -2,6 +2,7 @@
 import os
 import numpy as np
 import tinydb as db
+import pandas as pd
 from statsmodels.stats import proportion
 from scipy.optimize import curve_fit
 from pprint import pprint
@@ -17,12 +18,16 @@ detInfo = dsi.DetInfo()
 # Skip these detectors because of low statistics
 skipList = ['111', '211', '214', '221', '261', '274']
 
+# Enriched and Natural detector lists, I pulled this from the output of the combined efficiencies -- could probably just use skipList and then check if a detector is Enr or Nat but whatever
+enrDetList = [112, 113, 114, 122, 123, 132, 133, 134, 152, 153, 154, 161, 162, 163, 164, 172, 173, 174, 231, 232, 253, 254, 262, 273]
+natDetList = [121, 141, 142, 143, 144, 145, 151, 171, 222, 223, 241, 242, 244, 251]
 
 def main():
     """ need to think about how this code should interact w/ lat-expo
     and the spectrum fitting codes.
     """
-    combineSloEff(makePlots=True, writeDB=False, runMC=False, seedNum=1)
+    # combineSloEff(makePlots=True, writeDB=False, runMC=False, seedNum=1)
+    GPXSloEff(makePlots=True, writeDB=False)
 
 
 def combineSloEff(makePlots=False, writeDB=False, runMC=False, seedNum=1):
@@ -293,6 +298,174 @@ def combineSloEff(makePlots=False, writeDB=False, runMC=False, seedNum=1):
         p1.set_ylim(0.4, 1)
         plt.tight_layout()
         plt.savefig("./plots/combinedEff.pdf")
+
+
+
+def GPXSloEff(makePlots=False, writeDB=False):
+    """
+        This function does 2 things:
+        1) It calculates the total mHL == 1 efficiency at the 238 keV peak (not really required for anything but Wenqin wanted it)
+        2) It uses the mHL == 1 efficiency at the 238 keV peak and performs the sideband method of calculating the cut efficiency.
+
+        The sideband method was suggested by Wenqin as a cross-check to the cut efficiency. Instead of breaking up the m2s238 event pairs and evaluating the efficiency, we keep the pairs in tact and perform a background subtraction on the energy window slightly below the peak. We then can back out the single detector efficiency at low energy by using the mHL==1 efficiency of the 238 keV peak at high energy.
+
+    Requires:
+        CalPairHit_WithDbCut.h5 and CalPairHit_WithDbCut_mH1.h5, both generated in lat2.py
+        These files are essentially the m2s238 hit data with a Pass/Fail for fitSlo
+        Weibull fit parameters of the Combined efficiency
+
+    Writes:
+        fitSlo_Sideband_m2s238_eff95 (containing the sideband Weibull fit parameters of Enr and Nat) key to the DB
+
+    """
+
+    df = pd.read_hdf('{}/data/CalPairHit_WithDbCut.h5'.format(os.environ['LATDIR']))
+    windowSize = 0.2
+    xVals = [round(windowSize*i, 2) for i in range(int(1/windowSize), int((50.+windowSize)/windowSize))]
+    fitBnd = ((1,-20,0,0.5),(np.inf,np.inf,np.inf, 0.99)) # eFitHi=30 and these works!
+    initialGuess = [1, -1.6, 2.75, 0.95]
+    fListPeakE, fListBkgE = [], []
+    cListPeakE, cListBkgE = [], []
+    fListPeakN, fListBkgN = [], []
+    cListPeakN, cListBkgN = [], []
+
+    for idx, er in enumerate(xVals):
+        if idx%50 == 0:
+            print('Current Energy: {:.2f} of {:.2f}'.format(er, xVals[-1]))
+        dFullPeakE, dCutPeakE, dFullBkgE, dCutBkgE, dFullPeakN, dCutPeakN, dFullBkgN, dCutBkgN = runCutVals(df, er, windowSize=windowSize)
+        fListPeakE.append(dFullPeakE)
+        cListPeakE.append(dCutPeakE)
+        fListBkgE.append(dFullBkgE)
+        cListBkgE.append(dCutBkgE)
+        fListPeakN.append(dFullPeakN)
+        cListPeakN.append(dCutPeakN)
+        fListBkgN.append(dFullBkgN)
+        cListBkgN.append(dCutBkgN)
+
+
+    # Grab total fitSlo efficiency from DB
+    dbKey = "fitSlo_Combined_m2s238_eff95"
+    fsN = dsi.getDBRecord(dbKey, False, calDB, pars)
+    enrpars = fsN[0]
+    natpars = fsN[1]
+    EnrEff = wl.weibull(xVals, *(np.array(enrpars[:4])))
+    NatEff = wl.weibull(xVals, *(np.array(natpars[:4])))
+
+    # mHL==1 efficiency correction from high energy
+    effScaleEnr, effScaleNat = getM1Efficiency()
+    print('Scaling Factors: ', effScaleEnr, effScaleNat)
+
+    effCorrE = (np.array(cListPeakE) - np.array(cListBkgE))/(np.array(fListPeakE) - np.array(fListBkgE))
+    effCorrE /= effScaleEnr
+    enr_ci_low, enr_ci_upp = proportion.proportion_confint(np.array(cListPeakE) - np.array(cListBkgE), np.array(fListPeakE) - np.array(fListBkgE), alpha=0.1, method='beta')
+
+    effCorrN = (np.array(cListPeakN) - np.array(cListBkgN))/(np.array(fListPeakN) - np.array(fListBkgN))
+    effCorrN /= effScaleNat
+    nat_ci_low, nat_ci_upp = proportion.proportion_confint(np.array(cListPeakN) - np.array(cListBkgN), np.array(fListPeakN) - np.array(fListBkgN), alpha=0.1, method='beta')
+
+    poptEnr, pcovenr = curve_fit(wl.weibull, xVals, effCorrE, p0=initialGuess, bounds=fitBnd)
+    poptNat, pcovnat = curve_fit(wl.weibull, xVals, effCorrN, p0=initialGuess, bounds=fitBnd)
+
+    effEFit = wl.weibull(xVals, *poptEnr)
+    effNFit = wl.weibull(xVals, *poptNat)
+
+    # Comparison of the parameters
+    print(poptEnr, enrpars[:4])
+    print(poptNat, natpars[:4])
+
+    sigmaEnr = np.sqrt(np.diagonal(pcovenr))
+    sigmaNat = np.sqrt(np.diagonal(pcovnat))
+
+    if writeDB:
+        dbKeyFill = "fitSlo_Sideband_m2s238_eff95"
+        dbVals = {0: [*poptEnr, *sigmaEnr], # 0: enr
+                1: [*poptNat, *sigmaNat]} # 1: nat
+        print('Writing dbVals:', dbVals)
+        dsi.setDBRecord({"key":dbKeyFill, "vals":dbVals}, forceUpdate=True, calDB=calDB, pars=pars)
+        print("DB filled:",dbKeyFill)
+
+        # Get the record
+        fsFill = dsi.getDBRecord(dbKeyFill, False, calDB, pars)
+        print(fsFill)
+
+    if makePlots:
+        fig1, ax1 = plt.subplots(nrows=2, ncols=2, figsize=(15,10))
+        ax1 = ax1.flatten()
+        ax1[0].errorbar(xVals, effCorrE, yerr=[effCorrE - enr_ci_low/effScaleEnr, enr_ci_upp/effScaleEnr - effCorrE], color='k', linewidth=0.8, fmt='o', alpha=0.75, capsize=2, label='Sideband Method')
+        ax1[0].plot(xVals, effEFit, 'b', lw=3, label='Sideband Fit Efficiency')
+        ax1[0].plot(xVals, EnrEff, 'r', lw=3, label='Central Fit Efficiency')
+        ax1[0].set_title('Enriched Efficiency')
+        ax1[0].set_ylabel('Efficiency')
+        ax1[0].legend()
+        ax1[2].plot(xVals, EnrEff - effEFit)
+        ax1[2].set_xlabel('Energy (keV)')
+        ax1[2].set_ylabel('Efficiency Difference (Central - Sideband)')
+
+        ax1[1].errorbar(xVals, effCorrN, yerr=[effCorrN - nat_ci_low/effScaleNat, nat_ci_upp/effScaleNat - effCorrN], color='k', linewidth=0.8, fmt='o', alpha=0.75, capsize=2, label='Sideband Method')
+        ax1[1].plot(xVals, effNFit, 'b', lw=3, label='Sideband Fit Efficiency')
+        ax1[1].plot(xVals, NatEff, 'r', lw=3, label='Central Fit Efficiency')
+        ax1[1].set_title('Natural Efficiency')
+        ax1[1].set_ylabel('Efficiency')
+        ax1[1].legend()
+        ax1[3].plot(xVals, EnrEff - effEFit)
+        ax1[3].set_xlabel('Energy (keV)')
+        ax1[3].set_ylabel('Efficiency Difference (Central - Sideband)')
+
+        plt.tight_layout()
+        fig1.savefig('./plots/GPXEfficiencyComparison.png')
+
+
+def getM1Efficiency():
+    df = pd.read_hdf(os.environ['LATDIR']+'/data/CalPairHit_WithDbCut_mH1.h5')
+    dfg = df.groupby(['cpd1'])
+
+    dEnrFull, dEnrCut = 0, 0
+    dNatFull, dNatCut = 0, 0
+
+    for name, g in dfg:
+        bCuts = g['trapENFCal1'].values
+        aCuts = g.loc[(df['Pass1'] == True), 'trapENFCal1'].values
+        if name in enrDetList:
+            dEnrFull += len(bCuts)
+            dEnrCut += len(aCuts)
+        else:
+            dNatFull += len(bCuts)
+            dNatCut += len(aCuts)
+
+    effEnr, effNat = float(dEnrCut/dEnrFull), float(dNatCut/dNatFull)
+    return np.sqrt(effEnr), np.sqrt(effNat)
+
+
+def runCutVals(df, eVal=0., windowSize = 2):
+    """
+        Why do I loop through all detectors? I don't know but in the beginning I did each detector individually and I'm too lazy to change it
+    """
+
+    dfg = df.groupby(['cpd1'])
+
+    eMin = round(eVal - windowSize/2, 2)
+    eMax = round(eMin + windowSize, 2)
+    dFullPeakE, dFullBkgE = 0, 0
+    dCutPeakE, dCutBkgE = 0, 0
+    dFullPeakN, dFullBkgN = 0, 0
+    dCutPeakN, dCutBkgN = 0, 0
+
+    for name, g in dfg:
+        valsFull = g['trapENFCal1'].loc[(g['trapENFCal1']>eMin) & (g['trapENFCal1']<eMax)].values + g['trapENFCal2'].loc[(g['trapENFCal1']>eMin) & (g['trapENFCal1']<eMax)].values
+
+        valsCut = g['trapENFCal1'].loc[(g['Pass1']==True) & (g['Pass2']==True) & (g['trapENFCal1']>eMin) & (g['trapENFCal1']<eMax)].values + g['trapENFCal2'].loc[(g['Pass1']==True) & (g['Pass2']==True) & (g['trapENFCal1']>=eMin) & (g['trapENFCal1']<=eMax)].values
+        if name in enrDetList:
+            dFullPeakE += len(valsFull[(valsFull > 237.28) & (valsFull < 239.46)])
+            dCutPeakE += len(valsCut[(valsCut > 237.28) & (valsCut < 239.46)])
+            dFullBkgE += len(valsFull[(valsFull > 235) & (valsFull < 237.18)])
+            dCutBkgE += len(valsCut[(valsCut > 235) & (valsCut < 237.18)])
+        elif name in natDetList:
+            dFullPeakN += len(valsFull[(valsFull > 237.28) & (valsFull < 239.46)])
+            dCutPeakN += len(valsCut[(valsCut > 237.28) & (valsCut < 239.46)])
+            dFullBkgN += len(valsFull[(valsFull > 235) & (valsFull < 237.18)])
+            dCutBkgN += len(valsCut[(valsCut > 235) & (valsCut < 237.18)])
+
+    return dFullPeakE, dCutPeakE, dFullBkgE, dCutBkgE, dFullPeakN, dCutPeakN, dFullBkgN, dCutBkgN
 
 
 if __name__ == "__main__":

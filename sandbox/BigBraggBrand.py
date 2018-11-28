@@ -32,9 +32,21 @@
     lambda: 181.7/258812.4304 = 0.0007
 
     Brian's results (95 Limit):
-    5 -- 20: 209.167060373 => 0.00101
-    New: 211.01599 => 0.00102
-    4 -- 20: 294.202131301 => 0.00114
+    New:
+    5 -- 20: 159.16 => 0.00077
+
+    but, the expected number of axions was 213100.962 and now 194123.1755
+
+    Central: 194123.1755
+    Lo90: 192770.2718
+    Hi90: 195454.8897
+
+
+    Efficiency Studies:
+    http://mjcalendar.npl.washington.edu/indico/event/2761/material/slides/0.pdf
+    http://mjcalendar.npl.washington.edu/indico/event/2813/material/slides/0.pdf
+    https://mjcalendar.npl.washington.edu/indico/event/2781/material/slides/0.pdf
+
 
 """
 
@@ -46,7 +58,7 @@ from matplotlib import gridspec
 import seaborn as sns
 import theano.tensor as tt
 from scipy.interpolate import interp1d
-from scipy.stats import norm, mode
+from scipy.stats import norm, mode, poisson
 import pandas as pd
 sns.set(style='darkgrid')
 
@@ -61,11 +73,6 @@ det = dsi.DetInfo()
 inDir = os.environ['LATDIR']+'/data/MCMC'
 dsList = ['5B', '5C', '6']
 # dsList = ['5B']
-# Energy range (also defines fitting range!)
-# The tritium endpoint is 18 keV, the axion PDF stops at 12 keV.
-#we want to extend the PDF to slightly beyond the tritium endpoint in order to capture the flat bkg
-energyThresh, energyThreshMax, binSize = 5.0, 20.0, 0.1
-energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/binSize)+1)
 
 # The start and end time are for DS5b
 startTime = 1485575988
@@ -89,16 +96,22 @@ totExposure = 2621.72447852 # DS5b, DS5c, DS6
 yearInSec = 31536000 # Number of seconds in 1 year
 nBurn = 1000 # Number of burn-in samples for the MCMC
 
+# Energy range (also defines fitting range!)
+# The tritium endpoint is 18 keV, the axion PDF stops at 12 keV.
+#we want to extend the PDF to slightly beyond the tritium endpoint in order to capture the flat bkg
+energyThresh, energyThreshMax, binSize = 5.0, 20.0, 0.1
+energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-energyThresh)/binSize)+1)
+
 def main(argv):
     # Some random booleans
-    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend = False, False, False, False, False
-    backendDir = ''
+    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend, bPPC = False, False, False, False, False, False
+    # Default backendDir is my own directory!
+    backendDir = '/Users/brianzhu/code/LAT/data/MCMC/AveragedAxion2_Enr_Central_DS5breso_5_20'
     bSample, bFull = False, True
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
     # Set initial seed number here -- this is an option that can be changed
-    dsNum, seedNum = 1, '5b'
-
+    dsNum, seedNum = '5b', 1
 
     if len(argv)==0:
         help_options()
@@ -140,6 +153,9 @@ def main(argv):
             bBackend = True
             backendDir = str(argv[i+1])
             print('Using Backend Directory: {}'.format(backendDir))
+        if opt == '-ppc':
+            bPPC = True
+            print('Generating Posterior Predictive Checks, MCMC chain needs to be sampled!')
         if opt == '-setbinsize':
             axionBinSize = int(argv[i+1])
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
@@ -161,8 +177,8 @@ def main(argv):
     # Sort by UnixTime -- I forget why I did this...
     df.sort_values(by=['UnixTime'], inplace=True)
     # Select Enriched detectors only, grab numpy array of the values
-    dataArr = df[['Energy', 'UnixTime']].loc[df['isEnr']==1].values
-
+    dataArr = df[['Energy', 'UnixTime']].loc[(df['isEnr']==1) & (df['UnixTime'] >= startTime) & (df['UnixTime'] <= endTime)].values
+    print('Data Integral: {}'.format(len(dataArr)))
     # Bin the data into a 2D histogram -- here we use the exact time bin edges of the axion PDF to make sure everything is binned properly
     pdfArrDict['Data'], xedges, yedges = np.histogram2d(dataArr[:,0], dataArr[:,1], bins=[energyBins, timeBinLowEdge])
 
@@ -242,11 +258,13 @@ def main(argv):
         with model:
             db = pm.backends.Text(backendDir)
             trace = pm.sample(draws=10000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
-            # trace = pm.sample(draws=5000, chains=1, n_init=500, chain_idx=seedNum, seed=seedNum, tune=500, progressbar=True, trace=db)
 
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
         modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
+
+    if bPPC:
+        posteriorChecks(model, pdfArrDict=pdfArrDict, backendDir=backendDir)
 
     if bFinalSpectra:
         trace = pm.backends.text.load(backendDir, model)
@@ -278,6 +296,7 @@ def constructModel(pdfDict, energyBins, bFull=True):
     """
     with pm.Model() as model:
         # Perhaps should switch to a more informative prior
+        #These are referred to as free_RVs
         if bFull:
             Axion = pm.HalfFlat("Axion")
         Tritium = pm.HalfFlat("Tritium")
@@ -309,6 +328,7 @@ def constructModel(pdfDict, energyBins, bFull=True):
         else:
             det = Tritium*pdfDict['Tritium'] + Bkg*pdfDict['Bkg'] + Fe55*pdfDict['Fe55'] + Zn65*pdfDict['Zn65'] + Ge68*pdfDict['Ge68']
 
+        # Define the likelihood, this is the observed_RVs
         L = pm.Poisson("L", mu=det, observed=pdfDict['Data'])
     return model
 
@@ -339,8 +359,8 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
 
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
-    # fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS5breso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
-    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS6areso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
+    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS5breso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
+    # fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS6areso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
 
     hday = fAxion.Get('hday')
     hday.RebinX(axionBinSize) # 5 minute bins
@@ -405,8 +425,9 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
         print('Axion Shape', AxionArr.shape, nTimeBins)
 
     # Efficiency * Exposure mask
-    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList = dsList, debug = debug)
+    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList=dsList, debug=debug)
 
+    # Multiply the Axion PDF by the Efficiency*Exposure mask
     NormAxionArr = AxionArr*eeMask
     effNorm = eeMask/expMask
 
@@ -461,13 +482,14 @@ def drawFinalSpectra(pdfDict, trace):
     axSpec.errorbar(energyBins[:-1], DataSpec, yerr=DataSpecErr, color='black', fmt='o', label='Data')
     axTime.errorbar(timeBins, TimeSpec, yerr=TimeSpecErr, color='black', fmt='o', label='Data')
 
-    # Create a dummy for the total spectrum
-    totalSpec = np.zeros(DataSpec.shape) # Dummy for energy spectrum
-    totalTime = np.zeros(TimeSpec.shape) # Dummy for time spectrum
-    totalModel2D = np.zeros(rebinShape) # Dummy for energy vs time spectrum
     print('rebinShape size:', rebinShape)
     print('TimeSpec size:', TimeSpec.shape)
     print('timeBins size:', timeBins.shape)
+
+    # Create a dummy for the total spectrum
+    totalSpec = np.zeros(DataSpec.shape) # Dummy for energy spectrum
+    totalTime = np.zeros(TimeSpec.shape) # Dummy for time spectrum
+    totalModel2D = np.zeros((int(rebinShape[0]), int(rebinShape[1]))) # Dummy for energy vs time spectrum
 
     # Take all the pdfs and flatten time and energy axes
     for key in pdfDict.keys():
@@ -498,6 +520,7 @@ def drawFinalSpectra(pdfDict, trace):
     axSpec.set_xlabel('Energy (keV)')
     axSpec.legend()
     plt.tight_layout()
+    figSpec.savefig('AxionFit_5_20_Spectrum.png')
 
     # Labels for plots only -- only label 5 bins
     timeLabels = np.linspace(startTime, endTime, 5, dtype='datetime64[s]')
@@ -511,8 +534,9 @@ def drawFinalSpectra(pdfDict, trace):
     axTime.set_xticklabels(timeLabels, rotation=30)
     axTime.legend()
     plt.tight_layout()
-    plt.show()
-    # return
+    figTime.savefig('AxionFit_5_20_Time.png')
+    # plt.show()
+    return
 
     # Loop again -- Make sure I don't mess up the other plots
     # The counts vs time plot with binning is very finnicky when rebinning other stuff
@@ -630,7 +654,7 @@ def drawPDFs(pdfArrDict):
     plt.show()
 
 
-def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None, debug = False):
+def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, debug=False):
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
         for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
@@ -641,6 +665,10 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
             effMask -- Efficiency mask only (no exposure applied)
 
     """
+    if not dsList:
+        print('Error: DataSet List not specified for efficiency calculation')
+        return
+
     import ROOT
     eeMask = np.ones(AxionShape)
     expMask = np.ones(AxionShape) # Exposure only
@@ -654,7 +682,6 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     if debug:
         print('Timing Bin size: ', timeBinSize)
 
-    # fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
     fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
     # Dummy variable for Start time of DS5b to calculate gaps in livetime
     prevEnd = startTime
@@ -662,6 +689,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList = None
     for ds in dsList:
         # First build efficiency array -- assumes efficiency for all dataset is constant
         # Also combines efficiency of natural and enriched detectors
+        # hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
         hEff = fEff.Get('hDS{}_Norm_Enr_Lo90'.format(ds))
         effArr = np.ones(len(energyBins)-1)
         for eIdx, eBin in enumerate(energyBins[:-1]):
@@ -848,14 +876,16 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     print('Loading Backend from {}'.format(backendDir))
     trace = pm.backends.text.load(backendDir, model)
     # Get summary of trace as a dataframe
-    print(trace[nBurn:])
+    # print(trace[nBurn:])
     traceBurn = trace[nBurn:]
-    dfSum = pm.summary(traceBurn, alpha=0.1)
+    dfSum = pm.summary(traceBurn, alpha=0.1, include_transformed=True)
     print(dfSum.head(10))
     AxionIntegral = pdfArrDict['Axion'].sum()
 
+
     # This gets printed out from "convertaxionPDF", it's the amount I artificially scale the axion PDF integral
     AxionNorm = (np.amax(unNormAxion))
+    print('Axion Shape', pdfArrDict['Axion'].shape)
     print('Axion PDF Integral:', AxionIntegral)
     print('Normalization: {}'.format(AxionNorm))
 
@@ -870,6 +900,9 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     axionIntegral = 0
     axionMeanIntegral = 0
     for par in dfSum.index:
+        if '_log_' in par:
+            continue
+
         # Integrate PDF
         parInt = (pdfArrDict[par]/effNorm).sum()
         parRaw = pdfArrDict[par].sum()
@@ -888,13 +921,64 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     print('Total Background Integral (Mean): {}'.format(bkgIntegral))
     print('Axion Integral (Mean): {}'.format(axionMeanIntegral))
     print('Axion Integral (95% C.I.): {}'.format(axionIntegral))
-    # Debate: when converting to lambda,
 
+    cached = [(var, var.logp_elemwise) for var in model.observed_RVs]
+
+    def logp_vals_point(pt):
+        logp_vals = []
+        for var, logp in cached:
+            logp = logp(pt)
+            if var.missing_values:
+                logp = logp[~var.observations.mask]
+            logp_vals.append(logp.ravel())
+        return np.concatenate(logp_vals)
+
+    # points = traceBurn.points()
+    # pt = []
+    # idx = 0
+    # logpArr = np.zeros(5000)
+    # for pt in points:
+    #     if idx >= 5000:
+    #         break
+    #     atemp = logp_vals_point(pt)
+    #     logpArr[idx] = atemp.sum()
+    #     idx += 1
+        # print(atemp, atemp.shape)
+
+    # ptMean = {par: dfSum.loc[par, 'mean'] for par in dfSum.index}
+    # aMean = logp_vals_point(ptMean).sum()
+
+    # xArr = np.arange(0, 5000, 1)
+    # fig0, (ax01, ax02) = plt.subplots(ncols=2, figsize=(12,5))
+    # sns.distplot(logpArr, bins=50, kde=False, ax=ax01)
+    # ax01.axvline(aMean)
+    # ax01.set_xlabel('NLL')
+    # ax02.plot(xArr, logpArr)
+    # ax02.set_xlabel('Sample')
+    # ax02.set_ylabel('NLL')
+
+    # Draw a posterior with the X-axis converted into Axion Counts
+    fig11, ax11 = plt.subplots(figsize=(10,6))
+    axionTraceArr = trace.get_values('Axion', burn=1000)
+    hist, edges = np.histogram(axionTraceArr, bins=5000)
+    integralArr = np.cumsum(hist)
+    idxPass = np.where(integralArr >= 0.9*hist.sum())[0][0]
+    idxPass2 = np.where(integralArr >= 0.95*hist.sum())[0][0]
+    print(idxPass, edges[idxPass], pdfArrDict['Axion'].sum()*edges[idxPass])
+    print(idxPass2, edges[idxPass2], pdfArrDict['Axion'].sum()*edges[idxPass2])
+
+    axionTraceArrScaled = pdfArrDict['Axion'].sum()*axionTraceArr
+    sns.distplot(axionTraceArrScaled, kde=False, bins=50, ax=ax11)
+    ax11.axvline(pdfArrDict['Axion'].sum()*edges[idxPass])
+    ax11.set_title('Axion Posterior')
+    ax11.set_xlabel('Axion Counts')
+
+    # Debate: when converting to lambda,
     # axionLambda = 3600*24*dfSum.loc['Axion', 'hpd_95']/AxionNorm
     # print("Axion Lambda: {} --- g_agg (E-8 GeV): {}".format(axionLambda, np.power(axionLambda, 0.25)))
 
     # Plot Traces
-    # fig1, ax1 = plt.subplots(nrows=6,ncols=2,figsize=(10, 16))
+    # fig1, ax1 = plt.subplots(nrows=6,ncols=2,figsize=(16, 18))
     # pm.traceplot(traceBurn, ax=ax1)
     # fig1.savefig('AxionFit_5_20_Trace.png')
 
@@ -911,7 +995,9 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     # fig3.savefig('AxionFit_5_20_Forest_Axion.png')
 
     # Plot Posteriors
-    pm.plot_posterior(traceBurn, alpha_level=0.1, round_to=5)
+    # fig4, ax4 = plt.subplots(ncols=3, nrows=3, figsize=(12, 12))
+    # pm.plot_posterior(traceBurn, alpha_level=0.1, round_to=5)
+    # fig4.savefig('AxionFit_5_20_Posterior.png')
 
 
     # print(np.array([traceBurn['Axion'], traceBurn['Tritium']]).T.shape)
@@ -922,13 +1008,17 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
     # hpdDict = pm.hpd(trace[nBurn:], alpha=0.1)
     # print(hpdDict[1])
 
-    # pm.autocorrplot(trace[nBurn:], max_lag=100)
+
+    # fig5, ax5 = plt.subplots(nrows=8, ncols=1, figsize=(15, 7))
+    # ax5 = pm.autocorrplot(trace[nBurn:], varnames=['Axion'], max_lag=1000)
+    # for i in range(len(ax5)):
+        # print(ax5[i], type(ax5[i]))
     # print(pm.autocorr(trace[nBurn:]))
     # pm.densityplot(trace[nBurn:])
     plt.show()
 
 
-def posteriorChecks(model, trace):
+def posteriorChecks(model, pdfDict, backendDir=None):
     """
         In the Bayesian perspective we define a model that we assume is true and we fit it to the data, but what if the model is wrong? Posterior Predictive Checks performs another check on the model by requiring reasonable predictive performance using the model. In standard machine learning, holding out a dataset gives some check of predictive performance but it is only one point, not an ensemble. Cross-validation doesn't give predictive performance, it gives a sense of partitioning performance.
 
@@ -947,36 +1037,23 @@ def posteriorChecks(model, trace):
         Note: out-of-sample is data not used for the fit (ie: making a prediction)
 
     """
-    # Posterior Predictive Checks -- Generates 500 toy samples of size 100
-    # This is essentially toy MC
-    model_ppc = pm.sample_ppc(trace, samples=500, model=model)
 
-    # Widely-applicable Information Criterion (WAIC)
-    model_waic = pm.waic(trace[len(trace)-100:], model, progressbar=True)
+    if not backendDir:
+        print('No backend directory specified!')
+        return
 
-    # Leave-one-out Cross-validation (LOO)
-    model_loo = pm.loo(trace[len(trace)-100:], model, progressbar=True)
+    # Load from files
+    print('Loading Backend from {}'.format(backendDir))
+    trace = pm.backends.text.load(backendDir, model)
 
-    # ppc = pm.sample_ppc(trace[nBurn:], samples=500, model=model)
-    # print(np.asarray(ppc['L'].shape), ppc.keys())
-    # _, axppc = plt.subplots(figsize=(12, 6))
-    # axppc.hist([n.mean() for n in ppc['L']], bins=19, alpha=0.5)
-    # axppc.set(title='Posterior predictive for L', xlabel='L(x)', ylabel='Frequency');
-    # plt.show()
+    ppc = pm.sample_ppc(trace[nBurn:], samples=1, size=664, model=model)
+    print(np.asarray(ppc['L'].shape), ppc.keys())
+    _, axppc = plt.subplots(figsize=(12, 7))
+    axppc.hist([n.mean() for n in ppc['L']], bins=19, alpha=0.5)
+    axppc.set(title='Posterior predictive for L', xlabel='L(x)', ylabel='Frequency');
+    plt.show()
 
-    # df_comp_WAIC = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]])
-    # df_comp_WAIC.head()
-    # pm.compareplot(df_comp_WAIC)
-    # df_comp_LOO = pm.compare(models = [model, modelBasic], traces = [trace[nBurn:], traceBasic[nBurn]], ic='LOO')
-    # df_comp_LOO.head()
-    # pm.compareplot(df_comp_LOO)
-
-    # LOO results
-    # LOO  pLOO   dLOO weight      SE   dSE warning
-    # 0  61479.8  5.68      0   0.94  798.63     0       1
-    # 1    61502  4.95  22.12   0.06  798.47  10.2       1
-
-    return model_ppc, model_waic, model_loo
+    return
 
 
 def rebin(inArr, size=2):
@@ -1049,11 +1126,13 @@ def help_options():
     print("BigBraggBrand Run Options:")
     print("\t -h or --help: Prints this help message")
     print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
+    print("\t -backend : Changes the backend directory")
     print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
     print("\t -debug: Turns on debug mode, more output/plots")
     print("\t -drawPDF: Only draws the PDFs")
     print("\t -drawSpectra: Draws final spectra, MCMC chain needs to be sampled")
     print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
+    print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
     print("\t -noaxion: Builds model without Axion signal")
     print("\t -sample: Turns on MCMC sampling")
     print("\t -setbinsize: Sets axion bin size (Default/RECOMMENDED 5 minutes)")

@@ -41,8 +41,8 @@ def main():
 
     # Run these two functions to combine all Enr/Nat detector efficiencies
     # and to calculate uncertainties as well as write the combined efficiency fit results in to the DB
-    # combinedEff(bSave = False, bWriteDB = False, seedNum=1)
-    plotMCEffUnc(bSave = False)
+    combinedEff(bSave = False, bWriteDB = False, seedNum=1)
+    # plotMCEffUnc(bSave = False)
     # checkROOTEff()
 
     # These are old functions that were for simulated calibration plots, etc
@@ -835,6 +835,8 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     markerList = ['o', 'v', 's', 'D']
     eIdx, eMIdx = 0, 0
     nIdx, nMIdx = 0, 0
+    enrDetList = []
+    natDetList = []
     for det in detList:
         # Skip the bad stuff
         if det in skipList:
@@ -846,6 +848,7 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
         # print(effData[det][4], effData[det][6])
         # print(det, effData[det][4][4], np.array(effData[det][4][4], dtype=float)/effData[det][6][4], effData[det][4][9], float(effData[det][4][9])/effData[det][6][9])
         if isEnr:
+            enrDetList.append(int(det))
             eIdx += 1
             if eIdx%11==0:
                 eMIdx += 1
@@ -860,6 +863,7 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
             ax0[0].scatter(neff5, nc5, c=cList[eIdx%8], marker=markerList[eMIdx], label='C{}P{}D{}'.format(*det))
             ax0[0].scatter(neff10, nc10, c=cList[eIdx%8], marker=markerList[eMIdx])
         else:
+            natDetList.append(int(det))
             nIdx += 1
             if nIdx%11==0:
                 nMIdx += 1
@@ -878,6 +882,8 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     hEffEnr = np.nan_to_num(hPassEnr/hFullEnr)
     hEffNat = np.nan_to_num(hPassNat/hFullNat)
 
+    print(sorted(enrDetList))
+    print(sorted(natDetList))
     print(len(xVals), xVals)
     print(hPassEnr)
     print(hFullEnr)
@@ -892,7 +898,7 @@ def combinedEff(bSave = False, bWriteDB = False, bSavePlots = False, seedNum=1):
     # ax0[3].set(title = 'Natural Counts vs Eff (5 keV)', xlabel='Efficiency', ylabel='Counts')
     plt.tight_layout()
     # plt.show()
-    fig0.savefig(os.environ['LATDIR']+'/CountsvsEff.png')
+    # fig0.savefig(os.environ['LATDIR']+'/CountsvsEff.png')
     return
 
 
@@ -1224,7 +1230,8 @@ def checkROOTEff():
 
     import ROOT
 
-    dsList = dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
+    # dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
+    dsList = ['5A', '5B', '5C', 6]
     oldF = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_final95_Full.root')
     newF = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
 
@@ -1257,6 +1264,11 @@ def checkROOTEff():
         hNewEnr.Draw("SAME")
         hNewEnrHi.Draw("SAME")
         hNewEnrLo.Draw("SAME")
+        leg1 = ROOT.TLegend(0.35, 0.25, 0.88, 0.55)
+        leg1.AddEntry(hOldEnr, 'Individual + Summed', 'l')
+        leg1.AddEntry(hNewEnr, 'Combined', 'l')
+        leg1.SetBorderSize(0)
+        leg1.Draw()
 
         c1.cd(2)
         hOldNat.SetLineColor(ROOT.kBlue)
