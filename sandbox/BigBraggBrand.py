@@ -683,6 +683,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
             effMask -- Efficiency mask only (no exposure applied)
 
     """
+    
     if not dsList:
         print('Error: DataSet List not specified for efficiency calculation')
         return
@@ -713,7 +714,6 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
             hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
         else:
             hEff = fEff.Get('hDS{}_Norm_Enr_{}'.format(ds, effMode))
-
         effArr = np.ones(len(energyBins)-1)
         for eIdx, eBin in enumerate(energyBins[:-1]):
             effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
@@ -722,16 +722,14 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
             print('DS{} Efficiency Array:'.format(ds), effArr, effArr.shape)
 
         # Create a new map for all runs with the exposure of each run
+        # Builds up dictionary of run:exposure for every dataset
         if ds in ['5A', '5B', '5C']:
             dsNum = 5
         else:
             dsNum = int(ds)
-
-        # Builds up dictionary of run:exposure for every dataset
         runMatrix = {}
         bkgRanges = bkg.getRanges(dsNum)
-        chList = det.getGoodChanList(dsNum)
-
+        chList = det.getGoodChanList(dsNum, detType='Enr')
         # Loop through channels to build up total runLists
         for ch in chList:
             cpd = int(det.getChanCPD(dsNum,ch))
@@ -741,6 +739,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
                     # Loop through file,
                     for line in f:
                         currArr = np.array(line.split(','), dtype=np.float)
+                        # print(currArr)
                         runMatrix.setdefault(int(currArr[0]), 0.)
                         runMatrix[int(currArr[0])] += currArr[1]
             except:
