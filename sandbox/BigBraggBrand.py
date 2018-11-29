@@ -35,12 +35,20 @@
     New:
     5 -- 20: 159.16 => 0.00077
 
+    ok, the upper limit was 143. and now 146.
     but, the expected number of axions was 213100.962 and now 194123.1755
+    194123.1755/213100.96=91%
+    so the change is 9%
+    or 146/194123.1755 v.s. 143./213100.962, which is 0.00075 v.s. 0.00067
+    so 12% more conservative
 
+    Axion Integrals:
     Central: 194123.1755
-    Lo90: 192770.2718
-    Hi90: 195454.8897
-
+    Lo90: 192770.2718 -> 164.75/192770.2718 = 0.000855 (Need to run longer chains)
+    Hi90: 195454.8897 ->
+    Hi68: 194939.535 ->
+    IS: 188168.4693 ->
+    Sideband: 202775.0857 ->
 
     Efficiency Studies:
     http://mjcalendar.npl.washington.edu/indico/event/2761/material/slides/0.pdf
@@ -112,6 +120,7 @@ def main(argv):
     pdfArrDict, pdfFlatDict = {}, {}
     # Set initial seed number here -- this is an option that can be changed
     dsNum, seedNum = '5b', 1
+    effMode = None
 
     if len(argv)==0:
         help_options()
@@ -133,6 +142,9 @@ def main(argv):
             print('Debug mode ON!')
         if opt == '-ds':
             dsNum = str(argv[i+1])
+            if dsNum not in ['5b', '6a']:
+                print('Error: Dataset {} is not valid! Can only use 5b or 6a!'.format(dsNum))
+                return
             print('Setting Resolution to Dataset',dsNum)
         if opt == '-drawPDF':
             bDrawPDF = True
@@ -143,6 +155,12 @@ def main(argv):
         if opt == '-diagnostic':
             bDiagnostic = True
             print('Generating Model Diagnostics, MCMC chain needs to be sampled!')
+        if opt == '-eff':
+            effMode = str(argv[i+1])
+            if effMode not in ['Lo90', 'Hi90', 'Sideband', 'IS']:
+                print('Error: Dataset {} is not valid! Can only use Lo90, Hi90, Sideband, IS!'.format(effMode))
+                return
+            print('Setting Resolution to Dataset',dsNum)
         if opt == '-noaxion':
             bFull = False
             print('Building Model without Axion PDF!')
@@ -161,16 +179,17 @@ def main(argv):
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize=axionBinSize)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize=axionBinSize, dsNum=dsNum, effMode = effMode)
 
     # Normalize Axion PDF by maximum (this is arbitrary for simplifying the sampling)
     #I guess it's questionable whether or not this is actually useful...
-    AxionNorm = (np.amax(AxionArr))
-    pdfArrDict['Axion'] = AxionArr/AxionNorm
+    # AxionNorm = (np.amax(AxionArr))
+    # pdfArrDict['Axion'] = AxionArr/AxionNorm
+    pdfArrDict['Axion'] = AxionArr
 
     print('Generated Axion PDF!')
     print('Axion Integral: {} -- Shape: {}'.format(AxionArr.sum(), AxionArr.shape))
-    print('Axion Normalization Constant: {}'.format(AxionNorm))
+    # print('Axion Normalization Constant: {}'.format(AxionNorm))
 
     # Load Background data and bin exactly as PDF
     df = pd.read_hdf('{}/Bkg_Spectrum.h5'.format(inDir))
@@ -257,7 +276,7 @@ def main(argv):
     if bSample:
         with model:
             db = pm.backends.Text(backendDir)
-            trace = pm.sample(draws=10000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
+            trace = pm.sample(draws=15000, chains=1, n_init=1000, chain_idx=seedNum, seed=seedNum, tune=1000, progressbar=True, trace=db)
 
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
@@ -275,7 +294,7 @@ class ErrorFnc(pm.Continuous):
     """
         Custom Error Function distribution for pymc3
         This is for efficiency/uncertainty sampling
-        Not currently used
+        Not currently used but I keep it here in case I need an example for a custom PDF
     """
     def __init__(self, mu, sd, *args, **kwargs):
         self._mu = tt.as_tensor_variable(mu)
@@ -333,7 +352,7 @@ def constructModel(pdfDict, energyBins, bFull=True):
     return model
 
 
-def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
+def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum = '5b', effMode = None):
     """
         Converts 2D histogram PDF for axion into numpy array
 
@@ -359,8 +378,7 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
 
     import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
-    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS5breso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
-    # fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS6areso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir))
+    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS{}reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir, dsNum))
 
     hday = fAxion.Get('hday')
     hday.RebinX(axionBinSize) # 5 minute bins
@@ -425,7 +443,7 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False):
         print('Axion Shape', AxionArr.shape, nTimeBins)
 
     # Efficiency * Exposure mask
-    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList=dsList, debug=debug)
+    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList=dsList, debug=debug, effMode=effMode)
 
     # Multiply the Axion PDF by the Efficiency*Exposure mask
     NormAxionArr = AxionArr*eeMask
@@ -654,7 +672,7 @@ def drawPDFs(pdfArrDict):
     plt.show()
 
 
-def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, debug=False):
+def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, debug=False, effMode=None):
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
         for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
@@ -668,6 +686,8 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
     if not dsList:
         print('Error: DataSet List not specified for efficiency calculation')
         return
+    if effMode:
+        print('Using {} mode for cut efficiency'.format(effMode))
 
     import ROOT
     eeMask = np.ones(AxionShape)
@@ -689,8 +709,11 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
     for ds in dsList:
         # First build efficiency array -- assumes efficiency for all dataset is constant
         # Also combines efficiency of natural and enriched detectors
-        # hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
-        hEff = fEff.Get('hDS{}_Norm_Enr_Lo90'.format(ds))
+        if not effMode:
+            hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
+        else:
+            hEff = fEff.Get('hDS{}_Norm_Enr_{}'.format(ds, effMode))
+
         effArr = np.ones(len(energyBins)-1)
         for eIdx, eBin in enumerate(energyBins[:-1]):
             effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
@@ -815,7 +838,7 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
     return eeMask, expMask, effMask
 
 
-def getSigma(energy, dsNum='6'):
+def getSigma(energy, dsNum='6a'):
 
     p0,p1,p2 = 0., 0., 0.
     if dsNum=='0':
@@ -832,7 +855,7 @@ def getSigma(energy, dsNum='6'):
         p0 = 0.1815; p1=0.01705; p2=0.00031527
     elif dsNum=='5c':
         p0 = 0.1361; p1=0.0174; p2=0.0002829
-    elif dsNum=='6':
+    elif dsNum=='6a':
         p0 = 0.1314; p1=0.01728; p2=0.0002742
 
     # Use DS6a as default
@@ -884,10 +907,8 @@ def modelDiagnostics(model, pdfArrDict=None, backendDir=None, unNormAxion=None, 
 
 
     # This gets printed out from "convertaxionPDF", it's the amount I artificially scale the axion PDF integral
-    AxionNorm = (np.amax(unNormAxion))
     print('Axion Shape', pdfArrDict['Axion'].shape)
     print('Axion PDF Integral:', AxionIntegral)
-    print('Normalization: {}'.format(AxionNorm))
 
     # Loop through and calculate 95% CI for all parameters
     print('Calculating 95% Credible Intervals: ')
@@ -1125,16 +1146,18 @@ def help_options():
     """
     print("BigBraggBrand Run Options:")
     print("\t -h or --help: Prints this help message")
-    print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
     print("\t -backend : Changes the backend directory")
-    print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
     print("\t -debug: Turns on debug mode, more output/plots")
+    print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
     print("\t -drawPDF: Only draws the PDFs")
     print("\t -drawSpectra: Draws final spectra, MCMC chain needs to be sampled")
-    print("\t -diagnostic: Generates model diagnostics, only run AFTER MCMC")
-    print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
+    print("\t -ds: Sets the energy resolution of the Axion and Gaussian PDFs, default is 5b (can also use 6a)")
+    print("\t -eff: Sets efficiency curve, default is None (central), other options are Lo90, Hi90, IS, and Sideband")
     print("\t -noaxion: Builds model without Axion signal")
+    print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
+    print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
     print("\t -sample: Turns on MCMC sampling")
+    print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
     print("\t -setbinsize: Sets axion bin size (Default/RECOMMENDED 5 minutes)")
     return
 
