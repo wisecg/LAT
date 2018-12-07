@@ -1230,14 +1230,18 @@ def checkROOTEff():
 
     import ROOT
 
-    dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
-    # dsList = ['5A', '5B', '5C', 6]
+    # dsList = [0, 1, 2, 3, 4, '5A', '5B', '5C', 6]
+    dsList = ['5B', '5C', 6]
     newF = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
 
-    c1 = ROOT.TCanvas('c1', 'c1', 1200, 600)
+    c1 = ROOT.TCanvas('c1', 'c1', 1600, 600)
     ROOT.gStyle.SetOptStat(0)
-    c1.Divide(2, 1)
-    for ds in dsList:
+    c1.Divide(3, 1)
+    for idx, ds in enumerate(dsList):
+        if ds == 6:
+            dsName = '6A'
+        else:
+            dsName = ds
         hNewEnr = newF.Get('hDS{}_Enr'.format(ds))
         hNewEnrLo90 = newF.Get('hDS{}_Enr_Lo90'.format(ds))
         hNewEnrHi90 = newF.Get('hDS{}_Enr_Hi90'.format(ds))
@@ -1250,9 +1254,10 @@ def checkROOTEff():
         hNewNatHi = newF.Get('hDS{}_Nat_Sideband'.format(ds))
         hNewNatLo = newF.Get('hDS{}_Nat_IS'.format(ds))
 
-        c1.cd(1)
+        c1.cd(idx+1)
         hNewEnr.GetYaxis().SetTitleOffset(1.5)
         maxValEnr = hNewEnr.GetMaximum()
+        hNewEnr.SetTitle('DS{} Enriched Efficiencies'.format(dsName))
         hNewEnr.GetYaxis().SetRangeUser(0.65*maxValEnr, 1.1*maxValEnr)
         hNewEnr.GetXaxis().SetRangeUser(0, 50.)
         hNewEnr.SetLineColor(ROOT.kRed)
@@ -1267,33 +1272,35 @@ def checkROOTEff():
         hNewEnrLo.Draw("SAME")
         hNewEnrHi90.Draw("SAME")
         hNewEnrLo90.Draw("SAME")
-        leg1 = ROOT.TLegend(0.35, 0.25, 0.88, 0.55)
+        leg1 = ROOT.TLegend(0.20, 0.25, 0.89, 0.55)
+        leg1.SetTextSize(0.05)
         leg1.AddEntry(hNewEnr, 'Combined', 'l')
         leg1.AddEntry(hNewEnrLo, 'Individual + Summed', 'l')
         leg1.AddEntry(hNewEnrHi, 'Sideband', 'l')
         leg1.SetBorderSize(0)
         leg1.Draw()
 
-        c1.cd(2)
-        hNewNat.GetYaxis().SetTitleOffset(1.5)
-        maxValNat = hNewNat.GetMaximum()
-        hNewNat.GetYaxis().SetRangeUser(0.65*maxValNat, 1.1*maxValNat)
-        hNewNat.GetXaxis().SetRangeUser(0, 50.)
-        hNewNat.SetLineColor(ROOT.kRed)
-        hNewNatHi90.SetLineStyle(ROOT.kDashed)
-        hNewNatLo90.SetLineStyle(ROOT.kDashed)
-        hNewNatHi90.SetLineColor(ROOT.kRed)
-        hNewNatLo90.SetLineColor(ROOT.kRed)
-        hNewNatHi.SetLineColor(ROOT.kBlue)
-        hNewNatLo.SetLineColor(ROOT.kMagenta)
-        hNewNat.Draw()
-        hNewNatHi.Draw("SAME")
-        hNewNatLo.Draw("SAME")
-        hNewNatHi90.Draw("SAME")
-        hNewNatLo90.Draw("SAME")
+        # c1.cd(2)
+        # hNewNat.GetYaxis().SetTitleOffset(1.5)
+        # maxValNat = hNewNat.GetMaximum()
+        # hNewNat.SetTitle('DS{} Natural Efficiencies'.format(dsName))
+        # hNewNat.GetYaxis().SetRangeUser(0.65*maxValNat, 1.1*maxValNat)
+        # hNewNat.GetXaxis().SetRangeUser(0, 50.)
+        # hNewNat.SetLineColor(ROOT.kRed)
+        # hNewNatHi90.SetLineStyle(ROOT.kDashed)
+        # hNewNatLo90.SetLineStyle(ROOT.kDashed)
+        # hNewNatHi90.SetLineColor(ROOT.kRed)
+        # hNewNatLo90.SetLineColor(ROOT.kRed)
+        # hNewNatHi.SetLineColor(ROOT.kBlue)
+        # hNewNatLo.SetLineColor(ROOT.kMagenta)
+        # hNewNat.Draw()
+        # hNewNatHi.Draw("SAME")
+        # hNewNatLo.Draw("SAME")
+        # hNewNatHi90.Draw("SAME")
+        # hNewNatLo90.Draw("SAME")
 
-        c1.SaveAs(os.environ['LATDIR'] + '/DS{}_CombinedEffComparison.pdf'.format(ds))
-
+        # c1.SaveAs(os.environ['LATDIR'] + '/DS{}_CombinedEffComparison.pdf'.format(ds))
+    c1.SaveAs(os.environ['LATDIR'] + '/CombinedEffComparison.pdf'.format(ds))
 
 if __name__=="__main__":
     main()
