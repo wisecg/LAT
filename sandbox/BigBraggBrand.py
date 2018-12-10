@@ -134,7 +134,7 @@ def main(argv):
             return
         if opt == '-reduce':
             # Save data into dataframe -- if this hasn't been done before -- exits immediately afterwards
-            print('Converting ROOT data into DataFrame -- this only needs to be done once!')
+            print('Converting Background and Tritium ROOT data into DataFrames -- this only needs to be done once!')
             reduceData()
             return
         if opt == '-seed':
@@ -1098,8 +1098,23 @@ def bin_ndarray(ndarray, new_shape, operation='sum'):
 
 
 def reduceData():
-    import ROOT
+    """
+        Saves background and tritium spectrum into pandas dataframes
+        This function only needs to be run once!
+    """
     inDir, outDir = os.environ['LATDATADIR']+'/bkg/cut/final95', os.environ['LATDIR']+'/data/MCMC'
+    inDirTrit = '/projecta/projectdirs/majorana/users/bxyzhu/Axion' # Change this to your own directory!
+    bkgFile, tritFile = 'Bkg_Spectrum.h5', 'TritSpec.h5'
+
+    # Check if files already exist
+    if os.path.isfile('{}/{}'.format(outDir, bkgFile)):
+        print('Error: {} already exists!'.format(bkgFile))
+        return
+    if os.path.isfile('{}/{}'.format(outDir, tritFile)):
+        print('Error: {} already exists!'.format(tritFile))
+        return
+
+    import ROOT
     skimTree = ROOT.TChain("skimTree")
     skimTree.Add("{}/final95_DS5B.root".format(inDir))
     skimTree.Add("{}/final95_DS5C.root".format(inDir))
@@ -1115,10 +1130,19 @@ def reduceData():
     nEnergyList = list(float(nEnergy[n]) for n in range(nPass))
     nTimeList = list(int(nTime[n]) for n in range(nPass))
     nEnrList = list(int(nEnr[n]) for n in range(nPass))
-
     df = pd.DataFrame({"Energy":nEnergyList, "Channel":nChList, 'UnixTime':nTimeList, 'isEnr':nEnrList})
     print(df.head(10))
-    df.to_hdf('{}/Bkg_Spectrum.h5'.format(outDir), 'skimTree', mode='w', format='table')
+    df.to_hdf('{}/{}'.format(outDir, bkgFile), 'skimTree', mode='w', format='table')
+
+    f1 = ROOT.TFile('{}/TritSpec.root'.format(inDir))
+    tritHist = f1.Get('tritHist')
+    tritHist.Scale(1./tritHist.Integral("w"))
+    energy = [tritHist.GetBinCenter(xbin) for xbin in range(1, tritHist.GetNbinsX())]
+    val = [tritHist.GetBinContent(xbin) for xbin in range(1, tritHist.GetNbinsX())]
+    dfTrit = pd.DataFrame({"Energy":energy, "Tritium":val})
+    print(dfTrit.head(10))
+    dfTrit.to_hdf('{}/{}'.format(outDir, tritFile), 'TritSpec', mode='w', format='table')
+
 
 
 def help_options():
@@ -1136,7 +1160,7 @@ def help_options():
     print("\t -eff: Sets efficiency curve, default is None (central), other options are Lo90, Hi90, IS, and Sideband")
     print("\t -noaxion: Builds model without Axion signal")
     print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
-    print("\t -reduce: Saves ROOT data into a DataFrame (only run this once!)")
+    print("\t -reduce: Saves Bkg/Tritium ROOT data into DataFrames (only run this once!)")
     print("\t -sample: Turns on MCMC sampling")
     print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
     print("\t -setbinsize: Sets axion bin size (Default/RECOMMENDED 5 minutes)")
