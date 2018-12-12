@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-    This code performs the Coherent Bragg-Primakov Axion analysis using pymc3
-
+    This code performs the Coherent Bragg-Primakov Axion analysis using PyMC3
 
     0) This code requires a couple of inputs:
         a) Angle-averaged Axion PDF (provided by Wenqin)
@@ -17,7 +16,8 @@
         python BigBraggBrand.py -reduce
         - Then sample MCMC
         python BigBraggBrand.py -sample -backend BACKENDDIR -seed SEEDNUM
-
+        - WARNING: For DS5B-6A open data (removing the blind portions), the model will take up just under 5Gb memory (it will likely not run for laptops with just 4 Gb of RAM)
+        - WARNING: For DS5B-6A unblind (I left the blind portions in there), the model takes up ~13 Gb. This is definitely a concern for CPUs with <16 Gb RAM
 
     Limits we want to beat (for Lambda):
     lambda = np.power(g_agg * 1e8, 4)
@@ -559,21 +559,19 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     timeLabels1 = np.linspace(timeBinLowEdge[0], timeBinLowEdge[-1], 5, dtype='datetime64[s]')
     timeLabels1 = np.array(timeLabels1, dtype='datetime64[D]')
 
-    fig1, ax1 = plt.subplots(ncols=2, nrows=2, figsize=(15,8))
+    fig1, ax1 = plt.subplots(ncols=2, nrows=2, figsize=(12,12))
     ax1 = ax1.flatten()
     sns.heatmap(pdfArrDict['Tritium'], cmap="YlGnBu", ax=ax1[0])
     ax1[0].set_title('Tritium PDF')
     ax1[0].set_ylabel('Energy')
-    # ax1[0].set_xlabel('Time')
     ax1[0].invert_yaxis()
-    ax1[0].locator_params(axis='y', nbins=len(energyBins[::50]))
-    ax1[0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
+    ax1[0].locator_params(axis='y', nbins=len(energyBins[::25]))
+    ax1[0].set_yticklabels([round(x,1) for x in energyBins[::25]], rotation=0)
     ax1[0].set_xticklabels([])
 
     sns.heatmap(pdfArrDict['Fe55'], cmap="YlGnBu", ax=ax1[1])
     ax1[1].set_title('Fe55 PDF')
     ax1[1].invert_yaxis()
-    ax1[1].locator_params(axis='x', nbins=5)
     ax1[1].set_yticklabels([])
     ax1[1].set_xticklabels([])
 
@@ -583,8 +581,8 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     ax1[2].set_xlabel('Time')
     ax1[2].invert_yaxis()
     ax1[2].locator_params(axis='x', nbins=5)
-    ax1[2].locator_params(axis='y', nbins=len(energyBins[::50]))
-    ax1[2].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
+    ax1[2].locator_params(axis='y', nbins=len(energyBins[::25]))
+    ax1[2].set_yticklabels([round(x,1) for x in energyBins[::25]], rotation=0)
     ax1[2].set_xticklabels(timeLabels1, rotation=30)
 
     sns.heatmap(pdfArrDict['Ge68'], cmap="YlGnBu", ax=ax1[3])
@@ -605,7 +603,7 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
 
     fig2, (ax2, ax3)= plt.subplots(ncols=2, figsize=(12,6))
     sns.heatmap(pdfArrDict['Axion'], cmap="YlGnBu", ax=ax2)
-    ax2.set_title('DS5B AAA PDF (Before Deadtime Removal)')
+    ax2.set_title('DS5B-6A AAA PDF (Before Deadtime Removal)')
     # ax2.set_xlabel('Time')
     ax2.set_ylabel('Energy (keV)')
     ax2.invert_yaxis()
@@ -615,7 +613,7 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     ax2.set_xticklabels(timeLabels1, rotation=30)
 
     sns.heatmap(axionRm, cmap="YlGnBu", ax=ax3)
-    ax3.set_title('DS5B AAA PDF (After Deadtime Removal)')
+    ax3.set_title('DS5B-6A AAA PDF (After Deadtime Removal)')
     # ax3.set_xlabel('Time')
     ax3.set_ylabel('Energy (keV)')
     ax3.invert_yaxis()
