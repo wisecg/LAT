@@ -2,13 +2,17 @@
 """
     This code performs the Coherent Bragg-Primakov Axion analysis using pymc3
 
+
     0) This code requires a couple of inputs:
         a) Angle-averaged Axion PDF (provided by Wenqin)
-            => In the current implementation, this PDF is loaded and wrangled everytime the code is run, which is admittedly very inefficient in terms of overhead.
+            => Axion_averaged_MJD_DS5breso_Elow0_Ehi20_minutes1_2017_2018.root
+            => In the current implementation, this PDF is loaded and wrangled everytime the code is run, which is admittedly very inefficient in terms of overhead. It is likely more efficient to save into a dataframe or a 2D array
         b) Final low energy spectra from 5 - 20 keV
-            => In the current implementation, the ROOT file is converted to a HDF file (only once)
+            => In the current implementation, the ROOT file(s) are converted to a HDF file (only once)
         c) Final low energy efficiencies (in a ROOT file) along with data-set specific run lists (in a text file)
-            => In the current implementation of the code, these inputs are calculated in dsi.py
+            => These are calculated using:
+
+    Usage:
 
     Limits we want to beat (for Lambda):
     lambda = np.power(g_agg * 1e8, 4)
@@ -24,23 +28,6 @@
     From 3.5 - 18: 0.914782 of total axion
     From 3.8 - 18: 0.877228 of total axion
     From 4.0 - 18: 0.848106 of total axion
-
-    Wenqin's Current Fits (mean):
-    5 -- 20:
-    lambda: 175.3/206623.6666 = 0.00085
-    4 -- 20:
-    lambda: 181.7/258812.4304 = 0.0007
-
-    Brian's results (95 Limit):
-    New:
-    5 -- 20: 159.16 => 0.00077
-
-    ok, the upper limit was 143. and now 146.
-    but, the expected number of axions was 213100.962 and now 194123.1755
-    194123.1755/213100.96=91%
-    so the change is 9%
-    or 146/194123.1755 v.s. 143./213100.962, which is 0.00075 v.s. 0.00067
-    so 12% more conservative
 
     Axion Integrals:
     194112.5744
@@ -71,7 +58,7 @@ import theano.tensor as tt
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import pandas as pd
-sns.set(style='darkgrid', context='talk')
+sns.set(style='darkgrid')
 
 wl = imp.load_source('waveLibs', '{}/waveLibs.py'.format(os.environ['LATDIR']))
 dsi = imp.load_source('dsi', '{}/dsi.py'.format(os.environ['LATDIR']))
@@ -105,6 +92,7 @@ totExposure = 2621.72447852 # DS5b, DS5c, DS6
 # endTime = 1514678400 # End of 2017
 # endTime = 1546300800 # End of 2018
 yearInSec = 31536000 # Number of seconds in 1 year
+dayInSec = 86400
 nBurn = 1000 # Number of burn-in samples for the MCMC
 
 # Energy range (also defines fitting range!)
@@ -118,7 +106,7 @@ def main(argv):
     bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend, bPPC = False, False, False, False, False, False
     # Default backendDir is my own directory!
     backendDir = '/Users/brianzhu/code/LAT/data/MCMC/AveragedAxion2_Enr_Central_DS5breso_5_20'
-    bSample, bFull = False, True
+    bSample, bFull, bDecay = False, True, False
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
     # Set initial seed number here -- this is an option that can be changed
@@ -149,6 +137,9 @@ def main(argv):
                 print('Error: Dataset {} is not valid! Can only use 5b or 6a!'.format(dsNum))
                 return
             print('Setting Resolution to Dataset',dsNum)
+        if opt == '-decay':
+            bDecay = True
+            print('Setting decay mode ON, cosmogenic backgrounds will have a decaying time constant')
         if opt == '-drawPDF':
             bDrawPDF = True
             print('Drawing PDFs only!')
@@ -207,14 +198,26 @@ def main(argv):
     tritSpec = np.array([100*x if x >= 0. else 0. for x in tritSpec])
     tritInterp = interp1d(tritEnergy, tritSpec, fill_value='extrapolate')
     tritList = [tritInterp(x) for x in energyBins[:-1]]
-    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*eeMask
+
     pdfArrDict['Bkg'] = np.ones(pdfArrDict['Axion'].shape)*eeMask
 
     # Generate the Gaussian PDFs
     meansDict = {'Fe55':6.54, 'Zn65':8.98, 'Ge68':10.37}
     gausDict = generateGaus(energyBins[:-1], meansDict, dsNum)
+
+    # Dictionary with half-lives (in seconds!)
+    hlDict = {'Fe55':2.737*yearInSec, 'Zn65':244.8*dayInSec, 'Ge68':270.8*dayInSec, 'Tritium':12.32*yearInSec}
+
+    # pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T*eeMask
+    pdfArrDict['Tritium'] = np.array(tritList*nTimeBins).reshape(nTimeBins, len(tritList)).T
+    if bDecay:
+        pdfArrDict['Tritium'] = applyDecay(pdfArrDict['Tritium'], timeBinLowEdge, hlDict['Tritium'], axionBinSize)
+    pdfArrDict['Tritium'] *= eeMask
+
     for name, Arr in gausDict.items():
         pdfArrDict.setdefault(name, np.array(Arr.tolist()*nTimeBins).reshape(nTimeBins, len(Arr)).T)
+        if bDecay:
+            pdfArrDict[name] = applyDecay(pdfArrDict[name], timeBinLowEdge, hlDict[name], axionBinSize)
         pdfArrDict[name] *= eeMask
 
     # drawPDFs is before applying removeMask so we can make the comparison of removing vs not removing, etc
@@ -276,6 +279,7 @@ def main(argv):
     if bFinalSpectra:
         trace = pm.backends.text.load(backendDir, model)
         drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
+
 
 
 def constructModel(pdfDict, energyBins, bFull=True):
@@ -411,7 +415,6 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum =
     print('Axion Integral: {} (before exposure) -- {} (after efficiency/before exposure) -- {} (before efficiency) --- {} (after efficiency)'.format(AxionArr.sum()*binScaling, (AxionArr*effMask).sum()*binScaling, (AxionArr*expMask).sum()*binScaling, NormAxionArr.sum()*binScaling))
     print('Axion Integral Ratio: {} -- max: {} -- min {}'.format(((AxionArr*effMask)/AxionArr),np.amax((AxionArr*effMask)/AxionArr), np.amin((AxionArr*effMask)/AxionArr)))
     print('Test Integral: {}'.format((AxionArr*effMask).sum()/AxionArr.sum()))
-
     return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, eeMask, effNorm
 
 
@@ -552,8 +555,8 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     timeLabels1 = np.array(timeLabels1, dtype='datetime64[D]')
 
     fig1, ax1 = plt.subplots(ncols=3, nrows=2, figsize=(15,8))
-    sns.heatmap(pdfArrDict['Data'], ax=ax1[0,0])
-    ax1[0,0].set_title('DS5 Data')
+    sns.heatmap(pdfArrDict['Data'], cmap="YlGnBu", ax=ax1[0,0])
+    ax1[0,0].set_title('Data')
     ax1[0,0].set_ylabel('Energy')
     ax1[0,0].set_xlabel('Time')
     ax1[0,0].invert_yaxis()
@@ -561,21 +564,21 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     ax1[0,0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
     ax1[0,0].set_xticklabels([])
 
-    sns.heatmap(pdfArrDict['Tritium'], ax=ax1[0,1])
+    sns.heatmap(pdfArrDict['Tritium'], cmap="YlGnBu", ax=ax1[0,1])
     ax1[0,1].set_title('Tritium PDF')
     ax1[0,1].set_xlabel('Time')
     ax1[0,1].invert_yaxis()
     ax1[0,1].set_yticklabels([])
     ax1[0,1].set_xticklabels([])
 
-    sns.heatmap(pdfArrDict['Axion'], ax=ax1[0,2])
+    sns.heatmap(pdfArrDict['Axion'], cmap="YlGnBu", ax=ax1[0,2])
     ax1[0,2].set_title('Axion PDF')
     ax1[0,2].set_xlabel('Time')
     ax1[0,2].invert_yaxis()
     ax1[0,2].set_yticklabels([])
     ax1[0,2].set_xticklabels([])
 
-    sns.heatmap(pdfArrDict['Fe55'], ax=ax1[1,0])
+    sns.heatmap(pdfArrDict['Fe55'], cmap="YlGnBu", ax=ax1[1,0])
     ax1[1,0].set_title('Fe55 PDF')
     ax1[1,0].set_ylabel('Energy')
     ax1[1,0].set_xlabel('Time')
@@ -583,23 +586,23 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     ax1[1,0].locator_params(axis='y', nbins=len(energyBins[::50]))
     ax1[1,0].locator_params(axis='x', nbins=5)
     ax1[1,0].set_yticklabels([round(x,1) for x in energyBins[::50]], rotation=0)
-    ax1[1,0].set_xticklabels(timeLabels, rotation=30)
+    ax1[1,0].set_xticklabels(timeLabels1, rotation=30)
 
-    sns.heatmap(pdfArrDict['Zn65'], ax=ax1[1,1])
+    sns.heatmap(pdfArrDict['Zn65'], cmap="YlGnBu", ax=ax1[1,1])
     ax1[1,1].set_title('Zn65 PDF')
     ax1[1,1].set_xlabel('Time')
     ax1[1,1].invert_yaxis()
     ax1[1,1].locator_params(axis='x', nbins=5)
     ax1[1,1].set_yticklabels([])
-    ax1[1,1].set_xticklabels(timeLabels, rotation=30)
+    ax1[1,1].set_xticklabels(timeLabels1, rotation=30)
 
-    sns.heatmap(pdfArrDict['Ge68'], ax=ax1[1,2])
+    sns.heatmap(pdfArrDict['Ge68'], cmap="YlGnBu", ax=ax1[1,2])
     ax1[1,2].set_title('Ge68 PDF')
     ax1[1,2].set_xlabel('Time')
     ax1[1,2].invert_yaxis()
     ax1[1,2].locator_params(axis='x', nbins=5)
     ax1[1,2].set_yticklabels([])
-    ax1[1,2].set_xticklabels(timeLabels, rotation=30)
+    ax1[1,2].set_xticklabels(timeLabels1, rotation=30)
     plt.tight_layout()
     # fig1.savefig('{}/BraggFitPDF_New.png'.format(os.environ['LATDIR']+'/plots/Axion'))
 
@@ -795,7 +798,6 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
             # xmesh, ymesh = np.meshgrid(energyBins[:-1], timeBinLowEdge[:-1])
             # aeff.plot_surface(xmesh, ymesh, eeMask.T)
             # plt.show()
-
     return eeMask, expMask, effMask
 
 
@@ -834,6 +836,20 @@ def generateGaus(energyList, meansDict, dsNum):
     for name, mean in meansDict.items():
         outDict.setdefault(name, norm.pdf(energyList, loc=mean, scale=getSigma(mean, dsNum=dsNum)))
     return outDict
+
+
+def applyDecay(inArr, timeBinLowEdge, halflife, axionBinSize):
+    """
+        Applies decay constant to PDF
+        Input
+    """
+    # I add axionBinSize/2 to timeBinLowEdge, as timeBinLowEdge is the low bin edge of time bins
+    # I subtract the total value by the first value to normalize the decay time to 0
+    timeArr = timeBinLowEdge[:-1] + axionBinSize/2.*60 - timeBinLowEdge[0]
+    decayArr = np.exp(-1.*np.log(2)*timeArr/halflife)
+    # Copy the timeArray into the shape of the input matrix
+    decayMask = np.tile(decayArr, (inArr.shape[0], 1))
+    return inArr*decayMask
 
 
 def modelDiagnostics(model, pdfArrDict=None, backendDir=None, effNorm=None):
