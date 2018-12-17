@@ -276,7 +276,7 @@ def main(argv):
 
     # Perform Diagnostics on the model -- this can only be done AFTER MCMC sampling!
     if bDiagnostic:
-        modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, unNormAxion=AxionArr, effNorm=effNorm)
+        modelDiagnostics(model, pdfArrDict=pdfArrDict, backendDir=backendDir, effNorm=effNorm)
 
     if bPPC:
         posteriorChecks(model, pdfArrDict=pdfArrDict, backendDir=backendDir)
@@ -621,6 +621,14 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     ax3.locator_params(axis='x', nbins=5)
     ax3.set_yticklabels([round(x,1) for x in energyBins[::25]], rotation=0)
     ax3.set_xticklabels(timeLabels2, rotation=30)
+
+    fig3, (ax31, ax32)= plt.subplots(ncols=2, figsize=(12,6))
+    ax31.plot(np.sum(np.array(pdfArrDict['Ge68']), axis=0))
+    ax31.set_title('Ge68')
+    ax31.set_xlabel('Shifted Time (sec)')
+    ax32.plot(np.sum(np.array(pdfArrDict['Tritium']), axis=0))
+    ax32.set_title('Tritium')
+    ax32.set_xlabel('Shifted Time (sec)')
 
     plt.tight_layout()
     # fig2.savefig('{}/AxionPDF_Deadtime.png'.format(os.environ['LATDIR']+'/plots/Axion'))
