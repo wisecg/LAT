@@ -1176,6 +1176,8 @@ def help_options():
     """
         Prints the different options
     """
+    print("As with all LAT scripts, make sure to have the environment variable LATDIR set!")
+    print("To access ROOT data files, make sure to have LATDATADIR set as well!")
     print("BigBraggBrand Run Options:")
     print("\t -h or --help: Prints this help message")
     print("\t -backend : Changes the backend directory")
