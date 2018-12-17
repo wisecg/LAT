@@ -111,11 +111,11 @@ def main(argv):
     bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend, bPPC = False, False, False, False, False, False
     # Default backendDir is my own directory!
     backendDir = '/Users/brianzhu/code/LAT/data/MCMC/AveragedAxion2_Enr_Central_DS5breso_5_20'
-    bSample, bFull, bDecay = False, True, False
+    bSample, bFull, bDecay, bUseROOT = False, True, False, False
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
     # Set initial seed number here -- this is an option that can be changed
-    dsNum, seedNum = '5b', 1
+    dsNum, seedNum = '5b', 0
     effMode = None
 
     if len(argv)==0:
@@ -163,6 +163,9 @@ def main(argv):
         if opt == '-noaxion':
             bFull = False
             print('Building Model without Axion PDF!')
+        if opt == '-root':
+            bUseROOT = True
+            print('Loading ROOT files for Axion and Efficiency rather than HDF5, pyROOT must be properly compiled!')
         if opt == '-sample':
             bSample = True
             print('MCMC Sampling ON')
@@ -178,7 +181,7 @@ def main(argv):
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
 
     # Build Axion PDF -- Use low edges of PDF to generate bins
-    AxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize=axionBinSize, dsNum=dsNum, effMode = effMode)
+    AxionArr, nTimeBins, timeBinLowEdge, removeMask, eeMask, effNorm = convertaxionPDF(startTime, endTime, debug=bDebug, axionBinSize=axionBinSize, dsNum=dsNum, effMode = effMode, bUseROOT=bUseROOT)
     pdfArrDict['Axion'] = AxionArr
 
     print('Generated Axion PDF!')
@@ -313,7 +316,7 @@ def constructModel(pdfDict, energyBins, bFull=True):
     return model
 
 
-def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum = '5b', effMode = None):
+def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum = '5b', effMode = None, bUseROOT=False):
     """
         Converts 2D histogram PDF for axion into numpy array
 
@@ -337,73 +340,83 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum =
         effNorm: 2D (time vs Energy) array of the normalization factor (efficiency*exposure/exposure only)
     """
 
-    import ROOT
     inDir = os.environ['LATDIR']+'/data/MCMC'
-    fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS{}reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir, dsNum))
+    if bUseROOT:
+        import ROOT
 
-    hday = fAxion.Get('hday')
-    hday.RebinX(axionBinSize) # 5 minute bins
+        fAxion = ROOT.TFile('{}/Axion_averaged_MJD_DS{}reso_Elow0_Ehi20_minutes1_2017_2018.root'.format(inDir, dsNum))
 
-    # Find bins to cut off PDF at
-    bRepeat, endBin, endBin2 = False, 0, 0
-    nHistTime = hday.GetNbinsX()
-    endTimeHist = hday.GetXaxis().GetBinLowEdge(nHistTime)
-    startBin = hday.GetXaxis().FindBin(startTime) # No check is done on the start bin, assume within 2017-2018
+        hday = fAxion.Get('hday')
+        hday.RebinX(axionBinSize) # 5 minute bins
 
-    # If there is enough time bins in the original axion histogram
-    if endTimeHist > endTime:
-        endBin = hday.GetXaxis().FindBin(endTime)
-    # If the end time extends beyond 2018, need to extend the histogram
-    else:
-        bRepeat = True
-        endBin = nHistTime
-        endBin2 = hday.GetXaxis().FindBin(endTime - yearInSec)
+        # Find bins to cut off PDF at
+        bRepeat, endBin, endBin2 = False, 0, 0
+        nHistTime = hday.GetNbinsX()
+        endTimeHist = hday.GetXaxis().GetBinLowEdge(nHistTime)
+        startBin = hday.GetXaxis().FindBin(startTime) # No check is done on the start bin, assume within 2017-2018
 
-    AxionList = []
+        # If there is enough time bins in the original axion histogram
+        if endTimeHist > endTime:
+            endBin = hday.GetXaxis().FindBin(endTime)
+        # If the end time extends beyond 2018, need to extend the histogram
+        else:
+            bRepeat = True
+            endBin = nHistTime
+            endBin2 = hday.GetXaxis().FindBin(endTime - yearInSec)
 
-    # Because this is finding the bin edges, need to go beyond the final bin
-    # to get the upper end of the last time bin
-    timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(tBin)
-                        for tBin in range(hday.GetNbinsX())
-                        if tBin >= startBin and tBin <= endBin+1]
-    # Here is if we extend the PDF beyond 1 year
-    if debug and bRepeat:
-        print('Axion PDF Gap Extension (should be binsize):', timeBinLowEdge[-1], hday.GetXaxis().GetBinLowEdge(0)+yearInSec)
-    if bRepeat:
-        timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(tBin)+yearInSec
+        AxionList = []
+
+        # Because this is finding the bin edges, need to go beyond the final bin
+        # to get the upper end of the last time bin
+        timeBinLowEdge = [hday.GetXaxis().GetBinLowEdge(tBin)
                             for tBin in range(hday.GetNbinsX())
-                            if tBin >= 0 and tBin <= endBin2+1]) # nBins+1 overlaps with the 0 and 1st bin
+                            if tBin >= startBin and tBin <= endBin+1]
+        # Here is if we extend the PDF beyond 1 year
+        if debug and bRepeat:
+            print('Axion PDF Gap Extension (should be binsize):', timeBinLowEdge[-1], hday.GetXaxis().GetBinLowEdge(0)+yearInSec)
+        if bRepeat:
+            timeBinLowEdge.extend([hday.GetXaxis().GetBinLowEdge(tBin)+yearInSec
+                                for tBin in range(hday.GetNbinsX())
+                                if tBin >= 0 and tBin <= endBin2+1]) # nBins+1 overlaps with the 0 and 1st bin
+
+
+
+        # Loop through energy bins, grabbing the bin content of each bin and filling into matrix
+        # For the loop, start with 1 and go through NbinsY+1 -- this allows for a range up to 20 keV in the fit
+        for energyBin in range(1, hday.GetNbinsY()+1):
+            # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
+            if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) < energyThresh: continue
+            if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) > energyThreshMax-0.1: continue
+            # print("Axion Energy Bin: ", round(hday.GetYaxis().GetBinLowEdge(energyBin),1))
+            AxionList.append([hday.GetBinContent(timeBin, energyBin) #* binSize * 5./(60*24)/90.
+                                for timeBin in range(1, hday.GetNbinsX())
+                                if timeBin >= startBin and timeBin <= endBin])
+            # Extend Axion histogram
+            if bRepeat:
+                AxionList[len(AxionList)-1].extend([hday.GetBinContent(timeBin, energyBin) #*binSize * 5./(60*24)/90.
+                                    for timeBin in range(1, hday.GetNbinsX())
+                                    if timeBin <= endBin2+1])
+
+        fAxion.Close()
+        AxionArr = np.array(AxionList)
+    else:
+        df = pd.read_hdf('{}/AxionAveragedPDFs.h5'.format(inDir), key='AAA_DS{}'.format(dsNum))
+        AxionArr = df.values.T # Need to take the transpose of the matrix (because of the way we saved it)
+        # Here we're doing something stupid to make the formatting match up with what we had before
+        # The way I've stored the time bins is as the index of the dataframe, and I've stored the center values rather than the low edge values (so we need to add axionBinSize/2*60).
+        # Since we only stored the central values, I need to append the upper value to cover the last bin edge
+        timeBinLowEdge = (df.index.values - axionBinSize/2.*60.).tolist()
+        timeBinLowEdge.append(timeBinLowEdge[-1] + axionBinSize*60.)
 
     # Total bins is 1 less than the array length of timeBinLowEdge
     nTimeBins = len(timeBinLowEdge)-1
-
-    # Loop through energy bins, grabbing the bin content of each bin and filling into matrix
-    # For the loop, start with 1 and go through NbinsY+1 -- this allows for a range up to 20 keV in the fit
-    for energyBin in range(1, hday.GetNbinsY()+1):
-        # Apply energy cuts on the low edge of the bin -- rounding here is necessary because of ROOT's stupid precision
-        if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) < energyThresh: continue
-        if round(hday.GetYaxis().GetBinLowEdge(energyBin),1) > energyThreshMax-0.1: continue
-        # print("Axion Energy Bin: ", round(hday.GetYaxis().GetBinLowEdge(energyBin),1))
-        # Here we want to scale the PDF properly to maintain the units
-        # The histogram has a differential rate of c/keV/kg/day
-        # We need to divide by 90 because it is averaged across 90 angles (Wenqin's fault)
-        # Then multiply by the energy bin size (to get to keV) and divide by 5minutes/1 day for time
-        AxionList.append([hday.GetBinContent(timeBin, energyBin) #* binSize * 5./(60*24)/90.
-                            for timeBin in range(1, hday.GetNbinsX())
-                            if timeBin >= startBin and timeBin <= endBin])
-        # Extend Axion histogram
-        if bRepeat:
-            AxionList[len(AxionList)-1].extend([hday.GetBinContent(timeBin, energyBin) #*binSize * 5./(60*24)/90.
-                                for timeBin in range(1, hday.GetNbinsX())
-                                if timeBin <= endBin2+1])
-
-    fAxion.Close()
-    AxionArr = np.array(AxionList)
     if debug:
+        print('TimeBins:',timeBinLowEdge[0], timeBinLowEdge[-1])
         print('Axion Shape', AxionArr.shape, nTimeBins)
 
+
     # Efficiency * Exposure mask
-    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList=dsList, debug=debug, effMode=effMode)
+    eeMask, expMask, effMask = generateEfficiencyMask(np.array(timeBinLowEdge), energyBins, AxionArr.shape, dsList=dsList, debug=debug, effMode=effMode, bUseROOT=bUseROOT)
 
     # Multiply the Axion PDF by the Efficiency*Exposure mask
     NormAxionArr = AxionArr*eeMask
@@ -411,15 +424,6 @@ def convertaxionPDF(startTime, endTime, axionBinSize = 5, debug = False, dsNum =
 
     # Find all columns of full zeros (PDFs don't exist)
     removeMask = np.where(np.any(NormAxionArr, axis=0)==False)[0]
-
-    # Get stuff into counts
-    binScaling = (binSize*5./(60*24)/90)
-
-    print('Bin Scaling: {}'.format(binScaling))
-    print('Efficiency integral: {}, shape: {}'.format(effMask.sum(axis=0), effMask.sum(axis=0).shape ))
-    print('Axion Integral: {} (before exposure) -- {} (after efficiency/before exposure) -- {} (before efficiency) --- {} (after efficiency)'.format(AxionArr.sum()*binScaling, (AxionArr*effMask).sum()*binScaling, (AxionArr*expMask).sum()*binScaling, NormAxionArr.sum()*binScaling))
-    print('Axion Integral Ratio: {} -- max: {} -- min {}'.format(((AxionArr*effMask)/AxionArr),np.amax((AxionArr*effMask)/AxionArr), np.amin((AxionArr*effMask)/AxionArr)))
-    print('Test Integral: {}'.format((AxionArr*effMask).sum()/AxionArr.sum()))
     return NormAxionArr, nTimeBins, np.array(timeBinLowEdge), removeMask, eeMask, effNorm
 
 
@@ -635,7 +639,7 @@ def drawPDFs(pdfArrDict, removeMask, timeBinLowEdge):
     plt.show()
 
 
-def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, debug=False, effMode=None):
+def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, debug=False, effMode=None, bUseROOT=False):
     """
         Creates mask for efficiency*exposure, will return a number between 0 -- exposure (the weight for each bin)
         for every time and energy bin. Apply this mask to the PDFs to delete columns where the detectors are off
@@ -652,7 +656,12 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
     if effMode:
         print('Using {} mode for cut efficiency'.format(effMode))
 
-    import ROOT
+    if bUseROOT:
+        import ROOT
+        fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
+    else:
+        df = pd.read_hdf(os.environ['LATDIR']+'/data/MCMC/CombinedEff.h5')
+
     eeMask = np.ones(AxionShape)
     expMask = np.ones(AxionShape) # Exposure only
     effMask = np.ones(AxionShape) # Efficiency only
@@ -665,21 +674,26 @@ def generateEfficiencyMask(timeBinLowEdge, energyBins, AxionShape, dsList=None, 
     if debug:
         print('Timing Bin size: ', timeBinSize)
 
-    fEff = ROOT.TFile(os.environ['LATDIR']+'/data/lat-expo-efficiency_Combined.root')
     # Dummy variable for Start time of DS5b to calculate gaps in livetime
     prevEnd = startTime
 
     for ds in dsList:
         # First build efficiency array -- assumes efficiency for all dataset is constant
-        # Also combines efficiency of natural and enriched detectors
-        if not effMode:
-            hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
-        else:
-            hEff = fEff.Get('hDS{}_Norm_Enr_{}'.format(ds, effMode))
         effArr = np.ones(len(energyBins)-1)
-        for eIdx, eBin in enumerate(energyBins[:-1]):
-            effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
+        # Also combines efficiency of natural and enriched detectors
+        if bUseROOT:
+            if not effMode:
+                hEff = fEff.Get('hDS{}_Norm_Enr'.format(ds))
+            else:
+                hEff = fEff.Get('hDS{}_Norm_Enr_{}'.format(ds, effMode))
 
+            for eIdx, eBin in enumerate(energyBins[:-1]):
+                effArr[eIdx] = hEff.GetBinContent(hEff.FindBin(eBin+binSize/2.))
+        else:
+            if not effMode:
+                effArr = df['DS{}_Nominal'.format(ds)].values
+            else:
+                effArr = df['DS{}_{}'.format(ds, effMode)].values
         if debug:
             print('DS{} Efficiency Array:'.format(ds), effArr, effArr.shape)
 
@@ -1175,6 +1189,7 @@ def help_options():
     print("\t -noaxion: Builds model without Axion signal")
     print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
     print("\t -reduce: Saves Bkg/Tritium ROOT data into DataFrames (only run this once!)")
+    print("\t -root: Uses ROOT input files (legacy) rather than HDF5 input files, requires pyROOT!")
     print("\t -sample: Turns on MCMC sampling")
     print("\t -seed #: Changes seed number (corresponds to MCMC chain number)")
     print("\t -setbinsize: Sets axion bin size (Default/RECOMMENDED 5 minutes)")
