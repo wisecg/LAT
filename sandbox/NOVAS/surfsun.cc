@@ -19,7 +19,7 @@ int main (int argc, char** argv)
 {
    int Year = 0, Month = 0, Day = 0;
    double Hour=0, Minute=0;
-   double UTC[60], Azimuth[60], Zenith[60];
+   double UTC[60], Azimuth[60], Zenith[60], SolarPos[60];
 
    // Difference between UT1 and UTC, based off of rotation of the Earth
    // Obtained from http://maia.usno.navy.mil/search/search.html, changes every day
@@ -37,7 +37,7 @@ int main (int argc, char** argv)
    tree->Branch("UTC", &UTC, "UTC[60]/D");
    tree->Branch("Azimuth", &Azimuth, "Azimuth[60]/D");
    tree->Branch("Zenith", &Zenith, "Zenith[60]/D");
-
+   tree->Branch("SolarPos", &SolarPos, "SolarPos[60]/D");
 
    short int error = 0;
    short int accuracy = 1;
@@ -74,7 +74,6 @@ int main (int argc, char** argv)
       return (error);
    }
 
-   // Subtract 8 to converts time zone from GMT to MT
    const double timezone = -0.0;
 
    // Correction terms
@@ -138,10 +137,10 @@ int main (int argc, char** argv)
             }
 
             equ2hor (jd_ut1, delta_t, accuracy, 0.0, 0.0, &geo_loc, t_place.ra , t_place.dec, 1, &zd, &az, &rar, &decr);
-
             UTC[j] = jd_utc;
             Zenith[j] = zd;
             Azimuth[j] = az;
+            SolarPos[j] = t_place.dis;
          }
 
          tree->Fill();
