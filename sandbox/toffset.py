@@ -2,7 +2,7 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 
 import dsi
 det = dsi.DetInfo()

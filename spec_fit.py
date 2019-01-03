@@ -6,7 +6,7 @@ from scipy.interpolate import spline
 import waveLibs as wl
 import dsi
 import matplotlib.pyplot as plt
-plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
+plt.style.use('%s/clint.mpl' % dsi.latSWDir)
 sys.argv.append("-b")
 import ROOT
 from ROOT import TFile

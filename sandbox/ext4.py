@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 from matplotlib.colors import LogNorm
 
 import dsi

@@ -3,7 +3,7 @@
 import sys, random
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 
 from scipy.ndimage.filters import gaussian_filter
 import waveLibs as wl

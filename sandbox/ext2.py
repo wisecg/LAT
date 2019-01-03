@@ -6,7 +6,7 @@ wl = imp.load_source('waveLibs',os.environ['LATDIR']+'/waveLibs.py')
 import matplotlib
 matplotlib.use('pdf')
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 from matplotlib.colors import LogNorm
 import numpy as np
 import tinydb as db

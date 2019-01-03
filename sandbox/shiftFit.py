@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import spline
 import matplotlib
 import matplotlib.pyplot as plt
-plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
+plt.style.use('%s/clint.mpl' % dsi.latSWDir)
 sys.argv.append("-b")
 import waveLibs as wl
 import ROOT

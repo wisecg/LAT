@@ -3,7 +3,7 @@ import random
 import numpy as np
 import dsi
 import matplotlib.pyplot as plt
-plt.style.use('%s/pltReports.mplstyle' % dsi.latSWDir)
+plt.style.use('%s/clint.mpl' % dsi.latSWDir)
 from ROOT import TFile, TTree, TH1D, TCanvas, gStyle, gROOT
 
 gae_mb = 2.6e-11

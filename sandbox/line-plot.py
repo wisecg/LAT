@@ -3,7 +3,7 @@ import numpy as np
 import tinydb as db
 
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 
 import dsi
 bkg = dsi.BkgInfo()

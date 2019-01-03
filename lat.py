@@ -92,8 +92,7 @@ def main(argv):
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
     import matplotlib.ticker as mtick
-    # plt.style.use('pltTalks.mplstyle')
-    plt.style.use('pltReports.mplstyle')
+    plt.style.use('clint.mpl')
     from matplotlib import colors
 
     # File I/O

@@ -6,7 +6,7 @@ from statsmodels.stats import proportion
 from scipy.optimize import curve_fit
 from pprint import pprint
 import matplotlib.pyplot as plt
-plt.style.use('pltReports.mplstyle')
+plt.style.use('clint.mpl')
 
 import dsi
 import waveLibs as wl

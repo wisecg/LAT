@@ -6,7 +6,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 sys.argv.append("-b")
 import matplotlib.pyplot as plt
-# plt.style.use('../pltReports.mplstyle')
+# plt.style.use('../clint.mpl')
 # import seaborn as sns
 
 # load LAT libraries

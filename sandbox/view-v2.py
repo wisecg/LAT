@@ -8,7 +8,7 @@ from scipy.signal import butter, lfilter
 from ROOT import TFile, TChain, TTree
 
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 
 bkg = dsi.BkgInfo()
 

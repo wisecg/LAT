@@ -29,7 +29,7 @@ def main(argv):
         matplotlib.use('TkAgg')
         print("Warp-speed drawing, don't trust figure axes.")
     import matplotlib.pyplot as plt
-    plt.style.use('../pltReports.mplstyle')
+    plt.style.use('../clint.mpl')
     from matplotlib.colors import LogNorm, Normalize
 
     # Set input file and cuts

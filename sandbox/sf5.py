@@ -5,7 +5,7 @@ from scipy.interpolate import spline
 import waveLibs as wl
 import dsi
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 sys.argv.append("-b")
 import ROOT
 from ROOT import RooFit as RF

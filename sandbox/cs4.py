@@ -2,7 +2,7 @@
 import sys, os, math, glob
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 
 import waveLibs as wl
 import dsi

@@ -522,7 +522,7 @@ def makeMovies():
     """
     from ROOT import TFile, TTree, MGTWaveform
     import matplotlib.pyplot as plt
-    plt.style.use('./pltReports.mplstyle')
+    plt.style.use('./clint.mpl')
     from matplotlib import animation
     import pywt
 
@@ -635,7 +635,7 @@ def getEfficiency():
     import lat3
     from ROOT import TFile, TTree
     import matplotlib.pyplot as plt
-    plt.style.use('./pltReports.mplstyle')
+    plt.style.use('./clint.mpl')
 
     dsList = [0,1,2,3,4,"5A","5B","5C",6]  # default
     # dsList = ["5A"]

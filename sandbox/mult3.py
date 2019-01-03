@@ -7,7 +7,7 @@ import matplotlib as mpl
 # mpl.use('Agg')
 # sys.argv.append("-b")
 import matplotlib.pyplot as plt
-plt.style.use('../pltReports.mplstyle')
+plt.style.use('../clint.mpl')
 from matplotlib.colors import LogNorm, Normalize
 
 # load LAT libraries

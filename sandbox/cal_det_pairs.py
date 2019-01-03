@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn as sns
 # sns.set(style='darkgrid')
-# plt.style.use('../pltReports.mplstyle')
+# plt.style.use('../clint.mpl')
 
 # load LAT libraries
 ds = imp.load_source('DataSetInfo',os.environ['LATDIR']+'/sandbox/DataSetInfo.py')
