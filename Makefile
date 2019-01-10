@@ -1,7 +1,7 @@
 include $(MGDODIR)/buildTools/config.mk
 
 # Give the list of applications, which must be the stems of cc files with 'main'.
-APPS = skim_mjd_data wave_skim ds_livetime auto-thresh validate_skim
+APPS = skim_mjd_data wave_skim ds_livetime auto-thresh validate_skim gen_json
 
 # Stuff needed by BasicMakefile
 SHLIB =
