@@ -63,7 +63,7 @@ import theano.tensor as tt
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import pandas as pd
-sns.set(style='darkgrid')
+sns.set(style='ticks')
 
 wl = imp.load_source('waveLibs', '{}/waveLibs.py'.format(os.environ['LATDIR']))
 dsi = imp.load_source('dsi', '{}/dsi.py'.format(os.environ['LATDIR']))
@@ -108,9 +108,9 @@ energyBins = np.linspace(energyThresh,energyThreshMax, round((energyThreshMax-en
 
 def main(argv):
     # Some random booleans
-    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend, bPPC = False, False, False, False, False, False
+    bDebug, bDrawPDF, bDiagnostic, bFinalSpectra, bBackend, bPPC, bLike = False, False, False, False, False, False, False
     # Default backendDir is my own directory!
-    backendDir = '/Users/brianzhu/code/LAT/data/MCMC/AveragedAxion2_Enr_Central_DS5breso_5_20'
+    backendDir = os.environ['LATDIR']+'/data/MCMC/AAA_Enr_DS5breso_Decay_5_20/'
     bSample, bFull, bDecay, bUseROOT = False, True, False, False
     axionBinSize = 5 # This is in units of minutes
     pdfArrDict, pdfFlatDict = {}, {}
@@ -176,6 +176,9 @@ def main(argv):
         if opt == '-ppc':
             bPPC = True
             print('Generating Posterior Predictive Checks, MCMC chain needs to be sampled!')
+        if opt == '-like':
+            bLike = True
+            print('Manually Calculating Likelihoods!')
         if opt == '-setbinsize':
             axionBinSize = int(argv[i+1])
             print('Setting axion bin size to be {} minutes -- Warning anything different from the default has NOT been vetted'.format(axionBinSize))
@@ -251,13 +254,13 @@ def main(argv):
         print("Axion Shape", pdfArrDict['Axion'].shape)
 
     # Flatten 2D arrays into 1D for ease of sampling
-    pdfFlatDict['Data'] = pdfArrDict['Data'].flatten()
-    pdfFlatDict['Tritium'] = pdfArrDict['Tritium'].flatten()
-    pdfFlatDict['Axion'] = pdfArrDict['Axion'].flatten()
-    pdfFlatDict['Bkg'] = pdfArrDict['Bkg'].flatten()
-    pdfFlatDict['Fe55'] = pdfArrDict['Fe55'].flatten()
-    pdfFlatDict['Zn65'] = pdfArrDict['Zn65'].flatten()
-    pdfFlatDict['Ge68'] = pdfArrDict['Ge68'].flatten()
+    pdfFlatDict['Data'] = pdfArrDict['Data'].T.flatten()
+    pdfFlatDict['Tritium'] = pdfArrDict['Tritium'].T.flatten()
+    pdfFlatDict['Axion'] = pdfArrDict['Axion'].T.flatten()
+    pdfFlatDict['Bkg'] = pdfArrDict['Bkg'].T.flatten()
+    pdfFlatDict['Fe55'] = pdfArrDict['Fe55'].T.flatten()
+    pdfFlatDict['Zn65'] = pdfArrDict['Zn65'].T.flatten()
+    pdfFlatDict['Ge68'] = pdfArrDict['Ge68'].T.flatten()
 
     if bDebug:
         for key in pdfFlatDict:
@@ -266,9 +269,6 @@ def main(argv):
 
     model = constructModel(pdfFlatDict, energyBins, bFull = bFull)
     print('Built model(s)')
-
-    if not bBackend:
-        backendDir = '{}/AveragedAxion2_Enr_LowEff_DS5breso_{}_{}'.format(inDir, int(energyThresh), int(energyThreshMax))
 
     # Sample Here - I didn't include an option to change the number of samples...
     # At LANL, it takes approximately 3 days to sample 16000 samples in one chain
@@ -284,10 +284,12 @@ def main(argv):
     if bPPC:
         posteriorChecks(model, pdfArrDict=pdfArrDict, backendDir=backendDir)
 
+    if bLike:
+        evalLikelihood(model, pdfArrDict=pdfFlatDict, backendDir=backendDir)
+
     if bFinalSpectra:
         trace = pm.backends.text.load(backendDir, model)
         drawFinalSpectra(trace=trace[nBurn:], pdfDict=pdfArrDict)
-
 
 
 def constructModel(pdfDict, energyBins, bFull=True):
@@ -1080,6 +1082,59 @@ def posteriorChecks(model, pdfArrDict, backendDir=None):
     return
 
 
+def evalLikelihood(model, pdfArrDict, backendDir=None):
+    """
+        Takes best fit model and evaluates likelihood on a point by point basis for all non-zero points
+    """
+    # Load from files
+    print('Loading Backend from {}'.format(backendDir))
+    trace = pm.backends.text.load(backendDir, model)
+    # Get summary of trace as a dataframe
+    traceBurn = trace[nBurn:]
+    dfSum = pm.summary(traceBurn, alpha=0.1, include_transformed=False)
+    indexArr = np.nonzero(pdfArrDict['Data'])
+
+    likeDict = {}
+    print(dfSum.head(10))
+    for idx in indexArr[0]:
+        totL = 0.
+        for par in dfSum.index:
+            if '_log_' in par:
+                continue
+            tempmu = dfSum.loc[par, 'mean']*pdfArrDict[par][idx]
+            tempL = np.exp(tempmu)*tempmu
+            totL += tempL
+            # print(par, idx, tempL)
+            likeDict.setdefault(par, []).append(tempL)
+
+        likeDict.setdefault('Total', []).append(totL)
+
+    indexVals = np.linspace(1, len(likeDict['Total']), len(likeDict['Total']))
+
+    idx = 0
+    # cList = ['blue', 'red', 'green', 'teal', 'magenta', 'black']
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(15,10))
+    prevBot = np.zeros(len(likeDict['Total']))
+    for key in likeDict.keys():
+        if key == 'Total':
+            continue
+        currProb = np.array(likeDict[key])/np.array(likeDict['Total'])
+        ax1.bar(indexVals[:300], currProb[:300], bottom=prevBot[:300], label=key)
+        ax2.bar(indexVals[300:600], currProb[300:600], bottom=prevBot[300:600], label=key)
+        ax3.bar(indexVals[600:], currProb[600:], bottom=prevBot[600:], label=key)
+        prevBot += currProb
+        idx += 1
+    ax1.set_ylabel('Probability')
+    ax2.set_ylabel('Probability')
+    ax3.set_ylabel('Probability')
+    ax3.set_xlabel('Event Number')
+    ax1.legend()
+    plt.tight_layout()
+    plt.show()
+
+    return likeDict
+
+
 def rebin(inArr, size=2, bPrint=False):
     """
         Rebin an array
@@ -1188,6 +1243,7 @@ def help_options():
     print("\t -drawSpectra: Draws final spectra, MCMC chain needs to be sampled")
     print("\t -ds: Sets the energy resolution of the Axion and Gaussian PDFs, default is 5b (can also use 6a)")
     print("\t -eff: Sets efficiency curve, default is None (central), other options are Lo90, Hi90, IS, and Sideband")
+    print("\t -like: Manually calculates likelihood after MCMC")
     print("\t -noaxion: Builds model without Axion signal")
     print("\t -ppc: Generates posterior predictive checks, only run AFTER MCMC")
     print("\t -reduce: Saves Bkg/Tritium ROOT data into DataFrames (only run this once!)")
